@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant Cat as ComponentCatalog.categories
+    participant DP as ParkUIDemoPage(_kCats)
+    participant Reg as ParkComponentRegistry
+    participant Detail as ParkComponentDetailPage
+    participant Spec as ParkComponentSpec
+    participant Tok as ParkColors/Spacing/Radius/Typography
+
+    Cat ->> DP: 派生 _kCats（分类+组件名，单一源）
+    Note over DP: 侧边栏菜单 + 计数全部来自 cat.components.length
+    DP ->> Reg: lookup('ParkXxx')   %% 用户点击某组件
+    Reg -->> DP: ParkComponentSpec?
+    alt spec 存在
+        DP ->> Detail: Get.to(ParkComponentDetailPage(spec))
+        Detail ->> Spec: 读 properties/events/methods/demos/guide/schemaDoc/dynamicFormSchemaDoc
+        Spec -->> Detail: 三 Tab（示例/API/指南）渲染
+        Detail ->> Tok: 颜色/间距/圆角/字号取令牌（非魔法变量）
+        Note over Detail: demos[].builder 用 Park* 组件+令牌实时预览
+    else spec 缺失
+        DP ->> DP: _jumpTo(name) 滚动定位（占位）
+    end

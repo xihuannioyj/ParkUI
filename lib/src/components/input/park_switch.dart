@@ -137,7 +137,7 @@ class _ParkSwitchState extends FormFieldState<dynamic> with BindableFormFieldMix
     }
 
     final newValue = nextBool ? w.checkedValue : w.uncheckedValue;
-    setValue(newValue);
+    didChange(newValue);
     w.onChanged?.call(newValue);
   }
 }

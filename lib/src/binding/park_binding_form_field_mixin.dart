@@ -46,6 +46,8 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
       _bindable = service.bind<T>(key);
       _bindable!.addListener(onBindableChanged);
       _isLinked = true;
+      // 用 bindable 的初始值同步 FormField.value，确保表单字段显示默认值
+      setValue(_bindable!.value as T?);
     }
   }
 

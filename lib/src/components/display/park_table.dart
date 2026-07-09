@@ -335,21 +335,25 @@ class _ParkTableState extends State<ParkTable> {
 
     // Empty state
     if (widget.data.isEmpty && !widget.loading) {
-      return widget.empty ??
-          ParkEmpty(description: widget.emptyText);
+      return widget.empty ?? ParkEmpty(description: widget.emptyText);
     }
 
     final data = _sortedData;
     final headerBg = park.colors.surface;
 
-    Widget header = _buildTableHeader(data, headerBg, park);
-    Widget body = _buildTableBody(data, park);
+    final bool hasFixed =
+        _leftFixedColumns.isNotEmpty || _rightFixedColumns.isNotEmpty;
+    final Widget tableView = hasFixed
+        ? _buildFixedTable(data, headerBg, park)
+        : _buildPlainTable(data, headerBg, park);
+
+    Widget result = tableView;
 
     // Loading overlay
     if (widget.loading) {
-      body = Stack(
+      result = Stack(
         children: [
-          body,
+          result,
           Positioned.fill(
             child: Container(
               color: park.colors.surface.withValues(alpha: 0.6),
@@ -365,18 +369,18 @@ class _ParkTableState extends State<ParkTable> {
       );
     }
 
-    Widget table = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        header,
-        body,
-        if (widget.pagination != null)
+    if (widget.pagination != null) {
+      result = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          result,
           _buildPaginationBar(widget.pagination!, park),
-      ],
-    );
+        ],
+      );
+    }
 
-    return table;
+    return result;
   }
 
   // ========================================================================
@@ -1024,6 +1028,263 @@ class _ParkTableState extends State<ParkTable> {
       case ParkTableColumnAlign.right:
         return MainAxisAlignment.end;
     }
+  }
+
+  // ========================================================================
+  // 固定列（Fixed Columns）
+  // ========================================================================
+
+  /// 左侧固定列（始终可见，不随横向滚动移动）。
+  List<ParkTableColumn> get _leftFixedColumns => widget.columns
+      .where((ParkTableColumn c) => c.fixed == ParkColumnFixed.left)
+      .toList();
+
+  /// 中间可滚动列（fixed == none）。
+  List<ParkTableColumn> get _midColumns => widget.columns
+      .where((ParkTableColumn c) => c.fixed == ParkColumnFixed.none)
+      .toList();
+
+  /// 右侧固定列（始终可见，右侧锚定）。
+  List<ParkTableColumn> get _rightFixedColumns => widget.columns
+      .where((ParkTableColumn c) => c.fixed == ParkColumnFixed.right)
+      .toList();
+
+  /// 无固定列时的传统整体渲染（保持 sticky / expandable 等原有行为）。
+  Widget _buildPlainTable(
+    List<Map<String, dynamic>> data,
+    Color headerBg,
+    ParkThemeData park,
+  ) {
+    final Widget header = _buildTableHeader(data, headerBg, park);
+    final Widget body = _buildTableBody(data, park);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[header, body],
+    );
+  }
+
+  /// 含固定列时的三段式布局：左固定层 + 中间横向滚动 + 右固定层。
+  Widget _buildFixedTable(
+    List<Map<String, dynamic>> data,
+    Color headerBg,
+    ParkThemeData park,
+  ) {
+    final List<ParkTableColumn> left = _leftFixedColumns;
+    final List<ParkTableColumn> mid = _midColumns;
+    final List<ParkTableColumn> right = _rightFixedColumns;
+    final bool hasSelection = widget.rowSelection != null;
+    final Color surface = park.colors.surface;
+
+    Widget buildPane(
+      List<ParkTableColumn> cols, {
+      required bool includeSelectionLeading,
+      required bool scrollable,
+    }) {
+      final Widget headerPane =
+          _buildHeaderPane(cols, park, includeSelectionLeading: includeSelectionLeading);
+      final Widget bodyPane =
+          _buildBodyPane(cols, data, park, includeSelectionLeading: includeSelectionLeading);
+      Widget pane = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[headerPane, bodyPane],
+      );
+      if (scrollable) {
+        pane = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: pane,
+        );
+      }
+      return pane;
+    }
+
+    final List<Widget> children = <Widget>[];
+
+    final bool hasLeftPane = left.isNotEmpty || hasSelection;
+    if (hasLeftPane) {
+      children.add(
+        _FixedLayer(
+          backgroundColor: surface,
+          shadowOnRight: left.isNotEmpty,
+          child: buildPane(
+            left,
+            includeSelectionLeading: hasSelection,
+            scrollable: false,
+          ),
+        ),
+      );
+    }
+
+    children.add(
+      Expanded(
+        child: buildPane(mid, includeSelectionLeading: false, scrollable: true),
+      ),
+    );
+
+    if (right.isNotEmpty) {
+      children.add(
+        _FixedLayer(
+          backgroundColor: surface,
+          shadowOnLeft: true,
+          child: buildPane(
+            right,
+            includeSelectionLeading: false,
+            scrollable: false,
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  /// 构建指定列集合的表头行（复用 [_buildHeaderCell]）。
+  Widget _buildHeaderPane(
+    List<ParkTableColumn> cols,
+    ParkThemeData park, {
+    required bool includeSelectionLeading,
+  }) {
+    final List<Widget> headerChildren = <Widget>[];
+
+    if (includeSelectionLeading && widget.rowSelection != null) {
+      headerChildren.add(
+        SizedBox(
+          width: 48,
+          child: Center(
+            child: widget.rowSelection!.type ==
+                    ParkRowSelectionType.checkbox
+                ? _buildSelectAllCheckbox(_sortedData, park)
+                : const SizedBox.shrink(),
+          ),
+        ),
+      );
+    }
+
+    if (widget.expandable && widget.expandedRowBuilder != null) {
+      headerChildren.add(const SizedBox(width: 40));
+    }
+
+    for (int i = 0; i < cols.length; i++) {
+      final ParkTableColumn col = cols[i];
+      headerChildren.add(
+        SizedBox(
+          width: col.width ?? 120,
+          child: _buildHeaderCell(
+            col,
+            park,
+            widget.columns.indexOf(col),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(color: park.colors.surface),
+      child: Row(children: headerChildren),
+    );
+  }
+
+  /// 构建指定列集合的数据行（复用 [_buildDataCell]）。
+  Widget _buildBodyPane(
+    List<ParkTableColumn> cols,
+    List<Map<String, dynamic>> data,
+    ParkThemeData park, {
+    required bool includeSelectionLeading,
+  }) {
+    final List<Widget> rows = <Widget>[];
+
+    for (int i = 0; i < data.length; i++) {
+      final Map<String, dynamic> row = data[i];
+      final bool isStriped = _isStriped && i.isOdd;
+      final bool isSelected = _isRowSelected(i);
+
+      Color? rowColor;
+      if (isSelected) {
+        rowColor = park.colors.brand.withValues(alpha: 0.04);
+      } else if (isStriped) {
+        rowColor = park.colors.background;
+      }
+
+      final List<Widget> cells = <Widget>[];
+
+      if (includeSelectionLeading && widget.rowSelection != null) {
+        cells.add(
+          SizedBox(
+            width: 48,
+            child: Center(child: _buildRowSelectionWidget(i, park)),
+          ),
+        );
+      }
+
+      if (widget.expandable && widget.expandedRowBuilder != null) {
+        cells.add(const SizedBox(width: 40));
+      }
+
+      for (final ParkTableColumn col in cols) {
+        cells.add(
+          SizedBox(
+            width: col.width ?? 120,
+            child: _buildDataCell(col, row, park, rowIndex: i),
+          ),
+        );
+      }
+
+      rows.add(
+        Container(color: rowColor, child: Row(children: cells)),
+      );
+      rows.add(Divider(height: 1, color: park.colors.divider));
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: rows,
+    );
+  }
+}
+
+/// 固定列容器：提供背景填充与阴影，使其在横向滚动的内容之上可见。
+class _FixedLayer extends StatelessWidget {
+  final Widget child;
+  final Color backgroundColor;
+  final bool shadowOnLeft;
+  final bool shadowOnRight;
+
+  const _FixedLayer({
+    required this.child,
+    required this.backgroundColor,
+    this.shadowOnLeft = false,
+    this.shadowOnRight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<BoxShadow> shadows = <BoxShadow>[];
+    if (shadowOnRight) {
+      shadows.add(const BoxShadow(
+        color: Colors.black12,
+        blurRadius: 6,
+        offset: Offset(2, 0),
+      ));
+    }
+    if (shadowOnLeft) {
+      shadows.add(const BoxShadow(
+        color: Colors.black12,
+        blurRadius: 6,
+        offset: Offset(-2, 0),
+      ));
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        boxShadow: shadows,
+      ),
+      child: child,
+    );
   }
 }
 

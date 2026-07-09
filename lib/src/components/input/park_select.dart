@@ -495,6 +495,7 @@ class ParkSelect extends FormField<String> {
           notFoundContent: widget.notFoundContent,
           allowCreate: widget.allowCreate,
           maxSelection: widget.maxSelection,
+          virtual: widget.virtual,
         );
       },
     );
@@ -530,6 +531,7 @@ class _SelectSheet extends StatefulWidget {
   final Widget? notFoundContent;
   final bool allowCreate;
   final int? maxSelection;
+  final bool virtual;
 
   const _SelectSheet({
     required this.items,
@@ -545,6 +547,7 @@ class _SelectSheet extends StatefulWidget {
     this.notFoundContent,
     required this.allowCreate,
     this.maxSelection,
+    this.virtual = false,
   });
 
   @override
@@ -647,6 +650,144 @@ class _SelectSheetState extends State<_SelectSheet> {
     }
 
     return renderItems;
+  }
+
+  /// 构建选项列表（区分虚拟滚动模式）。
+  ///
+  /// [renderItems] 扁平渲染项（分组头 + 选项）。
+  /// [showCreateEntry] 是否展示「创建新选项」条目。
+  Widget _buildOptionList(
+    List<_SelectRenderItem> renderItems,
+    bool showCreateEntry,
+  ) {
+    if (widget.virtual) {
+      final int itemCount = renderItems.length + (showCreateEntry ? 1 : 0);
+      return ListView.builder(
+        itemCount: itemCount,
+        itemBuilder: (BuildContext context, int index) {
+          if (index < renderItems.length) {
+            return _buildOptionItem(renderItems[index]);
+          }
+          return _buildCreateEntryItem();
+        },
+      );
+    }
+    return ListView(
+      shrinkWrap: true,
+      children: <Widget>[
+        ...renderItems.map(_buildOptionItem).toList(),
+        if (showCreateEntry) _buildCreateEntryItem(),
+      ],
+    );
+  }
+
+  /// 构建单个渲染项（分组头或选项）。
+  Widget _buildOptionItem(_SelectRenderItem renderItem) {
+    final ParkThemeData park = widget.park;
+    final colors = park.colors;
+    final typo = park.typography;
+    final spacing = park.spacing;
+
+    if (renderItem.isGroupHeader) {
+      return Container(
+        padding: EdgeInsets.fromLTRB(
+          spacing.base,
+          spacing.sm,
+          spacing.base,
+          spacing.xs,
+        ),
+        child: Text(
+          renderItem.groupTitle!,
+          style: TextStyle(
+            fontSize: typo.sizeCaption,
+            color: colors.textSecondary,
+            fontWeight: typo.weightMedium,
+          ),
+        ),
+      );
+    }
+
+    final ParkSelectOption item = renderItem.option!;
+    final bool isSelected = _tempSelected.contains(item.value);
+    final bool isDisabled = item.disabled;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: isDisabled
+          ? null
+          : () {
+              if (widget.multiple) {
+                _toggleItem(item.value);
+              } else {
+                Navigator.of(context).pop([item.value]);
+              }
+            },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: spacing.base,
+          vertical: spacing.md,
+        ),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: typo.sizeBody,
+                  color: isDisabled
+                      ? colors.textDisabled
+                      : isSelected
+                          ? colors.brand
+                          : colors.textPrimary,
+                  fontWeight: isSelected ? typo.weightMedium : typo.weightRegular,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check,
+                size: 20,
+                color: isDisabled ? colors.textDisabled : colors.brand,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建「创建新选项」条目。
+  Widget _buildCreateEntryItem() {
+    final ParkThemeData park = widget.park;
+    final colors = park.colors;
+    final typo = park.typography;
+    final spacing = park.spacing;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _createAndSelect(_keyword.trim()),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: spacing.base,
+          vertical: spacing.md,
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.add, size: 18, color: colors.brand),
+            SizedBox(width: spacing.xs),
+            Expanded(
+              child: Text(
+                '创建 "${_keyword.trim()}"',
+                style: TextStyle(
+                  fontSize: typo.sizeBody,
+                  color: colors.brand,
+                  fontWeight: typo.weightMedium,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -807,114 +948,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                             ),
                       ),
                     )
-                  : ListView(
-                      shrinkWrap: true,
-                      children: [
-                        ...List.generate(renderItems.length, (index) {
-                          final _SelectRenderItem renderItem = renderItems[index];
-                          if (renderItem.isGroupHeader) {
-                            return Container(
-                              padding: EdgeInsets.fromLTRB(
-                                spacing.base,
-                                spacing.sm,
-                                spacing.base,
-                                spacing.xs,
-                              ),
-                              child: Text(
-                                renderItem.groupTitle!,
-                                style: TextStyle(
-                                  fontSize: typo.sizeCaption,
-                                  color: colors.textSecondary,
-                                  fontWeight: typo.weightMedium,
-                                ),
-                              ),
-                            );
-                          }
-
-                          final ParkSelectOption item = renderItem.option!;
-                          final isSelected = _tempSelected.contains(item.value);
-                          final isDisabled = item.disabled;
-
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: isDisabled
-                                ? null
-                                : () {
-                                    if (widget.multiple) {
-                                      _toggleItem(item.value);
-                                    } else {
-                                      Navigator.of(context).pop([item.value]);
-                                    }
-                                  },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacing.base,
-                                vertical: spacing.md,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.label,
-                                      style: TextStyle(
-                                        fontSize: typo.sizeBody,
-                                        color: isDisabled
-                                            ? colors.textDisabled
-                                            : isSelected
-                                            ? colors.brand
-                                            : colors.textPrimary,
-                                        fontWeight: isSelected
-                                            ? typo.weightMedium
-                                            : typo.weightRegular,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Icon(
-                                      Icons.check,
-                                      size: 20,
-                                      color: isDisabled
-                                          ? colors.textDisabled
-                                          : colors.brand,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                        if (showCreateEntry)
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _createAndSelect(_keyword.trim()),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: spacing.base,
-                                vertical: spacing.md,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.add,
-                                    size: 18,
-                                    color: colors.brand,
-                                  ),
-                                  SizedBox(width: spacing.xs),
-                                  Expanded(
-                                    child: Text(
-                                      '创建 "${_keyword.trim()}"',
-                                      style: TextStyle(
-                                        fontSize: typo.sizeBody,
-                                        color: colors.brand,
-                                        fontWeight: typo.weightMedium,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  : _buildOptionList(renderItems, showCreateEntry),
             ),
 
             SizedBox(height: spacing.base),

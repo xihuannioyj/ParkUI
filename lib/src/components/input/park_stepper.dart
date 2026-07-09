@@ -131,7 +131,7 @@ class _ParkStepperState extends FormFieldState<int>
       widget.onOverLimit?.call();
       return;
     }
-    setValue(newValue);
+    didChange(newValue);
     widget.onChanged?.call(newValue);
   }
 
@@ -144,7 +144,7 @@ class _ParkStepperState extends FormFieldState<int>
       widget.onOverLimit?.call();
       return;
     }
-    setValue(newValue);
+    didChange(newValue);
     widget.onChanged?.call(newValue);
   }
 }

@@ -163,6 +163,19 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 从 ParkBindingFormScope 获取到服务后，把 bindable 初始值同步到 controller
+    final b = bindable;
+    if (b != null && b.value != null) {
+      final text = b.value.toString();
+      if (_controller.text != text) {
+        _controller.text = text;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _focusNode.removeListener(_onFocusChanged);
     if ((widget as ParkTextarea).focusNode == null) {

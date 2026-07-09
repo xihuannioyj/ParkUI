@@ -1,6 +1,27 @@
 import 'form_validator_result.dart';
 import '../models/form_field_schema.dart';
 
+/// 正则最大长度阈值，超过直接视为潜在 ReDoS 风险并拒绝。
+const int _kMaxRegexLength = 200;
+
+/// 危险正则结构：分组内含量词且整体再被量词修饰
+/// （如 `(a+)+`、`(a*)*`、`(a?)+`、`(.+){n,}` 等）。
+final RegExp _kNestedQuantifier = RegExp(r'\([^()]*[+*?]\)[+*{]');
+
+/// 安全构造 [RegExp]。
+///
+/// 对危险结构、超长或非法 pattern 返回 null，由调用方降级为校验失败，
+/// 避免正则灾难性回溯（ReDoS）导致的卡死或异常。
+RegExp? _safeRegExp(String pattern) {
+  if (pattern.length > _kMaxRegexLength) return null;
+  if (_kNestedQuantifier.hasMatch(pattern)) return null;
+  try {
+    return RegExp(pattern);
+  } catch (_) {
+    return null;
+  }
+}
+
 /// 表单校验器集合。
 ///
 /// 提供必填、长度、正则三个同步校验器，
@@ -80,7 +101,10 @@ class ParkFormValidators {
       return FormValidatorResult.success();
     }
 
-    final RegExp regExp = RegExp(pattern);
+    final RegExp? regExp = _safeRegExp(pattern);
+    if (regExp == null) {
+      return FormValidatorResult.error('格式校验规则无效');
+    }
     if (!regExp.hasMatch(value)) {
       return FormValidatorResult.error(
         field.validatorMessage ?? '${field.labelName}格式不正确',

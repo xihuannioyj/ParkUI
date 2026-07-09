@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 /// 单个字段的标签布局方式。
 enum ParkLabelLayout {
@@ -60,13 +61,7 @@ class ParkFormLayout extends Equatable {
               (json['labelWidth'] as num?))
           ?.toDouble(),
       gutter: ((json['gutter'] as num?) ?? 16.0).toDouble(),
-      sections: (json['sections'] as List<dynamic>? ?? <dynamic>[])
-          .map(
-            (dynamic item) => ParkFormSectionConfig.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ),
-          )
-          .toList(),
+      sections: _parseMapList(json['sections'], ParkFormSectionConfig.fromJson),
     );
   }
 
@@ -160,8 +155,8 @@ class ParkFormSectionConfig extends Equatable {
           ?.map((dynamic e) => e.toString())
           .toList() ??
           <String>[],
-      uiConfig: json['ui_config'] as Map<String, dynamic>? ??
-          json['uiConfig'] as Map<String, dynamic>?,
+      uiConfig: _asStringMap(json['ui_config']) ??
+          _asStringMap(json['uiConfig']),
     );
   }
 
@@ -210,3 +205,29 @@ class ParkFormSectionConfig extends Equatable {
     uiConfig,
   ];
 }
+
+/// 将动态列表安全转为 [T] 列表。
+///
+/// [list] 非 List 或元素非 Map 时静默跳过（用于 schema fromJson 健壮性守卫）。
+List<T> _parseMapList<T>(
+  dynamic list,
+  T Function(Map<String, dynamic>) f,
+) {
+  if (list is! List) return <T>[];
+  final List<T> result = <T>[];
+  for (final dynamic e in list) {
+    if (e is Map) {
+      result.add(f(Map<String, dynamic>.from(e)));
+    } else {
+      assert(() {
+        debugPrint('[ParkFormSchema] 跳过非 Map 元素: $e');
+        return true;
+      }());
+    }
+  }
+  return result;
+}
+
+/// 将动态值安全转为 String Map，非 Map 返回 null。
+Map<String, dynamic>? _asStringMap(dynamic v) =>
+    v is Map ? Map<String, dynamic>.from(v) : null;

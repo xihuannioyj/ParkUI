@@ -124,7 +124,7 @@ class _ParkCheckboxState extends FormFieldState<bool>
     final widget = this.widget as ParkCheckbox;
     if (widget.disabled || widget.readOnly) return;
     final newValue = !(value ?? false);
-    setValue(newValue);
+    didChange(newValue);
     widget.onChanged?.call(newValue);
     if (newValue) {
       _animController.forward();

@@ -470,7 +470,7 @@ void main() {
   // ParkForm + ParkBindingService integration regression tests
   // ---------------------------------------------------------------------------
   group('ParkForm binding integration', () {
-    testWidgets('submit returns binding values for bindKey fields', (WidgetTester tester) async {
+      testWidgets('submit returns binding values for bindKey fields', (WidgetTester tester) async {
       final service = ParkBindingService({'name': 'Alice', 'city': '北京'});
       Map<String, dynamic>? submitted;
 
@@ -512,6 +512,44 @@ void main() {
       expect(submitted!['name'], 'Bob');
       expect(submitted!['city'], '北京');
       expect(submitted!.length, 2);
+
+      service.dispose();
+    });
+
+    testWidgets('bindKey fields display initial values from binding service', (WidgetTester tester) async {
+      final service = ParkBindingService({
+        'name': 'Alice',
+        'age': '28',
+        'bio': 'Flutter 开发者',
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ParkForm(
+              bindingService: service,
+              submitLabel: '提交',
+              children: <Widget>[
+                ParkInput(label: '姓名', bindKey: 'name'),
+                ParkInput(label: '年龄', bindKey: 'age'),
+                ParkTextarea(label: '介绍', bindKey: 'bio'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextField);
+      expect(fields, findsNWidgets(3));
+
+      final nameWidget = tester.widget<TextField>(fields.at(0));
+      final ageWidget = tester.widget<TextField>(fields.at(1));
+      final bioWidget = tester.widget<TextField>(fields.at(2));
+
+      expect(nameWidget.controller?.text, 'Alice');
+      expect(ageWidget.controller?.text, '28');
+      expect(bioWidget.controller?.text, 'Flutter 开发者');
 
       service.dispose();
     });

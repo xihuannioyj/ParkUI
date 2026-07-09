@@ -1,0 +1,62 @@
+classDiagram
+    class ComponentCategory {
+        +String name
+        +List~String~ components
+        +ComponentCategory(name, components)
+    }
+    class ComponentCatalog {
+        +List~ComponentCategory~ categories
+    }
+    class ParkComponentSpec {
+        +String name
+        +String title
+        +String category   %% base/input/nav/display/feedback/form
+        +String description
+        +IconData icon
+        +List~ParkPropertyDef~ properties
+        +List~ParkEventDef~ events
+        +List~ParkMethodDef~ methods
+        +List~ParkDemoScenario~ demos
+        +String basicUsageCode
+        +String guide
+        +String schemaDoc
+        +String dynamicFormSchemaDoc
+    }
+    class ParkPropertyDef {
+        +String name
+        +String type
+        +String defaultVal
+        +String description
+        +bool required
+    }
+    class ParkEventDef {
+        +String name
+        +String signature
+        +String description
+    }
+    class ParkMethodDef {
+        +String name
+        +String signature
+        +String description
+    }
+    class ParkDemoScenario {
+        +String title
+        +String description
+        +String code
+        +Widget Function(BuildContext) builder
+    }
+    class ParkComponentRegistry {
+        -Map~String,ParkComponentSpec~ _specs
+        +lookup(name) ParkComponentSpec?
+        +byCategory(cat) List~ParkComponentSpec~
+        +List~ParkComponentSpec~ all
+        +int count
+    }
+    ComponentCatalog "1" *-- "6" ComponentCategory : categories
+    ParkComponentSpec "1" *-- "0..*" ParkPropertyDef : properties
+    ParkComponentSpec "1" *-- "0..*" ParkEventDef : events
+    ParkComponentSpec "1" *-- "0..*" ParkMethodDef : methods
+    ParkComponentSpec "1" *-- "0..*" ParkDemoScenario : demos
+    ParkComponentRegistry ..> ParkComponentSpec : aggregates(_specs)
+    note for ParkComponentSpec "category 枚举须含 'form'；dynamicFormSchemaDoc 仅非空时渲染"
+    note for ComponentCatalog "权威计数 = 72；表单 = ParkDynamicForm + ParkBinding"

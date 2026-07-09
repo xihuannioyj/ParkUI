@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 import 'form_layout_schema.dart';
 
@@ -978,13 +979,10 @@ class ParkFormReactionSchema extends Equatable {
             'change',
       ),
       conditions: ParkFormFieldSchema._parseMap(json['conditions']),
-      actions: (json['actions'] as List<dynamic>? ?? <dynamic>[])
-          .map(
-            (dynamic item) => ParkFormReactionActionSchema.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ),
-          )
-          .toList(),
+      actions: _parseMapList(
+        json['actions'],
+        ParkFormReactionActionSchema.fromJson,
+      ),
     );
   }
 
@@ -1060,24 +1058,10 @@ class ParkFormSchema extends Equatable {
   factory ParkFormSchema.fromJson(Map<String, dynamic> json) {
     return ParkFormSchema(
       formKey: json['formKey'] as String? ?? json['form_key'] as String? ?? '',
-      fields: (json['fields'] as List<dynamic>? ?? <dynamic>[])
-          .map(
-            (dynamic item) => ParkFormFieldSchema.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ),
-          )
-          .toList(),
-      reactions: (json['reactions'] as List<dynamic>? ?? <dynamic>[])
-          .map(
-            (dynamic item) => ParkFormReactionSchema.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ),
-          )
-          .toList(),
-      layout: json['layout'] != null
-          ? ParkFormLayout.fromJson(
-              Map<String, dynamic>.from(json['layout'] as Map),
-            )
+      fields: _parseMapList(json['fields'], ParkFormFieldSchema.fromJson),
+      reactions: _parseMapList(json['reactions'], ParkFormReactionSchema.fromJson),
+      layout: json['layout'] is Map
+          ? ParkFormLayout.fromJson(_asStringMap(json['layout'])!)
           : null,
     );
   }
@@ -1114,6 +1098,32 @@ class ParkFormSchema extends Equatable {
   @override
   List<Object?> get props => <Object?>[formKey, fields, reactions, layout];
 }
+
+/// 将动态列表安全转为 [T] 列表。
+///
+/// [list] 非 List 或元素非 Map 时静默跳过（用于 schema fromJson 健壮性守卫）。
+List<T> _parseMapList<T>(
+  dynamic list,
+  T Function(Map<String, dynamic>) f,
+) {
+  if (list is! List) return <T>[];
+  final List<T> result = <T>[];
+  for (final dynamic e in list) {
+    if (e is Map) {
+      result.add(f(Map<String, dynamic>.from(e)));
+    } else {
+      assert(() {
+        debugPrint('[ParkFormSchema] 跳过非 Map 元素: $e');
+        return true;
+      }());
+    }
+  }
+  return result;
+}
+
+/// 将动态值安全转为 String Map，非 Map 返回 null。
+Map<String, dynamic>? _asStringMap(dynamic v) =>
+    v is Map ? Map<String, dynamic>.from(v) : null;
 
 /// copyWith 的哨兵对象。
 const Object _copyWithSentinel = Object();
