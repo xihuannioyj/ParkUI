@@ -542,7 +542,7 @@ class _ParkButtonState extends State<ParkButton> {
               fontSize: fontSize,
               fontWeight: fontWeight,
             ),
-            child: textChild!,
+            child: textChild,
           )
         : null;
 

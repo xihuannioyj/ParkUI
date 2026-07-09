@@ -299,7 +299,6 @@ class _ParkSwiperState extends State<ParkSwiper>
   }
 
   Widget _buildStackEffectPageView(ParkThemeData park) {
-    final double vpFraction = widget.viewportFraction ?? 0.85;
     final double scaleValue = widget.scale ?? 0.9;
 
     return PageView.builder(

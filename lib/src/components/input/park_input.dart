@@ -278,7 +278,7 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
     // 非 String 类型（如 int）通过 toString 安全转换，避免类型转换异常
     final b = bindable;
     if (b != null && b.value != null) {
-      _controller.text = b.value?.toString() ?? '';
+      _controller.text = b.value.toString();
     }
   }
 
