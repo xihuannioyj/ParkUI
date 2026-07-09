@@ -1,5 +1,5 @@
 name: park_ui
-description: Park UI - 独立、可插拔的 Flutter UI 组件集。提供 72 个自定义控件和完整的设计令牌系统，覆盖基础/输入/导航/展示/反馈/表单六大类。
+description: "Park UI - 独立、可插拔的 Flutter UI 组件集。提供 72 个自定义控件和完整的设计令牌系统，覆盖基础/输入/导航/展示/反馈/表单六大类。"
 version: 0.1.0
 # publish_to 已移除 → 默认发布到 pub.dev
 
