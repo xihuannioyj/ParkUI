@@ -1,0 +1,598 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../../theme/park_theme_data.dart';
+
+/// Timeline content positioning mode.
+enum ParkTimelineMode {
+  /// All content on the left side of the line.
+  left,
+
+  /// All content on the right side of the line.
+  right,
+
+  /// Content alternates sides (left/right/left...).
+  /// On wide screens (>= 600px), content is truly alternated.
+  /// On narrow screens, falls back to [right] mode.
+  alternate,
+}
+
+/// Timeline label placement.
+enum ParkTimelineLabelPlacement {
+  /// Label is placed beside the dot on the same side.
+  sameSide,
+
+  /// Label is placed opposite to the content.
+  opposite,
+}
+
+/// Data model for a single timeline entry.
+///
+/// Each item renders a dot on the vertical line and a content card beside it.
+@immutable
+class ParkTimelineItem {
+  /// Creates a timeline item.
+  const ParkTimelineItem({
+    required this.title,
+    this.description,
+    this.time,
+    this.icon,
+    this.color,
+    this.dotWidget,
+  });
+
+  /// Primary text displayed for this entry.
+  final String title;
+
+  /// Optional secondary text below the title.
+  final String? description;
+
+  /// Optional timestamp label (rendered in caption style).
+  final String? time;
+
+  /// Optional icon rendered inside the dot indicator.
+  /// When provided, the dot becomes a filled circle containing this icon.
+  final IconData? icon;
+
+  /// Custom color for this item's dot indicator.
+  /// Defaults to [ParkColors.brand] when null.
+  final Color? color;
+
+  /// Fully custom widget replacing the default dot indicator.
+  /// When provided, [icon] and [color] are ignored.
+  final Widget? dotWidget;
+}
+
+/// A vertical timeline that connects a sequence of events with a line and
+/// dot indicators.
+///
+/// Supports left/right/alternate content positioning, sequential fade-in
+/// animation, a pending (loading) indicator on the last item, and custom
+/// dot widgets per item.
+///
+/// ```dart
+/// ParkTimeline(
+///   items: [
+///     ParkTimelineItem(title: 'Order placed', time: '10:00'),
+///     ParkTimelineItem(title: 'Shipped', time: '14:30', color: Colors.green),
+///   ],
+///   mode: ParkTimelineMode.alternate,
+/// )
+/// ```
+class ParkTimeline extends StatefulWidget {
+  /// Creates a ParkTimeline.
+  const ParkTimeline({
+    super.key,
+    required this.items,
+    this.mode = ParkTimelineMode.right,
+    this.pending = false,
+    this.pendingText = 'Loading...',
+    this.reverse = false,
+    this.dotSize = 12.0,
+    this.lineWidth = 2.0,
+    this.itemSpacing = 24.0,
+    this.animationDuration = const Duration(milliseconds: 400),
+    this.animationDelay = const Duration(milliseconds: 80),
+    this.labelPlacement = ParkTimelineLabelPlacement.sameSide,
+    this.pendingDot,
+  });
+
+  /// The timeline entries to display.
+  final List<ParkTimelineItem> items;
+
+  /// How content is positioned relative to the vertical line.
+  final ParkTimelineMode mode;
+
+  /// When true, shows a loading indicator at the last item's position.
+  final bool pending;
+
+  /// Text shown next to the loading indicator when [pending] is true.
+  final String pendingText;
+
+  /// When true, the first item in [items] is rendered at the bottom.
+  final bool reverse;
+
+  /// Diameter of the default dot indicator in logical pixels.
+  final double dotSize;
+
+  /// Width of the vertical connecting line.
+  final double lineWidth;
+
+  /// Vertical gap between consecutive items.
+  final double itemSpacing;
+
+  /// Duration of each item's fade-in animation.
+  final Duration animationDuration;
+
+  /// Delay between successive item animations.
+  final Duration animationDelay;
+
+  /// Controls where the time label is placed relative to the dot.
+  final ParkTimelineLabelPlacement labelPlacement;
+
+  /// Custom widget for the pending (loading) dot indicator.
+  final Widget? pendingDot;
+
+  @override
+  State<ParkTimeline> createState() => _ParkTimelineState();
+}
+
+class _ParkTimelineState extends State<ParkTimeline> {
+  /// Tracks how many items have been revealed by the staggered animation.
+  int _revealedCount = 0;
+
+  /// Timers for the staggered reveal animation.
+  final List<Timer> _revealTimers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _startRevealAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant ParkTimeline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-run animation when the item list changes.
+    if (oldWidget.items.length != widget.items.length ||
+        oldWidget.reverse != widget.reverse) {
+      _cancelRevealTimers();
+      _revealedCount = 0;
+      _startRevealAnimation();
+    }
+  }
+
+  @override
+  void dispose() {
+    _cancelRevealTimers();
+    super.dispose();
+  }
+
+  void _cancelRevealTimers() {
+    for (final timer in _revealTimers) {
+      timer.cancel();
+    }
+    _revealTimers.clear();
+  }
+
+  void _startRevealAnimation() {
+    final totalItems = widget.items.length + (widget.pending ? 1 : 0);
+    for (int i = 0; i < totalItems; i++) {
+      final timer = Timer(widget.animationDelay * i, () {
+        if (mounted) {
+          setState(() {
+            _revealedCount = i + 1;
+          });
+        }
+      });
+      _revealTimers.add(timer);
+    }
+  }
+
+  /// Returns the effective mode for the given viewport width.
+  ParkTimelineMode _effectiveMode(double width) {
+    if (widget.mode == ParkTimelineMode.alternate) {
+      // Fall back to right-aligned on narrow viewports.
+      return width >= 600 ? ParkTimelineMode.alternate : ParkTimelineMode.right;
+    }
+    return widget.mode;
+  }
+
+  /// Whether the content for item at [index] should be placed on the left
+  /// side of the line.
+  bool _isLeftSide(int index, ParkTimelineMode mode) {
+    switch (mode) {
+      case ParkTimelineMode.left:
+        return true;
+      case ParkTimelineMode.right:
+        return false;
+      case ParkTimelineMode.alternate:
+        return index.isEven;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+
+    // Build the ordered item list (apply reverse).
+    final orderedItems =
+        widget.reverse ? widget.items.reversed.toList() : widget.items;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mode = _effectiveMode(constraints.maxWidth);
+        final isAlternate = mode == ParkTimelineMode.alternate;
+        final isLeftOnly = mode == ParkTimelineMode.left;
+
+        return Column(
+          crossAxisAlignment: isLeftOnly
+              ? CrossAxisAlignment.end
+              : isAlternate
+                  ? CrossAxisAlignment.stretch
+                  : CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < orderedItems.length; i++) ...[
+              if (i > 0) SizedBox(height: widget.itemSpacing),
+              _buildItem(
+                context,
+                park,
+                orderedItems[i],
+                i,
+                orderedItems.length,
+                mode,
+              ),
+            ],
+            if (widget.pending) ...[
+              if (orderedItems.isNotEmpty)
+                SizedBox(height: widget.itemSpacing),
+              _buildPendingItem(
+                context,
+                park,
+                orderedItems.length,
+                mode,
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Builds a single timeline entry (dot + content card).
+  Widget _buildItem(
+    BuildContext context,
+    ParkThemeData park,
+    ParkTimelineItem item,
+    int index,
+    int totalCount,
+    ParkTimelineMode mode,
+  ) {
+    final isLeft = _isLeftSide(index, mode);
+    final isAlternate = mode == ParkTimelineMode.alternate;
+    final isRevealed = index < _revealedCount;
+    final dotColor = item.color ?? park.colors.brand;
+
+    final dot = _buildDot(park, item, dotColor);
+
+    final content = _buildContent(park, item);
+
+    // Build the line segments above and below the dot.
+    final isFirst = index == 0;
+    final isLast = index == totalCount - 1 && !widget.pending;
+
+    return _AnimatedReveal(
+      visible: isRevealed,
+      duration: widget.animationDuration,
+      child: _TimelineRow(
+        dotSize: widget.dotSize,
+        lineWidth: widget.lineWidth,
+        lineColor: park.colors.border,
+        dot: dot,
+        content: content,
+        isLeft: isLeft,
+        isAlternate: isAlternate,
+        showLineAbove: !isFirst,
+        showLineBelow: !isLast,
+        lineAboveHeight: widget.itemSpacing,
+        lineBelowHeight: widget.itemSpacing,
+      ),
+    );
+  }
+
+  /// Builds the pending (loading) indicator at the end of the timeline.
+  Widget _buildPendingItem(
+    BuildContext context,
+    ParkThemeData park,
+    int index,
+    ParkTimelineMode mode,
+  ) {
+    final isLeft = _isLeftSide(index, mode);
+    final isAlternate = mode == ParkTimelineMode.alternate;
+    final isRevealed = index < _revealedCount;
+
+    final pendingDot = SizedBox(
+      width: widget.dotSize,
+      height: widget.dotSize,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: park.colors.brand,
+      ),
+    );
+
+    final pendingContent = Padding(
+      padding: EdgeInsets.only(
+        left: isLeft ? 0 : park.spacing.md,
+        right: isLeft ? park.spacing.md : 0,
+      ),
+      child: Text(
+        widget.pendingText,
+        style: TextStyle(
+          fontSize: park.typography.sizeCaption,
+          color: park.colors.textSecondary,
+        ),
+      ),
+    );
+
+    return _AnimatedReveal(
+      visible: isRevealed,
+      duration: widget.animationDuration,
+      child: _TimelineRow(
+        dotSize: widget.dotSize,
+        lineWidth: widget.lineWidth,
+        lineColor: park.colors.border,
+        dot: pendingDot,
+        content: pendingContent,
+        isLeft: isLeft,
+        isAlternate: isAlternate,
+        showLineAbove: true,
+        showLineBelow: false,
+        lineAboveHeight: widget.itemSpacing,
+        lineBelowHeight: 0,
+      ),
+    );
+  }
+
+  /// Builds the dot indicator for a timeline item.
+  Widget _buildDot(
+    ParkThemeData park,
+    ParkTimelineItem item,
+    Color dotColor,
+  ) {
+    // Custom dot widget takes highest priority.
+    if (item.dotWidget != null) {
+      return item.dotWidget!;
+    }
+
+    // Icon dot: filled circle with icon inside.
+    if (item.icon != null) {
+      final iconSize = widget.dotSize + 8;
+      return Container(
+        width: iconSize,
+        height: iconSize,
+        decoration: BoxDecoration(
+          color: dotColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: dotColor.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          item.icon,
+          size: iconSize * 0.55,
+          color: Colors.white,
+        ),
+      );
+    }
+
+    // Default: simple circle dot with ring.
+    return Container(
+      width: widget.dotSize,
+      height: widget.dotSize,
+      decoration: BoxDecoration(
+        color: dotColor,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: dotColor.withValues(alpha: 0.25),
+          width: 3,
+        ),
+      ),
+    );
+  }
+
+  /// Builds the content card for a timeline item.
+  Widget _buildContent(ParkThemeData park, ParkTimelineItem item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            item.title,
+            style: TextStyle(
+              fontSize: park.typography.sizeBody,
+              fontWeight: park.typography.weightMedium,
+              color: park.colors.textPrimary,
+            ),
+          ),
+          if (item.description != null) ...[
+            SizedBox(height: park.spacing.xs),
+            Text(
+              item.description!,
+              style: TextStyle(
+                fontSize: park.typography.sizeCaption,
+                color: park.colors.textSecondary,
+              ),
+            ),
+          ],
+          if (item.time != null) ...[
+            SizedBox(height: park.spacing.xs),
+            Text(
+              item.time!,
+              style: TextStyle(
+                fontSize: park.typography.sizeCaption,
+                color: park.colors.textPlaceholder,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/// A row that renders the dot column (with optional line segments above/below)
+/// and the content column, handling left/right/alternate positioning.
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({
+    required this.dotSize,
+    required this.lineWidth,
+    required this.lineColor,
+    required this.dot,
+    required this.content,
+    required this.isLeft,
+    required this.isAlternate,
+    required this.showLineAbove,
+    required this.showLineBelow,
+    required this.lineAboveHeight,
+    required this.lineBelowHeight,
+  });
+
+  final double dotSize;
+  final double lineWidth;
+  final Color lineColor;
+  final Widget dot;
+  final Widget content;
+  final bool isLeft;
+  final bool isAlternate;
+  final bool showLineAbove;
+  final bool showLineBelow;
+  final double lineAboveHeight;
+  final double lineBelowHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    // The "rail" is the vertical column containing line-dot-line.
+    final railWidth = dotSize + 12; // dot + horizontal padding
+
+    Widget rail = SizedBox(
+      width: railWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Line above the dot
+          if (showLineAbove)
+            SizedBox(
+              width: lineWidth,
+              height: lineAboveHeight / 2,
+              child: ColoredBox(color: lineColor),
+            )
+          else
+            SizedBox(height: lineAboveHeight / 2),
+          // Dot
+          Center(child: dot),
+          // Line below the dot
+          if (showLineBelow)
+            SizedBox(
+              width: lineWidth,
+              height: lineBelowHeight / 2,
+              child: ColoredBox(color: lineColor),
+            )
+          else
+            SizedBox(height: lineBelowHeight / 2),
+        ],
+      ),
+    );
+
+    // In alternate mode, both sides need equal width allocation.
+    if (isAlternate) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left content area (or spacer)
+          Expanded(
+            child: isLeft
+                ? Align(
+                    alignment: Alignment.topRight,
+                    child: content,
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // Rail in center
+          rail,
+          // Right content area (or spacer)
+          Expanded(
+            child: isLeft
+                ? const SizedBox.shrink()
+                : Align(
+                    alignment: Alignment.topLeft,
+                    child: content,
+                  ),
+          ),
+        ],
+      );
+    }
+
+    // Non-alternate: rail + content side by side.
+    if (isLeft) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: content,
+            ),
+          ),
+          rail,
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        rail,
+        Expanded(child: content),
+      ],
+    );
+  }
+}
+
+/// Simple fade + slide-up animation for revealing timeline items.
+class _AnimatedReveal extends StatelessWidget {
+  const _AnimatedReveal({
+    required this.visible,
+    required this.duration,
+    required this.child,
+  });
+
+  final bool visible;
+  final Duration duration;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: visible ? 1.0 : 0.0,
+      duration: duration,
+      curve: Curves.easeOut,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, -0.15),
+        duration: duration,
+        curve: Curves.easeOut,
+        child: child,
+      ),
+    );
+  }
+}

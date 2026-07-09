@@ -1,0 +1,5 @@
+build/
+.dart_tool/
+doc/api/
+.idea/
+*.tmp

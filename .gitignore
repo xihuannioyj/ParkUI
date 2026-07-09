@@ -1,0 +1,6 @@
+.dart_tool/
+build/
+doc/api/
+.idea/
+*.tmp
+*.__tmp__
