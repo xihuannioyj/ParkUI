@@ -57,7 +57,7 @@ class ExamplePage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // 输入
-          const ParkInput(
+          ParkInput(
             label: '用户名',
             hintText: '请输入用户名',
           ),

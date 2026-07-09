@@ -328,7 +328,12 @@ class ParkFormState extends State<ParkForm> {
 
     if (form.validate()) {
       form.save();
-      widget.onSubmit?.call(Map<String, dynamic>.from(_values));
+      // 合并非绑定字段值 + 绑定服务模型，绑定字段优先
+      final values = Map<String, dynamic>.from(_values);
+      if (_bindingService != null) {
+        values.addAll(_bindingService!.model);
+      }
+      widget.onSubmit?.call(values);
       return true;
     }
 
