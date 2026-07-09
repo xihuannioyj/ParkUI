@@ -252,6 +252,9 @@ class ParkFormState extends State<ParkForm> {
   /// 是否由本状态类拥有绑定服务（外部传入的不由我们 dispose）。
   bool _ownsBindingService = false;
 
+  /// 自动创建服务时记录的初始 model，reset 时恢复用。
+  Map<String, dynamic>? _initialModelSnapshot;
+
   /// Flutter Form 的 GlobalKey
   GlobalKey<FormState> get formKey => _formKey;
 
@@ -279,6 +282,7 @@ class ParkFormState extends State<ParkForm> {
       _bindingService = widget.bindingService;
       _ownsBindingService = false;
     } else if (widget.model != null) {
+      _initialModelSnapshot = Map<String, dynamic>.from(widget.model!);
       _bindingService = ParkBindingService(widget.model);
       _ownsBindingService = true;
     }
@@ -351,6 +355,12 @@ class ParkFormState extends State<ParkForm> {
 
     _formKey.currentState?.reset();
     _values.clear();
+    // 自动创建的服务一并恢复到初始 model
+    if (_ownsBindingService &&
+        _bindingService != null &&
+        _initialModelSnapshot != null) {
+      _bindingService!.updateModel(_initialModelSnapshot!);
+    }
     widget.onReset?.call();
   }
 

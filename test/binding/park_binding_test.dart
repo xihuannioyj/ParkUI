@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:park_ui/park_ui.dart';
 
@@ -462,6 +463,57 @@ void main() {
         service.updateModel(<String, dynamic>{});
         expect(service.model, <String, dynamic>{});
       });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // ParkForm + ParkBindingService integration regression tests
+  // ---------------------------------------------------------------------------
+  group('ParkForm binding integration', () {
+    testWidgets('submit returns binding values for bindKey fields', (WidgetTester tester) async {
+      final service = ParkBindingService({'name': 'Alice', 'city': '北京'});
+      Map<String, dynamic>? submitted;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ParkForm(
+              bindingService: service,
+              onSubmit: (values) => submitted = values,
+              submitLabel: '提交',
+              showDefaultActions: true,
+              children: <Widget>[
+                ParkInput(label: '姓名', bindKey: 'name'),
+                ParkSelect(
+                  label: '城市',
+                  bindKey: 'city',
+                  items: <ParkSelectOption>[
+                    ParkSelectOption(label: '北京', value: '北京'),
+                    ParkSelectOption(label: '上海', value: '上海'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Change name input
+      final nameField = find.byType(TextField).first;
+      await tester.enterText(nameField, 'Bob');
+      await tester.pumpAndSettle();
+
+      // Tap submit
+      await tester.tap(find.text('提交'));
+      await tester.pumpAndSettle();
+
+      expect(submitted, isNotNull);
+      expect(submitted!['name'], 'Bob');
+      expect(submitted!['city'], '北京');
+      expect(submitted!.length, 2);
+
+      service.dispose();
     });
   });
 }

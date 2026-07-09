@@ -87,21 +87,13 @@ class ParkBindingService {
     if (T == String && candidate is! String) {
       return candidate.toString() as T;
     }
-    // 同类型直接返回。
-    if (candidate is T) {
-      return candidate;
-    }
-    // 类型不匹配：优先回退到 defaultValue。
-    if (defaultValue != null && defaultValue is T) {
-      return defaultValue;
-    }
-    // 兜底 cast（极端情况）。
+    // 同类型直接返回（含兜底 cast，极端类型不匹配时暴露错误）。
     return candidate as T;
   }
 
   /// 将 bindable 的值同步到 _model。
   void _syncToModel(String path, dynamic value) {
-    _model = ParkBindingPath.set(path, _model, value) as Map<String, dynamic>;
+    _model = ParkBindingPath.set(path, _model, value);
   }
 
   /// 快捷设置值。
@@ -118,7 +110,7 @@ class ParkBindingService {
       bindable.value = value;
     } else {
       // 直接更新模型
-      _model = ParkBindingPath.set(path, _model, value) as Map<String, dynamic>;
+      _model = ParkBindingPath.set(path, _model, value);
     }
   }
 
