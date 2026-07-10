@@ -72,6 +72,9 @@ class ParkCollapse extends StatefulWidget {
     this.collapsible = ParkCollapseCollapsible.header,
     this.bindKey,
     this.bindingService,
+    this.shape,
+    this.headerPadding,
+    this.contentPadding,
   });
 
   /// The list of collapsible items.
@@ -103,6 +106,22 @@ class ParkCollapse extends StatefulWidget {
 
   /// 绑定服务实例
   final ParkBindingService? bindingService;
+
+  /// The shape of the collapse panel (e.g. RoundedRectangleBorder).
+  ///
+  /// When provided, each panel header and content body uses this shape
+  /// with the panel's background color. Mimics ExpansionTile.shape.
+  final ShapeBorder? shape;
+
+  /// Padding around the header area of each panel.
+  ///
+  /// When null, defaults to `EdgeInsets.symmetric(horizontal: 16, vertical: 12)`.
+  final EdgeInsetsGeometry? headerPadding;
+
+  /// Padding around the expandable content body of each panel.
+  ///
+  /// When null, defaults to `EdgeInsets.fromLTRB(16, 0, 16, 16)`.
+  final EdgeInsetsGeometry? contentPadding;
 
   @override
   State<ParkCollapse> createState() => _ParkCollapseState();
@@ -172,86 +191,112 @@ class _ParkCollapseState extends State<ParkCollapse>
     final isOpen = _activeKeys.contains(item.key);
     final isDisabled = item.disabled;
 
+    final headerPad = widget.headerPadding ?? EdgeInsets.symmetric(
+      horizontal: park.spacing.base,
+      vertical: park.spacing.md,
+    );
+
+    final contentPad = widget.contentPadding ?? EdgeInsets.fromLTRB(
+      park.spacing.base,
+      0,
+      park.spacing.base,
+      park.spacing.base,
+    );
+
+    final bgColor = isDisabled
+        ? park.colors.disabledBg.withValues(alpha: 0.3)
+        : widget.ghost
+            ? Colors.transparent
+            : park.colors.surface;
+
+    final Widget header = GestureDetector(
+      onTap: isDisabled ? null : () => _toggle(item.key),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: headerPad,
+        decoration: widget.shape != null
+            ? null
+            : BoxDecoration(
+                color: bgColor,
+                border: widget.bordered
+                    ? Border(
+                        bottom: BorderSide(color: park.colors.divider, width: 0.5),
+                      )
+                    : null,
+              ),
+        child: Row(
+          children: [
+            if (item.icon != null) ...[
+              Icon(
+                item.icon,
+                size: 20,
+                color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
+              ),
+              SizedBox(width: park.spacing.sm),
+            ],
+            Expanded(
+              child: item.headerWidget ??
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      fontSize: park.typography.sizeBody,
+                      fontWeight: park.typography.weightMedium,
+                      color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
+                    ),
+                  ),
+            ),
+            if (item.extra != null) ...[
+              item.extra!,
+              SizedBox(width: park.spacing.sm),
+            ],
+            item.expandIcon ??
+                AnimatedRotation(
+                  turns: isOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: isDisabled ? park.colors.textDisabled : park.colors.textSecondary,
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+
+    final Widget body = AnimatedCrossFade(
+      firstChild: const SizedBox(width: double.infinity),
+      secondChild: Padding(
+        padding: contentPad,
+        child: item.content,
+      ),
+      crossFadeState: isOpen ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      duration: const Duration(milliseconds: 250),
+      firstCurve: Curves.easeInOut,
+      secondCurve: Curves.easeInOut,
+      sizeCurve: Curves.easeInOut,
+    );
+
+    // When shape is provided, wrap in Material + shape to match ExpansionTile behavior
+    if (widget.shape != null) {
+      return Material(
+        type: MaterialType.transparency,
+        child: Container(
+          decoration: ShapeDecoration(
+            shape: widget.shape!,
+            color: bgColor,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [header, body],
+          ),
+        ),
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: isDisabled ? null : () => _toggle(item.key),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: park.spacing.base,
-              vertical: park.spacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: isDisabled
-                  ? park.colors.disabledBg.withValues(alpha: 0.3)
-                  : widget.ghost
-                      ? Colors.transparent
-                      : null,
-              border: widget.bordered
-                  ? Border(
-                      bottom: BorderSide(color: park.colors.divider, width: 0.5),
-                    )
-                  : null,
-            ),
-            child: Row(
-              children: [
-                if (item.icon != null) ...[
-                  Icon(
-                    item.icon,
-                    size: 20,
-                    color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
-                  ),
-                  SizedBox(width: park.spacing.sm),
-                ],
-                Expanded(
-                  child: item.headerWidget ??
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontSize: park.typography.sizeBody,
-                          fontWeight: park.typography.weightMedium,
-                          color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
-                        ),
-                      ),
-                ),
-                if (item.extra != null) ...[
-                  item.extra!,
-                  SizedBox(width: park.spacing.sm),
-                ],
-                item.expandIcon ??
-                    AnimatedRotation(
-                      turns: isOpen ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 20,
-                        color: isDisabled ? park.colors.textDisabled : park.colors.textSecondary,
-                      ),
-                    ),
-              ],
-            ),
-          ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox(width: double.infinity),
-          secondChild: Padding(
-            padding: EdgeInsets.fromLTRB(
-              park.spacing.base,
-              0,
-              park.spacing.base,
-              park.spacing.base,
-            ),
-            child: item.content,
-          ),
-          crossFadeState: isOpen ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 250),
-          firstCurve: Curves.easeInOut,
-          secondCurve: Curves.easeInOut,
-          sizeCurve: Curves.easeInOut,
-        ),
-      ],
+      children: [header, body],
     );
   }
 }

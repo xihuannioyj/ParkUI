@@ -4,6 +4,7 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 日期范围筛选快捷预设
 class ParkDateRangeShortcut {
@@ -400,7 +401,7 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
                         child: Text(
-                          '取消',
+                          ParkLocalizations.of(context).cancelText,
                           style: TextStyle(color: park.colors.textSecondary),
                         ),
                       ),
@@ -415,7 +416,7 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, temp),
                         child: Text(
-                          '确定',
+                          ParkLocalizations.of(context).confirmText,
                           style: TextStyle(color: park.colors.brand),
                         ),
                       ),

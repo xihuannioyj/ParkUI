@@ -258,4 +258,164 @@ class _ParkPopupState extends State<ParkPopup>
         return _wrapSafeArea(content);
     }
   }
+
+  /// Show a standard modal popup with title bar (cancel + title + confirm)
+  /// and scrollable content body.
+  ///
+  /// Convenience method for the common "form modal" pattern.
+  /// Returns the popup result (true if confirmed, false/null if cancelled).
+  // ignore: unused_element
+  static Future<bool?> showModal({
+    required BuildContext context,
+    required String title,
+    required Widget child,
+    String confirmText = '确定',
+    String cancelText = '取消',
+    VoidCallback? onConfirm,
+    VoidCallback? onCancel,
+    bool confirmEnabled = true,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return _ParkPopupModal(
+          title: title,
+          child: child,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: onConfirm,
+          onCancel: onCancel,
+          confirmEnabled: confirmEnabled,
+        );
+      },
+    );
+  }
+}
+
+/// Internal modal scaffold widget used by [ParkPopup.showModal].
+class _ParkPopupModal extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final String confirmText;
+  final String cancelText;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onCancel;
+  final bool confirmEnabled;
+
+  const _ParkPopupModal({
+    required this.title,
+    required this.child,
+    required this.confirmText,
+    required this.cancelText,
+    this.onConfirm,
+    this.onCancel,
+    this.confirmEnabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final park = Theme.of(context).extension<ParkThemeData>() ??
+        ParkThemeData.light();
+    final colors = park.colors;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(park.radius.lg)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Padding(
+              padding: EdgeInsets.only(top: park.spacing.sm),
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: park.spacing.sm,
+                vertical: park.spacing.xs,
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      onCancel?.call();
+                      Navigator.pop(context, false);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: park.spacing.base,
+                        vertical: park.spacing.sm,
+                      ),
+                      child: Text(
+                        cancelText,
+                        style: TextStyle(
+                          fontSize: park.typography.sizeBody,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: park.typography.sizeBody,
+                      fontWeight: park.typography.weightBold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: confirmEnabled
+                        ? () {
+                            onConfirm?.call();
+                            Navigator.pop(context, true);
+                          }
+                        : null,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: park.spacing.base,
+                        vertical: park.spacing.sm,
+                      ),
+                      child: Text(
+                        confirmText,
+                        style: TextStyle(
+                          fontSize: park.typography.sizeBody,
+                          fontWeight: park.typography.weightBold,
+                          color: confirmEnabled ? colors.brand : colors.textDisabled,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Scrollable content body
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  park.spacing.base, 0,
+                  park.spacing.base, park.spacing.base,
+                ),
+                child: child,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

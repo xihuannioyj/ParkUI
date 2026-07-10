@@ -28,6 +28,12 @@ library;
 
 export 'src/theme/park_theme.dart';
 export 'src/theme/park_theme_data.dart';
+
+// ============================================================================
+// 本地化
+// ============================================================================
+
+export 'src/l10n/park_localizations.dart';
 export 'src/theme/tokens/park_colors.dart';
 export 'src/theme/tokens/park_typography.dart';
 export 'src/theme/tokens/park_spacing.dart';
@@ -47,6 +53,7 @@ export 'src/components/base/park_divider.dart';
 export 'src/components/base/park_fab.dart';
 export 'src/components/base/park_link.dart';
 export 'src/components/base/park_space.dart';
+export 'src/components/base/park_ink_well.dart';
 
 // ============================================================================
 // 输入组件

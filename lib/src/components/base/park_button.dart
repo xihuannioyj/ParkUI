@@ -122,6 +122,9 @@ class ParkButton extends StatefulWidget {
   /// 是否为纯图标按钮（无文字，影响内边距和最小宽度）
   final bool iconOnly;
 
+  /// 工具提示文本（长按或悬停时显示）
+  final String? tooltip;
+
   /// 自定义高度覆盖（单位 px）。
   ///
   /// 传入时覆盖由 [size] 推导的默认高度（small:28 / medium:36 / large:44）。
@@ -161,6 +164,7 @@ class ParkButton extends StatefulWidget {
     this.onBlur,
     this.ghost = false,
     this.iconOnly = false,
+    this.tooltip,
     this.height,
   });
 
@@ -182,6 +186,7 @@ class ParkButton extends StatefulWidget {
     int? badge,
     bool badgeDot = false,
     bool danger = false,
+    String? tooltip,
   }) {
     return ParkButton(
       key: key,
@@ -199,6 +204,7 @@ class ParkButton extends StatefulWidget {
       badge: badge,
       badgeDot: badgeDot,
       danger: danger,
+      tooltip: tooltip,
       child: Text(label),
     );
   }
@@ -366,8 +372,14 @@ class _ParkButtonState extends State<ParkButton> {
     ),
     );
 
-    if (widget.block) return button;
-    return button;
+    final btn = widget.block ? button : button;
+    if (widget.tooltip != null) {
+      return Tooltip(
+        message: widget.tooltip!,
+        child: btn,
+      );
+    }
+    return btn;
   }
 
   Widget _buildDecoratedButton({

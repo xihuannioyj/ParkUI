@@ -19,7 +19,13 @@ import 'tokens/park_shadows.dart';
 ///
 /// // 方式二：通过 context 扩展（需要 import park_ui.dart）
 /// final park = context.parkTheme;
-/// ```
+///
+/// // 方式三：快捷主题常量
+/// MaterialApp(
+///   theme: parkThemeDataLight,  // 浅色
+///   darkTheme: parkThemeDataDark,  // 深色
+/// )
+/// /// 
 class ParkTheme {
   ParkTheme._();
 
@@ -75,3 +81,16 @@ extension ParkThemeContextExtension on BuildContext {
   /// 获取阴影令牌
   ParkShadows get parkShadows => ParkTheme.shadowsOf(this);
 }
+
+/// 快捷主题常量：浅色。
+final ThemeData parkThemeDataLight = ThemeData(
+  useMaterial3: true,
+  extensions: <ThemeExtension<ParkThemeData>>[ParkThemeData.light()],
+);
+
+/// 快捷主题常量：深色。
+final ThemeData parkThemeDataDark = ThemeData(
+  useMaterial3: true,
+  brightness: Brightness.dark,
+  extensions: <ThemeExtension<ParkThemeData>>[ParkThemeData.dark()],
+);

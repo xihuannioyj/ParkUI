@@ -5,6 +5,7 @@ import '../../theme/tokens/park_motion.dart';
 import 'park_input.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 日期选择器模式
 enum ParkDatePickerMode {
@@ -16,6 +17,9 @@ enum ParkDatePickerMode {
 
   /// 日期 + 时间
   dateTime,
+
+  /// 时间（含秒）
+  timeWithSeconds,
 
   /// 年月
   yearMonth,
@@ -357,6 +361,8 @@ class ParkDatePicker extends FormField<DateTime> {
         return Icons.calendar_today_outlined;
       case ParkDatePickerMode.time:
         return Icons.access_time_outlined;
+      case ParkDatePickerMode.timeWithSeconds:
+        return Icons.access_time_outlined;
       case ParkDatePickerMode.dateTime:
         return Icons.calendar_today_outlined;
     }
@@ -381,6 +387,8 @@ class ParkDatePicker extends FormField<DateTime> {
         return '${dt.year}-${pad(dt.month)}-${pad(dt.day)}';
       case ParkDatePickerMode.time:
         return '${pad(dt.hour)}:${pad(dt.minute)}';
+      case ParkDatePickerMode.timeWithSeconds:
+        return '${pad(dt.hour)}:${pad(dt.minute)}:${pad(dt.second)}';
       case ParkDatePickerMode.dateTime:
         return '${dt.year}-${pad(dt.month)}-${pad(dt.day)} ${pad(dt.hour)}:${pad(dt.minute)}';
       case ParkDatePickerMode.yearMonth:
@@ -405,6 +413,9 @@ class ParkDatePicker extends FormField<DateTime> {
         cupertinoMode = CupertinoDatePickerMode.time;
         break;
       case ParkDatePickerMode.dateTime:
+        cupertinoMode = CupertinoDatePickerMode.dateAndTime;
+        break;
+      case ParkDatePickerMode.timeWithSeconds:
         cupertinoMode = CupertinoDatePickerMode.dateAndTime;
         break;
       case ParkDatePickerMode.yearMonth:
@@ -542,7 +553,7 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Text(
-                      '取消',
+                      ParkLocalizations.of(context).cancelText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
                         color: colors.textSecondary,
@@ -563,7 +574,7 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(_tempDate),
                     child: Text(
-                      '确认',
+                      ParkLocalizations.of(context).confirmText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
                         color: colors.brand,

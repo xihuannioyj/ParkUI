@@ -60,6 +60,13 @@ class ParkDialog extends StatefulWidget {
   /// Whether to show the mask/overlay background. When false, no mask is rendered.
   final bool mask;
 
+  /// Custom action buttons rendered as a horizontal row at the bottom.
+  ///
+  /// When provided, this replaces the default confirm/cancel buttons and any [footer].
+  /// Each widget is typically a button (e.g. TextButton, ElevatedButton) that the
+  /// caller wires with its own onPressed callback. Mimics Flutter's AlertDialog.actions.
+  final List<Widget>? actions;
+
   const ParkDialog({
     super.key,
     required this.title,
@@ -83,6 +90,7 @@ class ParkDialog extends StatefulWidget {
     this.destroyOnClose = false,
     this.closeIcon,
     this.mask = true,
+    this.actions,
   });
 
   /// 弹出 alert 对话框（仅一个确认按钮）
@@ -369,6 +377,7 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    List<Widget>? actions,
   }) {
     final overlay = Overlay.of(context, rootOverlay: true);
     late OverlayEntry entry;
@@ -409,6 +418,7 @@ class ParkDialog extends StatefulWidget {
         contentWidget: contentWidget,
         titleWidget: titleWidget,
         fullscreen: fullscreen,
+        actions: actions,
       );
     });
 
@@ -442,6 +452,7 @@ class _ParkDialogState extends State<ParkDialog> {
       contentWidget: widget.contentWidget,
       titleWidget: widget.titleWidget,
       fullscreen: widget.fullscreen,
+      actions: widget.actions,
     );
   }
 }
@@ -466,6 +477,7 @@ class _ParkDialogOverlay extends StatefulWidget {
   final Widget? contentWidget;
   final Widget? titleWidget;
   final bool fullscreen;
+  final List<Widget>? actions;
 
   const _ParkDialogOverlay({
     required this.title,
@@ -487,6 +499,7 @@ class _ParkDialogOverlay extends StatefulWidget {
     this.contentWidget,
     this.titleWidget,
     this.fullscreen = false,
+    this.actions,
   });
 
   @override
@@ -624,8 +637,18 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
               ),
             ],
             SizedBox(height: park.spacing.lg),
-            // Footer: custom or default buttons
-            if (widget.footer != null)
+            // Footer: actions > footer > default buttons
+            if (widget.actions != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  for (int i = 0; i < widget.actions!.length; i++) ...[
+                    if (i > 0) SizedBox(width: park.spacing.sm),
+                    widget.actions![i],
+                  ],
+                ],
+              )
+            else if (widget.footer != null)
               widget.footer!
             else
               Row(

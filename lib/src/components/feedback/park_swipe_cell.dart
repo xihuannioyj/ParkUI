@@ -8,11 +8,15 @@ class ParkSwipeAction {
   final Color color;
   final VoidCallback? onTap;
 
+  /// 确认模式下的按钮文字（默认 '确认'）
+  final String confirmText;
+
   const ParkSwipeAction({
     required this.label,
     this.icon,
     this.color = const Color(0xFF333333),
     this.onTap,
+    this.confirmText = '确认',
   });
 }
 
@@ -273,7 +277,7 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
               SizedBox(height: park.spacing.xs),
             ],
             Text(
-              isConfirming ? '确认' : action.label,
+              isConfirming ? action.confirmText : action.label,
               style: park.typography.body.copyWith(
                 fontSize: park.typography.sizeCaption,
                 color: Colors.white,

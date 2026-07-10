@@ -84,6 +84,15 @@ class ParkCard extends StatefulWidget {
   /// 是否可折叠（点击头部切换展开/收起）
   final bool collapsible;
 
+  /// 描述文字（显示在标题下方）
+  final String? description;
+
+  /// 头部图标（显示在标题左侧，替代指示条）
+  final Widget? icon;
+
+  /// 是否显示左侧彩色指示条（显示在标题左侧，icon 为空时有效）
+  final bool showIndicator;
+
   const ParkCard({
     super.key,
     this.title,
@@ -104,6 +113,9 @@ class ParkCard extends StatefulWidget {
     this.size = ParkCardSize.defaultSize,
     this.headStyle = false,
     this.collapsible = false,
+    this.description,
+    this.icon,
+    this.showIndicator = false,
   });
 
   @override
@@ -134,7 +146,10 @@ class _ParkCardState extends State<ParkCard> {
     final bool hasHeader = widget.title != null ||
         widget.titleText != null ||
         widget.extra != null ||
-        widget.collapsible;
+        widget.collapsible ||
+        widget.description != null ||
+        widget.icon != null ||
+        widget.showIndicator;
 
     // 卡片内容（加载时显示骨架屏）
     final Widget bodyContent =
@@ -178,34 +193,71 @@ class _ParkCardState extends State<ParkCard> {
                                 ),
                               )
                             : null,
-                        child: Row(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: <Widget>[
-                            Expanded(
-                              child: widget.title ??
-                                  (widget.titleText != null
-                                      ? Text(
-                                          widget.titleText!,
-                                          style: park.typography.body.copyWith(
-                                            fontSize: park.typography.sizeH3,
-                                            fontWeight: park.typography.weightBold,
-                                            color: colors.textPrimary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        )
-                                      : const SizedBox.shrink()),
-                            ),
-                            if (widget.extra != null) widget.extra!,
-                            if (widget.collapsible)
-                              AnimatedRotation(
-                                turns: _isCollapsed ? -0.5 : 0,
-                                duration: const Duration(milliseconds: 200),
-                                child: Icon(
-                                  Icons.keyboard_arrow_up,
-                                  size: 20,
-                                  color: colors.textSecondary,
+                            // 图标或指示条
+                            if (widget.icon != null)
+                              Padding(
+                                padding: EdgeInsets.only(right: spacing.sm),
+                                child: widget.icon!,
+                              )
+                            else if (widget.showIndicator)
+                              Container(
+                                width: 4,
+                                height: 20,
+                                margin: EdgeInsets.only(right: spacing.sm),
+                                decoration: BoxDecoration(
+                                  color: colors.brand,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
+                            // 标题 + 描述
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: widget.title ??
+                                            (widget.titleText != null
+                                                ? Text(
+                                                    widget.titleText!,
+                                                    style: park.typography.body.copyWith(
+                                                      fontSize: park.typography.sizeH3,
+                                                      fontWeight: park.typography.weightBold,
+                                                      color: colors.textPrimary,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  )
+                                                : const SizedBox.shrink()),
+                                      ),
+                                      if (widget.extra != null) widget.extra!,
+                                      if (widget.collapsible)
+                                        Icon(
+                                          _isCollapsed ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
+                                          size: 20,
+                                          color: colors.textPlaceholder,
+                                        ),
+                                    ],
+                                  ),
+                                  if (widget.description != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(top: spacing.xs),
+                                      child: Text(
+                                        widget.description!,
+                                        style: park.typography.caption.copyWith(
+                                          color: colors.textSecondary,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),

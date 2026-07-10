@@ -640,23 +640,11 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
         children: [
           // 取消按钮（仅多选模式显示）
           if (widget.multiple)
-            TextButton(
-              onPressed: _handleCancel,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: park.spacing.base,
-                  vertical: park.spacing.sm,
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                widget.cancelText,
-                style: TextStyle(
-                  fontSize: park.typography.sizeBody,
-                  color: park.colors.textSecondary,
-                ),
-              ),
+            _sheetButton(
+              text: widget.cancelText,
+              filled: false,
+              park: park,
+              onTap: _handleCancel,
             )
           else
             const SizedBox(width: 48),
@@ -677,24 +665,11 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
 
           // 确定按钮（仅多选模式显示）
           if (widget.multiple)
-            TextButton(
-              onPressed: _handleConfirm,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: park.spacing.base,
-                  vertical: park.spacing.sm,
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                widget.confirmText,
-                style: TextStyle(
-                  fontSize: park.typography.sizeBody,
-                  fontWeight: park.typography.weightBold,
-                  color: park.colors.brand,
-                ),
-              ),
+            _sheetButton(
+              text: widget.confirmText,
+              filled: true,
+              park: park,
+              onTap: _handleConfirm,
             )
           else
             const SizedBox(width: 48),
@@ -759,6 +734,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
       child: AnimatedContainer(
         duration: ParkMotion.quick,
         curve: ParkMotion.defaultEasing,
+        margin: EdgeInsets.symmetric(vertical: park.spacing.xs),
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -767,8 +743,23 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
           color:
               isSelected
                   ? park.colors.brand.withValues(alpha: 0.08)
-                  : Colors.transparent,
+                  : park.colors.surface,
           borderRadius: park.radius.brSm,
+          border: Border.all(
+            color:
+                isSelected
+                    ? park.colors.brand.withValues(alpha: 0.2)
+                    : park.colors.border.withValues(alpha: 0.4),
+          ),
+             boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? park.colors.brand.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: isSelected ? 10 : 6,
+              offset: Offset(0, isSelected ? 4 : 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -860,33 +851,101 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
         duration: ParkMotion.quick,
         curve: ParkMotion.defaultEasing,
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? park.colors.brand.withValues(alpha: 0.08)
-                  : park.colors.background,
+          color: isSelected
+              ? park.colors.brand.withValues(alpha: 0.08)
+              : park.colors.background,
           borderRadius: park.radius.brSm,
           border: Border.all(
-            color:
-                isSelected
-                    ? park.colors.brand.withValues(alpha: 0.3)
-                    : park.colors.border,
+            color: isSelected
+                ? park.colors.brand.withValues(alpha: 0.3)
+                : park.colors.border.withValues(alpha: 0.5),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? park.colors.brand.withValues(alpha: 0.10)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: isSelected ? 12 : 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Center(
-          child: Text(
-            option.label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: park.typography.sizeBodySmall,
-              fontWeight:
-                  isSelected ? park.typography.weightBold : null,
-              color:
-                  option.disabled
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (option.leading != null) ...[
+              SizedBox(height: 4),
+              SizedBox(
+                width: 24, height: 24,
+                child: FittedBox(child: option.leading!),
+              ),
+              SizedBox(height: park.spacing.xs),
+            ],
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                option.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: park.typography.sizeBodySmall,
+                  fontWeight: isSelected ? park.typography.weightBold : null,
+                  color: option.disabled
                       ? park.colors.textPlaceholder
                       : isSelected
-                      ? park.colors.brand
-                      : park.colors.textPrimary,
+                          ? park.colors.brand
+                          : park.colors.textPrimary,
+                ),
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetButton({
+    required String text,
+    required bool filled,
+    required ParkThemeData park,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: filled
+              ? park.colors.brand.withValues(alpha: 0.12)
+              : park.colors.surface,
+          borderRadius: park.radius.brSm,
+          border: Border.all(
+            color: filled
+                ? park.colors.brand.withValues(alpha: 0.24)
+                : park.colors.border.withValues(alpha: 0.5),
+          ),
+          boxShadow: filled
+              ? [
+                  BoxShadow(
+                    color: park.colors.brand.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: park.typography.sizeBody,
+            fontWeight: park.typography.weightMedium,
+            color: filled
+                ? park.colors.brand
+                : park.colors.textSecondary,
           ),
         ),
       ),

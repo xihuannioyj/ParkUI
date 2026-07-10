@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 级联选项节点（树形结构）
 class ParkCascaderOption {
@@ -495,7 +496,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Text(
-                      '取消',
+                      ParkLocalizations.of(context).cancelText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
                         color: colors.textSecondary,
@@ -507,7 +508,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                         ? () => Navigator.of(context).pop(_tempPath)
                         : null,
                     child: Text(
-                      '确认',
+                      ParkLocalizations.of(context).confirmText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
                         color: _canConfirm ? colors.brand : colors.textDisabled,

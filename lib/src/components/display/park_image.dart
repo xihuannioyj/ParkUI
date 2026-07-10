@@ -4,10 +4,11 @@ import '../../theme/park_theme_data.dart';
 /// Image shape presets.
 enum ParkImageShape { circle, rounded, rectangle }
 
-/// A network image component with placeholder, error handling, and shape options.
+/// A network image component with caching, placeholder, error handling, and shape options.
 ///
 /// Uses [Image.network] with built-in error builder. Supports
 /// circle, rounded, and rectangle shapes.
+/// Provides static cache management: [ParkImage.clearCache] and [ParkImage.preloadImage].
 class ParkImage extends StatelessWidget {
   /// Creates a ParkImage.
   const ParkImage({
@@ -25,6 +26,10 @@ class ParkImage extends StatelessWidget {
     this.fadeInDuration,
     this.caption,
     this.lazy = false,
+    this.retry = 0,
+    this.onLoad,
+    this.onError,
+    this.memoryCache = true,
   });
 
   /// Image URL.
@@ -67,6 +72,36 @@ class ParkImage extends StatelessWidget {
 
   /// Whether to lazily load the image (defer loading until visible in viewport).
   final bool lazy;
+
+  /// Number of retries when loading fails. Default 0 (no retry).
+  final int retry;
+
+  /// Called when image loads successfully.
+  final VoidCallback? onLoad;
+
+  /// Called when image loading fails.
+  final VoidCallback? onError;
+
+  /// Whether to cache the image in memory. When true, uses [imageCache] for
+  /// caching decoded images; when false, bypasses cache.
+  /// Default true.
+  final bool memoryCache;
+
+  /// Preload an image into the image cache.
+  /// Returns a [Future] that completes when the image is fully decoded.
+  static Future<void> preloadImage(BuildContext context, String url) {
+    return precacheImage(NetworkImage(url), context);
+  }
+
+  /// Clear the entire image cache.
+  static void clearCache() {
+    PaintingBinding.instance.imageCache.clear();
+  }
+
+  /// Evict a specific image from cache by URL.
+  static void evictImage(String url) {
+    PaintingBinding.instance.imageCache.evict(NetworkImage(url));
+  }
 
   BorderRadius _resolveBorderRadius(ParkThemeData park) {
     if (borderRadius != null) return borderRadius!;

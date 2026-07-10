@@ -119,6 +119,9 @@ class ParkRadio extends FormField<String> {
   /// 自定义选项渲染回调（覆盖默认选项渲染）
   final Widget Function(ParkRadioOption option, bool isSelected, VoidCallback? onTap)? optionBuilder;
 
+  /// 按钮式模式下选项紧密拼接（去除间隙、合并边框）
+  final bool buttonJoin;
+
   ParkRadio({
     super.key,
     this.bindKey,
@@ -137,6 +140,7 @@ class ParkRadio extends FormField<String> {
     this.onFocus,
     this.onBlur,
     this.optionBuilder,
+    this.buttonJoin = false,
     FormFieldSetter<String>? onSaved,
     FormFieldValidator<String>? validator,
     bool autovalidateMode = false,
@@ -290,67 +294,80 @@ class ParkRadio extends FormField<String> {
     final colors = park.colors;
     final typo = park.typography;
     final radius = park.radius;
+    final isJoin = widget.buttonJoin;
+
+    final children = widget.options.asMap().entries.map((entry) {
+      final index = entry.key;
+      final option = entry.value;
+      final isDisabled = widget.disabled || widget.readOnly || option.disabled;
+      final isSelected = state.value == option.value;
+
+      return Expanded(
+        child: GestureDetector(
+          onTap: isDisabled
+              ? null
+              : () {
+                  state.didChange(option.value);
+                  widget.onChanged?.call(option.value);
+                },
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: ParkMotion.standard,
+            curve: ParkMotion.enterEasing,
+            padding: EdgeInsets.symmetric(
+              horizontal: park.spacing.base,
+              vertical: park.spacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected ? colors.surface : Colors.transparent,
+              borderRadius: isJoin
+                  ? BorderRadius.zero
+                  : radius.brXs,
+              border: isJoin
+                  ? Border(
+                      right: index < widget.options.length - 1
+                          ? BorderSide(color: colors.divider, width: 0.5)
+                          : BorderSide.none,
+                    )
+                  : null,
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: widget.optionBuilder != null
+                ? widget.optionBuilder!(option, isSelected, null)
+                : Text(
+                    option.label,
+                    style: TextStyle(
+                      fontSize: typo.sizeBody,
+                      color: isDisabled
+                          ? colors.textDisabled
+                          : isSelected
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                      fontWeight: isSelected
+                          ? typo.weightMedium
+                          : typo.weightRegular,
+                    ),
+                  ),
+          ),
+        ),
+      );
+    }).toList();
 
     return Container(
       decoration: BoxDecoration(
         color: colors.disabledBg,
         borderRadius: radius.brSm,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: widget.options.map((option) {
-          final isDisabled = widget.disabled || widget.readOnly || option.disabled;
-          final isSelected = state.value == option.value;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: isDisabled
-                  ? null
-                  : () {
-                      state.didChange(option.value);
-                      widget.onChanged?.call(option.value);
-                    },
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
-                duration: ParkMotion.standard,
-                curve: ParkMotion.enterEasing,
-                padding: EdgeInsets.symmetric(
-                  horizontal: park.spacing.base,
-                  vertical: park.spacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? colors.surface : Colors.transparent,
-                  borderRadius: radius.brXs,
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  option.label,
-                  style: TextStyle(
-                    fontSize: typo.sizeBody,
-                    color: isDisabled
-                        ? colors.textDisabled
-                        : isSelected
-                            ? colors.textPrimary
-                            : colors.textSecondary,
-                    fontWeight: isSelected
-                        ? typo.weightMedium
-                        : typo.weightRegular,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+      child: isJoin ? Row(mainAxisSize: MainAxisSize.min, children: children) : Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 
