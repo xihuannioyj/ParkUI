@@ -675,7 +675,7 @@ class _SelectSheetState extends State<_SelectSheet> {
     return ListView(
       shrinkWrap: true,
       children: <Widget>[
-        ...renderItems.map(_buildOptionItem).toList(),
+        ...renderItems.map(_buildOptionItem),
         if (showCreateEntry) _buildCreateEntryItem(),
       ],
     );

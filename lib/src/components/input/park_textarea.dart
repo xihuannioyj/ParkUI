@@ -141,8 +141,8 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
     // 如果 bindable 已有值，同步到 TextEditingController
     // 非 String 类型（如 int）通过 toString 安全转换，避免类型转换异常
     final b = bindable;
-    if (b != null && b.value != null) {
-      _controller.text = b.value?.toString() ?? '';
+    if (b != null) {
+      _controller.text = b.value.toString();
     }
   }
 
@@ -167,7 +167,7 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
     super.didChangeDependencies();
     // 从 ParkBindingFormScope 获取到服务后，把 bindable 初始值同步到 controller
     final b = bindable;
-    if (b != null && b.value != null) {
+    if (b != null) {
       final text = b.value.toString();
       if (_controller.text != text) {
         _controller.text = text;

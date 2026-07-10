@@ -75,11 +75,7 @@ class ParkBindingPath {
 
     final String key = keys[index];
     if (index == keys.length - 1) {
-      if (value == null) {
-        result.remove(key);
-      } else {
-        result[key] = value;
-      }
+      result[key] = value;
       return result;
     }
 

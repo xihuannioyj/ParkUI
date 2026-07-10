@@ -115,7 +115,9 @@ class ParkInputGroup extends StatelessWidget {
     }
 
     return Container(
-      height: _groupHeight + 2,
+      // +2 用于边框（1px 上下），额外 +2 给子项（如 ParkInput bordered:false 的
+      // TextField）留足 intrinsic 高度，防止 1.5px 底部溢出。
+      height: _groupHeight + 4,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: bgColor,

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:park_ui/park_ui.dart';
+import '../../../park_ui.dart';
 
 /// 单个动态字段渲染组件。
 ///
@@ -764,7 +764,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                         .map((dynamic e) => Map<String, dynamic>.from(e as Map))
                         .toList(),
                   )
-                : null,
+                : const <ParkTreeNode>[],
           ),
         )
         .toList();

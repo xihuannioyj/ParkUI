@@ -1055,6 +1055,82 @@ class _ParkTableState extends State<ParkTable> {
     Color headerBg,
     ParkThemeData park,
   ) {
+    // 非 sticky 且 非 expandable → 用同一个 Table widget 统一渲染表头和数据行，
+    // 确保 columnWidths 对表头和数据行一致，避免 header 用 SizedBox(fixed)
+    // 而 body 用 FlexColumnWidth 导致的列宽不匹配。
+    if (!widget.sticky &&
+        !(widget.expandable && widget.expandedRowBuilder != null)) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Table(
+          columnWidths: _buildColumnWidths(),
+          border: widget.bordered
+              ? TableBorder.all(color: park.colors.border, width: 1)
+              : TableBorder(
+                  horizontalInside: BorderSide(
+                      color: park.colors.divider, width: 0.5),
+                  bottom:
+                      BorderSide(color: park.colors.divider, width: 0.5),
+                ),
+          children: <TableRow>[
+            // 表头行（第一行）
+            TableRow(
+              decoration: BoxDecoration(color: headerBg),
+              children: <Widget>[
+                if (widget.rowSelection != null)
+                  SizedBox(
+                    width: 48,
+                    child: Center(
+                      child: widget.rowSelection!.type ==
+                              ParkRowSelectionType.checkbox
+                          ? _buildSelectAllCheckbox(data, park)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ...widget.columns.asMap().entries.map((MapEntry<int,
+                        ParkTableColumn> entry) =>
+                    _buildHeaderCell(entry.value, park, entry.key)),
+              ],
+            ),
+            // 数据行
+            ...data.asMap().entries.map((MapEntry<int,
+                    Map<String, dynamic>> entry) {
+              final int rowIndex = entry.key;
+              final Map<String, dynamic> row = entry.value;
+              final bool isStriped = _isStriped && rowIndex.isOdd;
+              final bool isSelected = _isRowSelected(rowIndex);
+
+              Color? rowBg;
+              if (isSelected) {
+                rowBg = park.colors.brand.withValues(alpha: 0.04);
+              } else if (isStriped) {
+                rowBg = park.colors.background;
+              }
+
+              return TableRow(
+                decoration: BoxDecoration(color: rowBg),
+                children: <Widget>[
+                  if (widget.rowSelection != null)
+                    SizedBox(
+                      width: 48,
+                      child: Center(
+                        child:
+                            _buildRowSelectionWidget(rowIndex, park),
+                      ),
+                    ),
+                  ...widget.columns.map((ParkTableColumn col) =>
+                      _buildDataCell(col, row, park,
+                          rowIndex: rowIndex)),
+                ],
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    // sticky / expandable 场景：保留原有的分离式 header + body 布局
+    // （它们都用 SizedBox(width: col.width ?? 120)，宽度计算一致）
     final Widget header = _buildTableHeader(data, headerBg, park);
     final Widget body = _buildTableBody(data, park);
     return Column(

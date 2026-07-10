@@ -84,9 +84,14 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
     _syncToBindable(value);
   }
 
+  /// 将 [FormField] 的值同步到 [ParkBindable]。
+  ///
+  /// 移除旧版 `value != null` 守卫，支持清空输入框时同步 null 值。
+  /// 使用 dynamic 绕开 Dart 泛型协变限制（T? → T 不满足赋值兼容性）。
   void _syncToBindable(T? value) {
-    if (_bindable != null && value != null) {
-      _bindable!.value = value;
+    if (_bindable != null) {
+      // ignore: avoid_dynamic_calls
+      (_bindable! as dynamic).value = value;
     }
   }
 

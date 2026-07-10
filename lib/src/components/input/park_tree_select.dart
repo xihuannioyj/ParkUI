@@ -2,31 +2,7 @@ import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
-
-/// 树节点数据
-class ParkTreeNode {
-  /// 节点唯一标识
-  final String key;
-
-  /// 节点显示文字
-  final String label;
-
-  /// 子节点列表
-  final List<ParkTreeNode>? children;
-
-  /// 是否禁用
-  final bool disabled;
-
-  const ParkTreeNode({
-    required this.key,
-    required this.label,
-    this.children,
-    this.disabled = false,
-  });
-
-  /// 是否为叶子节点
-  bool get isLeaf => children == null || children!.isEmpty;
-}
+import '../display/park_tree.dart';
 
 /// 自定义展开/折叠图标构建器
 typedef ParkTreeSwitcherIconBuilder = Widget Function(bool isExpanded);
@@ -407,9 +383,9 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
 
     for (final ParkTreeNode node in nodes) {
       final bool selfMatched = node.label.toLowerCase().contains(keyword);
-      final List<ParkTreeNode> matchedChildren = node.children == null
+      final List<ParkTreeNode> matchedChildren = node.children.isEmpty
           ? const <ParkTreeNode>[]
-          : _filterNodes(node.children!, keyword);
+          : _filterNodes(node.children, keyword);
 
       if (selfMatched || matchedChildren.isNotEmpty) {
         result.add(

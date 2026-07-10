@@ -1,6 +1,6 @@
 /// Park UI — 独立、可插拔的 Flutter UI 组件集
 ///
-/// 提供完整的设计令牌系统和 72 个自定义控件。
+/// 提供完整的设计令牌系统和 85+ 个自定义控件。
 /// 所有组件独立工作，不依赖 GetX / Provider 等全局状态管理。
 ///
 /// 快速开始：
@@ -46,6 +46,7 @@ export 'src/components/base/park_icon.dart';
 export 'src/components/base/park_divider.dart';
 export 'src/components/base/park_fab.dart';
 export 'src/components/base/park_link.dart';
+export 'src/components/base/park_space.dart';
 
 // ============================================================================
 // 输入组件
@@ -62,10 +63,16 @@ export 'src/components/input/park_checkbox.dart';
 export 'src/components/input/park_radio.dart';
 export 'src/components/input/park_picker.dart';
 export 'src/components/input/park_date_picker.dart';
+export 'src/components/input/park_date_range_picker.dart';
 export 'src/components/input/park_select.dart';
 export 'src/components/input/park_cascader.dart';
 export 'src/components/input/park_tree_select.dart';
 export 'src/components/input/park_upload.dart';
+export 'src/components/input/park_auto_complete.dart';
+export 'src/components/input/park_color_picker.dart';
+export 'src/components/input/park_input_number.dart';
+export 'src/components/input/park_time_picker.dart';
+export 'src/components/input/park_transfer.dart';
 export 'src/components/input/park_form.dart';
 export 'src/components/input/park_form_item.dart';
 export 'src/components/input/park_form_section.dart';
@@ -87,6 +94,9 @@ export 'src/components/navigation/park_back_top.dart';
 export 'src/components/navigation/park_indexes.dart';
 export 'src/components/navigation/park_breadcrumb.dart';
 export 'src/components/navigation/park_pagination.dart';
+export 'src/components/navigation/park_layout.dart';
+export 'src/components/navigation/park_anchor.dart';
+export 'src/components/navigation/park_menu.dart';
 
 // ============================================================================
 // 数据展示组件
@@ -111,10 +121,14 @@ export 'src/components/display/park_footer.dart';
 export 'src/components/display/park_grid.dart';
 export 'src/components/display/park_sticky.dart';
 export 'src/components/display/park_card.dart';
+export 'src/components/display/park_countdown.dart';
+export 'src/components/display/park_qrcode.dart';
 export 'src/components/display/park_list.dart';
 export 'src/components/display/park_ellipsis.dart';
 export 'src/components/display/park_timeline.dart';
 export 'src/components/display/park_tooltip.dart';
+export 'src/components/display/park_watermark.dart';
+export 'src/components/display/park_tree.dart';
 
 // ============================================================================
 // 反馈组件
@@ -123,15 +137,20 @@ export 'src/components/display/park_tooltip.dart';
 export 'src/components/feedback/park_dialog.dart';
 export 'src/components/feedback/park_toast.dart';
 export 'src/components/feedback/park_loading.dart';
+export 'src/components/feedback/park_alert.dart';
 export 'src/components/feedback/park_action_sheet.dart';
 export 'src/components/feedback/park_popup.dart';
 export 'src/components/feedback/park_dropdown_menu.dart';
+export 'src/components/feedback/park_dropdown_sheet.dart';
+export 'src/components/feedback/park_dropdown_filter.dart';
 export 'src/components/feedback/park_notice_bar.dart';
 export 'src/components/feedback/park_message.dart';
 export 'src/components/feedback/park_popover.dart';
 export 'src/components/feedback/park_refresh.dart';
 export 'src/components/feedback/park_swipe_cell.dart';
+export 'src/components/feedback/park_notification.dart';
 export 'src/components/feedback/park_overlay.dart';
+export 'src/components/feedback/park_popconfirm.dart';
 
 // ============================================================================
 // 动态表单
@@ -153,6 +172,7 @@ export 'src/form/data_source/park_data_source_resolver.dart';
 export 'src/form/widgets/park_dynamic_form.dart';
 export 'src/form/widgets/park_form_field_widget.dart';
 export 'src/form/widgets/park_form_field_helpers.dart';
+export 'src/form/widgets/park_schema_builder.dart';
 export 'src/form/platform/park_form_image_service.dart';
 
 // ============================================================================
@@ -161,6 +181,7 @@ export 'src/form/platform/park_form_image_service.dart';
 export 'src/binding/park_bindable.dart';
 export 'src/binding/park_binding_service.dart';
 export 'src/binding/park_binding_path.dart';
+export 'src/binding/park_binding_scheduler.dart';
 export 'src/binding/park_binding_form_field_mixin.dart';
 export 'src/binding/park_binding_form_scope.dart';
 export 'src/binding/park_binding_mixin.dart';

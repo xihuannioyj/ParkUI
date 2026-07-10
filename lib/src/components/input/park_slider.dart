@@ -256,14 +256,14 @@ class _ParkSliderBuilder extends StatelessWidget {
         ],
         sliderWidget,
         // Dots at step marks
-        if (widget.dots && effDivisions != null && effDivisions! > 0)
+        if (widget.dots && effDivisions != null && effDivisions > 0)
           Padding(
             padding: EdgeInsets.only(top: park.spacing.xs),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final dots = <Widget>[];
-                for (int i = 0; i <= effDivisions!; i++) {
-                  final ratio = i / effDivisions!;
+                for (int i = 0; i <= effDivisions; i++) {
+                  final ratio = i / effDivisions;
                   final stepValue = widget.min + ratio * (widget.max - widget.min);
                   final isActive = stepValue <= currentValue;
                   dots.add(

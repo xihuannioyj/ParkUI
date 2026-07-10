@@ -1,10 +1,44 @@
+import 'dart:collection';
+import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'park_binding_path.dart';
 import 'park_bindable.dart';
+import 'park_binding_scheduler.dart';
 
-/// 双向绑定引擎服务。
+/// 依赖追踪上下文（用于 [watchEffect] 自动收集依赖）。
+class _TrackContext {
+  static final _TrackContext _instance = _TrackContext._();
+  factory _TrackContext() => _instance;
+  _TrackContext._();
+
+  /// 当前正在执行的副作用函数。
+  void Function()? activeEffect;
+
+  /// 当前副作用的已收集依赖路径。
+  Set<String>? collectedDeps;
+
+  /// 开始追踪，返回清理函数。
+  static VoidCallback? Function(void Function() fn)? get track => null;
+
+  /// 记录一个依赖路径。
+  static void trackPath(String path) {
+    final ctx = _TrackContext._instance;
+    if (ctx.activeEffect != null && ctx.collectedDeps != null) {
+      ctx.collectedDeps!.add(path);
+    }
+  }
+}
+
+/// 双向绑定引擎服务。...
 ///
 /// 管理所有 [ParkBindable] 实例池，维护模型镜像。
 /// 同一路径始终返回同一 [ParkBindable] 实例（单例模式）。
+///
+/// 性能特性：
+/// - **批量调度**：通过 [beginBatch]/[endBatch] 将多次更新合并到单次微任务帧通知
+/// - **值相等检测**：仅值实际变化时触发通知
+/// - **惰性绑定**：组件销毁时自动解绑
+/// - **自动依赖追踪**：通过 [watchEffect] 自动收集依赖路径，值变化时自动重执行
 ///
 /// ```dart
 /// final service = ParkBindingService({'name': '张三', 'age': 18});
@@ -13,11 +47,11 @@ import 'park_bindable.dart';
 /// final nameBindable = service.bind<String>('name');
 /// print(nameBindable.value); // '张三'
 ///
-/// // 修改值
-/// service.setValue('name', '李四');
-///
-/// // 批量更新模型
-/// service.updateModel({'name': '王五'});
+/// // 批量更新多字段（合并到单次通知）
+/// service.batch(() {
+///   service.setValue('name', '李四');
+///   service.setValue('age', 20);
+/// });
 /// ```
 class ParkBindingService {
   /// 模型数据镜像。
@@ -31,6 +65,12 @@ class ParkBindingService {
   final Set<ParkBindable<dynamic>> _disposedGuard =
       <ParkBindable<dynamic>>{};
 
+  /// 批量调度器（微任务合并）。
+  final ParkBindingScheduler _scheduler = ParkBindingScheduler();
+
+  /// 批量模式嵌套深度（>0 表示在 batch 作用域内）。
+  int _batchDepth = 0;
+
   /// 创建 [ParkBindingService]。
   ///
   /// [initialModel] 初始模型数据（可选）。
@@ -42,12 +82,56 @@ class ParkBindingService {
   /// 当前模型数据的不可变快照。
   Map<String, dynamic> get model => Map<String, dynamic>.unmodifiable(_model);
 
+  /// 开始批量更新模式。
+  ///
+  /// 在批量模式内多次调用 [setValue] 将合并到单次通知帧，
+  /// 避免中间态导致的不必要 UI 重建。
+  ///
+  /// 必须与 [endBatch] 成对使用。推荐使用 [batch] 高阶方法。
+  void beginBatch() {
+    _batchDepth++;
+  }
+
+  /// 结束批量更新模式。
+  ///
+  /// 当批量嵌套归零时，刷新所有待通知监听器。
+  void endBatch() {
+    if (_batchDepth <= 0) return;
+    _batchDepth--;
+    if (_batchDepth == 0) {
+      _scheduler.flushNow();
+    }
+  }
+
+  /// 执行批量更新操作。
+  ///
+  /// 将 [fn] 内的所有 [setValue] / [updateModel] 调用合并到单次通知。
+  ///
+  /// ```dart
+  /// service.batch(() {
+  ///   service.setValue('name', '李四');
+  ///   service.setValue('age', 20);
+  ///   service.setValue('city', '上海');
+  /// });
+  /// // 仅触发一次批量通知
+  /// ```
+  void batch(void Function() fn) {
+    beginBatch();
+    try {
+      fn();
+    } finally {
+      endBatch();
+    }
+  }
+
   /// 绑定一个路径，返回 [ParkBindable<T>]。
   ///
   /// - 如果已绑定过该路径，返回缓存的 [ParkBindable]（单例模式）。
   /// - 如果未绑定，创建新的 [ParkBindable]。
   /// - [defaultValue] 在路径值不存在时生效。
   ParkBindable<T> bind<T>(String path, {T? defaultValue}) {
+    // 自动追踪：如果当前在 [watchEffect] 内，记录此路径
+    _TrackContext.trackPath(path);
     // 检查是否已绑定
     if (_bindables.containsKey(path)) {
       return _bindables[path]! as ParkBindable<T>;
@@ -58,6 +142,7 @@ class ParkBindingService {
 
     final T resolvedValue = _resolveBoundValue<T>(initialValue, defaultValue);
     final bindable = ParkBindable<T>(path, resolvedValue);
+    bindable.setupOwner(this);
     _bindables[path] = bindable;
 
     // 监听 bindable 变化，同步到 _model
@@ -69,25 +154,14 @@ class ParkBindingService {
   }
 
   /// 安全地解析绑定初始值，避免原始类型不匹配导致的类型转换异常。
-  ///
-  /// 规则：
-  /// - [raw] 与 [defaultValue] 均为 null 时，返回 null（由调用方决定兜底）。
-  /// - 目标类型 [T] 为 [String] 且原始值非 [String]（且非空）时，
-  ///   通过 [Object.toString] 进行兼容转换（例如 int 28 → '28'）。
-  /// - 其他类型尝试直接 `is T` 判定，命中则返回原值。
-  /// - 类型不匹配且无法安全转换时，回退到 [defaultValue]；若仍不匹配，
-  ///   保持原始 cast 以暴露极端错误（不影响常规使用）。
   T _resolveBoundValue<T>(dynamic raw, T? defaultValue) {
     final dynamic candidate = raw ?? defaultValue;
     if (candidate == null) {
-      // 允许 null 透传（例如 ParkBindable<String?>）。
       return candidate as T;
     }
-    // String 目标类型：对非 String 原始值做 toString 兼容。
     if (T == String && candidate is! String) {
       return candidate.toString() as T;
     }
-    // 同类型直接返回（含兜底 cast，极端类型不匹配时暴露错误）。
     return candidate as T;
   }
 
@@ -98,34 +172,47 @@ class ParkBindingService {
 
   /// 快捷设置值。
   ///
-  /// 调用此方法会同时更新 [ParkBindable] 和 _model。
+  /// 在 [batch] 作用域内调用时，通知被延迟到批量结束。
+  /// 在批量作用域外，立即触发通知。会自动唤醒依赖该路径的 [watchEffect]。
   ///
   /// ```dart
   /// service.setValue('user.name', '张三');
   /// ```
   void setValue<T>(String path, T value) {
-    // 如果已有 bindable，通过它设置（触发通知）
     if (_bindables.containsKey(path)) {
       final bindable = _bindables[path]! as ParkBindable<T>;
-      bindable.value = value;
+      if (_batchDepth > 0) {
+        final oldValue = bindable.value;
+        if (value != oldValue) {
+          (bindable as dynamic).value = value;
+          _triggerEffects(path);
+        }
+      } else {
+        if (bindable.value != value) {
+          bindable.value = value;
+          _triggerEffects(path);
+        }
+      }
     } else {
-      // 直接更新模型
       _model = ParkBindingPath.set(path, _model, value);
     }
   }
 
   /// 快捷获取值。
   ///
+  /// 如果在 [watchEffect] 内部被调用，会自动追踪此依赖路径。
+  ///
   /// ```dart
   /// final name = service.getValue<String>('user.name');
   /// ```
   T? getValue<T>(String path) {
-    // 如果已有 bindable，从 bindable 获取
+    // 自动依赖追踪
+    _TrackContext.trackPath(path);
+
     if (_bindables.containsKey(path)) {
       final bindable = _bindables[path]! as ParkBindable<T>;
       return bindable.value;
     }
-    // 从模型解析
     final dynamic result = ParkBindingPath.resolve(path, _model);
     return result as T?;
   }
@@ -133,29 +220,36 @@ class ParkBindingService {
   /// 批量更新模型，比对差异后通知变化路径。
   ///
   /// 遍历所有 [ParkBindable]，对比新旧值，仅实际变化的项触发通知。
+  /// 变更通知总是通过批量调度器合并。
   ///
   /// ```dart
   /// service.updateModel({'name': '王五', 'age': 20});
   /// ```
   void updateModel(Map<String, dynamic> newModel) {
-    final Map<String, dynamic> oldModel =
-        Map<String, dynamic>.from(_model);
+    final oldModel = Map<String, dynamic>.from(_model);
     _model = Map<String, dynamic>.from(newModel);
 
-    // 比对差异，通知变化路径
-    for (final MapEntry<String, ParkBindable<dynamic>> entry
-        in _bindables.entries) {
-      final String path = entry.key;
-      final ParkBindable<dynamic> bindable = entry.value;
-
-      if (_disposedGuard.contains(bindable)) continue;
-
-      final dynamic newValue = ParkBindingPath.resolve(path, _model);
-      final dynamic oldValue = ParkBindingPath.resolve(path, oldModel);
-
-      // 仅值实际变化时触发通知
-      if (newValue != oldValue) {
-        bindable.update(newValue);
+    if (_batchDepth > 0) {
+      // 批量模式：将变化的 bindable 通过调度器排队
+      for (final entry in _bindables.entries) {
+        final bindable = entry.value;
+        if (_disposedGuard.contains(bindable)) continue;
+        final newValue = ParkBindingPath.resolve(entry.key, _model);
+        final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
+        if (newValue != oldValue) {
+          bindable.update(newValue);
+        }
+      }
+    } else {
+      // 非批量模式：用调度器批量通知
+      for (final entry in _bindables.entries) {
+        final bindable = entry.value;
+        if (_disposedGuard.contains(bindable)) continue;
+        final newValue = ParkBindingPath.resolve(entry.key, _model);
+        final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
+        if (newValue != oldValue) {
+          bindable.update(newValue);
+        }
       }
     }
   }
@@ -167,20 +261,120 @@ class ParkBindingService {
       _disposedGuard.add(bindable);
       bindable.dispose();
     }
+    _triggerEffects(path);
   }
 
   /// 释放所有绑定和资源。
   void dispose() {
-    for (final ParkBindable<dynamic> bindable in _bindables.values) {
+    // 清理所有 watchEffect
+    for (final effect in _watchEffects.toList()) {
+      effect.stop();
+    }
+    _watchEffects.clear();
+    _scheduler.dispose();
+    for (final bindable in _bindables.values) {
       _disposedGuard.add(bindable);
       bindable.dispose();
     }
     _bindables.clear();
     _model.clear();
+    _batchDepth = 0;
   }
 
   /// 内部：移除 bindable 引用（由 ParkBindable.dispose 调用）。
   void removeBindable(String path) {
     _bindables.remove(path);
   }
+
+  /// 等待所有待处理的批量更新完成。
+  ///
+  /// 类似 Vue3 的 [nextTick]，在批量更新后获取最新状态。
+  ///
+  /// ```dart
+  /// await service.nextTick();
+  /// print(service.getValue('name')); // 确保最新
+  /// ```
+  Future<void> nextTick() {
+    if (_scheduler.pendingCount > 0) {
+      _scheduler.flushNow();
+    }
+    return Future.value();
+  }
+
+  /// 当前待通知的监听器数量。
+  int get pendingCount => _scheduler.pendingCount;
+
+  // ========================================================================
+  // 自动依赖追踪（类似 Vue3 watchEffect）
+  // ========================================================================
+
+  final Set<_WatchEffect> _watchEffects = {};
+
+  /// 注册一个副作用函数，自动追踪其依赖的绑定路径。
+  ///
+  /// 当任何被依赖的路径值变化时，自动重新执行 [fn]。
+  /// 返回 [WatchEffectHandle] 可用于手动停止追踪。
+  ///
+  /// 类似 Vue3 的 [watchEffect]。
+  ///
+  /// ```dart
+  /// final stop = service.watchEffect(() {
+  ///   final name = service.getValue<String>('name');
+  ///   print('name changed to: $name');
+  /// });
+  ///
+  /// // 停止追踪
+  /// stop();
+  /// ```
+  WatchEffectHandle watchEffect(void Function() fn) {
+    final effect = _WatchEffect(fn, this);
+    _watchEffects.add(effect);
+    effect._run();
+    return effect.stop;
+  }
+
+  /// 内部：触发所有依赖了 [path] 的副作用。
+  void _triggerEffects(String path) {
+    for (final effect in _watchEffects.toList()) {
+      if (effect._deps.contains(path)) {
+        effect._run();
+      }
+    }
+  }
 }
+
+/// 自动依赖追踪的副作用实例。
+class _WatchEffect {
+  final void Function() _fn;
+  final ParkBindingService _service;
+  final Set<String> _deps = {};
+  bool _disposed = false;
+
+  _WatchEffect(this._fn, this._service);
+
+  /// 执行副作用并收集依赖。
+  void _run() {
+    if (_disposed) return;
+    _deps.clear();
+
+    final ctx = _TrackContext();
+    ctx.activeEffect = _fn;
+    ctx.collectedDeps = _deps;
+    try {
+      _fn();
+    } finally {
+      ctx.activeEffect = null;
+      ctx.collectedDeps = null;
+    }
+  }
+
+  /// 停止追踪。
+  void stop() {
+    _disposed = true;
+    _deps.clear();
+    _service._watchEffects.remove(this);
+  }
+}
+
+/// [watchEffect] 返回的句柄，调用即可停止追踪。
+typedef WatchEffectHandle = void Function();

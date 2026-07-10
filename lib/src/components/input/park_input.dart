@@ -277,7 +277,7 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
     // 如果 bindable 已有值，同步到 TextEditingController
     // 非 String 类型（如 int）通过 toString 安全转换，避免类型转换异常
     final b = bindable;
-    if (b != null && b.value != null) {
+    if (b != null) {
       _controller.text = b.value.toString();
     }
   }
@@ -303,7 +303,7 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
     super.didChangeDependencies();
     // 从 ParkBindingFormScope 获取到服务后，把 bindable 初始值同步到 controller
     final b = bindable;
-    if (b != null && b.value != null) {
+    if (b != null) {
       final text = b.value.toString();
       if (_controller.text != text) {
         _controller.text = text;
@@ -802,7 +802,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     final ParkInput inputWidget = widget.state.widget as ParkInput;
     final dynamic cfg = inputWidget.searchButton;
     final bool isCfg = cfg is ParkInputSearchButtonConfig;
-    final String text = isCfg ? (cfg as ParkInputSearchButtonConfig).text : '搜索';
+    final String text = isCfg ? cfg.text : '搜索';
     final IconData? icon = isCfg ? (cfg).icon : Icons.search;
     final bool loading = isCfg ? (cfg).loading : false;
     final ParkButtonVariant variant =
