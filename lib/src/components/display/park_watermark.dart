@@ -96,7 +96,6 @@ class _WatermarkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (text == null || text!.isEmpty) return;
-    final paint = Paint()..color = color;
     final radians = rotate * math.pi / 180;
 
     canvas.save();

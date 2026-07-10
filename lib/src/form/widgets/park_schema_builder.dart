@@ -19,7 +19,6 @@ class ParkSchemaBuilder {
   final String formKey;
   final List<ParkFormFieldSchema> _fields = [];
   ParkFormLayout? _layout;
-  int _fieldIndex = 0;
 
   /// 创建 Schema 构建器。
   ///
@@ -44,7 +43,6 @@ class ParkSchemaBuilder {
     String? groupKey,
     List<Map<String, dynamic>> options = const [],
   }) {
-    _fieldIndex++;
     return ParkFormFieldSchema(
       fieldId: fieldId,
       fieldType: fieldType,

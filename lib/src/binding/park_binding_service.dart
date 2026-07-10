@@ -1,6 +1,4 @@
-import 'dart:collection';
 import 'dart:async';
-import 'package:flutter/widgets.dart';
 import 'park_binding_path.dart';
 import 'park_bindable.dart';
 import 'park_binding_scheduler.dart';
@@ -16,9 +14,6 @@ class _TrackContext {
 
   /// 当前副作用的已收集依赖路径。
   Set<String>? collectedDeps;
-
-  /// 开始追踪，返回清理函数。
-  static VoidCallback? Function(void Function() fn)? get track => null;
 
   /// 记录一个依赖路径。
   static void trackPath(String path) {

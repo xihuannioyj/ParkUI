@@ -131,7 +131,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
     for (final node in nodes) {
       if (!node.isLeaf) {
         _expandedKeys.add(node.key);
-        _expandAll(node.children!);
+        _expandAll(node.children);
       }
     }
   }
@@ -140,14 +140,14 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
     for (final node in nodes) {
       if (!node.isLeaf && _hasSelectedDescendant(node)) {
         _expandedKeys.add(node.key);
-        _autoExpandForSelected(node.children!);
+        _autoExpandForSelected(node.children);
       }
     }
   }
 
   bool _hasSelectedDescendant(ParkTreeNode node) {
     if (node.isLeaf) return _selectedKeys.contains(node.key);
-    for (final child in node.children!) {
+    for (final child in node.children) {
       if (_selectedKeys.contains(child.key) || _hasSelectedDescendant(child)) {
         return true;
       }
@@ -196,7 +196,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
     if (node.isLeaf) {
       keys.add(node.key);
     } else {
-      for (final child in node.children!) {
+      for (final child in node.children) {
         _collectKeys(child, keys);
       }
     }
@@ -275,7 +275,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
         labels.add(node.label);
       }
       if (!node.isLeaf) {
-        _collectLabels(node.children!, labels);
+        _collectLabels(node.children, labels);
       }
     }
   }
@@ -486,7 +486,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
 
         // 子节点（展开时显示）+ 连接线
         if (isExpanded && !node.isLeaf)
-          ...node.children!.map(
+          ...node.children.map(
             (child) => _buildNodeWithLine(child, depth + 1, park),
           ),
       ],

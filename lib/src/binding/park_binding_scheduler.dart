@@ -41,9 +41,6 @@ class ParkBindingScheduler {
   /// 是否正在执行批量刷新。
   bool _isFlushing = false;
 
-  /// 当前微任务帧开始时间（用于性能监控）。
-  DateTime? _frameStartTime;
-
   /// 调度监听器通知。
   ///
   /// 将 [listener] 加入待通知队列。
@@ -59,7 +56,6 @@ class ParkBindingScheduler {
 
     if (!_hasScheduled) {
       _hasScheduled = true;
-      _frameStartTime = DateTime.now();
       // 调度微任务：当前同步代码执行完毕后，立即批量刷新
       Future.microtask(_flush);
     }
@@ -70,9 +66,6 @@ class ParkBindingScheduler {
     if (_isFlushing) return;
     _isFlushing = true;
     _hasScheduled = false;
-
-    // 记录性能
-    final int count = _pendingQueue.length;
 
     // 逐出队并通知
     while (_pendingQueue.isNotEmpty) {
