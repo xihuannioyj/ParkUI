@@ -68,6 +68,100 @@ class ParkPopup extends StatefulWidget {
 
   @override
   State<ParkPopup> createState() => _ParkPopupState();
+
+  /// Show a standard modal popup with title bar (cancel + title + confirm)
+  /// and scrollable content body.
+  ///
+  /// Convenience method for the common "form modal" pattern.
+  /// Returns the popup result (true if confirmed, false/null if cancelled).
+  static Future<bool?> showModal({
+    required BuildContext context,
+    required String title,
+    required Widget child,
+    String confirmText = '确定',
+    String cancelText = '取消',
+    VoidCallback? onConfirm,
+    VoidCallback? onCancel,
+    bool confirmEnabled = true,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return _ParkPopupModal(
+          title: title,
+          child: child,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onConfirm: onConfirm,
+          onCancel: onCancel,
+          confirmEnabled: confirmEnabled,
+        );
+      },
+    );
+  }
+
+  /// 通用底部弹窗（函数式调用，带返回值）。
+  ///
+  /// 封装 [showModalBottomSheet]，返回 [Future]<[T]?>。
+  /// 适用于选择列表、详情面板、操作菜单等需要函数式 + 返回值的场景。
+  ///
+  /// ```dart
+  /// // 选择列表（带返回值）
+  /// final String? value = await ParkPopup.showBottomSheet<String>(
+  ///   context: context,
+  ///   builder: (ctx) => Column(
+  ///     mainAxisSize: MainAxisSize.min,
+  ///     children: [
+  ///       ListTile(title: Text('选项 A'), onTap: () => Navigator.pop(ctx, 'A')),
+  ///       ListTile(title: Text('选项 B'), onTap: () => Navigator.pop(ctx, 'B')),
+  ///     ],
+  ///   ),
+  /// );
+  ///
+  /// // 详情面板
+  /// ParkPopup.showBottomSheet(
+  ///   context: context,
+  ///   isScrollControlled: true,
+  ///   builder: (ctx) => SafeArea(
+  ///     child: MyDetailPanel(),
+  ///   ),
+  /// );
+  /// ```
+  static Future<T?> showBottomSheet<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool isScrollControlled = false,
+    double? borderRadius,
+    Color? backgroundColor,
+    bool useSafeArea = true,
+    bool showDragHandle = false,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: isScrollControlled,
+      backgroundColor: backgroundColor ?? Colors.transparent,
+      shape: borderRadius != null
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
+            )
+          : null,
+      builder: (_) {
+        // 底部弹窗容器
+        return ClipRRect(
+          borderRadius: borderRadius != null
+              ? BorderRadius.vertical(top: Radius.circular(borderRadius))
+              : BorderRadius.vertical(top: Radius.circular(16)),
+          child: _ParkBottomSheetContent<T>(
+            builder: builder,
+            useSafeArea: useSafeArea,
+            showDragHandle: showDragHandle,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _ParkPopupState extends State<ParkPopup>
@@ -257,101 +351,6 @@ class _ParkPopupState extends State<ParkPopup>
       case ParkPopupAnimation.none:
         return _wrapSafeArea(content);
     }
-  }
-
-  /// Show a standard modal popup with title bar (cancel + title + confirm)
-  /// and scrollable content body.
-  ///
-  /// Convenience method for the common "form modal" pattern.
-  /// Returns the popup result (true if confirmed, false/null if cancelled).
-  // ignore: unused_element
-  static Future<bool?> showModal({
-    required BuildContext context,
-    required String title,
-    required Widget child,
-    String confirmText = '确定',
-    String cancelText = '取消',
-    VoidCallback? onConfirm,
-    VoidCallback? onCancel,
-    bool confirmEnabled = true,
-  }) {
-    return showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return _ParkPopupModal(
-          title: title,
-          child: child,
-          confirmText: confirmText,
-          cancelText: cancelText,
-          onConfirm: onConfirm,
-          onCancel: onCancel,
-          confirmEnabled: confirmEnabled,
-        );
-      },
-    );
-  }
-
-  /// 通用底部弹窗（函数式调用，带返回值）。
-  ///
-  /// 封装 [showModalBottomSheet]，返回 [Future]<[T]?>。
-  /// 适用于选择列表、详情面板、操作菜单等需要函数式 + 返回值的场景。
-  ///
-  /// ```dart
-  /// // 选择列表（带返回值）
-  /// final String? value = await ParkPopup.showBottomSheet<String>(
-  ///   context: context,
-  ///   builder: (ctx) => Column(
-  ///     mainAxisSize: MainAxisSize.min,
-  ///     children: [
-  ///       ListTile(title: Text('选项 A'), onTap: () => Navigator.pop(ctx, 'A')),
-  ///       ListTile(title: Text('选项 B'), onTap: () => Navigator.pop(ctx, 'B')),
-  ///     ],
-  ///   ),
-  /// );
-  ///
-  /// // 详情面板
-  /// ParkPopup.showBottomSheet(
-  ///   context: context,
-  ///   isScrollControlled: true,
-  ///   builder: (ctx) => SafeArea(
-  ///     child: MyDetailPanel(),
-  ///   ),
-  /// );
-  /// ```
-  static Future<T?> showBottomSheet<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    bool isScrollControlled = false,
-    double? borderRadius,
-    Color? backgroundColor,
-    bool useSafeArea = true,
-    bool showDragHandle = false,
-  }) {
-    return showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: isScrollControlled,
-      backgroundColor: backgroundColor ?? Colors.transparent,
-      shape: borderRadius != null
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
-            )
-          : null,
-      builder: (_) {
-        // 底部弹窗容器
-        return ClipRRect(
-          borderRadius: borderRadius != null
-              ? BorderRadius.vertical(top: Radius.circular(borderRadius))
-              : BorderRadius.vertical(top: Radius.circular(16)),
-          child: _ParkBottomSheetContent<T>(
-            builder: builder,
-            useSafeArea: useSafeArea,
-            showDragHandle: showDragHandle,
-          ),
-        );
-      },
-    );
   }
 }
 
