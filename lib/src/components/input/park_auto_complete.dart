@@ -99,12 +99,12 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
       width: renderBox.size.width,
       child: Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: park.radius.brSm,
         child: Container(
           constraints: const BoxConstraints(maxHeight: 200),
           decoration: BoxDecoration(
             color: park.colors.surface,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: park.radius.brSm,
             border: Border.all(color: park.colors.border),
           ),
           child: ListView.builder(
@@ -113,7 +113,7 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
             itemBuilder: (_, i) => InkWell(
               onTap: () => _select(_filtered[i]),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: 10),
                 child: Text(_filtered[i], style: TextStyle(fontSize: 14, color: park.colors.textPrimary)),
               ),
             ),
@@ -143,9 +143,9 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
           decoration: InputDecoration(
             hintText: widget.hintText ?? '请输入搜索',
             hintStyle: TextStyle(fontSize: 14, color: park.colors.textPlaceholder),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: park.colors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: park.colors.border)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
+            contentPadding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: 10),
             suffixIcon: _hasInput
                 ? IconButton(icon: Icon(Icons.close, size: 16), onPressed: () { _controller.clear(); _onTextChanged(''); })
                 : null,

@@ -395,13 +395,13 @@ class _ParkDividerWithText extends StatelessWidget {
     final fgColor = textColor ?? park.colors.textSecondary;
 
     final textWidget = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: park.spacing.md),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 16, color: fgColor),
-            const SizedBox(width: 4),
+            SizedBox(width: park.spacing.xs),
           ],
           Text(
             text,
@@ -423,7 +423,7 @@ class _ParkDividerWithText extends StatelessWidget {
         child: Row(
           children: [
             switch (textAlign) {
-              ParkDividerTextAlign.left => const SizedBox(width: 24),
+              ParkDividerTextAlign.left => SizedBox(width: park.spacing.xl),
               ParkDividerTextAlign.center => _buildLine(dividerColor),
               ParkDividerTextAlign.right => const Spacer(),
             },
@@ -431,7 +431,7 @@ class _ParkDividerWithText extends StatelessWidget {
             switch (textAlign) {
               ParkDividerTextAlign.left => const Spacer(),
               ParkDividerTextAlign.center => _buildLine(dividerColor),
-              ParkDividerTextAlign.right => const SizedBox(width: 24),
+              ParkDividerTextAlign.right => SizedBox(width: park.spacing.xl),
             },
           ],
         ),

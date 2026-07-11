@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 
@@ -312,8 +311,8 @@ class ParkRadio extends FormField<String> {
                 },
           behavior: HitTestBehavior.opaque,
           child: AnimatedContainer(
-            duration: ParkMotion.standard,
-            curve: ParkMotion.enterEasing,
+            duration: park.motion.standard,
+            curve: park.motion.enterEasing,
             padding: EdgeInsets.symmetric(
               horizontal: park.spacing.base,
               vertical: park.spacing.sm,
@@ -445,8 +444,8 @@ class ParkRadioItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedContainer(
-            duration: ParkMotion.quick,
-            curve: ParkMotion.defaultEasing,
+            duration: park.motion.quick,
+            curve: park.motion.defaultEasing,
             width: outerSize,
             height: outerSize,
             decoration: BoxDecoration(
@@ -461,8 +460,8 @@ class ParkRadioItem extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: AnimatedContainer(
-              duration: ParkMotion.quick,
-              curve: ParkMotion.defaultEasing,
+              duration: park.motion.quick,
+              curve: park.motion.defaultEasing,
               width: isSelected ? innerDotSize : 0,
               height: isSelected ? innerDotSize : 0,
               decoration: BoxDecoration(

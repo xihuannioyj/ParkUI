@@ -203,7 +203,7 @@ class ParkFab extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: iconSize, color: fg),
-          const SizedBox(width: 8),
+          SizedBox(width: park.spacing.sm),
           Text(
             label!,
             style: TextStyle(
@@ -238,7 +238,7 @@ class ParkFab extends StatelessWidget {
                 ? const BoxConstraints(minWidth: 80)
                 : BoxConstraints(minWidth: fabSize),
             padding: hasLabel
-                ? const EdgeInsets.symmetric(horizontal: 16)
+                ? EdgeInsets.symmetric(horizontal: park.spacing.base)
                 : EdgeInsets.zero,
             decoration: BoxDecoration(
               borderRadius: br,

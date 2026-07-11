@@ -268,7 +268,7 @@ class ParkToast extends StatelessWidget {
   }
 
   Widget _buildPill(ParkThemeData park) {
-    final bg = bgColor ?? const Color(0xCC000000);
+    final bg = bgColor ?? park.colors.overlay;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: park.spacing.base,
@@ -346,10 +346,10 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: ParkMotion.standard,
+      duration: ParkMotion.defaults.standard,
     );
     _fadeAnim =
-        CurvedAnimation(parent: _controller, curve: ParkMotion.enterEasing);
+        CurvedAnimation(parent: _controller, curve: ParkMotion.defaults.enterEasing);
     _controller.forward();
 
     _remainingDuration = widget.duration > const Duration(milliseconds: 300)
@@ -430,7 +430,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final bg = widget.bgColor ?? const Color(0xCC000000);
+    final bg = widget.bgColor ?? park.colors.overlay;
 
     Widget toastWidget = FadeTransition(
       opacity: _fadeAnim,

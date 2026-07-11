@@ -150,7 +150,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
             borderRadius: BorderRadius.circular(10),
             child: Container(
               width: 360,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(widget.park.spacing.base),
               decoration: BoxDecoration(
                 color: widget.park.colors.surface,
                 borderRadius: BorderRadius.circular(10),

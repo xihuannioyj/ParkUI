@@ -1,37 +1,90 @@
 import 'package:flutter/material.dart';
 
-/// Park 动效设计令牌
-///
-/// 定义统一的动画时长与缓动曲线，
-/// 确保所有组件的过渡动效风格一致。
-///
-/// 用法：
-/// ```dart
-/// AnimatedContainer(
-///   duration: ParkMotion.standard,
-///   curve: ParkMotion.defaultEasing,
-///   ...
-/// )
-/// ```
+/// Park 动画令牌。
 @immutable
 class ParkMotion {
-  const ParkMotion._();
+  /// 标准时长（毫秒）。
+  final int standardMs;
 
-  /// 快速过渡（150ms）— hover、focus、pressed 等即时反馈。
-  static const Duration quick = Duration(milliseconds: 150);
+  /// 快速时长（毫秒）。
+  final int quickMs;
 
-  /// 标准过渡（250ms）— 面板展开、弹窗出入、页面切换。
-  static const Duration standard = Duration(milliseconds: 250);
+  /// 慢速时长（毫秒）。
+  final int slowMs;
 
-  /// 慢速过渡（400ms）— 复杂动画、多元素编排。
-  static const Duration slow = Duration(milliseconds: 400);
+  /// 编组动画 / 入场序列的间隔延迟（毫秒）。
+  final int staggerMs;
 
-  /// 默认缓动曲线 — Stripe 风格快入慢出（easeOutCubic）。
-  static const Curve defaultEasing = Curves.easeOutCubic;
+  /// 进入曲线的入点缓动。
+  final Curve enterEasing;
 
-  /// 进入缓动曲线 — 元素出现时使用（快入慢出）。
-  static const Curve enterEasing = Curves.easeOut;
+  /// 默认曲线的出点缓动。
+  final Curve defaultEasing;
 
-  /// 退出缓动曲线 — 元素消失时使用（慢入快出）。
-  static const Curve exitEasing = Curves.easeIn;
+  /// 退出曲线的出点缓动。
+  final Curve exitEasing;
+
+  // Computed getters
+  Duration get standard => Duration(milliseconds: standardMs);
+  Duration get quick => Duration(milliseconds: quickMs);
+  Duration get slow => Duration(milliseconds: slowMs);
+
+  /// 编组动画 / 入场序列的间隔延迟。
+  Duration get stagger => Duration(milliseconds: staggerMs);
+
+  const ParkMotion({
+    this.standardMs = 250,
+    this.quickMs = 150,
+    this.slowMs = 400,
+    this.staggerMs = 50,
+    this.enterEasing = Curves.easeOut,
+    this.defaultEasing = Curves.easeOutCubic,
+    this.exitEasing = Curves.easeIn,
+  });
+
+  static const defaults = ParkMotion();
+
+  ParkMotion copyWith({
+    int? standardMs,
+    int? quickMs,
+    int? slowMs,
+    int? staggerMs,
+    Curve? enterEasing,
+    Curve? defaultEasing,
+    Curve? exitEasing,
+  }) {
+    return ParkMotion(
+      standardMs: standardMs ?? this.standardMs,
+      quickMs: quickMs ?? this.quickMs,
+      slowMs: slowMs ?? this.slowMs,
+      staggerMs: staggerMs ?? this.staggerMs,
+      enterEasing: enterEasing ?? this.enterEasing,
+      defaultEasing: defaultEasing ?? this.defaultEasing,
+      exitEasing: exitEasing ?? this.exitEasing,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkMotion &&
+          runtimeType == other.runtimeType &&
+          standardMs == other.standardMs &&
+          quickMs == other.quickMs &&
+          slowMs == other.slowMs &&
+          staggerMs == other.staggerMs &&
+          enterEasing == other.enterEasing &&
+          defaultEasing == other.defaultEasing &&
+          exitEasing == other.exitEasing;
+
+  @override
+  int get hashCode => Object.hash(
+        standardMs,
+        quickMs,
+        slowMs,
+        staggerMs,
+        enterEasing,
+        defaultEasing,
+        exitEasing,
+      );
 }

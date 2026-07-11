@@ -321,7 +321,7 @@ class _ParkTextState extends State<ParkText> {
 
     // 高亮背景（支持自定义 markColor）
     final highlightColor =
-        widget.highlight ? (widget.markColor ?? const Color(0xFFFFF59D)) : null;
+        widget.highlight ? (widget.markColor ?? park.colors.warning.withValues(alpha: 0.3)) : null;
 
     // code 模式背景色
     final codeBgColor = widget.code
@@ -389,7 +389,7 @@ class _ParkTextState extends State<ParkText> {
       expandToggle = GestureDetector(
         onTap: () => setState(() => _expanded = !_expanded),
         child: Padding(
-          padding: const EdgeInsets.only(left: 4),
+          padding: EdgeInsets.only(left: park.spacing.xs),
           child: Text(
             _expanded
                 ? (widget.collapseText ?? '收起')
@@ -410,7 +410,7 @@ class _ParkTextState extends State<ParkText> {
       copyIcon = GestureDetector(
         onTap: _copyToClipboard,
         child: Padding(
-          padding: const EdgeInsets.only(left: 4),
+          padding: EdgeInsets.only(left: park.spacing.xs),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -420,7 +420,7 @@ class _ParkTextState extends State<ParkText> {
                 color: colors.textSecondary,
               ),
               if (_showCopiedFeedback) ...[
-                const SizedBox(width: 2),
+                SizedBox(width: park.spacing.xxs),
                 Text(
                   '已复制',
                   style: TextStyle(
@@ -455,7 +455,7 @@ class _ParkTextState extends State<ParkText> {
           ),
           if (expandToggle != null)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: EdgeInsets.only(top: park.spacing.xxs),
               child: expandToggle,
             ),
         ],

@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
@@ -686,8 +685,8 @@ class _ShortcutChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.xs,

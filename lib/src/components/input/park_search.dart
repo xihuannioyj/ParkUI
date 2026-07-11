@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 
 /// 搜索框尺寸枚举
 enum ParkSearchSize {
@@ -450,13 +449,15 @@ class _ParkSearchState extends State<ParkSearch>
   }
 
   double get _height {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     switch (widget.size) {
       case ParkSearchSize.small:
-        return 32;
+        return park.sizing.inputHeightSm;
       case ParkSearchSize.medium:
         return 40;
       case ParkSearchSize.large:
-        return 48;
+        return park.sizing.inputHeightMd;
     }
   }
 
@@ -520,7 +521,7 @@ class _ParkSearchState extends State<ParkSearch>
           children: [
             Expanded(
               child: AnimatedContainer(
-                duration: ParkMotion.standard,
+                duration: park.motion.standard,
                 height: _height,
                 decoration: BoxDecoration(
                   color: bgColor,

@@ -263,7 +263,7 @@ class _ParkTooltipState extends State<ParkTooltip>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    final bgColor = widget.color ?? const Color(0xE6000000);
+    final bgColor = widget.color ?? park.colors.overlay;
     final fgColor = widget.textColor ?? Colors.white;
     final effectivePadding =
         widget.padding ?? EdgeInsets.symmetric(

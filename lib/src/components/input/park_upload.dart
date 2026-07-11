@@ -355,7 +355,7 @@ class ParkUpload extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radius.md),
-                child: _buildThumbnail(file),
+                child: _buildThumbnail(file, park),
               ),
             ),
           ),
@@ -431,7 +431,7 @@ class ParkUpload extends StatelessWidget {
     );
   }
 
-  Widget _buildThumbnail(ParkUploadFile file) {
+  Widget _buildThumbnail(ParkUploadFile file, ParkThemeData park) {
     if (file.thumbnailPath != null) {
       return buildFileImageWidget(file.thumbnailPath!,
           width: 80, height: 80, fit: BoxFit.cover);
@@ -442,15 +442,15 @@ class ParkUpload extends StatelessWidget {
           width: 80, height: 80, fit: BoxFit.cover);
     }
 
-    return _buildFileIcon(file);
+    return _buildFileIcon(file, park);
   }
 
-  Widget _buildFileIcon(ParkUploadFile file) {
+  Widget _buildFileIcon(ParkUploadFile file, ParkThemeData park) {
     return Center(
       child: Icon(
         _fileIconForPath(file.path),
         size: 28,
-        color: const Color(0xFF999999),
+        color: park.colors.textPlaceholder,
       ),
     );
   }
@@ -513,7 +513,7 @@ class ParkUpload extends StatelessWidget {
                   child: SizedBox(
                     width: 40,
                     height: 40,
-                    child: _buildListThumbnail(file),
+                    child: _buildListThumbnail(file, park),
                   ),
                 ),
                 SizedBox(width: spacing.sm),
@@ -639,7 +639,7 @@ class ParkUpload extends StatelessWidget {
     );
   }
 
-  Widget _buildListThumbnail(ParkUploadFile file) {
+  Widget _buildListThumbnail(ParkUploadFile file, ParkThemeData park) {
     if (file.thumbnailPath != null) {
       return buildFileImageWidget(file.thumbnailPath!,
           width: 40, height: 40, fit: BoxFit.cover);
@@ -648,7 +648,7 @@ class ParkUpload extends StatelessWidget {
       return buildFileImageWidget(file.path,
           width: 40, height: 40, fit: BoxFit.cover);
     }
-    return _buildFileIcon(file);
+    return _buildFileIcon(file, park);
   }
 
   /// 文本模式列表：文件图标 + 文件名 + 进度条 + 文件大小。

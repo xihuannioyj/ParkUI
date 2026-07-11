@@ -135,4 +135,30 @@ class ParkShadows {
       lg: lg ?? this.lg,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkShadows &&
+          runtimeType == other.runtimeType &&
+          _boxShadowListEquals(sm, other.sm) &&
+          _boxShadowListEquals(md, other.md) &&
+          _boxShadowListEquals(lg, other.lg);
+
+  @override
+  int get hashCode => Object.hash(
+        Object.hashAll(sm),
+        Object.hashAll(md),
+        Object.hashAll(lg),
+      );
+
+  /// 比较两个 [BoxShadow] 列表元素逐一相等。
+  static bool _boxShadowListEquals(
+      List<BoxShadow> a, List<BoxShadow> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }

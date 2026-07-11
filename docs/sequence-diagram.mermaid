@@ -1,0 +1,80 @@
+```mermaid
+sequenceDiagram
+    participant Widget as ParkButton Widget
+    participant Theme as ParkTheme
+    participant Data as ParkThemeData
+    participant Sizing as ParkSizing
+
+    Widget->>Theme: sizingOf(context)
+    Theme->>Data: of(context)
+    Data-->>Theme: ParkThemeData instance
+    Theme-->>Widget: ParkThemeData.sizing
+    Widget->>Sizing: buttonHeightMedium
+    Sizing-->>Widget: 36.0
+    Widget->>Sizing: buttonHorizontalPaddingMedium
+    Sizing-->>Widget: 24.0
+    Note over Widget: 使用尺寸值构建按钮布局
+```
+
+```mermaid
+sequenceDiagram
+    participant Card as ParkCard Widget
+    participant Radius as ParkRadius
+    participant Type as ParkComponentType
+
+    Card->>Radius: componentRadius(ParkComponentType.card)
+    Radius->>Type: 查询 card → md(12px)
+    Radius-->>Card: 12.0
+    Card->>Radius: brMd
+    Radius-->>Card: BorderRadius.circular(12)
+```
+
+```mermaid
+sequenceDiagram
+    participant Badge as ParkBadge Widget
+    participant Colors as ParkColors
+
+    Badge->>Colors: textOnColor(brand)
+    Note over Colors: computeLuminance(brand) → 0.18. 对比度(白)=5.4:1 > 4.5
+    Colors-->>Badge: Color(0xFFFFFFFF)
+    Badge->>Colors: textOnColor(surface)
+    Note over Colors: computeLuminance(surface) → 1.0. 对比度(黑)=21:1 > 4.5
+    Colors-->>Badge: Color(0xFF0A2540)
+```
+
+```mermaid
+sequenceDiagram
+    participant Form as ParkForm Widget
+    participant Spacing as ParkSpacing
+
+    Form->>Spacing: formFieldGap
+    Spacing-->>Form: 24.0 (xl)
+    Form->>Spacing: inputLabelGap
+    Spacing-->>Form: 8.0 (sm)
+    Note over Form: 使用速查值布局表单
+```
+
+```mermaid
+sequenceDiagram
+    participant Anim as 编排动画组件
+    participant Motion as ParkMotion
+
+    Anim->>Motion: quick
+    Motion-->>Anim: Duration(milliseconds: 150)
+    Anim->>Motion: staggerMs
+    Motion-->>Anim: 50
+    Note over Anim: 子元素延迟 = index * staggerMs
+```
+
+```mermaid
+graph TD
+    T01["T01: 项目基础设施<br/>(ParkSizing + ParkComponentType + barrel export)"]
+    T02["T02: ThemeData集成 + Colors/Typography增强<br/>(ParkThemeData + ParkColors + ParkTypography)"]
+    T03["T03: 场景化方法增强<br/>(ParkSpacing + ParkRadius + ParkMotion + ParkShadows)"]
+    T04["T04: 集成验证<br/>(ParkIconThemeData + dart analyze)"]
+
+    T01 --> T02
+    T01 --> T03
+    T02 --> T04
+    T03 --> T04
+```

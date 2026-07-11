@@ -263,7 +263,7 @@ class _ParkCalendarState extends State<ParkCalendar>
           widget.onRangeChanged?.call(range);
           boundValue = range;
           // Reset for next selection
-          Future<void>.delayed(ParkMotion.slow, () {
+          Future<void>.delayed(ParkMotion.defaults.slow, () {
             if (mounted) {
               setState(() => _tempRange = null);
             }

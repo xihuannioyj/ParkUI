@@ -138,7 +138,7 @@ class _ParkEllipsisTooltipState extends State<_ParkEllipsisTooltip> {
             child: Container(
               padding: EdgeInsets.all(widget.park.spacing.md),
               decoration: BoxDecoration(
-                color: const Color(0xE6000000),
+                color: widget.park.colors.textPrimary.withValues(alpha: 0.9),
                 borderRadius: widget.park.radius.brSm,
               ),
               child: Text(

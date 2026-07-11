@@ -35,6 +35,13 @@ class ParkTypography {
   final double sizeOverline;
 
   // ========================================================================
+  // 字符间距
+  // ========================================================================
+
+  /// Overline 字母间距（默认 0.5）
+  final double letterSpacingOverline;
+
+  // ========================================================================
   // 行高比例（行高 = 字号 × lineHeight）
   // ========================================================================
 
@@ -57,6 +64,9 @@ class ParkTypography {
   /// 中等字重（按钮、标签等）
   final FontWeight weightMedium;
 
+  /// 轻字重（辅助文字、大字号装饰等）
+  final FontWeight weightLight;
+
   // ========================================================================
   // 字体族
   // ========================================================================
@@ -73,11 +83,13 @@ class ParkTypography {
     this.sizeBodySmall = 14.0,
     this.sizeCaption = 13.0,
     this.sizeOverline = 11.0,
+    this.letterSpacingOverline = 0.5,
     this.lineHeightTitle = 1.25,
     this.lineHeightBody = 1.5,
     this.weightBold = FontWeight.w600,
     this.weightRegular = FontWeight.w400,
     this.weightMedium = FontWeight.w500,
+    this.weightLight = FontWeight.w300,
     this.fontFamily = 'Inter',
   });
 
@@ -152,7 +164,7 @@ class ParkTypography {
         height: lineHeightTitle,
         fontWeight: weightMedium,
         fontFamily: fontFamily,
-        letterSpacing: 0.5,
+        letterSpacing: letterSpacingOverline,
       );
 
   ParkTypography copyWith({
@@ -164,11 +176,13 @@ class ParkTypography {
     double? sizeBodySmall,
     double? sizeCaption,
     double? sizeOverline,
+    double? letterSpacingOverline,
     double? lineHeightTitle,
     double? lineHeightBody,
     FontWeight? weightBold,
     FontWeight? weightRegular,
     FontWeight? weightMedium,
+    FontWeight? weightLight,
     String? fontFamily,
   }) {
     return ParkTypography(
@@ -180,12 +194,57 @@ class ParkTypography {
       sizeBodySmall: sizeBodySmall ?? this.sizeBodySmall,
       sizeCaption: sizeCaption ?? this.sizeCaption,
       sizeOverline: sizeOverline ?? this.sizeOverline,
+      letterSpacingOverline:
+          letterSpacingOverline ?? this.letterSpacingOverline,
       lineHeightTitle: lineHeightTitle ?? this.lineHeightTitle,
       lineHeightBody: lineHeightBody ?? this.lineHeightBody,
       weightBold: weightBold ?? this.weightBold,
       weightRegular: weightRegular ?? this.weightRegular,
       weightMedium: weightMedium ?? this.weightMedium,
+      weightLight: weightLight ?? this.weightLight,
       fontFamily: fontFamily ?? this.fontFamily,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkTypography &&
+          runtimeType == other.runtimeType &&
+          sizeDisplay == other.sizeDisplay &&
+          sizeH1 == other.sizeH1 &&
+          sizeH2 == other.sizeH2 &&
+          sizeH3 == other.sizeH3 &&
+          sizeBody == other.sizeBody &&
+          sizeBodySmall == other.sizeBodySmall &&
+          sizeCaption == other.sizeCaption &&
+          sizeOverline == other.sizeOverline &&
+          letterSpacingOverline == other.letterSpacingOverline &&
+          lineHeightTitle == other.lineHeightTitle &&
+          lineHeightBody == other.lineHeightBody &&
+          weightBold == other.weightBold &&
+          weightRegular == other.weightRegular &&
+          weightMedium == other.weightMedium &&
+          weightLight == other.weightLight &&
+          fontFamily == other.fontFamily;
+
+  @override
+  int get hashCode => Object.hash(
+        sizeDisplay,
+        sizeH1,
+        sizeH2,
+        sizeH3,
+        sizeBody,
+        sizeBodySmall,
+        sizeCaption,
+        sizeOverline,
+        letterSpacingOverline,
+        lineHeightTitle,
+        lineHeightBody,
+        weightBold,
+        weightRegular,
+        weightMedium,
+        weightLight,
+        fontFamily,
+      );
 }

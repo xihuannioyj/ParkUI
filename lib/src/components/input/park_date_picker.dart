@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import 'park_input.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
@@ -305,8 +304,8 @@ class ParkDatePicker extends FormField<DateTime> {
     final input = GestureDetector(
       onTap: () => _showPicker(state),
       child: AnimatedContainer(
-        duration: ParkMotion.standard,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.standard,
+        curve: park.motion.defaultEasing,
         width: double.infinity,
         padding: EdgeInsets.symmetric(
           horizontal: hPadding,

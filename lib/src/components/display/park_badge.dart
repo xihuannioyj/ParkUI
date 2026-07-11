@@ -23,8 +23,8 @@ class ParkBadge extends StatelessWidget {
     this.count,
     this.dot = false,
     this.maxCount = 99,
-    this.color = const Color(0xFFEF4444),
-    this.textColor = const Color(0xFFFFFFFF),
+    this.color,
+    this.textColor,
     this.size = ParkBadgeSize.medium,
     this.child,
     this.status,
@@ -49,10 +49,10 @@ class ParkBadge extends StatelessWidget {
   final int maxCount;
 
   /// Background color of the badge. Defaults to red.
-  final Color color;
+  final Color? color;
 
   /// Text color inside the badge. Defaults to white.
-  final Color textColor;
+  final Color? textColor;
 
   /// Size preset.
   final ParkBadgeSize size;
@@ -115,7 +115,7 @@ class ParkBadge extends StatelessWidget {
       case ParkBadgeStatus.error:
         return park.colors.error;
       case null:
-        return color;
+        return color ?? park.colors.error;
     }
   }
 
@@ -157,7 +157,7 @@ class ParkBadge extends StatelessWidget {
         width: _dotSize,
         height: _dotSize,
         decoration: BoxDecoration(
-          color: color,
+          color: color ?? park.colors.error,
           shape: BoxShape.circle,
           border: Border.all(
             color: park.colors.surface,
@@ -172,7 +172,7 @@ class ParkBadge extends StatelessWidget {
         height: _height,
         padding: EdgeInsets.symmetric(horizontal: _padding),
         decoration: BoxDecoration(
-          color: color,
+          color: color ?? park.colors.error,
           borderRadius: BorderRadius.circular(_height / 2),
           border: Border.all(
             color: park.colors.surface,
@@ -185,7 +185,7 @@ class ParkBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: _fontSize,
             fontWeight: park.typography.weightBold,
-            color: textColor,
+            color: textColor ?? park.colors.textOnBrand,
             height: 1,
           ),
           textAlign: TextAlign.center,
@@ -268,7 +268,7 @@ class ParkBadge extends StatelessWidget {
         width: _dotSize,
         height: _dotSize,
         decoration: BoxDecoration(
-          color: color,
+          color: color ?? park.colors.error,
           shape: BoxShape.circle,
           border: Border.all(
             color: park.colors.surface,
@@ -285,7 +285,7 @@ class ParkBadge extends StatelessWidget {
         height: _height,
         padding: EdgeInsets.symmetric(horizontal: _padding),
         decoration: BoxDecoration(
-          color: color,
+          color: color ?? park.colors.error,
           borderRadius: BorderRadius.circular(_height / 2),
           border: Border.all(
             color: park.colors.surface,
@@ -298,7 +298,7 @@ class ParkBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: _fontSize,
             fontWeight: park.typography.weightBold,
-            color: textColor,
+            color: textColor ?? park.colors.textOnBrand,
             height: 1,
           ),
           textAlign: TextAlign.center,
@@ -375,7 +375,7 @@ class ParkBadge extends StatelessWidget {
 
     final ribbonWidget = Container(
       width: 80,
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: park.spacing.xs),
       decoration: BoxDecoration(
         color: color,
         boxShadow: [

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 
 /// ParkSegmented 尺寸
 enum ParkSegmentedSize {
@@ -317,8 +316,8 @@ class _ParkSegmentedState extends State<ParkSegmented>
               // Animated slider (single-select only)
               if (!widget.multiSelect && selectedIndex >= 0)
                 AnimatedPositioned(
-                  duration: ParkMotion.standard,
-                  curve: ParkMotion.enterEasing,
+                  duration: park.motion.standard,
+                  curve: park.motion.enterEasing,
                   left: sliderLeft,
                   top: 2,
                   bottom: 2,
@@ -484,7 +483,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
   Widget? _buildBadge(ParkSegmentedItem item, ParkThemeData park) {
     if (item.badge == null) return null;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: EdgeInsets.symmetric(horizontal: park.spacing.xs, vertical: 1),
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       decoration: BoxDecoration(
         color: park.colors.error,

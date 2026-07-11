@@ -452,7 +452,7 @@ class _ParkSliderThumb extends SliderComponentShape {
     // Outer shadow
     canvas.drawShadow(
       Path()..addOval(Rect.fromCircle(center: center, radius: 10)),
-      const Color(0x1A000000),
+      park.colors.textPrimary.withValues(alpha: 0.1),
       4.0,
       false,
     );

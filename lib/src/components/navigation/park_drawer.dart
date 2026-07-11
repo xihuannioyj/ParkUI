@@ -127,6 +127,9 @@ class ParkDrawer extends StatefulWidget {
   /// 关闭动画完成后的回调
   final VoidCallback? afterClose;
 
+  /// 打开回调（抽屉打开动画完成后触发）
+  final VoidCallback? onOpen;
+
   /// 指定抽屉挂载的容器（默认挂载到当前 Scaffold）
   final Widget? getContainer;
 
@@ -151,6 +154,7 @@ class ParkDrawer extends StatefulWidget {
     this.maskColor,
     this.zIndex = 1000,
     this.afterClose,
+    this.onOpen,
     this.getContainer,
   });
 
@@ -196,11 +200,16 @@ class _ParkDrawerState extends State<ParkDrawer> {
     super.initState();
     _internalVisible = widget.visible ?? true;
     _contentMounted = true;
+    // 首次打开时触发回调
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isVisible) widget.onOpen?.call();
+    });
   }
 
   @override
   void didUpdateWidget(covariant ParkDrawer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final wasVisible = _isVisible;
     if (widget.visible != null) {
       _internalVisible = widget.visible!;
     }
@@ -209,6 +218,10 @@ class _ParkDrawerState extends State<ParkDrawer> {
       _contentMounted = false;
     } else if (_isVisible) {
       _contentMounted = true;
+    }
+    // visible 从关闭→打开时触发回调
+    if (!wasVisible && _isVisible) {
+      widget.onOpen?.call();
     }
   }
 

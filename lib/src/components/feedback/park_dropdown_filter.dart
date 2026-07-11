@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import 'park_dropdown_sheet.dart';
 
 // ============================================================================
@@ -437,8 +436,8 @@ class _FilterLabel extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: disabled ? null : onTap,
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         padding:
             padding ??
             EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: 4),
@@ -470,7 +469,7 @@ class _FilterLabel extends StatelessWidget {
                 ),
                 SizedBox(width: park.spacing.xs),
                 AnimatedRotation(
-                  duration: ParkMotion.quick,
+                  duration: park.motion.quick,
                   turns: isExpanded ? 0.5 : 0.0,
                   child: Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -483,8 +482,8 @@ class _FilterLabel extends StatelessWidget {
 
             // ── 底部下划线 ──
             AnimatedContainer(
-              duration: ParkMotion.standard,
-              curve: ParkMotion.defaultEasing,
+              duration: park.motion.standard,
+              curve: park.motion.defaultEasing,
               margin: EdgeInsets.only(top: park.spacing.xs),
               width: isActive ? math.max(label.length * 8.0, 20.0) : 0.0,
               height: isActive ? 2.0 : 0.0,
@@ -732,8 +731,8 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
     return GestureDetector(
       onTap: () => _toggleOption(option),
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         margin: EdgeInsets.symmetric(vertical: park.spacing.xs),
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
@@ -848,8 +847,8 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
     return GestureDetector(
       onTap: () => _toggleOption(option),
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         decoration: BoxDecoration(
           color: isSelected
               ? park.colors.brand.withValues(alpha: 0.08)

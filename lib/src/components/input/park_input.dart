@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_sizing.dart';
 import '../../theme/tokens/park_colors.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../base/park_button.dart';
@@ -104,6 +104,8 @@ class ParkInput extends FormField<String> {
     this.suffixText,
     this.borderless = false,
     this.readonly = false,
+    this.contentPadding,
+    this.style,
     this.onCompositionStart,
     this.onCompositionEnd,
   }) : super(
@@ -220,6 +222,12 @@ class ParkInput extends FormField<String> {
 
   /// 是否只读（readOnly 的别名，兼容 AntD 命名）
   final bool readonly;
+
+  /// 输入内容内边距。不设时根据 [size] 自动计算。
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// 输入文字样式。不设时使用主题默认排版。
+  final TextStyle? style;
 
   /// 输入法组合开始回调（CJK 输入法开始组合时触发）
   final ValueChanged<String>? onCompositionStart;
@@ -370,14 +378,14 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
   bool _isHovered = false;
 
   /// 根据尺寸返回高度
-  double get _height {
+  double _height(ParkSizing sizing) {
     switch ((widget.state.widget as ParkInput).size) {
       case ParkInputSize.small:
-        return 32;
+        return sizing.inputHeightSm;
       case ParkInputSize.medium:
-        return 48;
+        return sizing.inputHeightMd;
       case ParkInputSize.large:
-        return 56;
+        return sizing.inputHeightLg;
     }
   }
 
@@ -540,7 +548,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
       onTapOutside: inputWidget.onTapOutside != null
           ? (_) => inputWidget.onTapOutside!()
           : null,
-      style: textStyle,
+      style: inputWidget.style ?? textStyle,
       cursorColor: park.colors.brand,
       onChanged: (v) {
         state.didChange(v);
@@ -569,10 +577,11 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         suffixIcon: suffixWidgets.isNotEmpty
             ? Row(mainAxisSize: MainAxisSize.min, children: suffixWidgets)
             : null,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: _horizontalPadding,
-          vertical: _verticalPadding,
-        ),
+        contentPadding: inputWidget.contentPadding ??
+            EdgeInsets.symmetric(
+              horizontal: _horizontalPadding,
+              vertical: _verticalPadding,
+            ),
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
@@ -630,7 +639,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
           Expanded(child: rawField),
           Container(
             width: 1,
-            height: _height - 16,
+            height: _height(widget.park.sizing) - 16,
             color: park.colors.divider,
           ),
           _buildSearchButton(park.colors),
@@ -644,10 +653,10 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     Widget borderedContainer;
     if (inputWidget.bordered) {
       borderedContainer = AnimatedContainer(
-        duration: ParkMotion.standard,
+        duration: park.motion.standard,
         clipBehavior: Clip.antiAlias,
         constraints: BoxConstraints(
-          minHeight: inputWidget.maxLines == 1 ? _height : _height,
+          minHeight: inputWidget.maxLines == 1 ? _height(widget.park.sizing) : _height(widget.park.sizing),
         ),
         decoration: BoxDecoration(
           color: bgColor,
@@ -662,10 +671,10 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     } else {
       // Borderless: transparent background, bottom border only on focus
       borderedContainer = AnimatedContainer(
-        duration: ParkMotion.standard,
+        duration: park.motion.standard,
         clipBehavior: Clip.antiAlias,
         constraints: BoxConstraints(
-          minHeight: inputWidget.maxLines == 1 ? _height : _height,
+          minHeight: inputWidget.maxLines == 1 ? _height(widget.park.sizing) : _height(widget.park.sizing),
         ),
         decoration: BoxDecoration(
           color: Colors.transparent,
@@ -826,10 +835,10 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
           );
 
     return SizedBox(
-      height: _height,
+      height: _height(widget.park.sizing),
       child: ParkButton(
         variant: variant,
-        height: _height,
+        height: _height(widget.park.sizing),
         loading: loading,
         onPressed: enabled
             ? () {

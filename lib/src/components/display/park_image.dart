@@ -107,7 +107,7 @@ class ParkImage extends StatelessWidget {
     if (borderRadius != null) return borderRadius!;
     switch (shape) {
       case ParkImageShape.circle:
-        return BorderRadius.circular(999);
+        return park.radius.brFull;
       case ParkImageShape.rounded:
         return BorderRadius.circular(park.radius.md);
       case ParkImageShape.rectangle:

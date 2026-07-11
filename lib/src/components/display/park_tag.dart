@@ -238,7 +238,7 @@ class ParkTag extends StatelessWidget {
 
   BorderRadius _resolveRadius(ParkThemeData park) {
     if (shape == ParkTagShape.round) {
-      return BorderRadius.circular(999);
+      return park.radius.brFull;
     }
     return BorderRadius.circular(park.radius.xs);
   }

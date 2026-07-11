@@ -252,3 +252,67 @@ class ParkLocalizationsEn implements ParkLocalizations {
   @override
   String get confirmDelete => 'Confirm delete?';
 }
+
+// =============================================================================
+// 日语
+// =============================================================================
+
+/// park_ui 日文本地化。
+class ParkLocalizationsJa implements ParkLocalizations {
+  const ParkLocalizationsJa();
+
+  @override
+  String get confirmText => '確認';
+  @override
+  String get cancelText => 'キャンセル';
+  @override
+  String get clearText => 'クリア';
+  @override
+  String get searchText => '検索';
+  @override
+  String get submitText => '送信';
+  @override
+  String get saveText => '保存';
+  @override
+  String get deleteText => '削除';
+  @override
+  String get closeText => '閉じる';
+  @override
+  String get doneText => '完了';
+  @override
+  String get resetText => 'リセット';
+  @override
+  String get selectPlaceholder => '選択してください';
+  @override
+  String get inputPlaceholder => '入力してください';
+  @override
+  String get searchPlaceholder => '検索';
+  @override
+  String get noData => 'データがありません';
+  @override
+  String get loading => '読み込み中...';
+  @override
+  String get loadFailed => '読み込み失敗';
+  @override
+  String get retry => '再試行';
+  @override
+  String get success => '成功';
+  @override
+  String get warning => '警告';
+  @override
+  String get error => 'エラー';
+  @override
+  String get previousStep => '前へ';
+  @override
+  String get nextStep => '次へ';
+  @override
+  String get noMore => 'これ以上ありません';
+  @override
+  String get pullToRefresh => '下に引っ張って更新';
+  @override
+  String get releaseToRefresh => '離して更新';
+  @override
+  String get refreshing => '更新中...';
+  @override
+  String get confirmDelete => '削除してもよろしいですか？';
+}

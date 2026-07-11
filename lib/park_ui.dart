@@ -28,6 +28,7 @@ library;
 
 export 'src/theme/park_theme.dart';
 export 'src/theme/park_theme_data.dart';
+export 'src/theme/park_icon_theme_data.dart';
 
 // ============================================================================
 // 本地化
@@ -40,6 +41,7 @@ export 'src/theme/tokens/park_spacing.dart';
 export 'src/theme/tokens/park_radius.dart';
 export 'src/theme/tokens/park_shadows.dart';
 export 'src/theme/tokens/park_motion.dart';
+export 'src/theme/tokens/park_sizing.dart';
 
 // ============================================================================
 // 基础组件
@@ -49,6 +51,7 @@ export 'src/components/base/park_button.dart';
 export 'src/components/base/park_button_style.dart';
 export 'src/components/base/park_text.dart';
 export 'src/components/base/park_icon.dart';
+export 'src/components/base/park_icon_size.dart';
 export 'src/components/base/park_divider.dart';
 export 'src/components/base/park_fab.dart';
 export 'src/components/base/park_link.dart';
@@ -94,6 +97,7 @@ export 'src/components/input/park_calendar.dart';
 export 'src/components/navigation/park_tabs.dart';
 export 'src/components/navigation/park_tab_bar.dart';
 export 'src/components/navigation/park_nav_bar.dart';
+export 'src/components/navigation/park_bottom_nav.dart';
 export 'src/components/navigation/park_side_bar.dart';
 export 'src/components/navigation/park_steps.dart';
 export 'src/components/navigation/park_drawer.dart';

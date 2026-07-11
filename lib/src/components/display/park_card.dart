@@ -4,7 +4,6 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
 import '../../theme/tokens/park_radius.dart';
 import '../../theme/tokens/park_spacing.dart';
-import '../../theme/tokens/park_motion.dart';
 import 'park_skeleton.dart';
 
 /// ParkCard 样式变体
@@ -284,8 +283,8 @@ class _ParkCardState extends State<ParkCard> {
           : null,
       child: surface.useGlass
           ? AnimatedContainer(
-              duration: ParkMotion.standard,
-              curve: ParkMotion.defaultEasing,
+              duration: park.motion.standard,
+              curve: park.motion.defaultEasing,
               decoration: BoxDecoration(
                 borderRadius: cardRadius,
                 boxShadow: surface.shadows,
@@ -295,8 +294,8 @@ class _ParkCardState extends State<ParkCard> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: AnimatedContainer(
-                    duration: ParkMotion.standard,
-                    curve: ParkMotion.defaultEasing,
+                    duration: park.motion.standard,
+                    curve: park.motion.defaultEasing,
                     decoration: BoxDecoration(
                       color: surface.color,
                       borderRadius: cardRadius,
@@ -308,8 +307,8 @@ class _ParkCardState extends State<ParkCard> {
               ),
             )
           : AnimatedContainer(
-              duration: ParkMotion.standard,
-              curve: ParkMotion.defaultEasing,
+              duration: park.motion.standard,
+              curve: park.motion.defaultEasing,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: surface.color,
@@ -380,7 +379,7 @@ class _ParkCardState extends State<ParkCard> {
         final Color color = explicit ??
             (isGhost
                 ? Colors.transparent
-                : (isDark ? const Color(0xFF121829) : colors.surface));
+                : (isDark ? colors.textPrimary : colors.surface));
         final Border? border = widget.bordered
             ? Border.all(color: colors.brand.withValues(alpha: 0.55), width: 1)
             : null;

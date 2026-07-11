@@ -69,10 +69,10 @@ class ParkAlert extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(banner ? 12 : 16),
+      padding: EdgeInsets.all(banner ? park.spacing.md : park.spacing.base),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: banner ? null : BorderRadius.circular(8),
+        borderRadius: banner ? null : park.radius.brSm,
         border: banner ? null : Border.all(color: borderColor, width: 1),
       ),
       child: Row(
@@ -80,7 +80,7 @@ class ParkAlert extends StatelessWidget {
         children: [
           if (showIcon)
             Padding(
-              padding: const EdgeInsets.only(right: 12, top: 1),
+              padding: EdgeInsets.only(right: park.spacing.md, top: 1),
               child: icon ??
                   Icon(defaultIcon, size: 20, color: iconColor),
             ),
@@ -102,12 +102,12 @@ class ParkAlert extends StatelessWidget {
                   ),
                 if (descriptionWidget != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: park.spacing.xs),
                     child: descriptionWidget!,
                   )
                 else if (description != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: park.spacing.xs),
                     child: Text(
                       description!,
                       style: TextStyle(
@@ -123,7 +123,7 @@ class ParkAlert extends StatelessWidget {
             GestureDetector(
               onTap: onClose,
               child: Padding(
-                padding: const EdgeInsets.only(left: 12),
+                padding: EdgeInsets.only(left: park.spacing.md),
                 child: Icon(
                   Icons.close,
                   size: 16,

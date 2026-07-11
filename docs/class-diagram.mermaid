@@ -1,0 +1,216 @@
+```mermaid
+classDiagram
+
+    %% ========================================================================
+    %% 新建类
+    %% ========================================================================
+
+    class ParkSizing {
+        <<new>>
+        +double buttonHeightSmall
+        +double buttonHeightMedium
+        +double buttonHeightLarge
+        +double inputHeightSmall
+        +double inputHeightMedium
+        +double inputHeightLarge
+        +double buttonHorizontalPaddingMedium
+        +double buttonVerticalPaddingMedium
+        +const ParkSizing(...)
+        +factory ParkSizing.defaults()
+        +ParkSizing copyWith(...)
+        +bool operator ==(Object other)
+        +int get hashCode
+    }
+
+    class ParkComponentType {
+        <<enum>>
+        +button
+        +buttonRound
+        +input
+        +card
+        +dialog
+        +select
+        +tagBadge
+    }
+
+    %% ========================================================================
+    %% 增强类（标注 → 标记新增方法）
+    %% ========================================================================
+
+    class ParkColors {
+        <<enhanced>>
+        +Color brand
+        +Color brandLight
+        +Color brandDark
+        +List~Color~ brandPalette
+        +Color success
+        +Color successLight
+        +Color warning
+        +Color warningLight
+        +Color error
+        +Color errorLight
+        +Color info
+        +Color infoLight
+        +Color textPrimary
+        +Color textSecondary
+        +Color textPlaceholder
+        +Color textDisabled
+        +Color textOnBrand
+        +Color border
+        +Color borderLight
+        +Color divider
+        +Color background
+        +Color surface
+        +Color overlay
+        +Color disabledBg
+        +const ParkColors(...)
+        +factory ParkColors.light()
+        +factory ParkColors.dark()
+        +Color brandAt(int level)
+        +Color textOnColor(Color bg)           %% NEW
+        +static double contrastRatio(Color a, Color b)  %% NEW
+        +ParkColors copyWith(...)
+        +bool operator ==(Object other)        %% NEW
+        +int get hashCode                       %% NEW
+    }
+
+    class ParkTypography {
+        <<enhanced>>
+        +double sizeDisplay
+        +double sizeH1
+        +double sizeH2
+        +double sizeH3
+        +double sizeBody
+        +double sizeBodySmall
+        +double sizeCaption
+        +double sizeOverline
+        +double lineHeightTitle
+        +double lineHeightBody
+        +FontWeight weightBold
+        +FontWeight weightRegular
+        +FontWeight weightMedium
+        +FontWeight weightLight                  %% NEW (w300)
+        +String? fontFamily
+        +double letterSpacingOverline           %% NEW
+        +const ParkTypography(...)
+        +factory ParkTypography.defaults()
+        +TextStyle get display
+        +TextStyle get h1
+        +TextStyle get h2
+        +TextStyle get h3
+        +TextStyle get body
+        +TextStyle get bodySmall
+        +TextStyle get caption
+        +TextStyle get overline                  %% MODIFIED (uses letterSpacingOverline)
+        +ParkTypography copyWith(...)
+        +bool operator ==(Object other)         %% NEW
+        +int get hashCode                        %% NEW
+    }
+
+    class ParkSpacing {
+        <<enhanced>>
+        +double xxs, xs, sm, md, base, lg, xl, xxl, page
+        +const ParkSpacing(...)
+        +factory ParkSpacing.defaults()
+        +Widget hGap(double)
+        +Widget vGap(double)
+        +Widget get hXs, hSm, hBase, hMd, hLg
+        +Widget get vXs, vSm, vBase, vMd, vLg, vXl
+        %% NEW scenario getters:
+        +double get buttonHorizontalPadding
+        +double get buttonVerticalPadding
+        +double get inputLabelGap
+        +double get formFieldGap
+        +double get cardPadding
+        +double get cardGap
+        +double get sectionGap
+        +double get dialogPadding
+        +ParkSpacing copyWith(...)
+        +bool operator ==(Object other)         %% NEW
+        +int get hashCode                        %% NEW
+    }
+
+    class ParkRadius {
+        <<enhanced>>
+        +double xs, sm, md, lg, xl, full
+        +const ParkRadius(...)
+        +factory ParkRadius.defaults()
+        +BorderRadius get brXs, brSm, brMd, brLg, brXl, brFull
+        +double componentRadius(ParkComponentType type)  %% NEW
+        +ParkRadius copyWith(...)
+        +bool operator ==(Object other)         %% NEW
+        +int get hashCode                        %% NEW
+    }
+
+    class ParkShadows {
+        <<enhanced>>
+        +List~BoxShadow~ sm, md, lg
+        +factory ParkShadows.defaults()
+        +factory ParkShadows.dark()
+        +factory ParkShadows.flat()
+        +factory ParkShadows.neon()
+        +ParkShadows copyWith(...)
+        +bool operator ==(Object other)         %% NEW
+        +int get hashCode                        %% NEW
+    }
+
+    class ParkMotion {
+        <<enhanced>>
+        +int standardMs
+        +int quickMs
+        +int slowMs
+        +int staggerMs                           %% NEW
+        +Curve enterEasing
+        +Curve defaultEasing
+        +Curve exitEasing
+        +const ParkMotion(...)
+        +Duration get standard, quick, slow
+        +bool operator ==(Object other)         %% NEW
+        +int get hashCode                        %% NEW
+    }
+
+    class ParkThemeData {
+        <<enhanced>>
+        +ParkColors colors
+        +ParkTypography typography
+        +ParkSpacing spacing
+        +ParkRadius radius
+        +ParkShadows shadows
+        +ParkSurfaceStyle surfaceStyle
+        +ParkIconThemeData iconTheme
+        +ParkMotion motion
+        +ParkSizing sizing                       %% NEW
+        +const ParkThemeData(...)
+        +factory ParkThemeData.light()
+        +factory ParkThemeData.dark()
+        +ParkThemeData copyWith(...)
+        +ParkThemeData lerp(...)
+        +bool operator ==(Object other)
+        +int get hashCode
+    }
+
+    class ParkTheme {
+        <<enhanced>>
+        +ParkThemeData of(BuildContext)
+        +ParkColors colorsOf(BuildContext)
+        +ParkTypography typographyOf(BuildContext)
+        +ParkSpacing spacingOf(BuildContext)
+        +ParkRadius radiusOf(BuildContext)
+        +ParkShadows shadowsOf(BuildContext)
+        +ParkSizing sizingOf(BuildContext)
+    }
+
+    %% ========================================================================
+    %% 关系
+    %% ========================================================================
+
+    ParkThemeData *-- ParkColors : contains
+    ParkThemeData *-- ParkTypography : contains
+    ParkThemeData *-- ParkSpacing : contains
+    ParkThemeData *-- ParkRadius : contains
+    ParkThemeData *-- ParkShadows : contains
+    ParkThemeData *-- ParkMotion : contains
+    ParkThemeData *-- ParkSizing : contains    %% NEW
+    ParkRadius ..> ParkComponentType : uses
+    ParkTheme ..> ParkThemeData : wraps
+```

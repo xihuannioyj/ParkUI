@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
+import '../../theme/park_icon_theme_data.dart';
+import '../base/park_icon.dart';
 
 /// Cell size presets.
 enum ParkCellSize { small, medium, large }
@@ -31,6 +32,9 @@ class ParkCell extends StatefulWidget {
     this.extra,
     this.labelWidth,
     this.clickable,
+    this.backgroundColor,
+    this.leftIconColor,
+    this.leftIconContainerColor,
   });
 
   @override
@@ -90,6 +94,17 @@ class ParkCell extends StatefulWidget {
   /// Whether the cell shows a visual affordance for being clickable.
   /// When null, defaults to true if [onPressed] is set.
   final bool? clickable;
+
+  /// Custom background color for the cell.
+  final Color? backgroundColor;
+
+  /// Left icon color. When [leftIcon] is a [ParkIcon], this overrides its color.
+  /// Falls back to [ParkIconThemeData.cellIconColor] then [ParkColors.brand].
+  final Color? leftIconColor;
+
+  /// Left icon container background color.
+  /// When [leftIcon] is a [ParkIcon] with container != none, this overrides its containerColor.
+  final Color? leftIconContainerColor;
 }
 
 class _ParkCellState extends State<ParkCell> {
@@ -156,12 +171,29 @@ class _ParkCellState extends State<ParkCell> {
 
     final leftChildren = <Widget>[];
     if (widget.leftIcon != null) {
+      Widget iconWidget = widget.leftIcon!;
+      // 若 leftIcon 是 ParkIcon，自动注入品牌色
+      if (iconWidget is ParkIcon) {
+        final effectiveColor = widget.leftIconColor ??
+            park.iconTheme.cellIconColor ??
+            park.colors.brand;
+        final effectiveContainerColor = widget.leftIconContainerColor;
+        iconWidget = ParkIcon(
+          iconWidget.icon,
+          size: iconWidget.size,
+          pixelSize: iconWidget.pixelSize,
+          color: iconWidget.color ?? effectiveColor,
+          container: iconWidget.container,
+          containerColor: effectiveContainerColor ?? iconWidget.containerColor,
+          spin: iconWidget.spin,
+        );
+      }
       leftChildren.add(
         Padding(
           padding: EdgeInsets.only(right: park.spacing.md),
           child: Opacity(
             opacity: isDisabled ? 0.4 : 1.0,
-            child: widget.leftIcon,
+            child: iconWidget,
           ),
         ),
       );
@@ -230,8 +262,8 @@ class _ParkCellState extends State<ParkCell> {
     );
 
     final cell = AnimatedContainer(
-      duration: ParkMotion.quick,
-      curve: ParkMotion.defaultEasing,
+      duration: park.motion.quick,
+      curve: park.motion.defaultEasing,
       color: _isPressed && !isDisabled
           ? park.colors.textPrimary.withValues(alpha: 0.06)
           : _isHovered && widget.hover && !isDisabled

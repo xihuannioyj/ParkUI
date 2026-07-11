@@ -85,11 +85,11 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
           height: 40,
           decoration: BoxDecoration(
             color: _selected,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: park.radius.brSm,
             border: Border.all(color: park.colors.border),
           ),
         ),
-        const SizedBox(height: 8),
+        park.spacing.vSm,
         // 预设色块网格
         Wrap(
           spacing: 6,
@@ -106,7 +106,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
                 height: 28,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: park.radius.brXs,
                   border: Border.all(
                     color: isActive ? park.colors.brand : Colors.transparent,
                     width: 2,

@@ -184,7 +184,7 @@ class _ParkLinkState extends State<ParkLink> {
     }
 
     // 解析已访问颜色
-    final effectiveVisitedColor = widget.visitedColor ?? const Color(0xFF722ED1);
+    final effectiveVisitedColor = widget.visitedColor ?? colors.brand;
 
     // 解析基础颜色
     final baseColor = widget.color ??
@@ -249,7 +249,7 @@ class _ParkLinkState extends State<ParkLink> {
               valueColor: AlwaysStoppedAnimation(displayColor),
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: park.spacing.xs),
         ],
         if (widget.icon != null) ...[
           IconTheme(
@@ -259,11 +259,11 @@ class _ParkLinkState extends State<ParkLink> {
             ),
             child: widget.icon!,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: park.spacing.xs),
         ],
         Text(widget.text, style: effectiveStyle),
         if (widget.trailingIcon != null) ...[
-          const SizedBox(width: 4),
+          SizedBox(width: park.spacing.xs),
           IconTheme(
             data: IconThemeData(
               color: displayColor,

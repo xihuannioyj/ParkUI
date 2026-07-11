@@ -1,20 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-
-/// Park 图标尺寸
-enum ParkIconSize {
-  /// 16px
-  small,
-
-  /// 20px
-  medium,
-
-  /// 24px
-  large,
-
-  /// 32px
-  xlarge,
-}
+import 'park_icon_size.dart';
 
 /// Park 图标容器形状
 enum ParkIconContainer {
@@ -196,7 +182,7 @@ class _ParkIconState extends State<ParkIcon>
     final colors = park.colors;
 
     final iconSize = widget.pixelSize ?? _resolveSize(widget.size);
-    final iconColor = widget.color ?? colors.textPrimary;
+    final iconColor = widget.color ?? park.iconTheme.defaultColor ?? colors.brand;
 
     Widget iconWidget = Icon(
       widget.icon,
@@ -261,7 +247,7 @@ class _ParkIconState extends State<ParkIcon>
                     ),
                   )
                 : Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                    padding: EdgeInsets.symmetric(horizontal: park.spacing.xs, vertical: 0),
                     constraints: const BoxConstraints(
                       minWidth: 16,
                       minHeight: 16,

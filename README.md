@@ -4,6 +4,7 @@
 
 ## 特性
 
+- 📐 **完整 Design System** — 详见 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)，包含完整色彩体系、字体层级、间距规则、阴影/圆角体系和 10+ 基础组件设计规范
 - 🧩 **80+ 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
 - 🎨 **Stripe 设计语言** — 品牌紫 blurple `#635BFF`、文字 navy `#0A2540`、浅灰底色 `#F6F9FC`
 - 🌓 **浅色/深色主题** — 全局 `ParkThemeData` 驱动，一键切换明暗
@@ -11,7 +12,7 @@
 - 🎯 **零第三方依赖** — 纯 Flutter Widget，不引入外部 UI 库
 - 🔗 **双向绑定引擎** — `ParkBindingService` + `ParkBindable<T>` 实现响应式数据绑定
 - 📱 **响应式布局** — 支持移动端、桌面端、Web 端
-- 🔧 **高度可定制** — Design Token 全覆盖（颜色、间距、圆角、排版、阴影、动画）
+- 🔧 **高度可定制** — Design Token 全覆盖（颜色、间距、圆角、排版、阴影、动画），所有组件使用统一令牌系统
 
 ## 安装
 
@@ -63,10 +64,12 @@ Park UI 的所有视觉风格由 Design Token 驱动。`ParkThemeData` 是 Flutt
 | 属性 | 类型 | 说明 |
 |------|------|------|
 | `colors` | `ParkColors` | 颜色令牌（品牌/文字/背景/边框/状态色） |
-| `spacing` | `ParkSpacing` | 间距令牌（xs/sm/base/md/lg/xl） |
-| `radius` | `ParkRadius` | 圆角令牌（none/xs/sm/md/lg/xl/brFull） |
+| `spacing` | `ParkSpacing` | 间距令牌（xxs/xs/sm/md/base/lg/xl/xxl/page） |
+| `radius` | `ParkRadius` | 圆角令牌（xs/sm/md/lg/xl/full） |
 | `typography` | `ParkTypography` | 排版令牌（字体族/字号/字重） |
 | `shadows` | `ParkShadows` | 阴影令牌（xs/sm/md/lg/xl） |
+| `motion` | `ParkMotion` | 动画令牌（standard/quick/slow） |
+| `iconTheme` | `ParkIconThemeData` | 图标主题（默认色、尺寸覆盖） |
 | `motion` | `ParkMotion` | 动画令牌（standard/quick/enterEasing/defaultEasing） |
 
 ## 配置清单
@@ -93,18 +96,15 @@ ParkThemeData(
     info: Color(0xFF3182CE),          // 信息
   ),
   radius: ParkRadius(
-    none: 0, xs: 2, sm: 4, md: 8, lg: 12, xl: 16, brFull: 999,
+    xs: 4, sm: 8, md: 12, lg: 16, xl: 20, full: 9999,
   ),
   spacing: ParkSpacing(
-    xs: 4, sm: 8, base: 16, md: 24, lg: 32, xl: 48,
+    xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, xxl: 32, page: 48,
   ),
   typography: ParkTypography(
     fontFamily: 'Inter',
-    sizeCaption: 12, sizeBodySmall: 13, sizeBody: 14,
-    sizeH3: 16, sizeH2: 20, sizeH1: 24,
-    weightRegular: FontWeight.w400,
-    weightMedium: FontWeight.w500,
-    weightBold: FontWeight.w700,
+    sizeCaption: 13, sizeBodySmall: 14, sizeBody: 16,
+    sizeH3: 18, sizeH2: 22, sizeH1: 28, sizeDisplay: 34,
   ),
 )
 ```
@@ -353,6 +353,68 @@ ParkDialog(confirmText: 'はい', cancelText: 'いいえ')
 
 ---
 
+# 表单布局 — ParkFormLayout
+
+Park UI 表单支持**纵向**（标签在上，默认）和**水平**（标签在左）两种布局。
+
+## API 参考
+
+| 属性 | 类型 | 所属 | 说明 |
+|------|------|------|------|
+| `layout` | `ParkFormLayout` | `ParkForm` / `ParkFormItem` | 布局方式，默认 `vertical` |
+| `labelWidth` | `double` | `ParkForm` / `ParkFormItem(labelCol)` | 水平布局标签宽度（默认 100px） |
+| `colon` | `bool` | `ParkForm` / `ParkFormItem` | 标签后显示冒号（默认 true） |
+
+## 枚举值
+
+| 值 | 说明 |
+|------|------|
+| `ParkFormLayout.vertical` | 纵向：标签在上，输入框在下 |
+| `ParkFormLayout.horizontal` | 水平：标签在左，输入框在右 |
+| `ParkFormLayout.inline` | 内联排列 |
+
+## 使用方式
+
+### 全局水平布局
+
+```dart
+ParkForm(
+  layout: ParkFormLayout.horizontal,
+  children: [
+    ParkFormItem(label: '姓名', child: ParkInput()),
+    ParkFormItem(label: '年龄', child: ParkInputNumber()),
+  ],
+)
+```
+
+### 单项覆盖
+
+```dart
+ParkForm(
+  layout: ParkFormLayout.horizontal,
+  children: [
+    ParkFormItem(label: '姓名', child: ParkInput()),
+    ParkFormItem(
+      label: '备注',
+      layout: ParkFormLayout.vertical,  // 此项改为纵向
+      child: ParkInput(maxLines: 3),
+    ),
+  ],
+)
+```
+
+### 独立使用（无 ParkForm）
+
+```dart
+ParkFormItem(
+  label: '姓名',
+  layout: ParkFormLayout.horizontal,
+  child: ParkInput(),
+)
+```
+
+---
+
 # 主题 + 国际化完整示例
 
 ```dart
@@ -447,13 +509,14 @@ class HomePage extends StatelessWidget {
 | 组件 | 说明 | 关键属性 |
 |------|------|---------|
 | `ParkButton` | 按钮 — 6 种变体、3 种尺寸、loading/disabled、异步 loading、防抖、角标 | `variant`, `size`, `loading`, `asyncOnPressed`, `badge` |
-| `ParkButtonGroup` | 按钮组 — 无缝拼接、首尾圆角 | `direction` |
+| `ParkButtonGroup` | 按钮组 — 贴合/均分两种模式 | `direction`, `mode` |
 | `ParkText` | 排版 — 预设 `bodySmall` / `body` / `h3` / `h2` / `h1` | `preset`, `maxLines` |
 | `ParkIcon` | 图标容器 — 统一尺寸/颜色 | `size`, `color` |
 | `ParkLink` | 链接 — 支持 href 跳转 | `href`, `underline` |
 | `ParkDivider` | 分割线 — 文字/图标插入 | `text`, `direction` |
 | `ParkFab` | 浮动操作按钮 | `onPressed` |
 | `ParkSpace` | 间距组件 — 统一子元素间距 | `size`, `direction`, `wrap` |
+| `ParkInkWell` | 交互容器 — 统一点击反馈（缩放/透明度/悬停高亮/手型光标） | `onTap`, `disabled`, `borderRadius` |
 
 ## 展示（Display）
 
@@ -517,6 +580,8 @@ class HomePage extends StatelessWidget {
 | `ParkFormItem` | 表单项 — 标签/校验/布局 | `label`, `required`, `validator`, `bindKey` |
 | `ParkFormSection` | 表单分组 | `title`, `children` |
 | `ParkInputGroup` | 输入框组合 | `children` |
+| `ParkDynamicForm` | 动态表单 — JSON Schema 驱动/引擎层校验/联动/自动生成 | `schema`, `bindingService`, `onSubmit` |
+| `ParkBinding` | 双向绑定系统 — 响应式数据绑定/表单关联/路径解析 | `bindKey`, `bindingService` |
 | `ParkInputNumber` | 数字输入框 | `value`, `min`, `max`, `step` |
 | `ParkUpload` | 上传 | `action`, `accept`, `multiple` |
 

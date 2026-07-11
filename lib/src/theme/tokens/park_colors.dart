@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// Park UI 色彩令牌（Stripe 风格）
@@ -289,5 +291,112 @@ class ParkColors {
       overlay: overlay ?? this.overlay,
       disabledBg: disabledBg ?? this.disabledBg,
     );
+  }
+
+  // ========================================================================
+  // 无障碍辅助方法（WCAG 2.1）
+  // ========================================================================
+
+  /// 计算两个颜色之间的相对亮度对比度 (WCAG 2.1)。
+  ///
+  /// 返回值 >= 4.5 表示满足 AA 级普通文字标准，
+  /// >= 3.0 表示满足 AA 级大文字标准。
+  static double contrastRatio(Color foreground, Color background) {
+    final double l1 = _relativeLuminance(foreground);
+    final double l2 = _relativeLuminance(background);
+    final double lighter = l1 > l2 ? l1 : l2;
+    final double darker = l1 > l2 ? l2 : l1;
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  /// 根据背景色自动选择白色或深色文字（确保 WCAG AA 4.5:1）。
+  ///
+  /// 当白色文字在给定背景上的对比度 >= 4.5 时返回纯白，
+  /// 否则返回 [textPrimary]（#0A2540，Stripe navy）。
+  Color textOnColor(Color background) {
+    return contrastRatio(const Color(0xFFFFFFFF), background) >= 4.5
+        ? const Color(0xFFFFFFFF)
+        : const Color(0xFF0A2540);
+  }
+
+  /// 计算颜色的相对亮度（WCAG 2.1 定义）。
+  static double _relativeLuminance(Color color) {
+    final double r = _linearize(color.r);
+    final double g = _linearize(color.g);
+    final double b = _linearize(color.b);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  /// 对 sRGB 通道值做线性化转换（gamma 展开）。
+  static double _linearize(double channel) {
+    if (channel <= 0.03928) return channel / 12.92;
+    return math.pow((channel + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkColors &&
+          runtimeType == other.runtimeType &&
+          brand == other.brand &&
+          brandLight == other.brandLight &&
+          brandDark == other.brandDark &&
+          _listEquals(brandPalette, other.brandPalette) &&
+          success == other.success &&
+          successLight == other.successLight &&
+          warning == other.warning &&
+          warningLight == other.warningLight &&
+          error == other.error &&
+          errorLight == other.errorLight &&
+          info == other.info &&
+          infoLight == other.infoLight &&
+          textPrimary == other.textPrimary &&
+          textSecondary == other.textSecondary &&
+          textPlaceholder == other.textPlaceholder &&
+          textDisabled == other.textDisabled &&
+          textOnBrand == other.textOnBrand &&
+          border == other.border &&
+          borderLight == other.borderLight &&
+          divider == other.divider &&
+          background == other.background &&
+          surface == other.surface &&
+          overlay == other.overlay &&
+          disabledBg == other.disabledBg;
+
+  @override
+  int get hashCode => Object.hashAll([
+        brand,
+        brandLight,
+        brandDark,
+        ...brandPalette,
+        success,
+        successLight,
+        warning,
+        warningLight,
+        error,
+        errorLight,
+        info,
+        infoLight,
+        textPrimary,
+        textSecondary,
+        textPlaceholder,
+        textDisabled,
+        textOnBrand,
+        border,
+        borderLight,
+        divider,
+        background,
+        surface,
+        overlay,
+        disabledBg,
+      ]);
+
+  /// 比较两个 Color 列表的元素逐一相等。
+  static bool _listEquals(List<Color> a, List<Color> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }

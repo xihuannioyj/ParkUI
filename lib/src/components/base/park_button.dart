@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_sizing.dart';
 import '../../theme/tokens/park_colors.dart';
-import '../../theme/tokens/park_motion.dart';
 import 'park_button_style.dart';
 
 /// Park 图标位置
@@ -250,8 +250,10 @@ class _ParkButtonState extends State<ParkButton> {
     final colors = park.colors;
     final radiusTokens = park.radius;
 
+    final sizing = park.sizing;
+
     // 解析尺寸参数
-    final sizeConfig = _resolveSize(widget.size);
+    final sizeConfig = _resolveSize(widget.size, sizing);
 
     // 解析变体样式（ghost 修饰符优先，其次 danger 修饰符）
     final effectiveVariant = widget.ghost
@@ -297,7 +299,7 @@ class _ParkButtonState extends State<ParkButton> {
     final pressedOpacity = _isPressed ? 0.85 : 1.0;
 
     // 内容构建
-    final content = _buildContent(fg ?? colors.textPrimary, fontSize, fontWeight, _isLoading);
+    final content = _buildContent(park, fg ?? colors.textPrimary, fontSize, fontWeight, _isLoading);
 
     // 边框构建（支持虚线）
     Border? border;
@@ -338,10 +340,10 @@ class _ParkButtonState extends State<ParkButton> {
             : null,
         child: AnimatedScale(
           scale: pressedScale,
-          duration: ParkMotion.quick,
+          duration: park.motion.quick,
           child: AnimatedOpacity(
             opacity: widget._enabled ? pressedOpacity : disabledOpacity,
-            duration: ParkMotion.quick,
+            duration: park.motion.quick,
             child: GestureDetector(
               onTapDown: widget._enabled ? (_) => setState(() => _isPressed = true) : null,
               onTapUp: widget._enabled ? (_) => setState(() => _isPressed = false) : null,
@@ -349,6 +351,7 @@ class _ParkButtonState extends State<ParkButton> {
               onTap: widget._enabled ? _handleTap : null,
               onLongPress: widget._enabled ? widget.onLongPress : null,
               child: _buildDecoratedButton(
+                park: park,
                 height: height,
                 hPadding: hPadding,
                 bg: bg,
@@ -383,6 +386,7 @@ class _ParkButtonState extends State<ParkButton> {
   }
 
   Widget _buildDecoratedButton({
+    required ParkThemeData park,
     required double height,
     required double hPadding,
     required Color? bg,
@@ -470,8 +474,8 @@ class _ParkButtonState extends State<ParkButton> {
                     ),
                   )
                 : Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: park.spacing.xs, vertical: park.spacing.xxs),
                     constraints: const BoxConstraints(minWidth: 18),
                     decoration: BoxDecoration(
                       color: colors.error,
@@ -498,7 +502,7 @@ class _ParkButtonState extends State<ParkButton> {
     return container;
   }
 
-  Widget _buildContent(Color fgColor, double fontSize, FontWeight? fontWeight, bool isLoading) {
+  Widget _buildContent(ParkThemeData park, Color fgColor, double fontSize, FontWeight? fontWeight, bool isLoading) {
     // autoInsertSpace: 对两字中文文本自动插入空格
     Widget? textChild = widget.child;
     if (widget.autoInsertSpace && widget.child is Text) {
@@ -522,7 +526,7 @@ class _ParkButtonState extends State<ParkButton> {
                 ),
               ),
           if (textChild != null) ...[
-            SizedBox(width: widget.size == ParkButtonSize.small ? 4 : 6),
+            SizedBox(width: widget.size == ParkButtonSize.small ? park.spacing.xs : park.spacing.sm),
             DefaultTextStyle(
               style: TextStyle(
                 color: fgColor,
@@ -533,7 +537,7 @@ class _ParkButtonState extends State<ParkButton> {
             ),
           ],
           if (widget.suffix != null) ...[
-            SizedBox(width: widget.size == ParkButtonSize.small ? 4 : 6),
+            SizedBox(width: widget.size == ParkButtonSize.small ? park.spacing.xs : park.spacing.sm),
             IconTheme(
               data: IconThemeData(color: fgColor, size: fontSize),
               child: widget.suffix!,
@@ -572,7 +576,7 @@ class _ParkButtonState extends State<ParkButton> {
           )
         : null;
 
-    final gap = SizedBox(width: widget.size == ParkButtonSize.small ? 4 : 6);
+    final gap = SizedBox(width: widget.size == ParkButtonSize.small ? park.spacing.xs : park.spacing.sm);
 
     // Build the content row based on iconPosition and presence of suffix
     final List<Widget> children = [];
@@ -621,14 +625,29 @@ class _ParkButtonState extends State<ParkButton> {
         text.codeUnitAt(1) <= 0x9FFF;
   }
 
-  _SizeConfig _resolveSize(ParkButtonSize size) {
+  _SizeConfig _resolveSize(ParkButtonSize size, ParkSizing sizing) {
     switch (size) {
       case ParkButtonSize.small:
-        return const _SizeConfig(height: 28, fontSize: 12, minWidth: 56, hPadding: 16);
+        return _SizeConfig(
+          height: sizing.buttonHeightSm,
+          fontSize: 12,
+          minWidth: 56,
+          hPadding: 16,
+        );
       case ParkButtonSize.medium:
-        return const _SizeConfig(height: 36, fontSize: 14, minWidth: 64, hPadding: 24);
+        return _SizeConfig(
+          height: sizing.buttonHeightMd,
+          fontSize: 14,
+          minWidth: 64,
+          hPadding: sizing.buttonHorizontalPaddingMd,
+        );
       case ParkButtonSize.large:
-        return const _SizeConfig(height: 44, fontSize: 16, minWidth: 80, hPadding: 32);
+        return _SizeConfig(
+          height: sizing.buttonHeightLg,
+          fontSize: 16,
+          minWidth: 80,
+          hPadding: 32,
+        );
     }
   }
 
@@ -639,7 +658,6 @@ class _ParkButtonState extends State<ParkButton> {
           backgroundColor: colors.brand,
           foregroundColor: colors.textOnBrand,
           fontWeight: FontWeight.w500,
-          borderRadius: 6,
         );
       case ParkButtonVariant.secondary:
         return _VariantStyle(
@@ -648,21 +666,18 @@ class _ParkButtonState extends State<ParkButton> {
           borderColor: colors.border,
           borderWidth: 1.0,
           fontWeight: FontWeight.w400,
-          borderRadius: 6,
         );
       case ParkButtonVariant.text:
         return _VariantStyle(
           backgroundColor: Colors.transparent,
           foregroundColor: colors.textPrimary,
           fontWeight: FontWeight.w400,
-          borderRadius: 6,
         );
       case ParkButtonVariant.link:
         return _VariantStyle(
           backgroundColor: Colors.transparent,
           foregroundColor: colors.brand,
           fontWeight: FontWeight.w400,
-          borderRadius: 6,
         );
       case ParkButtonVariant.ghost:
         return _VariantStyle(
@@ -671,28 +686,24 @@ class _ParkButtonState extends State<ParkButton> {
           borderColor: colors.brand,
           borderWidth: 1.0,
           fontWeight: FontWeight.w500,
-          borderRadius: 6,
         );
       case ParkButtonVariant.danger:
         return _VariantStyle(
           backgroundColor: colors.error,
           foregroundColor: colors.textOnBrand,
           fontWeight: FontWeight.w500,
-          borderRadius: 6,
         );
       case ParkButtonVariant.filled:
         return _VariantStyle(
           backgroundColor: Color.lerp(colors.surface, colors.textPrimary, 0.04)!,
           foregroundColor: colors.textPrimary,
           fontWeight: FontWeight.w400,
-          borderRadius: 6,
         );
       case ParkButtonVariant.light:
         return _VariantStyle(
           backgroundColor: colors.brand.withValues(alpha: 0.08),
           foregroundColor: colors.brand,
           fontWeight: FontWeight.w500,
-          borderRadius: 6,
         );
     }
   }
@@ -744,20 +755,47 @@ class _ParkIconData extends StatelessWidget {
 }
 
 // =============================================================================
+// ParkButtonGroupMode — 按钮组排列模式
+// =============================================================================
+
+/// 按钮组排列模式。
+enum ParkButtonGroupMode {
+  /// 紧密贴合模式：按钮之间无间隙，首尾按钮圆角，中间直角。
+  joined,
+
+  /// 均分模式：所有按钮均分可用空间（等宽/等高）。
+  equal,
+}
+
+// =============================================================================
 // ParkButtonGroup — 按钮组
 // =============================================================================
 
 /// Park 按钮组
 ///
-/// 将多个 [ParkButton] 组合在一起，按钮之间无间隙，
-/// 首尾按钮保留圆角，中间按钮为直角。
+/// 将多个 [ParkButton] 组合在一起。
+///
+/// 支持两种模式：
+/// - [ParkButtonGroupMode.joined]（默认）：紧密贴合，首尾按钮保留圆角。
+/// - [ParkButtonGroupMode.equal]：所有按钮均分可用空间（等宽/等高）。
 ///
 /// ```dart
+/// // 贴合模式
 /// ParkButtonGroup(
 ///   children: [
 ///     ParkButton(child: Text('左'), onPressed: () {}),
 ///     ParkButton(child: Text('中'), onPressed: () {}),
 ///     ParkButton(child: Text('右'), onPressed: () {}),
+///   ],
+/// )
+///
+/// // 均分模式（3 个按钮各占 1/3 宽度）
+/// ParkButtonGroup(
+///   mode: ParkButtonGroupMode.equal,
+///   children: [
+///     ParkButton(variant: ParkButtonVariant.primary, child: Text('通过')),
+///     ParkButton(child: Text('驳回')),
+///     ParkButton(child: Text('转办')),
 ///   ],
 /// )
 /// ```
@@ -768,10 +806,14 @@ class ParkButtonGroup extends StatelessWidget {
   /// 排列方向（默认为水平方向）
   final Axis direction;
 
+  /// 组模式。默认 [ParkButtonGroupMode.joined]。
+  final ParkButtonGroupMode mode;
+
   const ParkButtonGroup({
     super.key,
     required this.children,
     this.direction = Axis.horizontal,
+    this.mode = ParkButtonGroupMode.joined,
   });
 
   @override
@@ -788,6 +830,23 @@ class ParkButtonGroup extends StatelessWidget {
     }
 
     final isHorizontal = direction == Axis.horizontal;
+
+    final isEqual = mode == ParkButtonGroupMode.equal;
+
+    if (isEqual) {
+      // 均分模式：每个子项用 Expanded 包裹，均分可用空间
+      return isHorizontal
+          ? Row(
+              children: children
+                  .map((child) => Expanded(child: child))
+                  .toList(),
+            )
+          : Column(
+              children: children
+                  .map((child) => Expanded(child: child))
+                  .toList(),
+            );
+    }
 
     return isHorizontal
         ? Row(

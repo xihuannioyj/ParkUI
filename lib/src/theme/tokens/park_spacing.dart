@@ -93,6 +93,52 @@ class ParkSpacing {
   /// 垂直 xl 间距
   Widget get vXl => SizedBox(height: xl);
 
+  /// 垂直 xxl 间距
+  Widget get vXxl => SizedBox(height: xxl);
+
+  /// 垂直 page 间距
+  Widget get vPage => SizedBox(height: page);
+
+  /// 垂直 xxs 间距
+  Widget get vXxs => SizedBox(height: xxs);
+
+  /// 水平 xxl 间距
+  Widget get hXxl => SizedBox(width: xxl);
+
+  /// 水平 page 间距
+  Widget get hPage => SizedBox(width: page);
+
+  /// 水平 xxs 间距
+  Widget get hXxs => SizedBox(width: xxs);
+
+  // ========================================================================
+  // 场景速查 getter（基于 HANDOFF §3.3）
+  // ========================================================================
+
+  /// 按钮水平内边距 (medium 尺寸) = base + sm = 24px
+  double get buttonHorizontalPaddingMd => base + sm;
+
+  /// 按钮垂直内边距 (medium 尺寸) = sm = 8px
+  double get buttonVerticalPaddingMd => sm;
+
+  /// 输入框与标签间距 = sm = 8px
+  double get inputLabelGap => sm;
+
+  /// 表单字段间距 = xl = 24px
+  double get formFieldGap => xl;
+
+  /// 卡片内边距 = base = 16px
+  double get cardPadding => base;
+
+  /// 卡片间距 = xl = 24px
+  double get cardGap => xl;
+
+  /// Section 间距 = xxl = 32px
+  double get sectionGap => xxl;
+
+  /// 弹窗内边距 = xl = 24px
+  double get dialogPadding => xl;
+
   ParkSpacing copyWith({
     double? xxs,
     double? xs,
@@ -116,4 +162,22 @@ class ParkSpacing {
       page: page ?? this.page,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkSpacing &&
+          runtimeType == other.runtimeType &&
+          xxs == other.xxs &&
+          xs == other.xs &&
+          sm == other.sm &&
+          md == other.md &&
+          base == other.base &&
+          lg == other.lg &&
+          xl == other.xl &&
+          xxl == other.xxl &&
+          page == other.page;
+
+  @override
+  int get hashCode => Object.hash(xxs, xs, sm, md, base, lg, xl, xxl, page);
 }

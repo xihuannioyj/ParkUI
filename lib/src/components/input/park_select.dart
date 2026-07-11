@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 
@@ -316,8 +315,8 @@ class ParkSelect extends FormField<String> {
     return GestureDetector(
       onTap: isDisabled ? null : () => _showSheet(state),
       child: AnimatedContainer(
-        duration: ParkMotion.standard,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.standard,
+        curve: park.motion.defaultEasing,
         width: double.infinity,
         constraints: BoxConstraints(minHeight: minH),
         padding: EdgeInsets.symmetric(

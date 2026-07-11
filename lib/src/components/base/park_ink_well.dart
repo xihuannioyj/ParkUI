@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 
 /// ParkInkWell — 轻量级点击容器
 ///
@@ -49,7 +48,7 @@ class ParkInkWell extends StatefulWidget {
   /// 按下时 opacity 透明度（默认 0.85）
   final double pressedOpacity;
 
-  /// 动画时长（默认 ParkMotion.quick = 100ms）
+  /// 动画时长（默认 150ms）
   final Duration duration;
 
   /// 鼠标指针样式（默认 click）
@@ -71,7 +70,7 @@ class ParkInkWell extends StatefulWidget {
     this.borderRadius,
     this.pressedScale = 0.97,
     this.pressedOpacity = 0.85,
-    this.duration = ParkMotion.quick,
+    this.duration = const Duration(milliseconds: 150),
     this.cursor,
     this.showHoverHighlight = true,
     this.curve = Curves.easeInOut,

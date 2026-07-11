@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 
@@ -617,8 +616,8 @@ class _ParkDropdownSheetContentState
     return GestureDetector(
       onTap: () => _toggleItem(item),
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -712,8 +711,8 @@ class _ParkDropdownSheetContentState
     return GestureDetector(
       onTap: () => _toggleItem(item),
       child: AnimatedContainer(
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: park.motion.quick,
+        curve: park.motion.defaultEasing,
         decoration: BoxDecoration(
           color: isSelected
               ? park.colors.brand.withValues(alpha: 0.08)

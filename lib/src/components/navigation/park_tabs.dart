@@ -160,6 +160,15 @@ class ParkTabs extends StatefulWidget {
   /// 指示器高度（默认 2px）
   final double? indicatorHeight;
 
+  /// 自定义 Tab Widget 构建器。
+  ///
+  /// 当提供时，每个 Tab 的 Widget 由此构建器生成，忽略 [ParkTab] 的默认渲染。
+  /// 参数为 (index, isSelected)，返回自定义 Widget。
+  final Widget Function(int index, bool isSelected)? tabBuilder;
+
+  /// 指示器内边距。
+  final EdgeInsetsGeometry? indicatorPadding;
+
   /// 是否支持键盘方向键切换标签
   final bool keyboard;
 
@@ -194,6 +203,8 @@ class ParkTabs extends StatefulWidget {
     this.indicatorColor,
     this.indicatorWidth,
     this.indicatorHeight,
+    this.tabBuilder,
+    this.indicatorPadding,
     this.keyboard = false,
     this.bindKey,
     this.bindingService,
@@ -456,9 +467,14 @@ class _ParkTabsState extends State<ParkTabs>
         ? park.typography.sizeBody + 2.0
         : park.typography.sizeBody;
 
-    // 构建标签列表（支持 gutter 间距）
+    // 构建标签列表（支持 tabBuilder 和 gutter 间距）
     final rawTabs = widget.tabs.asMap().entries.map(
-      (e) => _buildTab(e.value, e.key, park),
+      (e) {
+        if (widget.tabBuilder != null) {
+          return widget.tabBuilder!(e.key, controller.index == e.key);
+        }
+        return _buildTab(e.value, e.key, park);
+      },
     ).toList();
 
     final List<Widget> tabWidgets;
@@ -514,6 +530,7 @@ class _ParkTabsState extends State<ParkTabs>
       indicatorColor: isCard ? Colors.transparent : colors.brand,
       indicatorWeight: isCard ? 0 : 2.0,
       indicatorSize: TabBarIndicatorSize.label,
+      indicatorPadding: widget.indicatorPadding ?? EdgeInsets.zero,
       indicator: isCard
           ? BoxDecoration(
               color: colors.brand.withValues(alpha: 0.1),

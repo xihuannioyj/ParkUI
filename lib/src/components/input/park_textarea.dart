@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
-import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import 'park_input.dart';
@@ -365,7 +364,7 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
     Widget borderedContainer;
     if (textareaWidget.bordered) {
       borderedContainer = AnimatedContainer(
-        duration: ParkMotion.standard,
+        duration: park.motion.standard,
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: park.radius.brSm,
@@ -378,7 +377,7 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
       );
     } else {
       borderedContainer = AnimatedContainer(
-        duration: ParkMotion.standard,
+        duration: park.motion.standard,
         decoration: const BoxDecoration(
           color: Colors.transparent,
         ),

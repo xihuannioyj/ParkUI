@@ -4,6 +4,9 @@ import 'tokens/park_typography.dart';
 import 'tokens/park_spacing.dart';
 import 'tokens/park_radius.dart';
 import 'tokens/park_shadows.dart';
+import 'tokens/park_motion.dart';
+import 'tokens/park_sizing.dart';
+import 'park_icon_theme_data.dart';
 
 /// 表面风格：决定卡片/容器等表面材质如何渲染（阴影、边框、玻璃、霓虹等）。
 ///
@@ -65,6 +68,15 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
   /// 表面风格（决定卡片/容器材质渲染策略：stripe / flat / glass / neo / neon）。
   final ParkSurfaceStyle surfaceStyle;
 
+  /// 图标主题。
+  final ParkIconThemeData iconTheme;
+
+  /// 动画令牌。
+  final ParkMotion motion;
+
+  /// 尺寸令牌。
+  final ParkSizing sizing;
+
   const ParkThemeData({
     required this.colors,
     required this.typography,
@@ -72,6 +84,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     required this.radius,
     required this.shadows,
     this.surfaceStyle = ParkSurfaceStyle.stripe,
+    this.iconTheme = const ParkIconThemeData(),
+    this.motion = const ParkMotion(),
+    this.sizing = const ParkSizing(),
   });
 
   /// 亮色主题
@@ -82,6 +97,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       spacing: ParkSpacing.defaults(),
       radius: ParkRadius.defaults(),
       shadows: ParkShadows.defaults(),
+      iconTheme: const ParkIconThemeData(),
+      motion: const ParkMotion(),
+      sizing: ParkSizing.defaults(),
     );
   }
 
@@ -93,6 +111,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       spacing: ParkSpacing.defaults(),
       radius: ParkRadius.defaults(),
       shadows: ParkShadows.dark(),
+      iconTheme: const ParkIconThemeData(),
+      motion: const ParkMotion(),
+      sizing: ParkSizing.defaults(),
     );
   }
 
@@ -104,6 +125,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     ParkRadius? radius,
     ParkShadows? shadows,
     ParkSurfaceStyle? surfaceStyle,
+    ParkIconThemeData? iconTheme,
+    ParkMotion? motion,
+    ParkSizing? sizing,
   }) {
     return ParkThemeData(
       colors: colors ?? this.colors,
@@ -112,6 +136,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       radius: radius ?? this.radius,
       shadows: shadows ?? this.shadows,
       surfaceStyle: surfaceStyle ?? this.surfaceStyle,
+      iconTheme: iconTheme ?? this.iconTheme,
+      motion: motion ?? this.motion,
+      sizing: sizing ?? this.sizing,
     );
   }
 
@@ -127,6 +154,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       radius: _lerpRadius(radius, other.radius, t),
       shadows: t < 0.5 ? shadows : other.shadows,
       surfaceStyle: t < 0.5 ? surfaceStyle : other.surfaceStyle,
+      iconTheme: t < 0.5 ? iconTheme : other.iconTheme,
+      motion: t < 0.5 ? motion : other.motion,
+      sizing: t < 0.5 ? sizing : other.sizing,
     );
   }
 

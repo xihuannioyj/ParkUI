@@ -114,8 +114,8 @@ class _ParkRateBuilder extends StatelessWidget {
     final currentValue = state.value ?? 0;
     final isInteractive = !widget.readOnly && !widget.disabled;
     final effectiveActiveColor = widget.disabled
-        ? (widget.activeColor ?? const Color(0xFFFADB14)).withValues(alpha: 0.4)
-        : (widget.activeColor ?? const Color(0xFFFADB14));
+        ? (widget.activeColor ?? park.colors.warning).withValues(alpha: 0.4)
+        : (widget.activeColor ?? park.colors.warning);
     final effectiveInactiveColor = widget.disabled
         ? (widget.inactiveColor ?? park.colors.border).withValues(alpha: 0.4)
         : (widget.inactiveColor ?? park.colors.border);

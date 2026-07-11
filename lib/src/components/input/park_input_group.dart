@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_sizing.dart';
 import 'park_input.dart';
 
 /// Park 紧凑组合输入组件。
@@ -64,14 +65,14 @@ class ParkInputGroup extends StatelessWidget {
   });
 
   /// 根据尺寸返回组高（与 ParkInput / ParkSelect 高度映射保持一致）。
-  double get _groupHeight {
+  double _groupHeight(ParkSizing sizing) {
     switch (size) {
       case ParkInputSize.small:
-        return 32;
+        return sizing.inputHeightSm;
       case ParkInputSize.medium:
-        return 48;
+        return sizing.inputHeightMd;
       case ParkInputSize.large:
-        return 56;
+        return sizing.inputHeightLg;
     }
   }
 
@@ -81,6 +82,7 @@ class ParkInputGroup extends StatelessWidget {
         ParkThemeData.light();
     final colors = park.colors;
     final radius = park.radius;
+    final sizing = park.sizing;
 
     final Color borderColor = disabled ? colors.divider : colors.border;
     final Color bgColor = disabled ? colors.disabledBg : colors.surface;
@@ -106,7 +108,7 @@ class ParkInputGroup extends StatelessWidget {
         rowChildren.add(
           Container(
             width: 1,
-            height: _groupHeight - 16,
+            height: _groupHeight(sizing) - 16,
             color: colors.divider,
           ),
         );
@@ -117,7 +119,7 @@ class ParkInputGroup extends StatelessWidget {
     return Container(
       // +2 用于边框（1px 上下），额外 +2 给子项（如 ParkInput bordered:false 的
       // TextField）留足 intrinsic 高度，防止 1.5px 底部溢出。
-      height: _groupHeight + 4,
+      height: _groupHeight(sizing) + 4,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: bgColor,

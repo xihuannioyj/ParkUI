@@ -101,16 +101,16 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
         GestureDetector(
           onTap: widget.disabled ? null : _showPicker,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: EdgeInsets.all(park.spacing.md),
             decoration: BoxDecoration(
               color: widget.disabled ? park.colors.disabledBg : Colors.transparent,
               border: Border.all(color: park.colors.border),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: park.radius.brSm,
             ),
             child: Row(
               children: [
                 Icon(Icons.access_time, size: 16, color: park.colors.textSecondary),
-                const SizedBox(width: 8),
+                park.spacing.hSm,
                 Expanded(
                   child: Text(
                     displayText,

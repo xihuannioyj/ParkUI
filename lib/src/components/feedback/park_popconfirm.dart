@@ -137,7 +137,7 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
             color: Colors.transparent,
             child: Container(
               constraints: const BoxConstraints(maxWidth: 280),
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(park.spacing.base),
               decoration: BoxDecoration(
                 color: park.colors.surface,
                 borderRadius: BorderRadius.circular(12),
@@ -156,7 +156,7 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
                   // 标题区域
                   if (widget.titleWidget != null || widget.title != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.only(bottom: park.spacing.sm),
                       child: widget.titleWidget ??
                           Row(
                             children: [
@@ -166,7 +166,7 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
                                     color: widget.danger
                                         ? park.colors.error
                                         : park.colors.brand),
-                                const SizedBox(width: 8),
+                                park.spacing.hSm,
                               ],
                               Expanded(
                                 child: Text(

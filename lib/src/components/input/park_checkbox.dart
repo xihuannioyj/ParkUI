@@ -101,7 +101,7 @@ class _ParkCheckboxState extends FormFieldState<bool>
   void initState() {
     super.initState();
     _animController = AnimationController(
-      duration: ParkMotion.quick,
+      duration: ParkMotion.defaults.quick,
       vsync: this,
       value: (value ?? false) ? 1.0 : 0.0,
     );

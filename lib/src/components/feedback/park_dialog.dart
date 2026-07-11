@@ -519,10 +519,10 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: ParkMotion.standard,
+      duration: ParkMotion.defaults.standard,
     );
     _fadeAnim =
-        CurvedAnimation(parent: _controller, curve: ParkMotion.enterEasing);
+        CurvedAnimation(parent: _controller, curve: ParkMotion.defaults.enterEasing);
     _scaleAnim = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
@@ -754,8 +754,8 @@ class _ParkDialogButtonState extends State<_ParkDialogButton> {
       onTap: disabled ? null : widget.onPressed,
       child: AnimatedScale(
         scale: _isPressed ? 0.95 : 1.0,
-        duration: ParkMotion.quick,
-        curve: ParkMotion.defaultEasing,
+        duration: widget.park.motion.quick,
+        curve: widget.park.motion.defaultEasing,
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: widget.park.spacing.base,

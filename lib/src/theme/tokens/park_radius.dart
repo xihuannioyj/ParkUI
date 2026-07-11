@@ -1,5 +1,34 @@
 import 'package:flutter/material.dart';
 
+/// 组件类型枚举（用于圆角查询）
+///
+/// 仅用于快捷查询组件推荐圆角值，不与组件实际类型耦合。
+enum ParkRadiusComponent {
+  /// 常规按钮
+  button,
+
+  /// 圆角/胶囊按钮
+  buttonRound,
+
+  /// 输入框
+  input,
+
+  /// 卡片
+  card,
+
+  /// 对话框
+  dialog,
+
+  /// 选择器
+  select,
+
+  /// 标签
+  tag,
+
+  /// 徽标
+  badge,
+}
+
 /// Park UI 圆角令牌
 ///
 /// 提供从小到大的圆角预设值，覆盖按钮、卡片、输入框、弹窗等场景。
@@ -59,6 +88,33 @@ class ParkRadius {
   /// 全圆角（胶囊形）
   BorderRadius get brFull => BorderRadius.circular(full);
 
+  // ========================================================================
+  // 组件圆角映射
+  // ========================================================================
+
+  /// 获取指定组件的推荐圆角值（px）。
+  double componentRadius(ParkRadiusComponent component) {
+    switch (component) {
+      case ParkRadiusComponent.button:
+      case ParkRadiusComponent.input:
+      case ParkRadiusComponent.select:
+        return sm; // 8px
+      case ParkRadiusComponent.buttonRound:
+        return full; // 9999px
+      case ParkRadiusComponent.card:
+        return md; // 12px
+      case ParkRadiusComponent.dialog:
+        return lg; // 16px
+      case ParkRadiusComponent.tag:
+      case ParkRadiusComponent.badge:
+        return xs; // 4px
+    }
+  }
+
+  /// 获取指定组件的推荐 [BorderRadius]。
+  BorderRadius componentBr(ParkRadiusComponent component) =>
+      BorderRadius.circular(componentRadius(component));
+
   ParkRadius copyWith({
     double? xs,
     double? sm,
@@ -76,4 +132,19 @@ class ParkRadius {
       full: full ?? this.full,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkRadius &&
+          runtimeType == other.runtimeType &&
+          xs == other.xs &&
+          sm == other.sm &&
+          md == other.md &&
+          lg == other.lg &&
+          xl == other.xl &&
+          full == other.full;
+
+  @override
+  int get hashCode => Object.hash(xs, sm, md, lg, xl, full);
 }

@@ -269,6 +269,9 @@ class ParkFormItem extends StatefulWidget {
   /// 覆盖表单级 colon 设置。null 时使用表单级设置。
   final bool? colon;
 
+  /// 表单项布局方式。null 时继承 [ParkForm] 或 [ParkFormScope] 的设置。
+  final ParkFormLayout? layout;
+
   /// 创建表单项容器。
   const ParkFormItem({
     super.key,
@@ -288,6 +291,7 @@ class ParkFormItem extends StatefulWidget {
     this.labelCol,
     this.rules,
     this.colon,
+    this.layout,
   });
 
   @override
@@ -334,9 +338,9 @@ class ParkFormItemState extends State<ParkFormItem> {
     final typo = park.typography;
     final spacing = park.spacing;
 
-    // 从 ParkFormScope 获取表单级配置
+    // 从 ParkFormScope 获取表单级配置，单项 layout 优先
     final scope = ParkFormScope.of(context);
-    final formLayout = scope?.layout ?? ParkFormLayout.vertical;
+    final formLayout = widget.layout ?? scope?.layout ?? ParkFormLayout.vertical;
     final formLabelWidth = widget.labelCol ?? scope?.labelWidth ?? 100;
     final showColon = widget.colon ?? scope?.colon ?? true;
     final formRequiredMark = scope?.requiredMark ?? ParkRequiredMark.asterisk;
