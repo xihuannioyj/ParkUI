@@ -302,7 +302,12 @@ class ParkRadio extends FormField<String> {
       final isSelected = state.value == option.value;
 
       return Expanded(
-        child: GestureDetector(
+        child: Semantics(
+          label: option.label,
+          selected: isSelected,
+          button: true,
+          enabled: !isDisabled,
+          child: GestureDetector(
           onTap: isDisabled
               ? null
               : () {
@@ -332,7 +337,7 @@ class ParkRadio extends FormField<String> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: park.colors.overlay.withValues(alpha: 0.06),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -358,7 +363,7 @@ class ParkRadio extends FormField<String> {
                   ),
           ),
         ),
-      );
+      ));
     }).toList();
 
     return Container(
@@ -437,51 +442,57 @@ class ParkRadioItem extends StatelessWidget {
 
     final dotColor = disabled ? colors.textDisabled : colors.brand;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: park.motion.quick,
-            curve: park.motion.defaultEasing,
-            width: outerSize,
-            height: outerSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: borderColor,
-                width: isSelected ? 2.0 : 1.5,
-              ),
-              color: isSelected
-                  ? colors.brandLight.withValues(alpha: 0.15)
-                  : Colors.transparent,
-            ),
-            alignment: Alignment.center,
-            child: AnimatedContainer(
+    return Semantics(
+      label: label,
+      selected: isSelected,
+      button: true,
+      enabled: !disabled,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
               duration: park.motion.quick,
               curve: park.motion.defaultEasing,
-              width: isSelected ? innerDotSize : 0,
-              height: isSelected ? innerDotSize : 0,
+              width: outerSize,
+              height: outerSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: dotColor,
+                border: Border.all(
+                  color: borderColor,
+                  width: isSelected ? 2.0 : 1.5,
+                ),
+                color: isSelected
+                    ? colors.brandLight.withValues(alpha: 0.15)
+                    : Colors.transparent,
+              ),
+              alignment: Alignment.center,
+              child: AnimatedContainer(
+                duration: park.motion.quick,
+                curve: park.motion.defaultEasing,
+                width: isSelected ? innerDotSize : 0,
+                height: isSelected ? innerDotSize : 0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dotColor,
+                ),
               ),
             ),
-          ),
-          SizedBox(width: park.spacing.sm),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: park.typography.sizeBody,
-              color: disabled ? colors.textDisabled : colors.textPrimary,
-              fontWeight: isSelected
-                  ? park.typography.weightMedium
-                  : park.typography.weightRegular,
+            SizedBox(width: park.spacing.sm),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: park.typography.sizeBody,
+                color: disabled ? colors.textDisabled : colors.textPrimary,
+                fontWeight: isSelected
+                    ? park.typography.weightMedium
+                    : park.typography.weightRegular,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

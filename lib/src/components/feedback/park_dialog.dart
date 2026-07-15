@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
+import '../../l10n/park_localizations.dart';
 
 /// ParkDialog — 对话框组件，支持 alert / confirm / info / success / warning / error 等静态调用。
 class ParkDialog extends StatefulWidget {
@@ -50,6 +51,9 @@ class ParkDialog extends StatefulWidget {
 
   /// Callback fired after dialog close animation completes.
   final VoidCallback? afterClose;
+
+  @override
+  State<ParkDialog> createState() => _ParkDialogState();
 
   /// When true, dialog content is destroyed when closed (unmounted).
   final bool destroyOnClose;
@@ -98,7 +102,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
+    String? confirmText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     bool centered = false,
@@ -111,12 +115,14 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
+      confirmText: confirmText ?? l10n.confirmText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       centered: centered,
@@ -129,6 +135,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -137,8 +144,8 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
-    String cancelText = '取消',
+    String? confirmText,
+    String? cancelText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
@@ -152,13 +159,15 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
-      cancelText: cancelText,
+      confirmText: confirmText ?? l10n.confirmText,
+      cancelText: cancelText ?? l10n.cancelText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       onCancel: onCancel,
@@ -172,6 +181,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -180,7 +190,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '我知道了',
+    String? confirmText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     IconData? icon,
@@ -194,14 +204,16 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
+      confirmText: confirmText ?? l10n.gotItText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       statusIcon: icon != null
@@ -217,6 +229,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -225,7 +238,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
+    String? confirmText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     IconData? icon,
@@ -239,14 +252,16 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
+      confirmText: confirmText ?? l10n.confirmText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       statusIcon: icon != null
@@ -263,6 +278,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -271,7 +287,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
+    String? confirmText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     IconData? icon,
@@ -285,14 +301,16 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
+      confirmText: confirmText ?? l10n.confirmText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       statusIcon: icon != null
@@ -309,6 +327,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -317,7 +336,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
+    String? confirmText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
     IconData? icon,
@@ -331,14 +350,16 @@ class ParkDialog extends StatefulWidget {
     Widget? contentWidget,
     Widget? titleWidget,
     bool fullscreen = false,
+    VoidCallback? afterClose,
   }) {
+    final l10n = ParkLocalizations.of(context);
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     return _show(
       context,
       title: title,
       content: content,
-      confirmText: confirmText,
+      confirmText: confirmText ?? l10n.confirmText,
       barrierDismissible: barrierDismissible,
       onConfirm: onConfirm,
       statusIcon: icon != null
@@ -354,6 +375,7 @@ class ParkDialog extends StatefulWidget {
       contentWidget: contentWidget,
       titleWidget: titleWidget,
       fullscreen: fullscreen,
+      afterClose: afterClose,
     );
   }
 
@@ -378,21 +400,34 @@ class ParkDialog extends StatefulWidget {
     Widget? titleWidget,
     bool fullscreen = false,
     List<Widget>? actions,
+    VoidCallback? afterClose,
   }) {
     final overlay = Overlay.of(context, rootOverlay: true);
     late OverlayEntry entry;
     bool dismissed = false;
     final completer = Completer<void>();
+    final GlobalKey<_ParkDialogOverlayState> dialogStateKey =
+        GlobalKey<_ParkDialogOverlayState>();
 
-    void dismiss() {
+    void remove() {
       if (dismissed) return;
       dismissed = true;
       entry.remove();
       if (!completer.isCompleted) completer.complete();
     }
 
+    void dismiss() {
+      final _ParkDialogOverlayState? state = dialogStateKey.currentState;
+      if (state == null) {
+        remove();
+        return;
+      }
+      state.dismiss();
+    }
+
     entry = OverlayEntry(builder: (_) {
       return _ParkDialogOverlay(
+        key: dialogStateKey,
         title: title,
         content: content,
         confirmText: confirmText,
@@ -406,7 +441,7 @@ class ParkDialog extends StatefulWidget {
           onCancel?.call();
           dismiss();
         },
-        onDismiss: dismiss,
+        onDismiss: remove,
         statusIcon: statusIcon,
         centered: centered,
         closable: closable,
@@ -419,15 +454,13 @@ class ParkDialog extends StatefulWidget {
         titleWidget: titleWidget,
         fullscreen: fullscreen,
         actions: actions,
+        afterClose: afterClose,
       );
     });
 
     overlay.insert(entry);
     return completer.future;
   }
-
-  @override
-  State<ParkDialog> createState() => _ParkDialogState();
 }
 
 class _ParkDialogState extends State<ParkDialog> {
@@ -452,6 +485,7 @@ class _ParkDialogState extends State<ParkDialog> {
       contentWidget: widget.contentWidget,
       titleWidget: widget.titleWidget,
       fullscreen: widget.fullscreen,
+      afterClose: widget.afterClose,
       actions: widget.actions,
     );
   }
@@ -477,9 +511,11 @@ class _ParkDialogOverlay extends StatefulWidget {
   final Widget? contentWidget;
   final Widget? titleWidget;
   final bool fullscreen;
+  final VoidCallback? afterClose;
   final List<Widget>? actions;
 
   const _ParkDialogOverlay({
+    super.key,
     required this.title,
     this.content,
     required this.confirmText,
@@ -499,6 +535,7 @@ class _ParkDialogOverlay extends StatefulWidget {
     this.contentWidget,
     this.titleWidget,
     this.fullscreen = false,
+    this.afterClose,
     this.actions,
   });
 
@@ -536,12 +573,18 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
     }
   }
 
+  /// Public dismiss entry point for the static call path.
+  void dismiss() {
+    _dismiss(null);
+  }
+
   Future<void> _dismiss(VoidCallback? callback) async {
     if (_isClosing) return;
     _isClosing = true;
     await _controller.reverse();
     if (!mounted) return;
     widget.onDismiss();
+    widget.afterClose?.call();
     callback?.call();
   }
 
@@ -574,7 +617,9 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    Widget dialogContent = Material(
+    Widget dialogContent = Semantics(
+      container: true,
+      child: Material(
       color: Colors.transparent,
       child: Container(
         constraints: widget.fullscreen
@@ -611,13 +656,17 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                   ),
                 ),
                 if (widget.closable)
-                  GestureDetector(
+                  Semantics(
+                    button: true,
+                    label: ParkLocalizations.of(context).closeText,
+                    child: GestureDetector(
                     onTap: () => _dismiss(widget.onCancel),
                     child: Icon(
                       Icons.close,
                       size: 20,
                       color: park.colors.textSecondary,
                     ),
+                  ),
                   ),
               ],
             ),
@@ -676,6 +725,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
               ),
           ],
         ),
+      ),
       ),
     );
 
@@ -747,7 +797,11 @@ class _ParkDialogButtonState extends State<_ParkDialogButton> {
   @override
   Widget build(BuildContext context) {
     final bool disabled = widget.onPressed == null || widget.loading;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      enabled: !disabled,
+      label: widget.label,
+      child: GestureDetector(
       onTapDown: disabled ? null : (_) => setState(() => _isPressed = true),
       onTapUp: disabled ? null : (_) => setState(() => _isPressed = false),
       onTapCancel: disabled ? null : () => setState(() => _isPressed = false),
@@ -802,6 +856,7 @@ class _ParkDialogButtonState extends State<_ParkDialogButton> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

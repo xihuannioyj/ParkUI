@@ -42,6 +42,8 @@ class ParkSchemaBuilder {
     bool required = false,
     String? groupKey,
     List<Map<String, dynamic>> options = const [],
+    String? fieldControl,
+    Map<String, dynamic> ext = const <String, dynamic>{},
   }) {
     return ParkFormFieldSchema(
       fieldId: fieldId,
@@ -54,6 +56,8 @@ class ParkSchemaBuilder {
       defaultValue: defaultValue,
       groupKey: groupKey,
       options: options,
+      fieldControl: fieldControl,
+      ext: ext,
     );
   }
 
@@ -95,6 +99,11 @@ class ParkSchemaBuilder {
       required: required,
       helpText: helpText,
       groupKey: groupKey,
+      // 写入数字范围到 ext，与数字控件读取口径（config['min'] / config['max']）一致。
+      ext: <String, dynamic>{
+        if (min != null) 'min': min,
+        if (max != null) 'max': max,
+      },
     ));
     return this;
   }
@@ -112,6 +121,7 @@ class ParkSchemaBuilder {
     _fields.add(_makeField(
       fieldId: fieldId,
       fieldType: multiple ? ParkFieldType.checkbox : ParkFieldType.select,
+      fieldControl: multiple ? 'multi' : null,
       labelName: label ?? fieldId,
       placeholder: placeholder,
       required: required,
@@ -135,6 +145,10 @@ class ParkSchemaBuilder {
       labelName: label ?? fieldId,
       required: required,
       groupKey: groupKey,
+      // 写入是否带时间选择标记到 ext，供日期控件读取（showTime）。
+      ext: <String, dynamic>{
+        'showTime': showTime,
+      },
     ));
     return this;
   }
@@ -207,6 +221,10 @@ class ParkSchemaBuilder {
       labelName: label ?? fieldId,
       defaultValue: 0,
       groupKey: groupKey,
+      // 写入评分上限到 ext，与评分控件读取口径（config['max']）一致。
+      ext: <String, dynamic>{
+        'max': max,
+      },
     ));
     return this;
   }
@@ -223,6 +241,10 @@ class ParkSchemaBuilder {
       fieldType: ParkFieldType.image,
       labelName: label ?? fieldId,
       groupKey: groupKey,
+      // 写入图片最大数量到 ext，与图片上传控件的读取口径一致（B65-Fix4）。
+      ext: <String, dynamic>{
+        'maxCount': maxCount,
+      },
     ));
     return this;
   }

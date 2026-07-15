@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import 'form_formatter_schema.dart';
 import 'form_layout_schema.dart';
 
 /// 动态表单字段控件类型。
@@ -345,6 +346,12 @@ class ParkFormFieldSchema extends Equatable {
   /// 控件 UI 配置（前缀、后缀、行数、高度等）。
   final ParkFieldUiConfig uiConfig;
 
+  /// 字段格式化配置。
+  ///
+  /// 配置了该属性时，展示文本会通过 [FormFormatterEngine.applyAll] 进行格式化。
+  /// 若为 null 则表示不应用任何格式化。
+  final ParkFormFieldFormatterSchema? format;
+
   // ---- 扩展 ----
 
   /// 扩展字段（业务自定义属性）。
@@ -387,6 +394,7 @@ class ParkFormFieldSchema extends Equatable {
     this.labelLayout,
     this.sectionKey,
     this.uiConfig = const ParkFieldUiConfig(),
+    this.format,
     this.ext = const <String, dynamic>{},
   });
 
@@ -523,6 +531,27 @@ class ParkFormFieldSchema extends Equatable {
     // 扩展。
     final Map<String, dynamic> extData = _parseMap(json['ext']);
 
+    // 格式化配置：优先从顶级 format 键读取，退化到 ext 中的旧字段。
+    ParkFormFieldFormatterSchema? formatSchema;
+    final dynamic formatJson = json['format'];
+    if (formatJson is Map<String, dynamic>) {
+      formatSchema = ParkFormFieldFormatterSchema.fromJson(formatJson);
+    } else if (formatJson is Map) {
+      formatSchema = ParkFormFieldFormatterSchema.fromJson(
+        Map<String, dynamic>.from(formatJson),
+      );
+    } else if (extData.containsKey('formatterType')) {
+      // 兼容旧版：从 ext 中读取格式化字段，构建临时 JSON 交由 fromJson 解析。
+      final Map<String, dynamic> formatFromExt = <String, dynamic>{
+        'formatterType': extData['formatterType']?.toString() ?? 'none',
+        'formatterPattern': extData['formatterPattern']?.toString() ?? '',
+        'suffixMode': extData['suffixMode']?.toString() ?? 'none',
+        'suffixText': extData['suffixText']?.toString() ?? '',
+        'displayTransform': extData['displayTransform']?.toString() ?? 'none',
+      };
+      formatSchema = ParkFormFieldFormatterSchema.fromJson(formatFromExt);
+    }
+
     return ParkFormFieldSchema(
       fieldId: id,
       fieldType: _parseType(typeStr),
@@ -561,6 +590,7 @@ class ParkFormFieldSchema extends Equatable {
           : null,
       sectionKey: secKey,
       uiConfig: ParkFieldUiConfig.fromJson(uiJson),
+      format: formatSchema,
       ext: extData,
     );
   }
@@ -603,6 +633,7 @@ class ParkFormFieldSchema extends Equatable {
       'label_layout': labelLayout?.name,
       'section_key': sectionKey,
       'ui_config': uiConfig.toJson(),
+      'format': format?.toJson(),
       'ext': ext,
     };
   }
@@ -646,6 +677,7 @@ class ParkFormFieldSchema extends Equatable {
     ParkLabelLayout? labelLayout,
     String? sectionKey,
     ParkFieldUiConfig? uiConfig,
+    ParkFormFieldFormatterSchema? format,
     Map<String, dynamic>? ext,
   }) {
     return ParkFormFieldSchema(
@@ -684,6 +716,7 @@ class ParkFormFieldSchema extends Equatable {
       labelLayout: labelLayout ?? this.labelLayout,
       sectionKey: sectionKey ?? this.sectionKey,
       uiConfig: uiConfig ?? this.uiConfig,
+      format: format ?? this.format,
       ext: ext ?? this.ext,
     );
   }
@@ -867,6 +900,7 @@ class ParkFormFieldSchema extends Equatable {
     labelLayout,
     sectionKey,
     uiConfig,
+    format,
     ext,
   ];
 }

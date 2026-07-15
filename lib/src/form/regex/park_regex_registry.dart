@@ -28,7 +28,7 @@ class ParkRegexRegistry {
       description: '中文姓名（2-20字）',
     ),
     'url': _RegexEntry(
-      pattern: r'^https?://[\w\-]+(\.[\w\-]+)+([\w.,@?^=%&:/~+#\-]*'
+      pattern: r'^https?://[\w\-]+(?:\.[\w\-])+([\w.,@?^=%&:/~+#\-]*'
           r'[\w@?^=%&/~+#\-])?$',
       description: 'HTTP/HTTPS 链接',
     ),
@@ -128,11 +128,34 @@ class ParkRegexRegistry {
   /// [tag] 标签名。
   /// [pattern] 正则表达式字符串。
   /// [description] 标签描述。
+  ///
+  /// 若 [pattern] 包含嵌套量词（如 `(a+)+`、`(x*)*` 等可能导致
+  /// 回溯爆炸的危险模式），将抛出 [ArgumentError]。
   static void register(String tag, String pattern, {String? description}) {
+    _safeRegExp(pattern);
     _registry[tag] = _RegexEntry(
       pattern: pattern,
       description: description ?? tag,
     );
+  }
+
+  /// 校验正则表达式是否安全（不含嵌套量词）。
+  ///
+  /// 嵌套量词（如 `(a+)+`、`([\w]+)*`）可能导致灾难性回溯（ReDoS），
+  /// 此方法检测常见危险模式并在匹配时抛出 [ArgumentError]。
+  static void _safeRegExp(String pattern) {
+    // 检测嵌套量词模式：
+    // 分组后跟量词，且分组内部也包含量词。
+    // 例如: (xxx+)+, (xxx*)+, (xxx+)*, (xxx{n,m})+ 等
+    final RegExp nestedQuantifier = RegExp(
+      r'\([^)]*[+*}][^)]*\)[+*?]|\([^)]*[+*}][^)]*\)\{',
+    );
+    if (nestedQuantifier.hasMatch(pattern)) {
+      throw ArgumentError(
+        'Potentially dangerous regex pattern rejected: "$pattern". '
+        'Nested quantifiers (e.g. (a+)+) can cause catastrophic backtracking.',
+      );
+    }
   }
 
   /// 移除已注册的正则标签。

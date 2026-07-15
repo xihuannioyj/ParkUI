@@ -34,7 +34,7 @@ void main() {
           reason: '未找到带边框+圆角+裁剪的外层 Container');
       // medium 默认组高应为 48（外层 Container 设置了固定 height）
       final outerSize = tester.getSize(find.byWidget(outer.first));
-      // BUG-5 修复：外层高度 = _groupHeight(48) + 上下边框(2) = 50
+      // 外层高度 = _groupHeight(48) + 上下边框(2) = 50
       expect(outerSize.height, 50.0);
     });
 
@@ -57,10 +57,10 @@ void main() {
       expect(dividerContainers.length, 1);
     });
 
-    testWidgets('组高随 size 变化 32/48/56', (tester) async {
+    testWidgets('组高随 size 变化 34/50/58', (tester) async {
       // 使用轻量 Text 子项避免 ParkInput 内部列约束干扰组容器高度检测。
       final cases = [
-        // BUG-5 修复：外层高度 = _groupHeight + 上下边框(2)
+        // B60 修复：外层高度 = _groupHeight + 上下边框(2)，移除多余留空
         (ParkInputSize.small, 34.0),
         (ParkInputSize.medium, 50.0),
         (ParkInputSize.large, 58.0),
@@ -93,6 +93,7 @@ void main() {
         ],
       )));
       final btnSize = tester.getSize(find.byType(ParkButton));
+      // 按钮放置在 Expanded+stretch 行内，会被拉伸至组容器内容区高度 50-2=48
       expect(btnSize.height, closeTo(48.0, 0.5));
     });
 

@@ -139,6 +139,21 @@ class ParkSpacing {
   /// 弹窗内边距 = xl = 24px
   double get dialogPadding => xl;
 
+  /// 逐间距值平滑插值。
+  static ParkSpacing lerp(ParkSpacing a, ParkSpacing b, double t) {
+    return ParkSpacing(
+      xxs: a.xxs + (b.xxs - a.xxs) * t,
+      xs: a.xs + (b.xs - a.xs) * t,
+      sm: a.sm + (b.sm - a.sm) * t,
+      md: a.md + (b.md - a.md) * t,
+      base: a.base + (b.base - a.base) * t,
+      lg: a.lg + (b.lg - a.lg) * t,
+      xl: a.xl + (b.xl - a.xl) * t,
+      xxl: a.xxl + (b.xxl - a.xxl) * t,
+      page: a.page + (b.page - a.page) * t,
+    );
+  }
+
   ParkSpacing copyWith({
     double? xxs,
     double? xs,

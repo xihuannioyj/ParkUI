@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Park Tab 指示器类型
@@ -127,17 +128,32 @@ class ParkTabs extends StatefulWidget {
   /// 标签栏尾部额外内容（如设置图标等）
   final Widget? tabBarExtraContent;
 
-  /// 是否在每个标签上显示关闭按钮
+  /// 是否在每个标签上显示关闭按钮（旧 API，由 [editable] 替代）
   final bool closable;
 
-  /// 关闭标签时的回调（参数为被关闭标签的索引）
+  /// 关闭标签时的回调（旧 API，由 [onTabClose] 替代）
   final ValueChanged<int>? onClose;
 
-  /// 是否显示添加标签按钮（"+"号）
+  /// 是否显示添加标签按钮（旧 API，由 [showAddButton] 替代）
   final bool addable;
 
-  /// 点击添加按钮时的回调
+  /// 点击添加按钮时的回调（旧 API，由 [onTabAdd] 替代）
   final VoidCallback? onAdd;
+
+  /// 是否可编辑 — 为 true 时每个 tab 显示关闭按钮（✕），最后一个 tab 不能关闭
+  final bool editable;
+
+  /// tab 关闭回调，由调用方实现删除 tab 后的数据更新
+  final ValueChanged<int>? onTabClose;
+
+  /// 为 true 时 tab 栏末尾显示「+」添加按钮
+  final bool showAddButton;
+
+  /// 添加按钮点击回调
+  final VoidCallback? onTabAdd;
+
+  /// tab 栏右侧额外内容区域（在滚动区外的右端位置，排布在添加按钮之右）
+  final Widget? extra;
 
   /// 是否销毁非活动标签页内容（默认 false，不销毁）
   final bool destroyInactiveTabPane;
@@ -196,6 +212,11 @@ class ParkTabs extends StatefulWidget {
     this.onClose,
     this.addable = false,
     this.onAdd,
+    this.editable = false,
+    this.onTabClose,
+    this.showAddButton = false,
+    this.onTabAdd,
+    this.extra,
     this.destroyInactiveTabPane = false,
     this.tabBarGutter,
     this.size = ParkTabSize.medium,
@@ -246,6 +267,22 @@ class _ParkTabsState extends State<ParkTabs>
   bool get _isVertical =>
       widget.tabPosition == ParkTabPosition.left ||
       widget.tabPosition == ParkTabPosition.right;
+
+  /// 统一闭包编辑状态：新 API [editable] 优先，旧 API [closable] 作为降级
+  bool get _effectiveEditable => widget.editable || widget.closable;
+
+  /// 统一关闭回调：新 API [onTabClose] 优先
+  ValueChanged<int>? get _effectiveOnTabClose =>
+      widget.onTabClose ?? widget.onClose;
+
+  /// 统一添加按钮：新 API [showAddButton] 优先
+  bool get _effectiveShowAddButton => widget.showAddButton || widget.addable;
+
+  /// 统一添加回调：新 API [onTabAdd] 优先
+  VoidCallback? get _effectiveOnTabAdd => widget.onTabAdd ?? widget.onAdd;
+
+  /// 统一额外内容：新 API [extra] 优先
+  Widget? get _effectiveExtra => widget.extra ?? widget.tabBarExtraContent;
 
   @override
   void initState() {
@@ -491,19 +528,23 @@ class _ParkTabsState extends State<ParkTabs>
     }
 
     // 添加"+"按钮
-    if (widget.addable) {
+    if (_effectiveShowAddButton) {
       tabWidgets.add(
         Padding(
           padding: EdgeInsets.only(left: park.spacing.sm),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: widget.onAdd,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: Icon(
-                Icons.add,
-                size: isLarge ? 22 : 18,
-                color: colors.textSecondary,
+            onTap: _effectiveOnTabAdd,
+            child: Semantics(
+              button: true,
+              label: 'Add tab',
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: Icon(
+                  Icons.add,
+                  size: isLarge ? 22 : 18,
+                  color: colors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -527,9 +568,11 @@ class _ParkTabsState extends State<ParkTabs>
         fontSize: labelFontSize,
         fontWeight: park.typography.weightRegular,
       ),
-      indicatorColor: isCard ? Colors.transparent : colors.brand,
-      indicatorWeight: isCard ? 0 : 2.0,
-      indicatorSize: TabBarIndicatorSize.label,
+      indicatorColor: widget.indicatorColor ?? (isCard ? Colors.transparent : colors.brand),
+      indicatorWeight: widget.indicatorHeight ?? (isCard ? 0 : 2.0),
+      indicatorSize: widget.indicatorWidth != null
+          ? TabBarIndicatorSize.tab
+          : TabBarIndicatorSize.label,
       indicatorPadding: widget.indicatorPadding ?? EdgeInsets.zero,
       indicator: isCard
           ? BoxDecoration(
@@ -551,22 +594,30 @@ class _ParkTabsState extends State<ParkTabs>
       tabs: tabWidgets,
     );
 
+    final barDecoration = widget.tabBarStyle ??
+        (isCard
+            ? BoxDecoration(
+                color: colors.surface, borderRadius: park.radius.brMd)
+            : BoxDecoration(
+                color: colors.surface,
+                border: Border(
+                  bottom: BorderSide(color: colors.divider, width: 0.5),
+                ),
+              ));
+
+    if (!widget.keyboard) {
+      tabBar = Focus(descendantsAreFocusable: false, child: tabBar);
+    }
+
     Widget bar = Container(
-      decoration: isCard
-          ? BoxDecoration(color: colors.surface, borderRadius: park.radius.brMd)
-          : BoxDecoration(
-              color: colors.surface,
-              border: Border(
-                bottom: BorderSide(color: colors.divider, width: 0.5),
-              ),
-            ),
-      child: widget.tabBarExtraContent != null
+      decoration: barDecoration,
+      child: _effectiveExtra != null
           ? Row(
               children: [
                 Expanded(child: tabBar),
                 Padding(
                   padding: EdgeInsets.only(right: park.spacing.sm),
-                  child: widget.tabBarExtraContent!,
+                  child: _effectiveExtra!,
                 ),
               ],
             )
@@ -601,26 +652,30 @@ class _ParkTabsState extends State<ParkTabs>
         mainAxisSize: MainAxisSize.min,
         children: [
           ..._insertGutters(tabs),
-          if (widget.addable)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.onAdd,
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: park.spacing.md,
-                  vertical: park.spacing.sm,
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.add, size: 18, color: colors.textSecondary),
-                  ],
+          if (_effectiveShowAddButton)
+            Semantics(
+              button: true,
+              label: 'Add tab',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _effectiveOnTabAdd,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: park.spacing.md,
+                    vertical: park.spacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.add, size: 18, color: colors.textSecondary),
+                    ],
+                  ),
                 ),
               ),
             ),
-          if (widget.tabBarExtraContent != null)
+          if (_effectiveExtra != null)
             Padding(
               padding: EdgeInsets.all(park.spacing.sm),
-              child: widget.tabBarExtraContent!,
+              child: _effectiveExtra!,
             ),
         ],
       ),
@@ -702,7 +757,7 @@ class _ParkTabsState extends State<ParkTabs>
                 ),
               ),
             ],
-            if (widget.closable)
+            if (_effectiveEditable && index < widget.tabs.length - 1)
               _buildCloseButton(index, park),
           ],
         ),
@@ -742,7 +797,7 @@ class _ParkTabsState extends State<ParkTabs>
               ),
             ),
           ],
-          if (widget.closable)
+          if (_effectiveEditable && index < widget.tabs.length - 1)
             _buildCloseButton(index, park),
         ],
       ),
@@ -765,17 +820,21 @@ class _ParkTabsState extends State<ParkTabs>
   }
 
   Widget _buildCloseButton(int index, ParkThemeData park) {
-    return Padding(
-      padding: EdgeInsets.only(left: park.spacing.xs),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => widget.onClose?.call(index),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: Icon(
-            Icons.close,
-            size: 16,
-            color: park.colors.textSecondary,
+    return Semantics(
+      button: true,
+      label: ParkLocalizations.of(context).closeText,
+      child: Padding(
+        padding: EdgeInsets.only(left: park.spacing.xs),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _effectiveOnTabClose?.call(index),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Icon(
+              Icons.close,
+              size: 16,
+              color: park.colors.textSecondary,
+            ),
           ),
         ),
       ),

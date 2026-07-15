@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Park 链接变体
@@ -157,6 +158,26 @@ class _ParkLinkState extends State<ParkLink> {
   bool _isPressed = false;
   bool _isHovered = false;
 
+  Future<void> _launchUrl() async {
+    try {
+      final uri = Uri.parse(widget.href!);
+      // B79: Block dangerous URL schemes (e.g. javascript:) that could be
+      // executed on the Web platform. Only allow safe, well-known schemes.
+      const allowedSchemes = {'http', 'https', 'mailto', 'tel'};
+      if (!allowedSchemes.contains(uri.scheme.toLowerCase())) {
+        debugPrint('ParkLink: Blocked unsafe scheme: ${uri.scheme}');
+        return;
+      }
+      if (widget.target == ParkLinkTarget.blank) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('ParkLink: Failed to launch URL: ${widget.href}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ??
@@ -208,13 +229,13 @@ class _ParkLinkState extends State<ParkLink> {
     } else {
       switch (widget.linkSize) {
         case ParkLinkSize.small:
-          effectiveFontSize = 12.0;
+          effectiveFontSize = park.typography.sizeOverline;
           break;
         case ParkLinkSize.medium:
           effectiveFontSize = park.typography.sizeBody;
           break;
         case ParkLinkSize.large:
-          effectiveFontSize = 16.0;
+          effectiveFontSize = park.typography.sizeH3;
           break;
       }
     }
@@ -292,7 +313,13 @@ class _ParkLinkState extends State<ParkLink> {
           onTapDown: (_) => setState(() => _isPressed = true),
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
-          onTap: widget.onTap,
+          onTap: () {
+            if (widget.onTap != null) {
+              widget.onTap!();
+            } else if (widget.href != null) {
+              _launchUrl();
+            }
+          },
           behavior: HitTestBehavior.opaque,
           child: content,
         ),

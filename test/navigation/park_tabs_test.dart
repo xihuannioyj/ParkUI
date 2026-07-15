@@ -7,8 +7,12 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkTabs', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTabs(
-        tabs: ['标签1', '标签2', '标签3'],
+      await tester.pumpWidget(_wrap(ParkTabs(
+        tabs: [
+          ParkTab(label: '标签1'),
+          ParkTab(label: '标签2'),
+          ParkTab(label: '标签3'),
+        ],
         children: [Text('内容1'), Text('内容2'), Text('内容3')],
       )));
       expect(find.text('标签1'), findsOneWidget);
@@ -17,8 +21,11 @@ void main() {
       expect(find.text('内容1'), findsOneWidget);
     });
     testWidgets('点击切换标签', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTabs(
-        tabs: ['A', 'B'],
+      await tester.pumpWidget(_wrap(ParkTabs(
+        tabs: [
+          ParkTab(label: 'A'),
+          ParkTab(label: 'B'),
+        ],
         children: [Text('内容A'), Text('内容B')],
       )));
       expect(find.text('内容A'), findsOneWidget);
@@ -27,8 +34,11 @@ void main() {
       expect(find.text('内容B'), findsOneWidget);
     });
     testWidgets('自定义初始索引', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTabs(
-        tabs: ['A', 'B'],
+      await tester.pumpWidget(_wrap(ParkTabs(
+        tabs: [
+          ParkTab(label: 'A'),
+          ParkTab(label: 'B'),
+        ],
         children: [Text('内容A'), Text('内容B')],
         initialIndex: 1,
       )));

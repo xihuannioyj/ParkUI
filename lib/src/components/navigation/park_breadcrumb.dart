@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import '../feedback/park_popover.dart';
 
 /// Park 面包屑尺寸
 enum ParkBreadcrumbSize {
@@ -62,23 +64,19 @@ class ParkBreadcrumb extends StatelessWidget {
   /// 点击展开被隐藏的项列表。
   final int? maxItems;
 
+  /// 溢出项展示方式：true 为下拉菜单，false 为 Popover
+  final bool overflowDropdown;
+
   /// 面包屑尺寸
   final ParkBreadcrumbSize size;
-
-  /// 分隔符图标（当 separator 为 null 时使用）
-  final Widget? separatorIcon;
-
-  /// 下拉菜单自定义样式类名
-  final String? overlayClassName;
 
   ParkBreadcrumb({
     super.key,
     required this.items,
     Widget? separator,
     this.maxItems,
+    this.overflowDropdown = false,
     this.size = ParkBreadcrumbSize.medium,
-    this.separatorIcon,
-    this.overlayClassName,
   }) : separator = separator ?? _defaultSeparator();
 
   /// 字符串快捷构造
@@ -126,6 +124,7 @@ class ParkBreadcrumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -176,7 +175,7 @@ class ParkBreadcrumb extends StatelessWidget {
 
       if (entry.isEllipsis) {
         // 省略号按钮
-        children.add(_buildEllipsisButton(park, hiddenItems));
+        children.add(_buildEllipsisButton(context, park, hiddenItems));
       } else {
         children.add(_buildItem(context, park, entry));
       }
@@ -198,7 +197,7 @@ class ParkBreadcrumb extends StatelessWidget {
     }
 
     return Semantics(
-      label: '面包屑导航',
+      label: l10n.breadcrumbLabel,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -283,7 +282,7 @@ class ParkBreadcrumb extends StatelessWidget {
     ParkBreadcrumbItem item,
   ) {
     return Semantics(
-      label: '${item.label}，有子菜单',
+      label: ParkLocalizations.of(context).breadcrumbHasSubmenu(item.label),
       button: true,
       child: PopupMenuButton<ParkBreadcrumbItem>(
         offset: Offset(0, _fontSize + park.spacing.sm),
@@ -323,6 +322,7 @@ class ParkBreadcrumb extends StatelessWidget {
 
   /// 构建省略号按钮（点击展开隐藏项）
   Widget _buildEllipsisButton(
+    BuildContext context,
     ParkThemeData park,
     List<ParkBreadcrumbItem> hiddenItems,
   ) {
@@ -336,36 +336,58 @@ class ParkBreadcrumb extends StatelessWidget {
       );
     }
 
-    return Semantics(
-      label: '展开更多面包屑',
-      button: true,
-      child: PopupMenuButton<ParkBreadcrumbItem>(
-        offset: Offset(0, _fontSize + park.spacing.sm),
-        onSelected: (item) => item.onTap?.call(),
-        itemBuilder: (context) {
-          return hiddenItems.map((item) {
-            return PopupMenuItem<ParkBreadcrumbItem>(
-              value: item,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (item.icon != null) ...[
-                    Icon(item.icon,
-                        size: _iconSize, color: park.colors.textPrimary),
-                    SizedBox(width: park.spacing.xs),
-                  ],
-                  Text(
-                    item.label,
-                    style: TextStyle(
-                      fontSize: _fontSize,
-                      color: park.colors.textPrimary,
+    if (overflowDropdown) {
+      // 下拉菜单模式：PopupMenuButton
+      return Semantics(
+        label: ParkLocalizations.of(context).breadcrumbExpand,
+        button: true,
+        child: PopupMenuButton<ParkBreadcrumbItem>(
+          offset: Offset(0, _fontSize + park.spacing.sm),
+          onSelected: (item) => item.onTap?.call(),
+          itemBuilder: (context) {
+            return hiddenItems.map((item) {
+              return PopupMenuItem<ParkBreadcrumbItem>(
+                value: item,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (item.icon != null) ...[
+                      Icon(item.icon,
+                          size: _iconSize, color: park.colors.textPrimary),
+                      SizedBox(width: park.spacing.xs),
+                    ],
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: _fontSize,
+                        color: park.colors.textPrimary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              );
+            }).toList();
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: park.spacing.xxs),
+            child: Text(
+              '...',
+              style: TextStyle(
+                color: park.colors.textSecondary,
+                fontSize: _fontSize,
+                fontWeight: park.typography.weightBold,
               ),
-            );
-          }).toList();
-        },
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Popover 模式：ParkPopover
+    return ParkPopover(
+      trigger: Semantics(
+        label: ParkLocalizations.of(context).breadcrumbExpand,
+        button: true,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: park.spacing.xxs),
           child: Text(
@@ -378,6 +400,51 @@ class ParkBreadcrumb extends StatelessWidget {
           ),
         ),
       ),
+      content: _buildHiddenItemsContent(context, park, hiddenItems),
+      direction: ParkPopoverDirection.bottom,
+      offset: 4,
+      showArrow: false,
+      maxWidth: 300,
+    );
+  }
+
+  /// 构建 Popover 内隐藏项列表
+  Widget _buildHiddenItemsContent(
+    BuildContext context,
+    ParkThemeData park,
+    List<ParkBreadcrumbItem> hiddenItems,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: hiddenItems.map((item) {
+        return InkWell(
+          onTap: item.onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: park.spacing.xxs,
+              horizontal: park.spacing.xxs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (item.icon != null) ...[
+                  Icon(item.icon,
+                      size: _iconSize, color: park.colors.textPrimary),
+                  SizedBox(width: park.spacing.xs),
+                ],
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: _fontSize,
+                    color: park.colors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

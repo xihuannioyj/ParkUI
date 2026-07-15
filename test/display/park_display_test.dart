@@ -112,10 +112,10 @@ void main() {
     expect(find.text('张三'), findsOneWidget);
   });
 
-  testWidgets('ParkCounter 应展示倒计时文本', (WidgetTester tester) async {
+  testWidgets('ParkCountdown 应展示倒计时文本', (WidgetTester tester) async {
     await tester.pumpWidget(
       _buildApp(
-        const ParkCounter(remaining: Duration(minutes: 1, seconds: 2)),
+        const ParkCountdown(remaining: Duration(minutes: 1, seconds: 2)),
       ),
     );
 

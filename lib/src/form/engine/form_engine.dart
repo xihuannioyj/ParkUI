@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'form_engine_io_stub.dart';
+import 'form_engine_io_stub.dart'
+    if (dart.library.io) 'form_engine_io_native.dart'
+    if (dart.library.html) 'form_engine_io_web.dart';
 
 import '../data_source/park_data_source_resolver.dart';
 import 'form_reaction_engine.dart';
@@ -36,6 +38,12 @@ class ParkFormEngine {
   /// 数据源解析器。
   final ParkDataSourceResolver dataSourceResolver =
       ParkDataSourceResolver();
+
+  /// 校验请求序列号（B13）。
+  ///
+  /// 每次 [validateFormAsync] 启动时递增，异步回调返回时与当前序列号比较，
+  /// 防止慢请求覆盖快请求的结果。
+  int _validationSequence = 0;
 
   /// 注册异步校验策略。
   ///
@@ -223,8 +231,15 @@ class ParkFormEngine {
     int debounceMs = 300,
     }
   ) async {
+    // 递增序列号并记录当前序号（B13）。
+    _validationSequence++;
+    final int seq = _validationSequence;
+
     // 防抖延迟
     await Future<void>.delayed(Duration(milliseconds: debounceMs));
+
+    // 防抖期间如果新请求已启动，丢弃本次结果。
+    if (_validationSequence != seq) return <String, String>{};
 
     final Map<String, String> errors = <String, String>{};
     for (final ParkFormFieldSchema field in schema.fields) {
@@ -245,10 +260,13 @@ class ParkFormEngine {
       try {
         final String? error = await resolved(field, values[field.fieldName])
             .timeout(Duration(milliseconds: timeoutMs));
+        // 校验完成后检查序列号，防止慢请求覆盖快请求（B13）。
+        if (_validationSequence != seq) return errors;
         if (error != null && error.isNotEmpty) {
           errors[field.fieldName] = error;
         }
       } on TimeoutException {
+        if (_validationSequence != seq) return errors;
         errors[field.fieldName] = '校验超时，请稍后重试';
       }
     }

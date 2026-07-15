@@ -4,6 +4,7 @@ import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
+import 'park_date_preset.dart';
 
 /// 日期范围筛选快捷预设
 class ParkDateRangeShortcut {
@@ -132,6 +133,9 @@ class ParkDateRangePicker extends StatefulWidget {
   /// 快捷预设列表
   final List<ParkDateRangeShortcut> shortcuts;
 
+  /// 预设快捷项列表（使用 [ParkDatePreset] 构建，支持回调闭包）
+  final List<ParkDatePreset>? presets;
+
   /// 标签文字（内联模式）
   final String? label;
 
@@ -153,6 +157,10 @@ class ParkDateRangePicker extends StatefulWidget {
   /// 绑定服务
   final ParkBindingService? bindingService;
 
+  /// 自定义底部 footer 组件，渲染在日期选择面板底部确认按钮下方。
+  /// 为 null 时无变化。
+  final Widget? renderExtraFooter;
+
   const ParkDateRangePicker({
     super.key,
     this.startTime,
@@ -171,6 +179,8 @@ class ParkDateRangePicker extends StatefulWidget {
     this.showReset = true,
     this.bindKey,
     this.bindingService,
+    this.presets,
+    this.renderExtraFooter,
   });
 
   /// 默认快捷预设（4 项：今天 / 近7天 / 近30天 / 本月至今）。
@@ -192,6 +202,8 @@ class ParkDateRangePicker extends StatefulWidget {
     DateTime? lastDate,
     bool showShortcuts = true,
     List<ParkDateRangeShortcut> shortcuts = ParkDateRangePicker.defaultShortcuts,
+    List<ParkDatePreset>? presets,
+    Widget? renderExtraFooter,
   }) {
     return showModalBottomSheet<ParkDateRange>(
       context: context,
@@ -204,6 +216,8 @@ class ParkDateRangePicker extends StatefulWidget {
         lastDate: lastDate,
         showShortcuts: showShortcuts,
         shortcuts: shortcuts,
+        presets: presets,
+        renderExtraFooter: renderExtraFooter,
       ),
     );
   }
@@ -214,24 +228,46 @@ class ParkDateRangePicker extends StatefulWidget {
 
 class _ParkDateRangePickerState extends State<ParkDateRangePicker>
     with BindableWidgetMixin<ParkDateRange?, ParkDateRangePicker> {
+  DateTime? _localStartDate;
+  DateTime? _localEndDate;
+
   @override
   void initState() {
     bindKey = widget.bindKey;
     bindingService = widget.bindingService;
     super.initState();
+    _localStartDate = widget.startTime;
+    _localEndDate = widget.endTime;
+  }
+
+  @override
+  void didUpdateWidget(ParkDateRangePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.startTime != oldWidget.startTime) {
+      _localStartDate = widget.startTime;
+    }
+    if (widget.endTime != oldWidget.endTime) {
+      _localEndDate = widget.endTime;
+    }
   }
 
   void _open() {
     ParkDateRangePicker.show(
       context,
-      startTime: widget.startTime,
-      endTime: widget.endTime,
+      startTime: _localStartDate,
+      endTime: _localEndDate,
       firstDate: widget.firstDate,
       lastDate: widget.lastDate,
       showShortcuts: widget.showShortcuts,
       shortcuts: widget.shortcuts,
+      presets: widget.presets,
+      renderExtraFooter: widget.renderExtraFooter,
     ).then((result) {
       if (result != null) {
+        setState(() {
+          _localStartDate = result.start;
+          _localEndDate = result.end;
+        });
         widget.onChanged?.call(result);
         widget.onConfirm?.call(result);
         boundValue = result;
@@ -251,14 +287,17 @@ class _ParkDateRangePickerState extends State<ParkDateRangePicker>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    final startText = _formatDate(widget.startTime);
-    final endText = _formatDate(widget.endTime);
+    final startText = _formatDate(_localStartDate);
+    final endText = _formatDate(_localEndDate);
     final hasValue = startText.isNotEmpty && endText.isNotEmpty;
     final displayText = hasValue ? '$startText ~ $endText' : '';
 
-    return GestureDetector(
-      onTap: _open,
-      child: Container(
+    return Semantics(
+      button: true,
+      label: widget.label ?? (displayText.isEmpty ? '' : displayText),
+      child: GestureDetector(
+        onTap: _open,
+        child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -287,8 +326,15 @@ class _ParkDateRangePickerState extends State<ParkDateRangePicker>
               ),
             ),
             if (hasValue)
-              GestureDetector(
+              Semantics(
+                button: true,
+                label: ParkLocalizations.of(context).clearText,
+                child: GestureDetector(
                 onTap: () {
+                  setState(() {
+                    _localStartDate = null;
+                    _localEndDate = null;
+                  });
                   widget.onChanged?.call(null);
                   boundValue = null;
                 },
@@ -298,8 +344,10 @@ class _ParkDateRangePickerState extends State<ParkDateRangePicker>
                   color: park.colors.textPlaceholder,
                 ),
               ),
+              ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -316,6 +364,8 @@ class _DateRangePickerSheet extends StatefulWidget {
   final DateTime? lastDate;
   final bool showShortcuts;
   final List<ParkDateRangeShortcut> shortcuts;
+  final List<ParkDatePreset>? presets;
+  final Widget? renderExtraFooter;
 
   const _DateRangePickerSheet({
     this.startTime,
@@ -324,6 +374,8 @@ class _DateRangePickerSheet extends StatefulWidget {
     this.lastDate,
     this.showShortcuts = true,
     this.shortcuts = ParkDateRangePicker.defaultShortcuts,
+    this.presets,
+    this.renderExtraFooter,
   });
 
   @override
@@ -355,9 +407,20 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
     });
   }
 
+  void _handlePreset(ParkDatePreset preset) {
+    preset.onSelect();
+    if (preset.startDate != null && preset.endDate != null) {
+      setState(() {
+        _startDate = preset.startDate;
+        _endDate = preset.endDate;
+      });
+    }
+  }
+
   void _pickDate({required bool isStart}) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
     final initial = isStart ? _startDate : _endDate;
 
     showModalBottomSheet<DateTime>(
@@ -397,26 +460,34 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                   ),
                   child: Row(
                     children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(
-                          ParkLocalizations.of(context).cancelText,
-                          style: TextStyle(color: park.colors.textSecondary),
+                      Semantics(
+                        button: true,
+                        label: l10n.cancelText,
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(
+                            l10n.cancelText,
+                            style: TextStyle(color: park.colors.textSecondary),
+                          ),
                         ),
                       ),
                       const Spacer(),
                       Text(
-                        isStart ? '选择开始日期' : '选择结束日期',
+                        isStart ? l10n.selectStartDate : l10n.selectEndDate,
                         style: park.typography.body.copyWith(
                           fontWeight: park.typography.weightBold,
                         ),
                       ),
                       const Spacer(),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, temp),
-                        child: Text(
-                          ParkLocalizations.of(context).confirmText,
-                          style: TextStyle(color: park.colors.brand),
+                      Semantics(
+                        button: true,
+                        label: l10n.confirmText,
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx, temp),
+                          child: Text(
+                            l10n.confirmText,
+                            style: TextStyle(color: park.colors.brand),
+                          ),
                         ),
                       ),
                     ],
@@ -429,8 +500,10 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                     initialDateTime: temp,
                     minimumDate: widget.firstDate,
                     maximumDate: widget.lastDate,
-                    minimumYear: 2018,
-                    maximumYear: 2030,
+                    minimumYear: (widget.firstDate?.year) ??
+                        (DateTime.now().year - 100),
+                    maximumYear: (widget.lastDate?.year) ??
+                        (DateTime.now().year + 100),
                     onDateTimeChanged: (dt) => temp = dt,
                   ),
                 ),
@@ -460,6 +533,7 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
     final typo = park.typography;
     final spacing = park.spacing;
     final radius = park.radius;
+    final l10n = ParkLocalizations.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -469,8 +543,9 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             // ── 拖拽手柄 ──
             Padding(
@@ -495,21 +570,25 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
               ),
               child: Row(
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
+                  Semantics(
+                    button: true,
+                    label: l10n.cancelText,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
-                      '取消',
+                      l10n.cancelText,
                       style: TextStyle(color: colors.textSecondary),
                     ),
                   ),
+                  ),
                   const Spacer(),
                   Text(
-                    '时间筛选',
+                    l10n.timeFilter,
                     style: typo.body.copyWith(
                       fontSize: typo.sizeBody,
                       fontWeight: typo.weightBold,
@@ -517,29 +596,33 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                     ),
                   ),
                   const Spacer(),
-                  TextButton(
-                    onPressed: () {
-                      if (_startDate != null && _endDate != null) {
-                        Navigator.pop(
-                          context,
-                          ParkDateRange(
-                            start: _startDate!,
-                            end: _endDate!,
-                          ),
-                        );
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      '确定',
-                      style: TextStyle(
-                        color: (_startDate != null && _endDate != null)
-                            ? colors.brand
-                            : colors.textPlaceholder,
+                  Semantics(
+                    button: true,
+                    label: l10n.confirmText,
+                    child: TextButton(
+                      onPressed: () {
+                        if (_startDate != null && _endDate != null) {
+                          Navigator.pop(
+                            context,
+                            ParkDateRange(
+                              start: _startDate!,
+                              end: _endDate!,
+                            ),
+                          );
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        l10n.confirmText,
+                        style: TextStyle(
+                          color: (_startDate != null && _endDate != null)
+                              ? colors.brand
+                              : colors.textPlaceholder,
+                        ),
                       ),
                     ),
                   ),
@@ -570,6 +653,38 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                 ),
               ),
 
+            // ── Preset 快捷项 ──
+            if (widget.presets != null && widget.presets!.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  spacing.base,
+                  spacing.xs,
+                  spacing.base,
+                  0,
+                ),
+                child: SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.presets!.length,
+                    separatorBuilder: (_, _a) =>
+                        SizedBox(width: spacing.sm),
+                    itemBuilder: (context, index) {
+                      final p = widget.presets![index];
+                      final isSelected = p.startDate != null &&
+                          p.endDate != null &&
+                          _startDate == p.startDate &&
+                          _endDate == p.endDate;
+                      return _ShortcutChip(
+                        label: p.label,
+                        selected: isSelected,
+                        onTap: () => _handlePreset(p),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
             SizedBox(height: spacing.sm),
 
             // ── 日期选择区域 ──
@@ -583,9 +698,9 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                 child: Column(
                   children: [
                     _DateField(
-                      label: '开始时间',
+                      label: l10n.startTime,
                       date: _startDate,
-                      hintText: '请选择开始日期',
+                      hintText: l10n.selectStartDate,
                       onTap: () => _pickDate(isStart: true),
                       park: park,
                     ),
@@ -596,9 +711,9 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                       color: colors.border.withValues(alpha: 0.6),
                     ),
                     _DateField(
-                      label: '结束时间',
+                      label: l10n.endTime,
                       date: _endDate,
-                      hintText: '请选择结束日期',
+                      hintText: l10n.selectEndDate,
                       onTap: () => _pickDate(isStart: false),
                       park: park,
                     ),
@@ -637,7 +752,7 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                       ),
                     ),
                     child: Text(
-                      '重置筛选',
+                      l10n.resetFilter,
                       style: typo.body.copyWith(
                         fontSize: typo.sizeBody,
                       ),
@@ -647,7 +762,15 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
               ),
 
             SizedBox(height: spacing.sm),
+
+            // ── 自定义 Footer ──
+            if (widget.renderExtraFooter != null) ...[
+              SizedBox(height: spacing.sm),
+              widget.renderExtraFooter!,
+              SizedBox(height: spacing.sm),
+            ],
           ],
+        ),
         ),
       ),
     );
@@ -682,7 +805,10 @@ class _ShortcutChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: park.motion.quick,
@@ -710,6 +836,7 @@ class _ShortcutChip extends StatelessWidget {
             color: selected ? park.colors.brand : park.colors.textPrimary,
           ),
         ),
+      ),
       ),
     );
   }
@@ -739,9 +866,12 @@ class _DateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValue = date != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
+    return Semantics(
+      button: true,
+      label: '$label${hasValue ? _fmt(date) : hintText}',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -774,6 +904,7 @@ class _DateField extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

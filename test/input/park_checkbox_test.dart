@@ -12,23 +12,23 @@ Widget _wrap(Widget child) {
 void main() {
   group('ParkCheckbox - 基本渲染', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkCheckbox()));
+      await tester.pumpWidget(_wrap(ParkCheckbox()));
       expect(find.byType(ParkCheckbox), findsOneWidget);
     });
 
     testWidgets('显示 label', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkCheckbox(label: '同意协议')));
+      await tester.pumpWidget(_wrap(ParkCheckbox(label: const Text('同意协议'))));
       expect(find.text('同意协议'), findsOneWidget);
     });
 
     testWidgets('初始选中状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkCheckbox(value: true)));
-      expect(find.byIcon(Icons.check_box), findsOneWidget);
+      await tester.pumpWidget(_wrap(ParkCheckbox(value: true)));
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     });
 
     testWidgets('初始未选中状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkCheckbox(value: false)));
-      expect(find.byIcon(Icons.check_box_outline_blank), findsOneWidget);
+      await tester.pumpWidget(_wrap(ParkCheckbox(value: false)));
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
     });
   });
 

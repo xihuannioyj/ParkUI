@@ -5,80 +5,122 @@ import 'form_runtime_state.dart';
 ///
 /// 负责在字段值变化时，根据 schema 中声明的 reactions 计算运行时覆盖状态、
 /// 字段值联动以及选项重载目标列表。
+///
+/// 支持级联重算（B14）：当 reaction 的目标字段自身也有 reaction 配置时，
+/// 会自动继续执行下一趟，直到无新变化或达到 [maxDepth] / [maxFieldTriggers] 限制。
 class ParkFormReactionEngine {
   /// 创建 reaction 运行时引擎。
   const ParkFormReactionEngine();
 
-  /// 执行指定触发字段的 change reactions。
+  /// 执行指定触发字段的 change reactions（支持级联重算）。
   ///
   /// [schema] 表单 schema。
   /// [triggerField] 触发字段名。
   /// [values] 当前表单值。
   /// [overrides] 当前运行时覆盖状态。
+  /// [maxDepth] 级联最大深度（默认 10），防止无穷递归。
+  /// [maxFieldTriggers] 单字段最大触发次数（默认 5），用于死循环检测。
   ParkFormReactionExecutionResult applyChange({
     required ParkFormSchema schema,
     required String triggerField,
     required Map<String, dynamic> values,
     required ParkFormRuntimeOverrides overrides,
+    int maxDepth = 10,
+    int maxFieldTriggers = 5,
   }) {
-    final Map<String, dynamic> nextValues = Map<String, dynamic>.from(values);
-    final Map<String, bool> visibleOverrides =
+    Map<String, dynamic> nextValues = Map<String, dynamic>.from(values);
+    Map<String, bool> visibleOverrides =
         Map<String, bool>.from(overrides.visibleOverrides);
-    final Map<String, bool> disabledOverrides =
+    Map<String, bool> disabledOverrides =
         Map<String, bool>.from(overrides.disabledOverrides);
-    final Map<String, bool> requiredOverrides =
+    Map<String, bool> requiredOverrides =
         Map<String, bool>.from(overrides.requiredOverrides);
-    final Set<String> affectedFields = <String>{triggerField};
-    final Set<String> reloadFields = <String>{};
+    final Set<String> allAffectedFields = <String>{triggerField};
+    final Set<String> allReloadFields = <String>{};
+    final Map<String, int> fieldTriggerCount = <String, int>{};
 
-    final Iterable<ParkFormReactionSchema> matchedReactions = schema.reactions
-        .where(
+    // 快照原始值，供 _resolveActionValue 读取 $form.xxx 引用（B65-Fix1）。
+    // 避免级联过程中 nextValues 的中间态污染引用解析。
+    final Map<String, dynamic> snapshotValues =
+        Map<String, dynamic>.from(values);
+
+    // 级联重算：从 triggerField 出发，逐趟执行 reactions，
+    // 被 setValue 或 clearValue 影响的字段如果有自己的 reaction 则继续执行（B14）。
+    Set<String> currentTriggerFields = <String>{triggerField};
+
+    for (int depth = 0; depth < maxDepth; depth++) {
+      final Set<String> nextTriggerFields = <String>{};
+
+      for (final String trigger in currentTriggerFields) {
+        // 死循环检测：同一字段在单次级联中触发次数不超过限制。
+        fieldTriggerCount[trigger] =
+            (fieldTriggerCount[trigger] ?? 0) + 1;
+        if (fieldTriggerCount[trigger]! > maxFieldTriggers) {
+          continue;
+        }
+
+        final Iterable<ParkFormReactionSchema> matchedReactions =
+            schema.reactions.where(
           (ParkFormReactionSchema reaction) =>
               reaction.triggerEvent == ParkFormTriggerEvent.change &&
-              reaction.triggerField == triggerField,
+              reaction.triggerField == trigger,
         );
 
-    for (final ParkFormReactionSchema reaction in matchedReactions) {
-      final bool hit = reaction.conditions.isEmpty
-          ? true
-          : ParkFormConditionMatcher.match(reaction.conditions, nextValues);
-      if (!hit) {
-        continue;
-      }
+        for (final ParkFormReactionSchema reaction in matchedReactions) {
+          final bool hit = reaction.conditions.isEmpty
+              ? true
+              : ParkFormConditionMatcher
+                  .match(reaction.conditions, nextValues);
+          if (!hit) {
+            continue;
+          }
 
-      for (final ParkFormReactionActionSchema action in reaction.actions) {
-        switch (action.actionType) {
-          case ParkFormReactionActionType.setVisible:
-            final bool resolved = _toBool(action.value);
-            visibleOverrides[action.targetField] = resolved;
-            affectedFields.add(action.targetField);
-            break;
-          case ParkFormReactionActionType.setDisabled:
-            final bool resolved = _toBool(action.value);
-            disabledOverrides[action.targetField] = resolved;
-            affectedFields.add(action.targetField);
-            break;
-          case ParkFormReactionActionType.setRequired:
-            final bool resolved = _toBool(action.value);
-            requiredOverrides[action.targetField] = resolved;
-            affectedFields.add(action.targetField);
-            break;
-          case ParkFormReactionActionType.setValue:
-            nextValues[action.targetField] = _resolveActionValue(
-              action.value,
-              nextValues,
-            );
-            affectedFields.add(action.targetField);
-            break;
-          case ParkFormReactionActionType.clearValue:
-            nextValues[action.targetField] = null;
-            affectedFields.add(action.targetField);
-            break;
-          case ParkFormReactionActionType.reloadOptions:
-            reloadFields.add(action.targetField);
-            break;
+          for (final ParkFormReactionActionSchema action in reaction.actions) {
+            switch (action.actionType) {
+              case ParkFormReactionActionType.setVisible:
+                final bool resolved = _toBool(action.value);
+                visibleOverrides[action.targetField] = resolved;
+                allAffectedFields.add(action.targetField);
+                break;
+              case ParkFormReactionActionType.setDisabled:
+                final bool resolved = _toBool(action.value);
+                disabledOverrides[action.targetField] = resolved;
+                allAffectedFields.add(action.targetField);
+                break;
+              case ParkFormReactionActionType.setRequired:
+                final bool resolved = _toBool(action.value);
+                requiredOverrides[action.targetField] = resolved;
+                allAffectedFields.add(action.targetField);
+                break;
+              case ParkFormReactionActionType.setValue:
+                nextValues[action.targetField] = _resolveActionValue(
+                  action.value,
+                  snapshotValues,
+                );
+                allAffectedFields.add(action.targetField);
+                // 值变化的目标字段可能触发下一趟 reaction。
+                if (action.targetField != trigger) {
+                  nextTriggerFields.add(action.targetField);
+                }
+                break;
+              case ParkFormReactionActionType.clearValue:
+                nextValues[action.targetField] = null;
+                allAffectedFields.add(action.targetField);
+                if (action.targetField != trigger) {
+                  nextTriggerFields.add(action.targetField);
+                }
+                break;
+              case ParkFormReactionActionType.reloadOptions:
+                allReloadFields.add(action.targetField);
+                break;
+            }
+          }
         }
       }
+
+      // 无新触发字段时结束级联。
+      if (nextTriggerFields.isEmpty) break;
+      currentTriggerFields = nextTriggerFields;
     }
 
     return ParkFormReactionExecutionResult(
@@ -88,8 +130,8 @@ class ParkFormReactionEngine {
         disabledOverrides: disabledOverrides,
         requiredOverrides: requiredOverrides,
       ),
-      affectedFields: affectedFields,
-      reloadFields: reloadFields,
+      affectedFields: allAffectedFields,
+      reloadFields: allReloadFields,
     );
   }
 

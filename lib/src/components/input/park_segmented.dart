@@ -16,6 +16,8 @@ enum ParkSegmentedSize {
 }
 
 /// ParkSegmented 选项数据
+///
+/// 每项含 value / label / icon（自定义 Widget）/ disabled / badge。
 class ParkSegmentedItem {
   /// 选项值
   final String value;
@@ -23,8 +25,8 @@ class ParkSegmentedItem {
   /// 显示文字
   final String? label;
 
-  /// 可选图标
-  final IconData? icon;
+  /// 可选图标（自定义 Widget，如 Icon / SvgPicture / Image）
+  final Widget? icon;
 
   /// 是否禁用
   final bool disabled;
@@ -44,7 +46,7 @@ class ParkSegmentedItem {
 /// ParkSegmented — 分段控制器
 ///
 /// 在一组互斥的选项中切换，选中态有滑块动画过渡。
-/// 支持图标+文字或纯图标模式，支持 block 撑满宽度。
+/// 支持图标+文字或纯图标模式，支持 block 撑满宽度，支持 small/medium/large 三种尺寸。
 ///
 /// 受控 / 非受控统一：内部维护 [_selectedValue]，初值取
 /// `widget.value ?? items.first.value`；所有视觉判定统一走
@@ -256,24 +258,20 @@ class _ParkSegmentedState extends State<ParkSegmented>
     // Size mapping
     final double itemHeight;
     final double fontSize;
-    final double iconSize;
     final double hPadding;
 
     switch (widget.size) {
       case ParkSegmentedSize.small:
         itemHeight = 28;
         fontSize = 12;
-        iconSize = 14;
         hPadding = spacing.sm;
       case ParkSegmentedSize.medium:
         itemHeight = 36;
         fontSize = 14;
-        iconSize = 16;
         hPadding = spacing.base;
       case ParkSegmentedSize.large:
         itemHeight = 44;
         fontSize = 16;
-        iconSize = 18;
         hPadding = spacing.lg;
     }
 
@@ -328,7 +326,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
                       borderRadius: radius.brXs,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: park.colors.textPrimary.withValues(alpha: 0.06),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -353,11 +351,15 @@ class _ParkSegmentedState extends State<ParkSegmented>
 
                     final badgeWidget = _buildBadge(item, park);
 
-                    return GestureDetector(
-                      key: _itemKeys[index],
-                      onTap: isDisabled ? null : () => _onItemTap(item),
-                      behavior: HitTestBehavior.opaque,
-                      child: Opacity(
+                    return Semantics(
+                      button: true,
+                      label: item.label ?? item.value,
+                      selected: isSelected,
+                      child: GestureDetector(
+                        key: _itemKeys[index],
+                        onTap: isDisabled ? null : () => _onItemTap(item),
+                        behavior: HitTestBehavior.opaque,
+                        child: Opacity(
                         opacity: isDisabled ? 0.4 : 1.0,
                         child: Container(
                           width: itemWidth,
@@ -380,6 +382,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
                               : customContent,
                         ),
                       ),
+                      ),
                     );
                   }
 
@@ -400,7 +403,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
                     content = Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(item.icon, size: iconSize, color: textColor),
+                        item.icon!,
                         SizedBox(width: spacing.xs),
                         Text(
                           item.label!,
@@ -413,8 +416,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
                       ],
                     );
                   } else if (item.icon != null) {
-                    content =
-                        Icon(item.icon, size: iconSize, color: textColor);
+                    content = item.icon!;
                   } else {
                     content = Text(
                       item.label ?? item.value,
@@ -469,7 +471,12 @@ class _ParkSegmentedState extends State<ParkSegmented>
                         : itemContent,
                   );
 
-                  return itemWidget;
+                  return Semantics(
+                    button: true,
+                    label: item.label ?? item.value,
+                    selected: isSelected,
+                    child: itemWidget,
+                  );
                 }),
               ),
             ],
@@ -493,7 +500,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
         item.badge! > 99 ? '99+' : '${item.badge!}',
         style: TextStyle(
           fontSize: 10,
-          color: Colors.white,
+          color: park.colors.textOnBrand,
           fontWeight: park.typography.weightMedium,
         ),
         textAlign: TextAlign.center,

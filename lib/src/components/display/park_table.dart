@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 import 'park_empty.dart';
 
 /// Park 表格列对齐方式
@@ -47,6 +48,15 @@ class ParkTableColumn {
   /// 是否在文本溢出时显示 tooltip
   final bool tooltip;
 
+  /// 是否可拖拽调整列宽
+  final bool resizable;
+
+  /// 最小列宽（拖拽时不会小于此值，null 时使用 50）
+  final double? minWidth;
+
+  /// 最大列宽（拖拽时不会大于此值，null 时不限制）
+  final double? maxWidth;
+
   const ParkTableColumn({
     required this.key,
     required this.title,
@@ -57,6 +67,9 @@ class ParkTableColumn {
     this.fixed = ParkColumnFixed.none,
     this.ellipsis = true,
     this.tooltip = false,
+    this.resizable = false,
+    this.minWidth,
+    this.maxWidth,
   });
 }
 
@@ -175,13 +188,16 @@ class ParkTable extends StatefulWidget {
   final ParkTableSize size;
 
   /// 是否启用斑马纹（与 [striped] 等效）
+  @Deprecated('Use striped instead')
   final bool stripe;
 
   /// 行唯一标识字段名（对应 data Map 中的 key），null 时使用行索引
   final String? rowKey;
 
-  /// 每行事件回调（返回该行自定义事件 Map，如 onTap/onDoubleTap 等）
-  final Map<String, Function>? Function(dynamic row, int index)? onRow;
+  /// 每行事件回调（返回该行自定义事件 Map，如 onTap/onDoubleTap 等）。
+  ///
+  /// 回调值已按真实类型声明为 [VoidCallback]，调用处无需强转。
+  final Map<String, VoidCallback>? Function(dynamic row, int index)? onRow;
 
   /// 表格滚动配置（如 {x: 1200, y: 400} 表示固定表头，横向可滚动）
   final Map<String, double>? scroll;
@@ -194,6 +210,9 @@ class ParkTable extends StatefulWidget {
 
   /// 展开行内容构建器（替代签名，与 expandedRowBuilder 功能相同）
   final Widget Function(Map<String, dynamic> row, int index)? expandedRowRender;
+
+  /// 列宽变化回调（拖拽调整列宽时触发，key 为列 key，value 为当前宽度）
+  final void Function(Map<String, double> widths)? onColumnWidthChanged;
 
   const ParkTable({
     super.key,
@@ -218,6 +237,7 @@ class ParkTable extends StatefulWidget {
     this.showSorterTooltip = true,
     this.onChange,
     this.expandedRowRender,
+    this.onColumnWidthChanged,
   });
 
   @override
@@ -229,7 +249,53 @@ class _ParkTableState extends State<ParkTable> {
   bool _sortAscending = true;
   final Set<int> _expandedRows = {};
 
+  /// 运行时列宽缓存（拖拽调整后更新），key 为列 key。
+  Map<String, double> _columnWidths = {};
+
+  /// Pre-computed sorted data cache (rebuilt once per build cycle).
+  List<Map<String, dynamic>>? _cachedSortedData;
+
+  /// Pre-computed row key cache: index → key (O(1) lookup).
+  Map<int, String>? _rowKeyCache;
+
   bool get _isStriped => widget.striped || widget.stripe;
+
+  /// 默认列宽（当列未指定 width 且未被拖拽调整时使用）。
+  static const double _defaultColumnWidth = 120.0;
+
+  /// 拖拽最小列宽限制。
+  static const double _minResizableWidth = 50.0;
+
+  /// 获取指定列的当前宽度。
+  double _getColumnWidth(ParkTableColumn col) {
+    return _columnWidths[col.key] ?? col.width ?? _defaultColumnWidth;
+  }
+
+  /// 初始化列宽缓存（从列定义中读取初始值）。
+  void _initColumnWidths() {
+    final widths = <String, double>{};
+    for (final col in widget.columns) {
+      if (col.width != null) {
+        widths[col.key] = col.width!;
+      }
+    }
+    _columnWidths = widths;
+  }
+
+  /// 拖拽调整列宽回调。
+  void _onColumnResize(ParkTableColumn col, double delta) {
+    final currentWidth = _getColumnWidth(col);
+    final minW = col.minWidth ?? _minResizableWidth;
+    double newWidth = currentWidth + delta;
+    if (newWidth < minW) newWidth = minW;
+    if (col.maxWidth != null && newWidth > col.maxWidth!) {
+      newWidth = col.maxWidth!;
+    }
+    setState(() {
+      _columnWidths[col.key] = newWidth;
+    });
+    widget.onColumnWidthChanged?.call(Map<String, double>.from(_columnWidths));
+  }
 
   void _toggleExpand(int index) {
     setState(() {
@@ -249,30 +315,55 @@ class _ParkTableState extends State<ParkTable> {
         _sortKey = key;
         _sortAscending = true;
       }
+      _cachedSortedData = null; // Invalidate cache on sort change
     });
     widget.onSort?.call(columnIndex, _sortAscending);
   }
 
-  List<Map<String, dynamic>> get _sortedData {
-    if (_sortKey == null) return widget.data;
-
-    final sorted = List<Map<String, dynamic>>.from(widget.data);
-    sorted.sort((a, b) {
-      final aVal = a[_sortKey]?.toString() ?? '';
-      final bVal = b[_sortKey]?.toString() ?? '';
-      return _sortAscending ? aVal.compareTo(bVal) : bVal.compareTo(aVal);
-    });
-    return sorted;
+  /// 将单元格值解析为 [num]，支持 num 与可解析的数字字符串。
+  ///
+  /// 无法解析时返回 null。
+  static num? _toNum(dynamic value) {
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
   }
 
-  String _getRowKey(int dataIndex) {
-    if (widget.rowKey != null) {
-      final data = _sortedData;
-      if (dataIndex < data.length) {
-        return data[dataIndex][widget.rowKey]?.toString() ?? '$dataIndex';
+  /// Ensures the sorted data and row key caches are up-to-date.
+  /// Called at the start of build() and lazily when _getRowKey is accessed.
+  void _ensureRowKeyCache() {
+    if (_cachedSortedData != null) return;
+    if (_sortKey == null) {
+      _cachedSortedData = widget.data;
+    } else {
+      final sorted = List<Map<String, dynamic>>.from(widget.data);
+      sorted.sort((a, b) {
+        final num? aNum = _toNum(a[_sortKey]);
+        final num? bNum = _toNum(b[_sortKey]);
+        if (aNum != null && bNum != null) {
+          return _sortAscending ? aNum.compareTo(bNum) : bNum.compareTo(aNum);
+        }
+        final aVal = a[_sortKey]?.toString() ?? '';
+        final bVal = b[_sortKey]?.toString() ?? '';
+        return _sortAscending ? aVal.compareTo(bVal) : bVal.compareTo(aVal);
+      });
+      _cachedSortedData = sorted;
+    }
+    _rowKeyCache = {};
+    final data = _cachedSortedData!;
+    for (var i = 0; i < data.length; i++) {
+      if (widget.rowKey != null) {
+        _rowKeyCache![i] = data[i][widget.rowKey]?.toString() ?? '$i';
+      } else {
+        _rowKeyCache![i] = '$i';
       }
     }
-    return '$dataIndex';
+  }
+
+  /// O(1) row key lookup from pre-computed cache.
+  String _getRowKey(int dataIndex) {
+    _ensureRowKeyCache();
+    return _rowKeyCache![dataIndex] ?? '$dataIndex';
   }
 
   bool _isRowSelected(int dataIndex) {
@@ -288,7 +379,7 @@ class _ParkTableState extends State<ParkTable> {
   void _toggleRowSelection(int dataIndex) {
     final sel = widget.rowSelection!;
     final key = _getRowKey(dataIndex);
-    final data = _sortedData;
+    final data = _cachedSortedData!;
 
     List<String> newKeys;
     if (sel.type == ParkRowSelectionType.radio) {
@@ -329,16 +420,36 @@ class _ParkTableState extends State<ParkTable> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _initColumnWidths();
+  }
+
+  @override
+  void didUpdateWidget(covariant ParkTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.data != oldWidget.data ||
+        widget.rowKey != oldWidget.rowKey ||
+        widget.columns != oldWidget.columns) {
+      _cachedSortedData = null;
+      _rowKeyCache = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
 
+    // Rebuild sorted data + row key caches once per build cycle (B78).
+    _ensureRowKeyCache();
+
     // Empty state
     if (widget.data.isEmpty && !widget.loading) {
-      return widget.empty ?? ParkEmpty(description: widget.emptyText);
+      return widget.empty ?? ParkEmpty(description: ParkLocalizations.of(context).noData);
     }
 
-    final data = _sortedData;
+    final data = _cachedSortedData!;
     final headerBg = park.colors.surface;
 
     final bool hasFixed =
@@ -409,7 +520,7 @@ class _ParkTableState extends State<ParkTable> {
             final colIndex = entry.key;
             final col = entry.value;
             return SizedBox(
-              width: col.width ?? 120,
+              width: _getColumnWidth(col),
               child: _buildHeaderCell(col, park, colIndex),
             );
           }),
@@ -515,7 +626,7 @@ class _ParkTableState extends State<ParkTable> {
     if (widget.rowSelection != null) w += 48;
     if (widget.expandable && widget.expandedRowBuilder != null) w += 40;
     for (final col in widget.columns) {
-      w += col.width ?? 120;
+      w += _getColumnWidth(col);
     }
     return w;
   }
@@ -569,7 +680,7 @@ class _ParkTableState extends State<ParkTable> {
                   ),
                 ...widget.columns.map((col) {
                   return SizedBox(
-                    width: col.width ?? 120,
+                    width: _getColumnWidth(col),
                     child: _buildDataCell(col, row, park, rowIndex: i),
                   );
                 }),
@@ -583,9 +694,9 @@ class _ParkTableState extends State<ParkTable> {
           final rowEvents = widget.onRow!(row, i);
           if (rowEvents != null) {
             rowWidget = GestureDetector(
-              onTap: rowEvents['onTap'] as VoidCallback?,
-              onDoubleTap: rowEvents['onDoubleTap'] as VoidCallback?,
-              onLongPress: rowEvents['onLongPress'] as VoidCallback?,
+              onTap: rowEvents['onTap'],
+              onDoubleTap: rowEvents['onDoubleTap'],
+              onLongPress: rowEvents['onLongPress'],
               child: rowWidget,
             );
           }
@@ -832,7 +943,11 @@ class _ParkTableState extends State<ParkTable> {
 
   Widget _pageNumberButton(
       int page, bool isCurrent, ParkTablePagination pg, ParkThemeData park) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: isCurrent,
+      label: '$page',
+      child: GestureDetector(
       onTap: isCurrent ? null : () => pg.onPageChanged?.call(page, pg.pageSize),
       child: Container(
         width: 32,
@@ -853,6 +968,7 @@ class _ParkTableState extends State<ParkTable> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -862,21 +978,29 @@ class _ParkTableState extends State<ParkTable> {
     required VoidCallback onPressed,
     required ParkThemeData park,
   }) {
-    return GestureDetector(
-      onTap: enabled ? onPressed : null,
-      child: Container(
-        width: 32,
-        height: 32,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: park.radius.brSm,
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: enabled
-              ? park.colors.textPrimary
-              : park.colors.textDisabled,
+    final l10n = ParkLocalizations.of(context);
+    final label = icon == Icons.chevron_left ? l10n.previousStep : l10n.nextStep;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: GestureDetector(
+        onTap: enabled ? onPressed : null,
+        child: Container(
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: park.radius.brSm,
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled
+                ? park.colors.textPrimary
+                : park.colors.textDisabled,
+          ),
         ),
       ),
     );
@@ -896,8 +1020,8 @@ class _ParkTableState extends State<ParkTable> {
 
     for (var i = 0; i < widget.columns.length; i++) {
       final col = widget.columns[i];
-      if (col.width != null) {
-        widths[index] = FixedColumnWidth(col.width!);
+      if (col.width != null || _columnWidths.containsKey(col.key)) {
+        widths[index] = FixedColumnWidth(_getColumnWidth(col));
       } else {
         widths[index] = const FlexColumnWidth();
       }
@@ -934,7 +1058,31 @@ class _ParkTableState extends State<ParkTable> {
               SizedBox(width: park.spacing.xs),
               _buildSortIcon(park, col.key),
             ],
+            if (col.resizable) _buildResizeHandle(col, park),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建列宽拖拽手柄。
+  Widget _buildResizeHandle(ParkTableColumn col, ParkThemeData park) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        onHorizontalDragUpdate: (DragUpdateDetails details) {
+          _onColumnResize(col, details.delta.dx);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Container(
+            width: 3,
+            height: 16,
+            decoration: BoxDecoration(
+              color: park.colors.border,
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
         ),
       ),
     );
@@ -1055,6 +1203,14 @@ class _ParkTableState extends State<ParkTable> {
     Color headerBg,
     ParkThemeData park,
   ) {
+    // 虚拟化路径：显式设置了 scroll 视口时，行使用 ListView.builder 惰性构建，
+    // 避免万行全量 build；表头固定、横向滚动与 Scrollbar 均保留（B26）。
+    if (!widget.sticky &&
+        !(widget.expandable && widget.expandedRowBuilder != null) &&
+        widget.scroll != null) {
+      return _buildVirtualTable(data, headerBg, park);
+    }
+
     // 非 sticky 且 非 expandable → 用同一个 Table widget 统一渲染表头和数据行，
     // 确保 columnWidths 对表头和数据行一致，避免 header 用 SizedBox(fixed)
     // 而 body 用 FlexColumnWidth 导致的列宽不匹配。
@@ -1218,6 +1374,92 @@ class _ParkTableState extends State<ParkTable> {
     );
   }
 
+  /// 虚拟滚动表格：表头固定 + 横向滚动 + 行按视口惰性构建（ListView.builder）。
+  ///
+  /// 仅在 [widget.scroll] 提供视口高度时启用，用于大数据量场景避免全量 build。
+  Widget _buildVirtualTable(
+    List<Map<String, dynamic>> data,
+    Color headerBg,
+    ParkThemeData park,
+  ) {
+    final double totalWidth = _totalRowWidth();
+    final double viewportHeight = widget.scroll?['y'] ?? 400.0;
+    final Widget header = _buildTableHeader(data, headerBg, park);
+
+    return Scrollbar(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: totalWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              header,
+              SizedBox(
+                height: viewportHeight,
+                child: Scrollbar(
+                  child: ListView.builder(
+                    itemCount: data.length,
+                    itemBuilder: (BuildContext context, int index) =>
+                        _buildVirtualRow(data[index], index, park),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建虚拟滚动中的单行（含选择列、各列单元格与 onRow 事件）。
+  Widget _buildVirtualRow(
+    Map<String, dynamic> row,
+    int index,
+    ParkThemeData park,
+  ) {
+    final bool isStriped = _isStriped && index.isOdd;
+    final bool isSelected = _isRowSelected(index);
+
+    Color? rowColor;
+    if (isSelected) {
+      rowColor = park.colors.brand.withValues(alpha: 0.04);
+    } else if (isStriped) {
+      rowColor = park.colors.background;
+    }
+
+    Widget rowWidget = Container(
+      color: rowColor,
+      child: Row(
+        children: <Widget>[
+          if (widget.rowSelection != null)
+            SizedBox(
+              width: 48,
+              child: Center(child: _buildRowSelectionWidget(index, park)),
+            ),
+          ...widget.columns.map(
+            (ParkTableColumn col) => SizedBox(
+              width: _getColumnWidth(col),
+              child: _buildDataCell(col, row, park, rowIndex: index),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final Map<String, VoidCallback>? rowEvents = widget.onRow?.call(row, index);
+    if (rowEvents != null) {
+      rowWidget = GestureDetector(
+        onTap: rowEvents['onTap'],
+        onDoubleTap: rowEvents['onDoubleTap'],
+        onLongPress: rowEvents['onLongPress'],
+        child: rowWidget,
+      );
+    }
+
+    return rowWidget;
+  }
+
   /// 构建指定列集合的表头行（复用 [_buildHeaderCell]）。
   Widget _buildHeaderPane(
     List<ParkTableColumn> cols,
@@ -1233,7 +1475,7 @@ class _ParkTableState extends State<ParkTable> {
           child: Center(
             child: widget.rowSelection!.type ==
                     ParkRowSelectionType.checkbox
-                ? _buildSelectAllCheckbox(_sortedData, park)
+                ? _buildSelectAllCheckbox(_cachedSortedData!, park)
                 : const SizedBox.shrink(),
           ),
         ),
@@ -1248,7 +1490,7 @@ class _ParkTableState extends State<ParkTable> {
       final ParkTableColumn col = cols[i];
       headerChildren.add(
         SizedBox(
-          width: col.width ?? 120,
+          width: _getColumnWidth(col),
           child: _buildHeaderCell(
             col,
             park,
@@ -1303,7 +1545,7 @@ class _ParkTableState extends State<ParkTable> {
       for (final ParkTableColumn col in cols) {
         cells.add(
           SizedBox(
-            width: col.width ?? 120,
+            width: _getColumnWidth(col),
             child: _buildDataCell(col, row, park, rowIndex: i),
           ),
         );
@@ -1339,19 +1581,21 @@ class _FixedLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ParkThemeData park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final List<BoxShadow> shadows = <BoxShadow>[];
     if (shadowOnRight) {
-      shadows.add(const BoxShadow(
-        color: Colors.black12,
+      shadows.add(BoxShadow(
+        color: park.colors.textPrimary.withValues(alpha: 0.12),
         blurRadius: 6,
-        offset: Offset(2, 0),
+        offset: const Offset(2, 0),
       ));
     }
     if (shadowOnLeft) {
-      shadows.add(const BoxShadow(
-        color: Colors.black12,
+      shadows.add(BoxShadow(
+        color: park.colors.textPrimary.withValues(alpha: 0.12),
         blurRadius: 6,
-        offset: Offset(-2, 0),
+        offset: const Offset(-2, 0),
       ));
     }
     return Container(

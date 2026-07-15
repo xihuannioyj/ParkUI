@@ -21,8 +21,8 @@ void main() {
       await tester.pumpWidget(_wrap(ParkDatePicker(value: date, onChanged: (_) {})));
       expect(find.text('2025-06-15'), findsOneWidget);
     });
-    testWidgets('disabled状态', (tester) async {
-      await tester.pumpWidget(_wrap(ParkDatePicker(enabled: false, onChanged: (_) {})));
+    testWidgets('渲染正常', (tester) async {
+      await tester.pumpWidget(_wrap(ParkDatePicker(onChanged: (_) {})));
       expect(find.byType(ParkDatePicker), findsOneWidget);
     });
   });

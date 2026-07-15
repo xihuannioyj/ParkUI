@@ -7,12 +7,16 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkPicker', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkPicker()));
+      await tester.pumpWidget(_wrap(ParkPicker(
+        items: const [ParkPickerItem(label: '北京', value: 'beijing')],
+      )));
       expect(find.byType(ParkPicker), findsOneWidget);
     });
-    testWidgets('显示placeholder', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkPicker(hintText: '请选择')));
-      expect(find.text('请选择'), findsOneWidget);
+    testWidgets('显示选项', (tester) async {
+      await tester.pumpWidget(_wrap(ParkPicker(
+        items: const [ParkPickerItem(label: '北京', value: 'beijing')],
+      )));
+      expect(find.text('北京'), findsOneWidget);
     });
   });
 }

@@ -2,10 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// Park 文本预设类型
 enum ParkTextPreset {
-  /// 超大标题（36px）
+  /// 超大标题（34px）
   display,
 
   /// 一级标题（28px）
@@ -17,16 +18,16 @@ enum ParkTextPreset {
   /// 三级标题（18px）
   h3,
 
-  /// 正文（14px）
+  /// 正文（16px）
   body,
 
-  /// 小号正文（12px）
+  /// 小号正文（14px）
   bodySmall,
 
-  /// 辅助文字（12px，次要色）
+  /// 辅助文字（13px，次要色）
   caption,
 
-  /// 超小文字（10px，标签/角标）
+  /// 超小文字（11px，标签/角标）
   overline,
 }
 
@@ -392,8 +393,8 @@ class _ParkTextState extends State<ParkText> {
           padding: EdgeInsets.only(left: park.spacing.xs),
           child: Text(
             _expanded
-                ? (widget.collapseText ?? '收起')
-                : (widget.expandText ?? '展开'),
+                ? (widget.collapseText ?? ParkLocalizations.of(context).collapseText)
+                : (widget.expandText ?? ParkLocalizations.of(context).expandText),
             style: TextStyle(
               color: colors.brand,
               fontSize: bgDecoratedStyle.fontSize ?? 14,
@@ -422,7 +423,7 @@ class _ParkTextState extends State<ParkText> {
               if (_showCopiedFeedback) ...[
                 SizedBox(width: park.spacing.xxs),
                 Text(
-                  '已复制',
+                  ParkLocalizations.of(context).copiedText,
                   style: TextStyle(
                     color: colors.success,
                     fontSize: (bgDecoratedStyle.fontSize ?? 14) * 0.85,
@@ -479,7 +480,10 @@ class _ParkTextState extends State<ParkText> {
       result = Opacity(opacity: 0.5, child: result);
     }
 
-    return result;
+    return Semantics(
+      label: widget.semanticsLabel ?? widget.data,
+      child: result,
+    );
   }
 
   TextStyle _presetStyle(ParkTextPreset p, dynamic typo) {

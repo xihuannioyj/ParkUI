@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 
@@ -559,7 +560,9 @@ class _ParkDropdownSheetContentState
         padding: EdgeInsets.all(park.spacing.xl),
         child: Center(
           child: Text(
-            _searchQuery.isNotEmpty ? '无匹配选项' : '暂无选项',
+            _searchQuery.isNotEmpty
+                ? ParkLocalizations.of(context).noMatchingOptions
+                : ParkLocalizations.of(context).noOptions,
             style: park.typography.body.copyWith(
               color: park.colors.textPlaceholder,
             ),
@@ -607,15 +610,22 @@ class _ParkDropdownSheetContentState
   Widget _buildListItem(
       ParkDropdownSheetItem item, bool isSelected, ParkThemeData park) {
     if (widget.itemBuilder != null) {
-      return GestureDetector(
-        onTap: () => _toggleItem(item),
-        child: widget.itemBuilder!(item, isSelected),
+      return Semantics(
+        button: true,
+        label: item.label,
+        child: GestureDetector(
+          onTap: () => _toggleItem(item),
+          child: widget.itemBuilder!(item, isSelected),
+        ),
       );
     }
 
-    return GestureDetector(
-      onTap: () => _toggleItem(item),
-      child: AnimatedContainer(
+    return Semantics(
+      button: true,
+      label: item.label,
+      child: GestureDetector(
+        onTap: () => _toggleItem(item),
+        child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
         padding: EdgeInsets.symmetric(
@@ -680,6 +690,7 @@ class _ParkDropdownSheetContentState
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -708,9 +719,13 @@ class _ParkDropdownSheetContentState
 
   Widget _buildGridItem(
       ParkDropdownSheetItem item, bool isSelected, ParkThemeData park) {
-    return GestureDetector(
-      onTap: () => _toggleItem(item),
-      child: AnimatedContainer(
+    return Semantics(
+      button: true,
+      label: item.label,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () => _toggleItem(item),
+        child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
         decoration: BoxDecoration(
@@ -740,6 +755,7 @@ class _ParkDropdownSheetContentState
             ),
           ),
         ),
+      ),
       ),
     );
   }

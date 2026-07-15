@@ -5,6 +5,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+// TODO(token): 待组件重构为 Widget 后替换为 park.colors.textDisabled
+const Color _kIconColor = Color(0xFF999999);
+
 /// 构建本地文件图片控件。
 ///
 /// 原生实现：使用 Image.file + dart:io File。
@@ -17,7 +20,7 @@ Widget buildFileImageWidget(String path,
     fit: fit,
     errorBuilder: (_, __, ___) => const Center(
       child: Icon(Icons.broken_image_outlined,
-          size: 28, color: Color(0xFF999999)),
+          size: 28, color: _kIconColor),
     ),
   );
 }

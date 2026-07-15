@@ -12,7 +12,7 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
     testWidgets('红点模式', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkBadge.dot(child: Icon(Icons.mail))));
+      await tester.pumpWidget(_wrap(const ParkBadge(dot: true, child: Icon(Icons.mail))));
       expect(find.byIcon(Icons.mail), findsOneWidget);
     });
     testWidgets('count=0不显示', (tester) async {

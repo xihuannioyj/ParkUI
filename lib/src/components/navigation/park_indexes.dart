@@ -84,12 +84,31 @@ class _ParkIndexesState extends State<ParkIndexes> {
   String? get _effectiveActiveIndex => widget.currentIndex ?? _activeIndex;
 
   @override
+  void initState() {
+    super.initState();
+    widget.anchorScrollController?.addListener(_onAnchorScroll);
+  }
+
+  @override
   void didUpdateWidget(covariant ParkIndexes oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 当外部 currentIndex 变化时同步
     if (widget.currentIndex != null &&
         widget.currentIndex != oldWidget.currentIndex) {
       _activeIndex = widget.currentIndex;
+    }
+    // anchorScrollController 变化时更新监听
+    if (widget.anchorScrollController != oldWidget.anchorScrollController) {
+      oldWidget.anchorScrollController?.removeListener(_onAnchorScroll);
+      widget.anchorScrollController?.addListener(_onAnchorScroll);
+    }
+  }
+
+  void _onAnchorScroll() {
+    // 外部通过 currentIndex 控制高亮时，didUpdateWidget 会自动同步 _activeIndex，
+    // 无需在此触发 setState 重建。仅同步内部状态即可。
+    if (widget.currentIndex == null) {
+      _activeIndex = null;
     }
   }
 
@@ -112,21 +131,25 @@ class _ParkIndexesState extends State<ParkIndexes> {
             ParkThemeData.light();
         return IgnorePointer(
           child: Center(
-            child: Container(
-              key: const ValueKey<String>('park-indexes-overlay'),
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: park.colors.brand.withValues(alpha: 0.85),
-                borderRadius: park.radius.brMd,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                index,
-                style: TextStyle(
-                  color: park.colors.textOnBrand,
-                  fontSize: 28,
-                  fontWeight: park.typography.weightBold,
+            child: Semantics(
+              label: index,
+              container: true,
+              child: Container(
+                key: const ValueKey<String>('park-indexes-overlay'),
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: park.colors.brand.withValues(alpha: 0.85),
+                  borderRadius: park.radius.brMd,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  index,
+                  style: TextStyle(
+                    color: park.colors.textOnBrand,
+                    fontSize: 28,
+                    fontWeight: park.typography.weightBold,
+                  ),
                 ),
               ),
             ),
@@ -213,26 +236,31 @@ class _ParkIndexesState extends State<ParkIndexes> {
             mainAxisSize: MainAxisSize.min,
             children: widget.indexes.map((index) {
               final isActive = index == _effectiveActiveIndex;
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _onSelect(index),
-                child: SizedBox(
-                  height: widget.itemHeight,
-                  width: widget.itemHeight + 8,
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 150),
-                      style: TextStyle(
-                        color: isActive ? actColor : inactColor,
-                        fontSize: isActive
-                            ? widget.fontSize + 2
-                            : widget.fontSize,
-                        fontWeight: isActive
-                            ? park.typography.weightBold
-                            : park.typography.weightMedium,
-                        height: 1.0,
+              return Semantics(
+                label: index,
+                button: true,
+                selected: isActive,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _onSelect(index),
+                  child: SizedBox(
+                    height: widget.itemHeight,
+                    width: widget.itemHeight + 8,
+                    child: Center(
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 150),
+                        style: TextStyle(
+                          color: isActive ? actColor : inactColor,
+                          fontSize: isActive
+                              ? widget.fontSize + 2
+                              : widget.fontSize,
+                          fontWeight: isActive
+                              ? park.typography.weightBold
+                              : park.typography.weightMedium,
+                          height: 1.0,
+                        ),
+                        child: Text(index),
                       ),
-                      child: Text(index),
                     ),
                   ),
                 ),

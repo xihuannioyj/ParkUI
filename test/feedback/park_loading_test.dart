@@ -15,7 +15,7 @@ void main() {
       expect(find.text('加载中...'), findsOneWidget);
     });
     testWidgets('全屏加载', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkLoading.fullscreen(text: '请稍候')));
+      await tester.pumpWidget(_wrap(const ParkLoading(mask: true, text: '请稍候')));
       expect(find.text('请稍候'), findsOneWidget);
     });
     testWidgets('自定义颜色', (tester) async {

@@ -303,13 +303,23 @@ class _ParkCellState extends State<ParkCell> {
     }
 
     if (widget.hover && !isDisabled) {
-      return MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: result,
+      return Semantics(
+        button: widget.onPressed != null,
+        label: widget.titleText,
+        enabled: !isDisabled,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: result,
+        ),
       );
     }
 
-    return result;
+    return Semantics(
+      button: widget.onPressed != null,
+      label: widget.titleText,
+      enabled: !isDisabled,
+      child: result,
+    );
   }
 }

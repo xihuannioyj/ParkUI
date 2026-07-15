@@ -338,7 +338,10 @@ class _ParkSkeletonCard extends StatelessWidget {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
 
-    return Container(
+    return Semantics(
+      liveRegion: true,
+      label: 'loading',
+      child: Container(
       padding: EdgeInsets.all(park.spacing.base),
       decoration: BoxDecoration(
         color: park.colors.surface,
@@ -396,6 +399,7 @@ class _ParkSkeletonCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

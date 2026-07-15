@@ -48,6 +48,51 @@ class ExamplePage extends StatelessWidget {
             child: const Text('这是一个 park_ui 卡片组件示例。'),
           ),
           const SizedBox(height: 16),
+          // 栅格布局
+          ParkGridRow(
+            gutter: 16,
+            vGutter: 8,
+            children: [
+              ParkGridCol(
+                span: 8,
+                child: Container(
+                  height: 48,
+                  color: Colors.blue.shade100,
+                  alignment: Alignment.center,
+                  child: const Text('8/24'),
+                ),
+              ),
+              ParkGridCol(
+                span: 8,
+                child: Container(
+                  height: 48,
+                  color: Colors.green.shade100,
+                  alignment: Alignment.center,
+                  child: const Text('8/24'),
+                ),
+              ),
+              ParkGridCol(
+                span: 8,
+                child: Container(
+                  height: 48,
+                  color: Colors.orange.shade100,
+                  alignment: Alignment.center,
+                  child: const Text('8/24'),
+                ),
+              ),
+              ParkGridCol(
+                span: 24,
+                responsive: const ParkGridResponsive(md: 12, lg: 6),
+                child: Container(
+                  height: 48,
+                  color: Colors.purple.shade100,
+                  alignment: Alignment.center,
+                  child: const Text('响应式'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Row(
             children: <Widget>[
               const ParkAvatar(text: 'PU'),

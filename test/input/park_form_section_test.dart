@@ -21,8 +21,8 @@ void main() {
           ParkFormItem(label: '字段2', child: Text('值2')),
         ],
       )));
-      expect(find.text('字段1'), findsOneWidget);
-      expect(find.text('字段2'), findsOneWidget);
+      expect(find.text('字段1：'), findsOneWidget);
+      expect(find.text('字段2：'), findsOneWidget);
     });
   });
 }

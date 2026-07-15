@@ -13,8 +13,8 @@ void main() {
   group('ParkFab - 基本渲染', () {
     testWidgets('创建不抛异常', (tester) async {
       await tester.pumpWidget(_wrap(ParkFab(
+        icon: Icons.add,
         onPressed: () {},
-        child: const Icon(Icons.add),
       )));
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
@@ -22,8 +22,8 @@ void main() {
     testWidgets('可点击', (tester) async {
       int pressed = 0;
       await tester.pumpWidget(_wrap(ParkFab(
+        icon: Icons.add,
         onPressed: () => pressed++,
-        child: const Icon(Icons.add),
       )));
       await tester.tap(find.byIcon(Icons.add));
       expect(pressed, 1);
@@ -31,9 +31,9 @@ void main() {
 
     testWidgets('自定义颜色', (tester) async {
       await tester.pumpWidget(_wrap(ParkFab(
+        icon: Icons.edit,
+        backgroundColor: Colors.blue,
         onPressed: () {},
-        color: Colors.blue,
-        child: const Icon(Icons.edit),
       )));
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import 'park_input.dart';
+import 'park_date_preset.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
@@ -26,37 +27,37 @@ enum ParkDatePickerMode {
 
 /// 日期选择器快捷选项
 class ParkDatePickerShortcut {
-  /// 显示文字
-  final String label;
+  /// 显示文字。为 null 时使用本地化默认值。
+  final String? label;
 
   /// 对应的日期值
   final DateTime date;
 
-  const ParkDatePickerShortcut({required this.label, required this.date});
+  const ParkDatePickerShortcut({this.label, required this.date});
 
   /// 今天
-  factory ParkDatePickerShortcut.today() =>
-      ParkDatePickerShortcut(label: '今天', date: DateTime.now());
+  factory ParkDatePickerShortcut.today({String? label}) =>
+      ParkDatePickerShortcut(label: label, date: DateTime.now());
 
   /// 最近7天
-  factory ParkDatePickerShortcut.last7Days() =>
+  factory ParkDatePickerShortcut.last7Days({String? label}) =>
       ParkDatePickerShortcut(
-        label: '近7天',
+        label: label,
         date: DateTime.now().subtract(const Duration(days: 7)),
       );
 
   /// 最近30天
-  factory ParkDatePickerShortcut.last30Days() =>
+  factory ParkDatePickerShortcut.last30Days({String? label}) =>
       ParkDatePickerShortcut(
-        label: '近30天',
+        label: label,
         date: DateTime.now().subtract(const Duration(days: 30)),
       );
 
   /// 本月第一天
-  factory ParkDatePickerShortcut.thisMonth() {
+  factory ParkDatePickerShortcut.thisMonth({String? label}) {
     final now = DateTime.now();
     return ParkDatePickerShortcut(
-      label: '本月',
+      label: label,
       date: DateTime(now.year, now.month, 1),
     );
   }
@@ -155,6 +156,13 @@ class ParkDatePicker extends FormField<DateTime> {
   /// 预设快捷日期（key 为显示文字，value 为日期值）
   final Map<String, DateTime>? presets;
 
+  /// 预设快捷项列表（使用 [ParkDatePreset] 构建，支持回调闭包）
+  final List<ParkDatePreset>? presetItems;
+
+  /// 自定义底部 footer 组件，渲染在日期选择面板确认按钮下方。
+  /// 为 null 时无变化。
+  final Widget? renderExtraFooter;
+
   ParkDatePicker({
     super.key,
     this.bindKey,
@@ -179,6 +187,8 @@ class ParkDatePicker extends FormField<DateTime> {
     this.onClear,
     this.showTime = false,
     this.presets,
+    this.presetItems,
+    this.renderExtraFooter,
     super.onSaved,
     super.validator,
     super.autovalidateMode = AutovalidateMode.disabled,
@@ -279,7 +289,10 @@ class ParkDatePicker extends FormField<DateTime> {
     // Build suffix widget
     Widget suffixWidget;
     if (widget.clearable && hasValue && widget.allowEmpty) {
-      suffixWidget = GestureDetector(
+      suffixWidget = Semantics(
+        button: true,
+        label: ParkLocalizations.of(state.context).clearText,
+        child: GestureDetector(
         onTap: () {
           state.didChange(null);
           widget.onChanged?.call(null);
@@ -290,6 +303,7 @@ class ParkDatePicker extends FormField<DateTime> {
           size: iconSz,
           color: colors.textPlaceholder,
         ),
+      ),
       );
     } else if (widget.suffixIcon != null) {
       suffixWidget = widget.suffixIcon!;
@@ -301,9 +315,12 @@ class ParkDatePicker extends FormField<DateTime> {
       );
     }
 
-    final input = GestureDetector(
-      onTap: () => _showPicker(state),
-      child: AnimatedContainer(
+    final input = Semantics(
+      button: true,
+      label: widget.hintText ?? ParkLocalizations.of(state.context).selectPlaceholder,
+      child: GestureDetector(
+        onTap: () => _showPicker(state),
+        child: AnimatedContainer(
         duration: park.motion.standard,
         curve: park.motion.defaultEasing,
         width: double.infinity,
@@ -324,7 +341,7 @@ class ParkDatePicker extends FormField<DateTime> {
               child: Text(
                 hasValue
                     ? _formatDate(currentValue, widget.mode, widget.format)
-                    : (widget.hintText ?? '请选择'),
+                    : (widget.hintText ?? ParkLocalizations.of(state.context).selectPlaceholder),
                 style: TextStyle(
                   fontSize: fontSize,
                   color: hasValue ? colors.textPrimary : colors.textPlaceholder,
@@ -334,6 +351,7 @@ class ParkDatePicker extends FormField<DateTime> {
             suffixWidget,
           ],
         ),
+      ),
       ),
     );
 
@@ -403,6 +421,14 @@ class ParkDatePicker extends FormField<DateTime> {
 
     DateTime tempDate = state.value ?? DateTime.now();
 
+    // 将 tempDate clamp 到 [firstDate, lastDate] 范围内，避免 CupertinoDatePicker 崩溃
+    if (widget.firstDate != null && tempDate.isBefore(widget.firstDate!)) {
+      tempDate = widget.firstDate!;
+    }
+    if (widget.lastDate != null && tempDate.isAfter(widget.lastDate!)) {
+      tempDate = widget.lastDate!;
+    }
+
     final CupertinoDatePickerMode cupertinoMode;
     switch (widget.mode) {
       case ParkDatePickerMode.date:
@@ -442,8 +468,18 @@ class ParkDatePicker extends FormField<DateTime> {
             tempDate = date;
             Navigator.of(ctx).pop(date);
           },
+          presets: widget.presetItems,
+          onPresetTap: (preset) {
+            preset.onSelect();
+            if (preset.date != null) {
+              Navigator.of(ctx).pop(preset.date);
+            } else {
+              Navigator.of(ctx).pop(tempDate);
+            }
+          },
           park: park,
           disabledDate: widget.disabledDate,
+          renderExtraFooter: widget.renderExtraFooter,
         );
       },
     ).then((result) {
@@ -479,6 +515,39 @@ class _ParkDatePickerState extends FormFieldState<DateTime>
 
   @override
   ParkDatePicker get widget => super.widget as ParkDatePicker;
+
+  @override
+  void initState() {
+    super.initState();
+    _clampValue();
+  }
+
+  @override
+  void didUpdateWidget(ParkDatePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value ||
+        oldWidget.firstDate != widget.firstDate ||
+        oldWidget.lastDate != widget.lastDate) {
+      _clampValue();
+    }
+  }
+
+  /// 将当前值 clamp 到 [firstDate, lastDate] 范围内。
+  /// firstDate/lastDate 为 null 时跳过对应方向的限制。
+  void _clampValue() {
+    final v = value;
+    if (v == null) return;
+    DateTime clamped = v;
+    if (widget.firstDate != null && clamped.isBefore(widget.firstDate!)) {
+      clamped = widget.firstDate!;
+    }
+    if (widget.lastDate != null && clamped.isAfter(widget.lastDate!)) {
+      clamped = widget.lastDate!;
+    }
+    if (clamped != v) {
+      didChange(clamped);
+    }
+  }
 }
 
 /// 内部：日期选择器底部面板
@@ -492,8 +561,11 @@ class _DatePickerSheet extends StatefulWidget {
   final ValueChanged<DateTime> onDateChanged;
   final List<ParkDatePickerShortcut>? shortcuts;
   final ValueChanged<DateTime>? onShortcutTap;
+  final List<ParkDatePreset>? presets;
+  final ValueChanged<ParkDatePreset>? onPresetTap;
   final ParkThemeData park;
   final bool Function(DateTime)? disabledDate;
+  final Widget? renderExtraFooter;
 
   const _DatePickerSheet({
     this.title,
@@ -505,8 +577,11 @@ class _DatePickerSheet extends StatefulWidget {
     required this.onDateChanged,
     this.shortcuts,
     this.onShortcutTap,
+    this.presets,
+    this.onPresetTap,
     required this.park,
     this.disabledDate,
+    this.renderExtraFooter,
   });
 
   @override
@@ -519,7 +594,56 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
   @override
   void initState() {
     super.initState();
-    _tempDate = widget.initialDateTime;
+    _tempDate = _clampInitialDateTime();
+  }
+
+  @override
+  void didUpdateWidget(_DatePickerSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialDateTime != widget.initialDateTime ||
+        oldWidget.minimumDate != widget.minimumDate ||
+        oldWidget.maximumDate != widget.maximumDate) {
+      _tempDate = _clampInitialDateTime();
+    }
+  }
+
+  /// 将 initialDateTime clamp 到 [minimumDate, maximumDate] 范围内。
+  DateTime _clampInitialDateTime() {
+    DateTime dt = widget.initialDateTime;
+    if (widget.minimumDate != null && dt.isBefore(widget.minimumDate!)) {
+      dt = widget.minimumDate!;
+    }
+    if (widget.maximumDate != null && dt.isAfter(widget.maximumDate!)) {
+      dt = widget.maximumDate!;
+    }
+    return dt;
+  }
+
+  /// 解析快捷选项标签：通过日期启发式匹配内置工厂快捷项，返回本地化文字。
+  String _resolveShortcutLabel(ParkDatePickerShortcut shortcut, BuildContext context) {
+    final l10n = ParkLocalizations.of(context);
+    final now = DateTime.now();
+    final d = shortcut.date;
+    // 今天
+    if (d.year == now.year && d.month == now.month && d.day == now.day) {
+      return l10n.shortcutToday;
+    }
+    // 本月第一天
+    if (d.year == now.year && d.month == now.month && d.day == 1) {
+      return l10n.shortcutThisMonth;
+    }
+    // 近7天
+    final diff7 = now.difference(d).inDays;
+    if (diff7 >= 6 && diff7 <= 8) {
+      return l10n.shortcutLast7Days;
+    }
+    // 近30天
+    final diff30 = now.difference(d).inDays;
+    if (diff30 >= 29 && diff30 <= 31) {
+      return l10n.shortcutLast30Days;
+    }
+    // 回退：使用日期格式
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -549,9 +673,12 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Text(
+                  Semantics(
+                    button: true,
+                    label: ParkLocalizations.of(context).cancelText,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Text(
                       ParkLocalizations.of(context).cancelText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
@@ -559,7 +686,8 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                       ),
                     ),
                   ),
-                  if (widget.title != null)
+                ),
+                if (widget.title != null)
                     Text(
                       widget.title!,
                       style: TextStyle(
@@ -570,14 +698,18 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                     )
                   else
                     const SizedBox.shrink(),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_tempDate),
-                    child: Text(
-                      ParkLocalizations.of(context).confirmText,
-                      style: TextStyle(
-                        fontSize: typo.sizeBody,
-                        color: colors.brand,
-                        fontWeight: typo.weightMedium,
+                  Semantics(
+                    button: true,
+                    label: ParkLocalizations.of(context).confirmText,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(_tempDate),
+                      child: Text(
+                        ParkLocalizations.of(context).confirmText,
+                        style: TextStyle(
+                          fontSize: typo.sizeBody,
+                          color: colors.brand,
+                          fontWeight: typo.weightMedium,
+                        ),
                       ),
                     ),
                   ),
@@ -599,9 +731,13 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                   spacing: spacing.sm,
                   runSpacing: spacing.xs,
                   children: widget.shortcuts!.map((shortcut) {
-                    return GestureDetector(
-                      onTap: () => widget.onShortcutTap?.call(shortcut.date),
-                      child: Container(
+                    final resolvedLabel = shortcut.label ?? _resolveShortcutLabel(shortcut, context);
+                    return Semantics(
+                      button: true,
+                      label: resolvedLabel,
+                      child: GestureDetector(
+                        onTap: () => widget.onShortcutTap?.call(shortcut.date),
+                        child: Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: spacing.md,
                           vertical: spacing.xs,
@@ -614,11 +750,59 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                           ),
                         ),
                         child: Text(
-                          shortcut.label,
+                          resolvedLabel,
                           style: TextStyle(
                             fontSize: typo.sizeBodySmall,
                             color: colors.brand,
                             fontWeight: typo.weightMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(height: spacing.xs),
+            ],
+
+            // Presets
+            if (widget.presets != null && widget.presets!.isNotEmpty) ...[
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  spacing.base,
+                  spacing.xs,
+                  spacing.base,
+                  spacing.xs,
+                ),
+                child: Wrap(
+                  spacing: spacing.sm,
+                  runSpacing: spacing.xs,
+                  children: widget.presets!.map((preset) {
+                    return Semantics(
+                      button: true,
+                      label: preset.label,
+                      child: GestureDetector(
+                        onTap: () => widget.onPresetTap?.call(preset),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: spacing.md,
+                            vertical: spacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.brand.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(radius.sm),
+                            border: Border.all(
+                              color: colors.brand.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            preset.label,
+                            style: TextStyle(
+                              fontSize: typo.sizeBodySmall,
+                              color: colors.brand,
+                              fontWeight: typo.weightMedium,
+                            ),
                           ),
                         ),
                       ),
@@ -634,7 +818,7 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
               height: 220,
               child: CupertinoDatePicker(
                 mode: widget.mode,
-                initialDateTime: widget.initialDateTime,
+                initialDateTime: _tempDate,
                 minimumDate: widget.minimumDate,
                 maximumDate: widget.maximumDate,
                 onDateTimeChanged: (dt) {
@@ -643,6 +827,12 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                 },
               ),
             ),
+
+            // ── 自定义 Footer ──
+            if (widget.renderExtraFooter != null) ...[
+              SizedBox(height: spacing.sm),
+              widget.renderExtraFooter!,
+            ],
 
             SizedBox(height: spacing.base),
           ],

@@ -7,7 +7,7 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkSwitch', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSwitch(value: false)));
+      await tester.pumpWidget(_wrap(ParkSwitch(value: false)));
       expect(find.byType(ParkSwitch), findsOneWidget);
     });
     testWidgets('点击切换', (tester) async {

@@ -5,25 +5,32 @@ import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
 
-/// 下拉菜单项数据模型
-class ParkDropdownItem {
+/// 下拉菜单项数据模型 — 支持子菜单嵌套。
+///
+/// 当 [children] 非 null 时该项为父菜单项，hover/点击展开子菜单。
+/// 叶子节点（[children]=null）正常触发 [onTap]。
+class ParkDropdownMenuItem {
   final String label;
   final String value;
   final Widget? icon;
   final bool disabled;
 
-  const ParkDropdownItem({
+  /// 子菜单项。非 null 时该项展开子菜单而非触发 onTap。
+  final List<ParkDropdownMenuItem>? children;
+
+  const ParkDropdownMenuItem({
     required this.label,
     required this.value,
     this.icon,
     this.disabled = false,
+    this.children,
   });
 }
 
 /// 下拉菜单分组
 class ParkDropdownGroup {
   final String label;
-  final List<ParkDropdownItem> items;
+  final List<ParkDropdownMenuItem> items;
 
   const ParkDropdownGroup({
     required this.label,
@@ -37,10 +44,32 @@ enum ParkDropdownDirection { down, up }
 /// 下拉菜单位置（更细粒度的放置选项）
 enum ParkDropdownPlacement { bottomLeft, bottomRight, topLeft, topRight }
 
+/// 子菜单生命周期控制器。
+///
+/// 管理所有活跃子菜单 OverlayEntry，在主菜单关闭时统一清理。
+class _SubmenuController {
+  final List<VoidCallback> _closeCallbacks = [];
+
+  void registerClose(VoidCallback callback) {
+    _closeCallbacks.add(callback);
+  }
+
+  void unregisterClose(VoidCallback callback) {
+    _closeCallbacks.remove(callback);
+  }
+
+  void closeAll() {
+    final callbacks = List<VoidCallback>.from(_closeCallbacks);
+    for (final cb in callbacks) {
+      cb();
+    }
+  }
+}
+
 /// ParkDropdownMenu — 下拉菜单组件，锚定在 trigger 下方/上方展示。
 class ParkDropdownMenu extends StatefulWidget {
-  final List<ParkDropdownItem> items;
-  final ValueChanged<ParkDropdownItem>? onSelected;
+  final List<ParkDropdownMenuItem> items;
+  final ValueChanged<ParkDropdownMenuItem>? onSelected;
   final Widget trigger;
   final ParkDropdownDirection direction;
   final bool closeOnTapOutside;
@@ -75,7 +104,7 @@ class ParkDropdownMenu extends StatefulWidget {
   final ParkDropdownPlacement? placement;
 
   /// Custom item rendering builder.
-  final Widget Function(ParkDropdownItem item, bool isSelected)? itemBuilder;
+  final Widget Function(ParkDropdownMenuItem item, bool isSelected)? itemBuilder;
 
   /// Maximum height of the dropdown menu.
   final double maxHeight;
@@ -129,6 +158,8 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
   int _overlayEpoch = 0;
+
+  final _SubmenuController _submenuController = _SubmenuController();
 
   late final AnimationController _controller;
   late final Animation<double> _fadeAnim;
@@ -210,6 +241,7 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
         triggerSize: _measureTriggerSize(),
         multiple: widget.multiple,
         selectedValues: _selectedValues,
+        submenuController: _submenuController,
         onSelected: (item) {
           if (widget.multiple) {
             setState(() {
@@ -227,7 +259,9 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
               _hideDropdown();
             }
           } else {
-            _hideDropdown();
+            if (widget.closeOnSelect) {
+              _hideDropdown();
+            }
             widget.onSelected?.call(item);
             boundValue = <String>{item.value};
           }
@@ -250,6 +284,9 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
   void _hideDropdown() {
     final entry = _overlayEntry;
     if (entry == null || (!_isOpen && _controller.isDismissed)) return;
+
+    // Close all open submenus first
+    _submenuController.closeAll();
 
     _isOpen = false;
     widget.onVisibleChanged?.call(false);
@@ -303,7 +340,7 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
 
 class _ParkDropdownOverlay extends StatelessWidget {
   final LayerLink layerLink;
-  final List<ParkDropdownItem> items;
+  final List<ParkDropdownMenuItem> items;
   final List<ParkDropdownGroup>? groups;
   final bool dividers;
   final ParkDropdownDirection direction;
@@ -315,10 +352,11 @@ class _ParkDropdownOverlay extends StatelessWidget {
   final Size? triggerSize;
   final bool multiple;
   final Set<String> selectedValues;
-  final ValueChanged<ParkDropdownItem> onSelected;
+  final _SubmenuController submenuController;
+  final ValueChanged<ParkDropdownMenuItem> onSelected;
   final VoidCallback onDismiss;
   final ParkDropdownPlacement? placement;
-  final Widget Function(ParkDropdownItem item, bool isSelected)? itemBuilder;
+  final Widget Function(ParkDropdownMenuItem item, bool isSelected)? itemBuilder;
   final double maxHeight;
 
   const _ParkDropdownOverlay({
@@ -335,6 +373,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
     required this.triggerSize,
     required this.multiple,
     required this.selectedValues,
+    required this.submenuController,
     required this.onSelected,
     required this.onDismiss,
     this.placement,
@@ -388,7 +427,10 @@ class _ParkDropdownOverlay extends StatelessWidget {
         if (closeOnTapOutside)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: onDismiss,
+            onTap: () {
+              submenuController.closeAll();
+              onDismiss();
+            },
             child: Container(color: Colors.transparent),
           ),
 
@@ -482,14 +524,32 @@ class _ParkDropdownOverlay extends StatelessWidget {
   }
 
   Widget _buildItem(
-      ParkDropdownItem item, ParkThemeData park, BuildContext context) {
+      ParkDropdownMenuItem item, ParkThemeData park, BuildContext context) {
+    // If item has children, render as submenu parent item
+    if (item.children != null && item.children!.isNotEmpty) {
+      return _ParkDropdownSubmenuItem(
+        item: item,
+        park: park,
+        selectedValues: selectedValues,
+        multiple: multiple,
+        submenuController: submenuController,
+        onSelected: onSelected,
+        itemBuilder: itemBuilder,
+        maxHeight: maxHeight,
+      );
+    }
+
     final bool isSelected = selectedValues.contains(item.value);
 
     // Use custom itemBuilder when provided
     if (itemBuilder != null) {
-      return GestureDetector(
-        onTap: item.disabled ? null : () => onSelected(item),
-        child: itemBuilder!(item, isSelected),
+      return Semantics(
+        button: true,
+        label: item.label,
+        child: GestureDetector(
+          onTap: item.disabled ? null : () => onSelected(item),
+          child: itemBuilder!(item, isSelected),
+        ),
       );
     }
 
@@ -497,9 +557,12 @@ class _ParkDropdownOverlay extends StatelessWidget {
         ? park.colors.textSecondary.withValues(alpha: 0.4)
         : park.colors.textPrimary;
 
-    return GestureDetector(
-      onTap: item.disabled ? null : () => onSelected(item),
-      child: Container(
+    return Semantics(
+      button: true,
+      label: item.label,
+      child: GestureDetector(
+        onTap: item.disabled ? null : () => onSelected(item),
+        child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -536,6 +599,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -575,5 +639,282 @@ class _ParkDropdownOverlay extends StatelessWidget {
       case ParkDropdownPlacement.topRight:
         return Offset(0, -offset);
     }
+  }
+}
+
+/// 带子菜单的下拉菜单项。
+///
+/// 当 [ParkDropdownMenuItem.children] 非空时渲染此项，hover/点击时在其右侧
+/// 弹出子菜单面板。支持多级递归嵌套。
+class _ParkDropdownSubmenuItem extends StatefulWidget {
+  final ParkDropdownMenuItem item;
+  final ParkThemeData park;
+  final bool multiple;
+  final Set<String> selectedValues;
+  final _SubmenuController submenuController;
+  final ValueChanged<ParkDropdownMenuItem> onSelected;
+  final Widget Function(ParkDropdownMenuItem item, bool isSelected)? itemBuilder;
+  final double maxHeight;
+
+  const _ParkDropdownSubmenuItem({
+    required this.item,
+    required this.park,
+    required this.multiple,
+    required this.selectedValues,
+    required this.submenuController,
+    required this.onSelected,
+    this.itemBuilder,
+    this.maxHeight = 300,
+  });
+
+  @override
+  State<_ParkDropdownSubmenuItem> createState() =>
+      _ParkDropdownSubmenuItemState();
+}
+
+class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _submenuEntry;
+  bool _isSubmenuOpen = false;
+
+  @override
+  void dispose() {
+    _closeSubmenu();
+    super.dispose();
+  }
+
+  void _openSubmenu() {
+    if (_submenuEntry != null || !mounted) return;
+
+    _isSubmenuOpen = true;
+    setState(() {});
+
+    _submenuEntry = OverlayEntry(builder: (context) {
+      return _buildSubmenuOverlay(context);
+    });
+
+    Overlay.of(context).insert(_submenuEntry!);
+
+    // Register with parent controller so it gets closed on main dismiss
+    widget.submenuController.registerClose(_closeSubmenu);
+  }
+
+  void _closeSubmenu() {
+    _submenuEntry?.remove();
+    _submenuEntry = null;
+    if (_isSubmenuOpen) {
+      _isSubmenuOpen = false;
+      if (mounted) setState(() {});
+    }
+    widget.submenuController.unregisterClose(_closeSubmenu);
+  }
+
+  void _toggleSubmenu() {
+    if (_isSubmenuOpen) {
+      _closeSubmenu();
+    } else {
+      _openSubmenu();
+    }
+  }
+
+  Widget _buildSubmenuOverlay(BuildContext context) {
+    // Build submenu items recursively
+    final subItems = widget.item.children!
+        .map((child) => _buildSubmenuItem(child, context))
+        .toList();
+
+    return Stack(
+      children: [
+        // Dismiss barrier for this submenu level
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _closeSubmenu,
+          child: Container(color: Colors.transparent),
+        ),
+        // Submenu positioned at the right of the parent item
+        CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          targetAnchor: Alignment.topRight,
+          followerAnchor: Alignment.topLeft,
+          offset: const Offset(4, 0),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              constraints: BoxConstraints(
+                minWidth: 140,
+                maxWidth: 280,
+                maxHeight: widget.maxHeight,
+              ),
+              decoration: BoxDecoration(
+                color: widget.park.colors.surface,
+                borderRadius: widget.park.radius.brMd,
+                boxShadow: widget.park.shadows.lg,
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(vertical: widget.park.spacing.xs),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: subItems,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmenuItem(ParkDropdownMenuItem item, BuildContext context) {
+    // Recursive: if child has children, create nested submenu item
+    if (item.children != null && item.children!.isNotEmpty) {
+      return _ParkDropdownSubmenuItem(
+        item: item,
+        park: widget.park,
+        multiple: widget.multiple,
+        selectedValues: widget.selectedValues,
+        submenuController: widget.submenuController,
+        onSelected: widget.onSelected,
+        itemBuilder: widget.itemBuilder,
+        maxHeight: widget.maxHeight,
+      );
+    }
+
+    // Leaf item in submenu
+    final bool isSelected = widget.selectedValues.contains(item.value);
+
+    if (widget.itemBuilder != null) {
+      return Semantics(
+        button: true,
+        label: item.label,
+        child: GestureDetector(
+          onTap: item.disabled ? null : () {
+            _closeSubmenu();
+            widget.onSelected(item);
+          },
+          child: widget.itemBuilder!(item, isSelected),
+        ),
+      );
+    }
+
+    final textColor = item.disabled
+        ? widget.park.colors.textSecondary.withValues(alpha: 0.4)
+        : widget.park.colors.textPrimary;
+
+    return Semantics(
+      button: true,
+      label: item.label,
+      child: GestureDetector(
+        onTap: item.disabled ? null : () {
+          _closeSubmenu();
+          widget.onSelected(item);
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.base,
+            vertical: widget.park.spacing.sm,
+          ),
+          color: isSelected && !widget.multiple
+              ? widget.park.colors.brand.withValues(alpha: 0.08)
+              : Colors.transparent,
+          child: Row(
+            children: [
+              if (widget.multiple) ...[
+                Icon(
+                  isSelected
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  size: 18,
+                  color: item.disabled
+                      ? widget.park.colors.textSecondary.withValues(alpha: 0.4)
+                      : (isSelected ? widget.park.colors.brand : widget.park.colors.textSecondary),
+                ),
+                SizedBox(width: widget.park.spacing.xs),
+              ],
+              if (item.icon != null) ...[
+                item.icon!,
+                SizedBox(width: widget.park.spacing.sm),
+              ],
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: widget.park.typography.body.copyWith(
+                    fontSize: widget.park.typography.sizeBody,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final bool isSelected = widget.selectedValues.contains(item.value);
+    final textColor = item.disabled
+        ? widget.park.colors.textSecondary.withValues(alpha: 0.4)
+        : widget.park.colors.textPrimary;
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Semantics(
+        button: true,
+        label: item.label,
+        child: GestureDetector(
+          onTap: item.disabled
+              ? null
+              : () {
+                  // Parent item with children: toggle submenu instead of onTap
+                  _toggleSubmenu();
+                },
+          onTapDown: (_) {
+            // Open submenu on tap-down for hover-like feel
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.park.spacing.base,
+              vertical: widget.park.spacing.sm,
+            ),
+            color: isSelected && !widget.multiple
+                ? widget.park.colors.brand.withValues(alpha: 0.08)
+                : Colors.transparent,
+            child: Row(
+              children: [
+                if (item.icon != null) ...[
+                  item.icon!,
+                  SizedBox(width: widget.park.spacing.sm),
+                ],
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: widget.park.typography.body.copyWith(
+                      fontSize: widget.park.typography.sizeBody,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                // Right arrow indicator for submenu
+                Semantics(
+                  label: '展开子菜单',
+                  child: Padding(
+                    padding: EdgeInsets.only(left: widget.park.spacing.sm),
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: widget.park.colors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

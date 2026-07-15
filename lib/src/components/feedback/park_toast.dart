@@ -173,7 +173,10 @@ class ParkToast extends StatelessWidget {
     _showToast(
       context,
       message: message,
-      duration: const Duration(hours: 1),
+      // B83a: Duration is irrelevant for loading toasts (no auto-dismiss timer
+      // is started when isloading=true), but a non-null value is required by
+      // the parameter contract.
+      duration: Duration.zero,
       position: position,
       toastKey: effectiveKey,
       isloading: true,
@@ -269,7 +272,7 @@ class ParkToast extends StatelessWidget {
 
   Widget _buildPill(ParkThemeData park) {
     final bg = bgColor ?? park.colors.overlay;
-    return Container(
+    final pill = Container(
       padding: EdgeInsets.symmetric(
         horizontal: park.spacing.base,
         vertical: park.spacing.sm,
@@ -287,13 +290,24 @@ class ParkToast extends StatelessWidget {
               message,
               style: park.typography.body.copyWith(
                 fontSize: park.typography.sizeBody,
-                color: Colors.white,
+                color: park.colors.textOnBrand,
               ),
             ),
           ),
         ],
       ),
     );
+
+    // 非居中位置时应用对齐
+    if (position != ParkToastPosition.center) {
+      return Align(
+        alignment: position == ParkToastPosition.top
+            ? Alignment.topCenter
+            : Alignment.bottomCenter,
+        child: pill,
+      );
+    }
+    return pill;
   }
 }
 
@@ -356,7 +370,10 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
         ? widget.duration - const Duration(milliseconds: 300)
         : Duration.zero;
 
-    _startDismissTimer();
+    // B83a: Loading toasts should persist until manually dismissed — skip timer.
+    if (!widget.isloading) {
+      _startDismissTimer();
+    }
   }
 
   void _startDismissTimer() {
@@ -432,7 +449,9 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final bg = widget.bgColor ?? park.colors.overlay;
 
-    Widget toastWidget = FadeTransition(
+    Widget toastWidget = Semantics(
+      liveRegion: true,
+      child: FadeTransition(
       opacity: _fadeAnim,
       child: Container(
         alignment: _alignment(),
@@ -473,7 +492,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                                  AlwaysStoppedAnimation<Color>(park.colors.textOnBrand),
                             ),
                           ),
                           SizedBox(width: park.spacing.xs),
@@ -487,7 +506,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
                             widget.message,
                             style: park.typography.body.copyWith(
                               fontSize: park.typography.sizeBody,
-                              color: Colors.white,
+                              color: park.colors.textOnBrand,
                             ),
                           ),
                         ),
@@ -496,6 +515,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
             ),
           ),
         ),
+      ),
       ),
     );
 

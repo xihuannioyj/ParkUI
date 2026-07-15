@@ -4,6 +4,9 @@
 // 在 Web 平台使用本空实现。
 import 'package:flutter/material.dart';
 
+// TODO(token): 待组件重构为 Widget 后替换为 park.colors.textDisabled
+const Color _kIconColor = Color(0xFF999999);
+
 /// 构建本地文件图片控件。
 ///
 /// 空实现：返回占位图标。
@@ -11,7 +14,7 @@ Widget buildFileImageWidget(String path,
     {double width = 80, double height = 80, BoxFit fit = BoxFit.cover}) {
   return const Center(
     child: Icon(Icons.image_not_supported_outlined,
-        size: 28, color: Color(0xFF999999)),
+        size: 28, color: _kIconColor),
   );
 }
 

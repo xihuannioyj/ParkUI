@@ -25,7 +25,7 @@ void main() {
     });
 
     testWidgets('带文字的分割线', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkDivider(child: Text('OR'))));
+      await tester.pumpWidget(_wrap(ParkDivider.withText('OR')));
       expect(find.text('OR'), findsOneWidget);
     });
   });

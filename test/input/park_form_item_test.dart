@@ -8,7 +8,7 @@ void main() {
   group('ParkFormItem', () {
     testWidgets('创建不抛异常', (tester) async {
       await tester.pumpWidget(_wrap(const ParkFormItem(label: '姓名', child: Text('内容'))));
-      expect(find.text('姓名'), findsOneWidget);
+      expect(find.text('姓名：'), findsOneWidget);
       expect(find.text('内容'), findsOneWidget);
     });
     testWidgets('required标记', (tester) async {

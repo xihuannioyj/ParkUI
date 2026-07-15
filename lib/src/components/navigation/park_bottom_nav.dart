@@ -99,7 +99,19 @@ class ParkBottomNav extends StatelessWidget {
     this.backgroundColor,
     this.elevation = 0,
   }) : assert(items.length >= 2 && items.length <= 5,
-            'ParkBottomNav 至少 2 项，最多 5 项');
+            'ParkBottomNav requires 2 to 5 items');
+
+  /// 计算满足 WCAG AA（4.5:1）对比度要求的 Badge 背景色。
+  ///
+  /// 亮色主题 [error] (#DF1B41) 对白色文字对比度约 4.56:1，刚好达标。
+  /// 暗色主题 [error] (#F25767) 对白色文字对比度仅约 3.3:1，不达标，
+  /// 需加深至 #D41540（对比度约 4.6:1）。
+  Color _badgeBackgroundColor(Color error, bool isDark) {
+    if (isDark) {
+      return const Color(0xFFD41540);
+    }
+    return error;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +123,10 @@ class ParkBottomNav extends StatelessWidget {
     final effectiveSelectedColor = selectedItemColor ?? colors.brand;
     final effectiveUnselectedColor =
         unselectedItemColor ?? colors.textSecondary;
+
+    // 判断是否为暗色主题，用于 Badge 对比度修正
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final badgeBg = _badgeBackgroundColor(colors.error, isDark);
 
     return Container(
       decoration: BoxDecoration(
@@ -145,6 +161,7 @@ class ParkBottomNav extends StatelessWidget {
           return BottomNavigationBarItem(
             icon: item.badge != null
                 ? Badge(
+                    backgroundColor: badgeBg,
                     label: Text(
                       item.badge!,
                       style: TextStyle(
@@ -158,6 +175,7 @@ class ParkBottomNav extends StatelessWidget {
             activeIcon: item.activeIcon != null
                 ? (item.badge != null
                     ? Badge(
+                        backgroundColor: badgeBg,
                         label: Text(
                           item.badge!,
                           style: TextStyle(

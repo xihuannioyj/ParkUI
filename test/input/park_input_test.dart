@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:park_ui/park_ui.dart';
 
@@ -12,17 +13,17 @@ Widget _wrap(Widget child) {
 void main() {
   group('ParkInput - 基本渲染', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(hintText: '请输入')));
+      await tester.pumpWidget(_wrap(ParkInput(hintText: '请输入')));
       expect(find.byType(ParkInput), findsOneWidget);
     });
 
     testWidgets('显示 label', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(label: '用户名', hintText: '请输入用户名')));
+      await tester.pumpWidget(_wrap(ParkInput(label: '用户名', hintText: '请输入用户名')));
       expect(find.text('用户名'), findsOneWidget);
     });
 
     testWidgets('显示 hintText', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(hintText: '请输入手机号')));
+      await tester.pumpWidget(_wrap(ParkInput(hintText: '请输入手机号')));
       expect(find.text('请输入手机号'), findsOneWidget);
     });
 
@@ -55,26 +56,26 @@ void main() {
       await tester.enterText(find.byType(TextField), 'test');
       await tester.pump();
       // 应该出现清除图标
-      expect(find.byIcon(Icons.cancel), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.clear_circled_solid), findsOneWidget);
     });
 
     testWidgets('obscureText 密码切换', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(
+      await tester.pumpWidget(_wrap(ParkInput(
         hintText: '密码',
         obscureText: true,
       )));
       // 应该显示眼睛图标用于切换
-      final eyeIcon = find.byIcon(Icons.visibility_off);
+      final eyeIcon = find.byIcon(CupertinoIcons.eye_slash);
       expect(eyeIcon, findsOneWidget);
 
       await tester.tap(eyeIcon);
       await tester.pump();
       // 切换后应变为 visibility
-      expect(find.byIcon(Icons.visibility), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.eye), findsOneWidget);
     });
 
     testWidgets('maxLines > 1 多行输入', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(
+      await tester.pumpWidget(_wrap(ParkInput(
         hintText: '备注',
         maxLines: 3,
       )));
@@ -82,9 +83,10 @@ void main() {
     });
 
     testWidgets('maxLength 显示字数统计', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(
+      await tester.pumpWidget(_wrap(ParkInput(
         hintText: '限制长度',
         maxLength: 10,
+        showCount: true,
       )));
       // 字数统计 0/10
       expect(find.text('0/10'), findsOneWidget);
@@ -93,7 +95,7 @@ void main() {
 
   group('ParkInput - 状态', () {
     testWidgets('enabled=false 禁用状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(
+      await tester.pumpWidget(_wrap(ParkInput(
         hintText: '禁用输入',
         enabled: false,
       )));
@@ -102,7 +104,7 @@ void main() {
     });
 
     testWidgets('readOnly 只读状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkInput(
+      await tester.pumpWidget(_wrap(ParkInput(
         hintText: '只读',
         readOnly: true,
       )));
@@ -112,17 +114,19 @@ void main() {
 
     testWidgets('validator 校验失败显示错误', (tester) async {
       final key = GlobalKey<FormState>();
-      await tester.pumpWidget(_wrap(MaterialApp(
+      await tester.pumpWidget(MaterialApp(
         theme: ThemeData(extensions: [ParkThemeData.light()]),
-        home: Scaffold(body: Form(
-          key: key,
-          child: ParkInput(
-            hintText: '必填',
-            validator: (v) => (v == null || v.isEmpty) ? '不能为空' : null,
-            autovalidateMode: AutovalidateMode.always,
+        home: Scaffold(
+          body: Form(
+            key: key,
+            child: ParkInput(
+              hintText: '必填',
+              validator: (v) => (v == null || v.isEmpty) ? '不能为空' : null,
+              autovalidateMode: AutovalidateMode.always,
+            ),
           ),
-        )),
-      )));
+        ),
+      ));
       key.currentState!.validate();
       await tester.pump();
       expect(find.text('不能为空'), findsOneWidget);

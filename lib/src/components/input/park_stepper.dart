@@ -166,7 +166,10 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
   void initState() {
     super.initState();
     final current = widget.state.value ?? 0;
-    _textController = TextEditingController(text: '$current');
+    final widget_ = widget.state.widget as ParkStepper;
+    final initialText = widget_.formatter?.call(current)
+        ?? _formatDisplay(current, widget_.precision, stringMode: widget_.stringMode);
+    _textController = TextEditingController(text: initialText);
   }
 
   @override
@@ -180,7 +183,7 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
     super.didUpdateWidget(oldWidget);
     final current = widget.state.value ?? 0;
     final widget_ = widget.state.widget as ParkStepper;
-    final displayText = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision);
+    final displayText = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision, stringMode: widget_.stringMode);
     if (_textController.text != displayText) {
       _textController.text = displayText;
     }
@@ -188,22 +191,30 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
 
   void _onSubmitted(String text) {
     final widget_ = widget.state.widget as ParkStepper;
-    final parsed = int.tryParse(text);
+    // In stringMode, display shows formatted values like "3.00"; parse as double first.
+    int? parsed = int.tryParse(text);
+    if (parsed == null && widget_.stringMode) {
+      parsed = double.tryParse(text)?.toInt();
+    }
     if (parsed != null) {
       int clamped = parsed;
       if (widget_.min != null) clamped = clamped < widget_.min! ? widget_.min! : clamped;
       if (widget_.max != null) clamped = clamped > widget_.max! ? widget_.max! : clamped;
       widget.state.didChange(clamped);
       widget_.onChanged?.call(clamped);
-      _textController.text = widget_.formatter?.call(clamped) ?? _formatDisplay(clamped, widget_.precision);
+      _textController.text = widget_.formatter?.call(clamped) ?? _formatDisplay(clamped, widget_.precision, stringMode: widget_.stringMode);
     } else {
       // revert to current value
       final current = widget.state.value ?? 0;
-      _textController.text = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision);
+      _textController.text = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision, stringMode: widget_.stringMode);
     }
   }
 
-  String _formatDisplay(int value, int? precision) {
+  String _formatDisplay(int value, int? precision, {bool stringMode = false}) {
+    if (stringMode) {
+      final effectivePrecision = (precision != null && precision > 0) ? precision : 2;
+      return value.toDouble().toStringAsFixed(effectivePrecision);
+    }
     if (precision == null || precision <= 0) return '$value';
     return value.toDouble().toStringAsFixed(precision);
   }
@@ -255,7 +266,7 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
     final btnSize = _buttonSize();
     final iconSz = _iconSize();
     final fontSize = _fontSize();
-    final displayText = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision);
+    final displayText = widget_.formatter?.call(current) ?? _formatDisplay(current, widget_.precision, stringMode: widget_.stringMode);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -286,6 +297,7 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               enabled: !isDisabled,
+              readOnly: widget_.inputReadOnly,
               style: widget.park.typography.body.copyWith(
                 color: isDisabled
                     ? widget.park.colors.textDisabled
@@ -294,7 +306,9 @@ class _ParkStepperBuilderState extends State<_ParkStepperBuilder> {
                 fontSize: fontSize,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
+                FilteringTextInputFormatter.allow(RegExp(
+                  widget_.stringMode ? r'^-?\d*\.?\d*' : r'^-?\d*',
+                )),
               ],
               onSubmitted: _onSubmitted,
               decoration: InputDecoration(
@@ -413,7 +427,12 @@ class _StepperButtonState extends State<_StepperButton> {
       iconColor = park.colors.brand;
     }
 
-    return GestureDetector(
+    final label = widget.icon == CupertinoIcons.minus ? 'decrement' : 'increment';
+
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
       onTap: widget.onTap,
       onLongPressStart: widget.longPressEnabled && isEnabled
           ? (_) => _startRepeat()
@@ -441,6 +460,7 @@ class _StepperButtonState extends State<_StepperButton> {
           color: iconColor,
         ),
       ),
+    ),
     );
   }
 }

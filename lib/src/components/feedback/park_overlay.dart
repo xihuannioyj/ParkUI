@@ -102,8 +102,11 @@ class ParkOverlay extends StatefulWidget {
     late OverlayEntry entry;
     final Completer<void> completer = Completer<void>();
     bool dismissed = false;
+    Timer? autoCloseTimer;
 
     void dismiss() {
+      autoCloseTimer?.cancel();
+      autoCloseTimer = null;
       if (dismissed) return;
       dismissed = true;
       if (entry.mounted) {
@@ -132,7 +135,7 @@ class ParkOverlay extends StatefulWidget {
     overlay.insert(entry);
 
     if (autoClose != null) {
-      Future<void>.delayed(autoClose, dismiss);
+      autoCloseTimer = Timer(autoClose, dismiss);
     }
 
     return ParkOverlayHandle._(dismiss, completer.future);
@@ -190,9 +193,13 @@ class _ParkOverlayState extends State<ParkOverlay>
     Widget result = AnimatedBuilder(
       animation: _controller,
       builder: (BuildContext context, Widget? child) {
-        Widget overlay = Container(
-          color: barrier.withValues(alpha: _fadeAnim.value),
-          child: widget.child,
+        Widget overlay = Semantics(
+          liveRegion: true,
+          label: 'Overlay',
+          child: Container(
+            color: barrier.withValues(alpha: _fadeAnim.value),
+            child: widget.child,
+          ),
         );
 
         if (widget.blur != null && widget.blur! > 0) {

@@ -200,9 +200,7 @@ class ParkSteps extends StatelessWidget {
         children.add(
           Expanded(
             child: _buildConnector(
-              isCompleted:
-                  _effectiveStatus(steps[stepIdx], stepIdx) ==
-                  ParkStepStatus.finish,
+              previousStepStatus: _effectiveStatus(steps[stepIdx], stepIdx),
               park: park,
               isVertical: false,
             ),
@@ -228,9 +226,7 @@ class ParkSteps extends StatelessWidget {
         if (rawIndex.isOdd) {
           final stepIdx = rawIndex ~/ 2;
           return _buildConnector(
-            isCompleted:
-                _effectiveStatus(steps[stepIdx], stepIdx) ==
-                ParkStepStatus.finish,
+            previousStepStatus: _effectiveStatus(steps[stepIdx], stepIdx),
             park: park,
             isVertical: true,
           );
@@ -378,21 +374,36 @@ class ParkSteps extends StatelessWidget {
 
   Widget _wrapInteractive(Widget child, int index) {
     final step = steps[index];
+    final status = _effectiveStatus(step, index);
+    final statusStr = switch (status) {
+      ParkStepStatus.finish => '已完成',
+      ParkStepStatus.process => '进行中',
+      ParkStepStatus.error => '出错',
+      ParkStepStatus.waiting => '待处理',
+    };
+
+    Widget result;
 
     // 禁用步骤：不可交互
     if (step.disabled || !_isInteractive) {
-      return GestureDetector(
+      result = GestureDetector(
         behavior: HitTestBehavior.opaque,
         child: child,
       );
+    } else {
+      result = MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: _HoverableStep(
+          onTap: () => onStepTap!(index),
+          child: child,
+        ),
+      );
     }
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: _HoverableStep(
-        onTap: () => onStepTap!(index),
-        child: child,
-      ),
+    return Semantics(
+      label: '步骤 ${index + 1}: ${step.title}, $statusStr${step.description != null ? ', ${step.description}' : ''}',
+      excludeSemantics: true,
+      child: result,
     );
   }
 
@@ -436,7 +447,7 @@ class ParkSteps extends StatelessWidget {
       final finishIcon = successIcon ?? Icons.check;
       innerChild = Icon(finishIcon, size: _iconSize, color: fgColor);
     } else if (status == ParkStepStatus.error) {
-      innerChild = Icon(Icons.priority_high, size: _iconSize, color: fgColor);
+      innerChild = Icon(Icons.close, size: _iconSize, color: fgColor);
     } else if (step.icon != null) {
       // 自定义图标替代编号
       innerChild = Icon(step.icon, size: _iconSize, color: fgColor);
@@ -501,7 +512,12 @@ class ParkSteps extends StatelessWidget {
       circle = Opacity(opacity: 0.4, child: circle);
     }
 
-    return circle;
+    final statusLabel = status.name;
+    return Semantics(
+      label: '${statusLabel == 'error' ? '✕' : '${index + 1}'} - ${step.title}',
+      excludeSemantics: true,
+      child: circle,
+    );
   }
 
   // ==========================================================================
@@ -509,11 +525,18 @@ class ParkSteps extends StatelessWidget {
   // ==========================================================================
 
   Widget _buildConnector({
-    required bool isCompleted,
+    required ParkStepStatus previousStepStatus,
     required ParkThemeData park,
     required bool isVertical,
   }) {
-    final color = isCompleted ? park.colors.success : park.colors.border;
+    Color color;
+    if (previousStepStatus == ParkStepStatus.error) {
+      color = park.colors.error;
+    } else if (previousStepStatus == ParkStepStatus.finish) {
+      color = park.colors.success;
+    } else {
+      color = park.colors.border;
+    }
     final halfCircle = _circleSize / 2;
 
     if (isVertical) {

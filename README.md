@@ -1,15 +1,15 @@
 # Park UI
 
-**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 80+ 开箱即用的高质量组件。
+**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 100+ 开箱即用的高质量组件。
 
 ## 特性
 
 - 📐 **完整 Design System** — 详见 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)，包含完整色彩体系、字体层级、间距规则、阴影/圆角体系和 10+ 基础组件设计规范
-- 🧩 **80+ 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
+- 🧩 **100+ 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
 - 🎨 **Stripe 设计语言** — 品牌紫 blurple `#635BFF`、文字 navy `#0A2540`、浅灰底色 `#F6F9FC`
 - 🌓 **浅色/深色主题** — 全局 `ParkThemeData` 驱动，一键切换明暗
 - 🌐 **国际化友好** — 全局 `ParkLocalizations` 系统 + 组件级参数覆盖
-- 🎯 **零第三方依赖** — 纯 Flutter Widget，不引入外部 UI 库
+- 🎯 **最小三方依赖** — 仅依赖 `equatable`、`qr_flutter`、`url_launcher`、`file_picker`，不引入重状态管理库
 - 🔗 **双向绑定引擎** — `ParkBindingService` + `ParkBindable<T>` 实现响应式数据绑定
 - 📱 **响应式布局** — 支持移动端、桌面端、Web 端
 - 🔧 **高度可定制** — Design Token 全覆盖（颜色、间距、圆角、排版、阴影、动画），所有组件使用统一令牌系统
@@ -68,7 +68,6 @@ Park UI 的所有视觉风格由 Design Token 驱动。`ParkThemeData` 是 Flutt
 | `radius` | `ParkRadius` | 圆角令牌（xs/sm/md/lg/xl/full） |
 | `typography` | `ParkTypography` | 排版令牌（字体族/字号/字重） |
 | `shadows` | `ParkShadows` | 阴影令牌（xs/sm/md/lg/xl） |
-| `motion` | `ParkMotion` | 动画令牌（standard/quick/slow） |
 | `iconTheme` | `ParkIconThemeData` | 图标主题（默认色、尺寸覆盖） |
 | `motion` | `ParkMotion` | 动画令牌（standard/quick/enterEasing/defaultEasing） |
 
@@ -80,20 +79,20 @@ ParkThemeData(
   colors: ParkColors(
     brand: Color(0xFF635BFF),        // 品牌色（按钮/链接/选中态）
     textPrimary: Color(0xFF0A2540),   // 主文字
-    textSecondary: Color(0xFF6B7C93), // 次要文字
-    textPlaceholder: Color(0xFFA0AEC0), // 占位文字
-    textDisabled: Color(0xFFCBD5E0),  // 禁用文字
+    textSecondary: Color(0xFF425466), // 次要文字
+    textPlaceholder: Color(0xFF8898AA), // 占位文字
+    textDisabled: Color(0xFF8792A2),  // 禁用文字
     textOnBrand: Color(0xFFFFFFFF),   // 品牌色上的文字
     surface: Color(0xFFFFFFFF),       // 表面色（卡片/面板）
     background: Color(0xFFF6F9FC),    // 底色
     border: Color(0xFFE3E8EE),        // 边框
-    divider: Color(0xFFE3E8EE),       // 分割线
-    disabledBg: Color(0xFFEDF2F7),    // 禁用背景
-    overlay: Color(0x1A0A2540),       // 遮罩
-    error: Color(0xFFE53E3E),         // 错误
-    success: Color(0xFF38A169),       // 成功
-    warning: Color(0xFFD69E2E),       // 警告
-    info: Color(0xFF3182CE),          // 信息
+    divider: Color(0x140A2540),       // 分割线（navy 7.8%）
+    disabledBg: Color(0xFFEDF0F5),    // 禁用背景
+    overlay: Color(0x730A2540),       // 遮罩（navy 45%）
+    error: Color(0xFFDF1B41),         // 错误
+    success: Color(0xFF1BB978),       // 成功
+    warning: Color(0xFFFFB400),       // 警告
+    info: Color(0xFF635BFF),          // 信息
   ),
   radius: ParkRadius(
     xs: 4, sm: 8, md: 12, lg: 16, xl: 20, full: 9999,
@@ -349,6 +348,7 @@ ParkDialog(confirmText: 'はい', cancelText: 'いいえ')
 | `ParkSwipeAction` | `confirmText` | `'确认'` |
 | `ParkInputSearchButtonConfig` | `text` | `'搜索'` |
 | `ParkCascader` | `emptyText` | `'暂无数据'` |
+| `ParkCascader` | `showSearch` / `multiple` | `false` |
 | `ParkSearch` | `hintText` | `'搜索'` |
 
 ---
@@ -512,7 +512,7 @@ class HomePage extends StatelessWidget {
 | `ParkButtonGroup` | 按钮组 — 贴合/均分两种模式 | `direction`, `mode` |
 | `ParkText` | 排版 — 预设 `bodySmall` / `body` / `h3` / `h2` / `h1` | `preset`, `maxLines` |
 | `ParkIcon` | 图标容器 — 统一尺寸/颜色 | `size`, `color` |
-| `ParkLink` | 链接 — 支持 href 跳转 | `href`, `underline` |
+| `ParkLink` | 链接 — 支持 href 跳转 | `href`, `target`, `underline` |
 | `ParkDivider` | 分割线 — 文字/图标插入 | `text`, `direction` |
 | `ParkFab` | 浮动操作按钮 | `onPressed` |
 | `ParkSpace` | 间距组件 — 统一子元素间距 | `size`, `direction`, `wrap` |
@@ -523,67 +523,71 @@ class HomePage extends StatelessWidget {
 | 组件 | 说明 | 关键属性 |
 |------|------|---------|
 | `ParkCard` | 卡片容器 — 标题/描述/图标指示条/loading/可折叠 | `title`, `description`, `icon`, `loading`, `collapsible` |
-| `ParkTag` | 标签 — 5 色主题、checkable、closable、4 种变体 | `theme`, `checkable`, `closable`, `shape` |
-| `ParkBadge` | 徽标 — 数字/红点/自定义 | `count`, `dot`, `max` |
-| `ParkAvatar` | 头像 — 图片/文字/图标 | `src`, `name`, `size` |
+| `ParkTag` | 标签 — 5 色主题、icon、checkable、closable、4 种变体 | `theme`, `icon`, `checkable`, `closable`, `shape` |
+| `ParkBadge` | 徽标 — 数字/红点/状态点/自定义（status+color 优先级：`color` > `status` > 默认红） | `count`, `dot`, `status`, `color`, `maxCount`, `standaloneText`, `overflowCount` |
+| `ParkAvatar` | 头像 — 图片/文字/图标，支持在线状态点和角标 | `src`, `name`, `size`, `status`, `statusDotSize`, `badge` |
+| `ParkAvatarGroup` | 头像组 — 堆叠展示多人/在线用户，超出显示 +N | `children`, `maxCount`, `size` |
 | `ParkCell` | 列表项 — 左图标+标题+说明+右箭头 | `title`, `leftIcon`, `note`, `onPressed` |
 | `ParkTable` | 表格 — 排序/选择/固定列/展开行/虚拟滚动 | `columns`, `dataSource`, `rowSelection` |
 | `ParkGrid` | 网格布局 | `columns`, `gap` |
 | `ParkList` | 长列表 | `data`, `itemBuilder` |
+| `ParkMasonry` | 瀑布流布局 — 最短列优先，响应式列数，无限滚动 | `items`, `itemBuilder`, `columns`, `spacing`, `minColumnWidth`, `onLoadMore` |
 | `ParkSkeleton` | 骨架屏 | `type`, `lines` |
-| `ParkEmpty` | 空状态 | `message`, `image` |
-| `ParkImage` | 图片 — 缓存/占位/错误/预览/圆角/预加载 | `src`, `previewable`, `fadeInDuration`, `retry` |
-| `ParkImageViewer` | 大图预览 | `images`, `initialIndex` |
-| `ParkTooltip` | 文字提示 | `message`, `position` |
+| `ParkEmpty` | 空状态 — 支持无数据/无搜索结果/无权限三种变体 | `type`, `icon`, `image`, `description`, `descriptionWidget`, `actions`, `size`, `footer` |
+| `ParkImage` | 图片 — 缓存/占位/错误/预览/圆角/重试/懒加载 | `src`, `previewable`, `fadeInDuration`, `retry`, `lazy`, `memoryCache` |
+| `ParkImageViewer` | 大图预览 — 缩放/旋转/翻转工具条 + 失败兜底 | `images`, `initialIndex`, `showToolbar`, `errorBuilder`, `onTap` |
+| `ParkTooltip` | 文字提示 — 受控展开、箭头配置、8 方向、延迟、自动隐藏 | `message`, `open`, `onOpenChange`, `showArrow`, `arrowPadding`, `placement`, `trigger`, `gap`, `delay`, `duration` |
 | `ParkPopover` | 气泡卡片 | `content`, `trigger` |
-| `ParkTree` | 树 | `data`, `onSelect` |
-| `ParkTimeline` | 时间线 | `items` |
-| `ParkCollapse` | 折叠面板 | `items`, `accordion` |
-| `ParkCountdown` | 倒计时 | `time`, `onEnd` |
-| `ParkCounter` | 数字递增 | `from`, `to`, `duration` |
-| `ParkDescriptions` | 描述列表 | `items`, `column` |
+| `ParkTree` | 树 — 选中/多选/异步加载/受控/拖拽排序/搜索高亮 | `data`, `onSelect`, `loadChildren`, `selectedKeys`, `multiSelect`, `draggable`, `onDragReorder`, `searchQuery` |
+| `ParkTimeline` | 时间线 — 支持 left/right/alternate 模式、pending 加载指示器、reverse 倒序 | `items`, `mode`, `pending`, `pendingLabel`, `reverse` |
+| `ParkCollapse` | 折叠面板 — 支持 ghost/accordion/自定义展开图标/展开图标位置 | `items`, `accordion`, `ghost`, `expandIcon`, `expandIconPosition` |
+| `ParkCountdown` | 倒计时数字块 — HH:MM:SS 方块 | `remaining`, `size`, `theme`, `controller` |
+| `ParkDescriptions` | 描述列表 | `items`, `column`, `bordered`, `size`, `layout` |
 | `ParkEllipsis` | 文字省略 | `text`, `maxLines`, `expandable` |
 | `ParkFooter` | 页脚 | `content` |
-| `ParkProgress` | 进度条 | `percent`, `strokeColor`, `status` |
+| `ParkStatistic` | 统计数值 — 动画计数/千分位/精度/prefix·suffix | `value`, `title`, `prefix`, `suffix`, `precision`, `groupSeparator`, `animate` |
+| `ParkProgress` | 进度条 — 支持 line / dashboard 环形仪表盘、步骤块(steps)、百分比标签、状态色 | `value`, `type`, `label`, `status`, `steps`, `formatLabel` |
 | `ParkQRCode` | 二维码 | `data`, `size` |
-| `ParkResult` | 结果页 | `status`, `title`, `subTitle` |
+| `ParkResult` | 结果页 — 7 种状态（success/error/info/warning/403/404/500），内置图标+配色，HTTP 状态码大图标+副标题，向后兼容 | `status`, `title`, `description`, `descriptionWidget`, `icon`, `actions`, `extra` |
 | `ParkSticky` | 吸顶容器 | `offset` |
 | `ParkSwiper` | 轮播 | `items`, `autoPlay`, `duration` |
 | `ParkWatermark` | 水印 | `text`, `opacity` |
+| `ParkSplitter` | 可拖拽分隔面板 — 水平/垂直、折叠按钮、受控比例、双击复位 | `axis`, `first`, `second`, `defaultRatio`, `minRatio`, `maxRatio`, `collapsible` |
 
 ## 输入（Input / Form）
 
 | 组件 | 说明 | 关键属性 |
 |------|------|---------|
-| `ParkInput` | 文本输入框 — 前后缀/清除/搜索/密码/字数统计 | `prefixIcon`, `suffix`, `showCount`, `maxLength` |
+| `ParkInput` | 文本输入框 — 前后缀/清除/搜索/密码/字数统计 | `prefixIcon`, `suffix`, `clearable`, `showCount`, `maxLength` |
 | `ParkTextarea` | 多行输入框 | `minLines`, `maxLines`, `showCount` |
 | `ParkSearch` | 搜索框 — 历史缓存/建议面板/加载态 | `cacheService`, `hintText`, `showCancel` |
-| `ParkSelect` | 下拉选择器 | `options`, `placeholder`, `searchable` |
-| `ParkDatePicker` | 日期选择器 — 日期/时间/日期时间/年月/带秒 | `mode`, `firstDate`, `lastDate`, `format` |
-| `ParkDateRangePicker` | 日期范围选择器 — 快捷预设 | `startDate`, `endDate`, `presets` |
+| `ParkSelect` | 下拉选择器 | `options`, `placeholder`, `searchable`, `maxTagCount` |
+| `ParkDatePicker` | 日期选择器 — 日期/时间/日期时间/年月/带秒 | `mode`, `firstDate`, `lastDate`, `format`, `presetItems` |
+| `ParkDateRangePicker` | 日期范围选择器 — 快捷预设 | `startTime`, `endTime`, `presets`, `presetItems` |
 | `ParkTimePicker` | 时间选择器 | `value`, `onChanged` |
-| `ParkSwitch` | 开关 | `value`, `onChanged`, `loading` |
+| `ParkSwitch` | 开关 — loading 态、滑块图标、无障碍标签 | `value`, `onChanged`, `loading`, `checkedChild`, `uncheckedChild`, `checkedLabel`, `uncheckedLabel` |
 | `ParkCheckbox` | 复选框 — 组/全选/半选 | `value`, `onChanged`, `indeterminate` |
 | `ParkRadio` | 单选框 — 点式/按钮式/Join 模式/图标 | `options`, `radioStyle`, `buttonJoin`, `optionBuilder` |
-| `ParkSegmented` | 分段控制器 — 单选/多选/滑块 | `items`, `value`, `multiSelect` |
-| `ParkSlider` | 滑动输入条 | `value`, `min`, `max`, `step` |
+| `ParkSegmented` | 分段控制器 — 单选/多选/滑块/图标/尺寸/通栏 | `items`, `value`, `multiSelect`, `size`, `block` |
+| `ParkSlider` | 滑动输入条 / 范围双滑块 | `value`, `min`, `max`, `step`, `marks`, `showTooltip`, `tooltipBuilder`, `range`, `rangeStart`, `rangeEnd`, `onRangeChanged` |
 | `ParkStepper` | 步进器 | `value`, `min`, `max`, `step` |
-| `ParkRate` | 评分 | `value`, `count`, `allowHalf` |
+| `ParkRate` | 评分 | `value`, `count`, `allowHalf`, `character`, `characters` |
 | `ParkPicker` | 滚动选择器 | `options`, `value` |
-| `ParkCascader` | 级联选择器 | `options`, `value`, `changeOnSelect` |
-| `ParkTransfer` | 穿梭框 | `data`, `targetKeys` |
-| `ParkTreeSelect` | 树选择 | `options`, `value` |
+| `ParkCascader` | 级联选择器 | `options`, `value`, `changeOnSelect`, `showSearch`, `multiple` |
+| `ParkTransfer` | 穿梭框 — 双栏选择、搜索过滤、单向模式、自定义标题 | `dataSource`, `targetKeys`, `showSearch`, `oneWay`, `leftTitle`, `rightTitle` |
+| `ParkTreeSelect` | 树选择 — 复选框/搜索/受控选中 | `nodes`, `treeCheckable`, `showSearch`, `checkedKeys`, `onCheck` |
 | `ParkAutoComplete` | 自动完成 | `options`, `onSearch`, `value` |
-| `ParkColorPicker` | 颜色选择器 | `value`, `onChanged` |
-| `ParkCalendar` | 日历 | `value`, `onChanged` |
+| `ParkMentions` | 提及输入 — @ 某人 / # 标签 下拉建议 | `items`, `triggerChars`, `onChanged`, `mentionBuilder` |
+| `ParkColorPicker` | 颜色选择器 — 预设色板 + 自定义 HSV 面板（色相条+SV方块）+ HEX/RGB/HSB 格式切换 | `value`, `onChanged`, `presetColors`, `enableCustom`, `showFormatSwitch`, `format` |
+| `ParkCalendar` | 日历 — 单日/范围/多选，支持 cellRender/cellBuilder/disabledDate/minDate/maxDate，范围选择新增 selectionMode/rangeStart/rangeEnd/onRangeChange | `value`, `onChanged`, `mode`, `selectionMode`, `rangeStart`, `rangeEnd`, `onRangeChange` |
 | `ParkForm` | 表单 — 校验/提交/双向绑定 | `formKey`, `bindingService`, `submitLabel` |
 | `ParkFormItem` | 表单项 — 标签/校验/布局 | `label`, `required`, `validator`, `bindKey` |
 | `ParkFormSection` | 表单分组 | `title`, `children` |
 | `ParkInputGroup` | 输入框组合 | `children` |
 | `ParkDynamicForm` | 动态表单 — JSON Schema 驱动/引擎层校验/联动/自动生成 | `schema`, `bindingService`, `onSubmit` |
 | `ParkBinding` | 双向绑定系统 — 响应式数据绑定/表单关联/路径解析 | `bindKey`, `bindingService` |
-| `ParkInputNumber` | 数字输入框 | `value`, `min`, `max`, `step` |
-| `ParkUpload` | 上传 | `action`, `accept`, `multiple` |
+| `ParkInputNumber` | 数字输入框 | `value`, `min`, `max`, `step`, `bindKey`, `bindingService` |
+| `ParkUpload` | 上传 — 支持自动文件选择、拖拽上传、文件类型/大小校验、自定义上传请求、多选 | `files`, `maxCount`, `onAdd`, `onChanged`, `accept`, `multiple`, `validateFile`, `customRequest`, `dragEnabled`, `onFileDrop`, `mode`(imageGrid/fileList/mixed), `listType`(text/picture/pictureCard), `maxSizeMB`, `imageOnly`, `beforeAddValidator`, `removable`, `previewable` |
 
 ## 反馈（Feedback）
 
@@ -592,12 +596,12 @@ class HomePage extends StatelessWidget {
 | `ParkDialog` | 对话框 — alert/confirm/info/自定义内容/全屏 | `title`, `content`, `footer`, `fullscreen` |
 | `ParkPopup` | 弹出面板 — 底部/居中/顶部/动画 | `visible`, `position`, `animation` |
 | `ParkActionSheet` | 操作菜单 | `actions`, `cancelText` |
-| `ParkToast` | 轻提示 — success/error/info/warning | 全局静态方法 |
-| `ParkMessage` | 全局消息 | 全局静态方法 |
+| `ParkToast` | 轻提示 — success/error/info/warning，支持全局静态方法和独立 widget、可配置位置/暂停悬停/自定义内容 | `message`, `icon`, `position`, `afterClose`, `destroyOnHide` |
+| `ParkMessage` | 全局消息 — 支持 info/success/warning/error/loading 静态方法、独立 widget 模式、悬停暂停、关闭回调、自定义图标和强调色、顶部/底部弹出 | `title`, `content`, `closable`, `duration`, `position`, `icon`, `accentColor`, `onTap`, `onClick`, `onClose`, `pauseOnHover` |
 | `ParkNotification` | 通知提醒 | `title`, `message`, `duration` |
 | `ParkAlert` | 警告提示 | `type`, `message`, `closable` |
 | `ParkDropdownFilter` | 筛选下拉栏 — 多标签/单多选/网格/自定义 | `items`, `style` |
-| `ParkDropdownMenu` | 下拉菜单 | `items`, `onSelected` |
+| `ParkDropdownMenu` | 下拉菜单 — 支持多级子菜单嵌套 | `items`, `onSelected`, `itemBuilder` |
 | `ParkDropdownSheet` | 底部下拉面板 | `title`, `options`, `child` |
 | `ParkLoading` | 加载指示器 | `tip` |
 | `ParkOverlay` | 遮罩层 | `visible`, `opacity` |
@@ -605,23 +609,24 @@ class HomePage extends StatelessWidget {
 | `ParkRefresh` | 下拉刷新 | `onRefresh`, `child` |
 | `ParkSwipeCell` | 滑动操作 | `leftActions`, `rightActions`, `child` |
 | `ParkNoticeBar` | 通告栏 | `text`, `mode` |
+| `ParkTour` | 漫游式引导 — 遮罩 + 气泡分步引导用户了解功能 | `steps`, `open`, `current`, `onChange`, `onClose`, `onFinish` |
 
 ## 导航（Navigation）
 
 | 组件 | 说明 | 关键属性 |
 |------|------|---------|
-| `ParkNavBar` | 导航栏 | `title`, `leftWidget`, `rightWidget` |
-| `ParkTabs` | 标签页 | `tabs`, `activeIndex`, `onChange` |
+| `ParkNavBar` | 导航栏 — 居中标题、返回箭头、右侧操作、透明模式、底部附加内容、副标题、返回确认 | `title`, `leftArrow`, `onBack`, `rightActions`, `actions`, `centerTitle`, `transparent`, `bordered`, `subTitle`, `bottom`, `onBackConfirm` |
+| `ParkTabs` | 标签页 — 可编辑卡片（增删）+ 额外内容，支持 line/card 两种类型 | `tabs`, `type`, `editable`, `onTabClose`, `showAddButton`, `onTabAdd`, `extra` |
 | `ParkTabBar` | 标签栏 | `tabs`, `activeIndex`, `onChange` |
-| `ParkMenu` | 导航菜单 | `items`, `mode` |
-| `ParkBreadcrumb` | 面包屑 | `items` |
-| `ParkPagination` | 分页 | `current`, `total`, `pageSize`, `onChange` |
-| `ParkSteps` | 步骤条 | `current`, `steps` |
-| `ParkDrawer` | 抽屉 | `visible`, `position`, `child` |
+| `ParkMenu` | 导航菜单 — 暗色模式、inline 折叠、多级展开、选中高亮、废弃 light 兼容 | `items`, `mode`, `themeMode`, `inlineCollapsed`, `collapsedWidth`, `light`(deprecated) |
+| `ParkBreadcrumb` | 面包屑 — 自定义分隔符、超长折叠溢出下拉/Popover | `items`, `separator`, `maxItems`, `overflowDropdown`, `size` |
+| `ParkPagination` | 分页 — 页码导航、快速跳转、每页条数选择、简洁模式、总条数显示、禁用态、响应式窄屏 | `current`, `total`, `pageSize`, `onChange`, `showSizeChanger`, `showQuickJumper`, `pageSizeOptions`, `showTotal`, `simple`, `disabled`, `size`, `responsive`, `defaultPageSize` |
+| `ParkSteps` | 步骤条 — 支持 error 状态、progressDot 圆点模式 | `current`, `steps`, `status`, `progressDot` |
+| `ParkDrawer` | 抽屉 — 多级嵌套（`show()` 静态方法）、header/footer/extra、loading、4 方向 | `visible`, `placement`, `child`, `header`, `footer`, `extra`, `closable`, `loading`, `size`, `mask`, `show()` |
 | `ParkBackTop` | 回到顶部 | `target`, `visibleHeight` |
 | `ParkLayout` | 布局容器 | `header`, `aside`, `content`, `footer` |
-| `ParkAnchor` | 锚点 | `items`, `offset` |
-| `ParkIndexes` | 索引列表 | `data`, `itemBuilder` |
+| `ParkAnchor` | 锚点 — 点击跳转/滚动高亮 | `items`, `scrollController`, `offset` |
+| `ParkIndexes` | 索引列表 — 字母索引条、点击/拖拽跳转、中央浮层提示、外部高亮控制、滚动联动 | `indexes`, `onIndexSelected`, `activeColor`, `fontSize`, `showOverlay`, `sticky`, `onChange`, `currentIndex`, `anchorScrollController` |
 | `ParkSideBar` | 侧边导航 | `items`, `activeIndex`, `onChange` |
 
 ---

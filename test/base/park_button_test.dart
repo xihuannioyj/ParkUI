@@ -98,7 +98,6 @@ void main() {
     });
 
     testWidgets('disabled 状态（无 onPressed）', (tester) async {
-      int pressed = 0;
       await tester.pumpWidget(_wrap(
         ParkButton(
           child: const Text('禁用'),

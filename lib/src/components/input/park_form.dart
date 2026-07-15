@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_service.dart';
 import '../../binding/park_binding_form_scope.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 表单布局方式
 enum ParkFormLayout {
@@ -62,6 +63,12 @@ class ParkFormScope extends InheritedWidget {
   /// 表单尺寸（传递给子组件输入控件）
   final ParkFormSize? size;
 
+  /// 标签列占格数（24 栅格）/ Label column span (24-grid)
+  final int? labelCol;
+
+  /// 控件列占格数（24 栅格）/ Wrapper column span (24-grid)
+  final int? wrapperCol;
+
   /// 注册表单字段 GlobalKey（供 scrollToFirstError 使用）
   final void Function(String name, GlobalKey key)? registerFieldKey;
 
@@ -71,6 +78,12 @@ class ParkFormScope extends InheritedWidget {
   /// 通知值变更（供 ParkFormItem 调用）
   final void Function(String name, dynamic value)? notifyFieldChanged;
 
+  /// 监听字段值变化
+  final VoidCallback Function(String fieldName, void Function(dynamic value) callback)? watch;
+
+  /// 取消监听字段值变化
+  final void Function(String fieldName)? unwatch;
+
   const ParkFormScope({
     super.key,
     required this.layout,
@@ -78,9 +91,13 @@ class ParkFormScope extends InheritedWidget {
     required this.colon,
     required this.requiredMark,
     this.size,
+    this.labelCol,
+    this.wrapperCol,
     this.registerFieldKey,
     this.unregisterFieldKey,
     this.notifyFieldChanged,
+    this.watch,
+    this.unwatch,
     required super.child,
   });
 
@@ -95,7 +112,9 @@ class ParkFormScope extends InheritedWidget {
         labelWidth != oldWidget.labelWidth ||
         colon != oldWidget.colon ||
         requiredMark != oldWidget.requiredMark ||
-        size != oldWidget.size;
+        size != oldWidget.size ||
+        labelCol != oldWidget.labelCol ||
+        wrapperCol != oldWidget.wrapperCol;
   }
 }
 
@@ -138,11 +157,11 @@ class ParkForm extends StatefulWidget {
   /// 是否处于整体加载态。
   final bool loading;
 
-  /// 提交按钮文字
-  final String submitLabel;
+  /// 提交按钮文字。为 null 时使用本地化默认值。
+  final String? submitLabel;
 
-  /// 重置按钮文字
-  final String resetLabel;
+  /// 重置按钮文字。为 null 时使用本地化默认值。
+  final String? resetLabel;
 
   /// 是否显示重置按钮
   final bool showReset;
@@ -197,6 +216,29 @@ class ParkForm extends StatefulWidget {
   /// 与 [model] 二选一使用，[bindingService] 优先级更高。
   final ParkBindingService? bindingService;
 
+  /// 外部传入的 [FormState] 全局键。
+  ///
+  /// 传入后，[ParkForm] 内部 [Form] 使用此键，调用方可通过该键直接执行
+  /// `formKey.currentState?.validate()` / `reset()` 等，无需依赖 [ParkForm.of]。
+  /// 不传时由组件内部创建（B30 / 开发文档.md §7.8，消除 README 中"已声明却不存在"的 formKey 形参）。
+  final GlobalKey<FormState>? formKey;
+
+  /// 标签列占格数（总共 24 格）/ Label column span (out of 24 total)
+  ///
+  /// 与 [wrapperCol] 同时设置时，[ParkFormItem] 内部使用 [Row] + [Expanded]
+  /// 按栅格比例布局标签和控件。两者之和应 ≤ 24。
+  ///
+  /// When both this and [wrapperCol] are set, [ParkFormItem] uses [Row] + [Expanded]
+  /// to lay out label and control by grid ratio. Sum should be ≤ 24.
+  final int? labelCol;
+
+  /// 控件列占格数（总共 24 格）/ Wrapper column span (out of 24 total)
+  ///
+  /// 与 [labelCol] 同时设置时生效。详见 [labelCol]。
+  ///
+  /// Effective when [labelCol] is also set. See [labelCol].
+  final int? wrapperCol;
+
   /// 子组件列表（表单字段）
   final List<Widget> children;
 
@@ -206,8 +248,8 @@ class ParkForm extends StatefulWidget {
     this.onReset,
     this.submitting = false,
     this.loading = false,
-    this.submitLabel = '提交',
-    this.resetLabel = '重置',
+    this.submitLabel,
+    this.resetLabel,
     this.showReset = false,
     this.spacing,
     this.padding,
@@ -223,12 +265,19 @@ class ParkForm extends StatefulWidget {
     this.size,
     this.model,
     this.bindingService,
+    this.formKey,
+    this.labelCol,
+    this.wrapperCol,
     required this.children,
   });
 
   /// 获取最近的 [ParkFormState]
   ///
   /// 子组件可通过此方法访问表单状态，执行提交 / 重置 / 校验等操作。
+  ///
+  /// 注意：此处使用 [BuildContext.findAncestorStateOfType] 查找 [State] 对象，
+  /// 这是 Flutter 中跨组件树访问 State 的标准方式。与 [InheritedWidget] 不同，
+  /// [State] 无法通过 `dependOnInheritedWidgetOfExactType` 获取。
   static ParkFormState? of(BuildContext context) {
     return context.findAncestorStateOfType<ParkFormState>();
   }
@@ -238,13 +287,16 @@ class ParkForm extends StatefulWidget {
 }
 
 class ParkFormState extends State<ParkForm> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final GlobalKey<FormState> _formKey;
 
   /// 表单字段值收集器
   final Map<String, dynamic> _values = {};
 
   /// 字段名 → GlobalKey 映射，供 scrollToFirstError 使用
   final Map<String, GlobalKey> _fieldKeys = {};
+
+  /// 字段 watchers，值变化时通知对应回调
+  final Map<String, List<void Function(dynamic value)>> _watchers = {};
 
   /// 双向绑定服务（外部传入或从 model 自动创建）。
   ParkBindingService? _bindingService;
@@ -271,6 +323,8 @@ class ParkFormState extends State<ParkForm> {
   @override
   void initState() {
     super.initState();
+    // 优先使用外部传入的 formKey（B30 / §7.8），否则内部创建。
+    _formKey = widget.formKey ?? GlobalKey<FormState>();
     // 用 initialValues 填充表单值
     if (widget.initialValues != null) {
       for (final entry in widget.initialValues!.entries) {
@@ -291,15 +345,36 @@ class ParkFormState extends State<ParkForm> {
   /// 获取表单值（同 [values]，统一 API 入口）
   Map<String, dynamic> getValues() => Map<String, dynamic>.from(_values);
 
+  /// 监听指定字段的值变化。
+  ///
+  /// 返回一个 [VoidCallback]，调用后取消本次订阅。
+  VoidCallback watch(String fieldName, void Function(dynamic value) callback) {
+    _watchers.putIfAbsent(fieldName, () => []);
+    _watchers[fieldName]!.add(callback);
+    return () => _watchers[fieldName]?.remove(callback);
+  }
+
+  /// 取消对指定字段的所有监听。
+  void unwatch(String fieldName) {
+    _watchers.remove(fieldName);
+  }
+
   /// 设置表单字段值（供子组件调用）
   void setValue(String key, dynamic value) {
     final oldValue = _values[key];
+    if (oldValue == value) return;
     _values[key] = value;
-    if (oldValue != value && widget.onValuesChange != null) {
-      widget.onValuesChange!(
-        {key: value},
-        Map<String, dynamic>.from(_values),
-      );
+    // 通知 onValuesChange 回调
+    widget.onValuesChange?.call(
+      {key: value},
+      Map<String, dynamic>.from(_values),
+    );
+    // 通知字段级 watchers
+    final watchers = _watchers[key];
+    if (watchers != null && watchers.isNotEmpty) {
+      for (final callback in List<void Function(dynamic)>.from(watchers)) {
+        callback(value);
+      }
     }
   }
 
@@ -410,9 +485,13 @@ class ParkFormState extends State<ParkForm> {
       colon: widget.colon,
       requiredMark: widget.requiredMark,
       size: widget.size,
+      labelCol: widget.labelCol,
+      wrapperCol: widget.wrapperCol,
       registerFieldKey: registerFieldKey,
       unregisterFieldKey: unregisterFieldKey,
       notifyFieldChanged: notifyFieldChanged,
+      watch: watch,
+      unwatch: unwatch,
       child: Padding(
         padding: formPadding,
         child: Form(
@@ -474,6 +553,9 @@ class ParkFormState extends State<ParkForm> {
     final typo = park.typography;
     final radius = park.radius;
     final spacing = park.spacing;
+    final l10n = ParkLocalizations.of(context);
+    final effectiveSubmitLabel = widget.submitLabel ?? l10n.submitText;
+    final effectiveResetLabel = widget.resetLabel ?? l10n.resetText;
 
     return Row(
       children: [
@@ -481,7 +563,7 @@ class ParkFormState extends State<ParkForm> {
         if (widget.showReset) ...[
           Expanded(
             child: _ParkFormButton(
-              label: widget.resetLabel,
+              label: effectiveResetLabel,
               backgroundColor: colors.surface,
               foregroundColor: colors.textPrimary,
               borderColor: colors.border,
@@ -500,7 +582,7 @@ class ParkFormState extends State<ParkForm> {
         // 提交按钮
         Expanded(
           child: _ParkFormButton(
-            label: widget.submitLabel,
+            label: effectiveSubmitLabel,
             backgroundColor: colors.brand,
             foregroundColor: colors.textOnBrand,
             borderColor: null,
@@ -542,7 +624,7 @@ class ParkFormState extends State<ParkForm> {
           ),
           SizedBox(width: spacing.sm),
           Text(
-            '表单加载中，请稍候…',
+            ParkLocalizations.of(context).formLoadingText,
             style: TextStyle(
               fontSize: typo.sizeBodySmall,
               color: colors.textSecondary,
@@ -602,7 +684,11 @@ class _ParkFormButtonState extends State<_ParkFormButton> {
       child: AnimatedOpacity(
         opacity: opacity,
         duration: const Duration(milliseconds: 150),
-        child: GestureDetector(
+        child: Semantics(
+          button: true,
+          enabled: canPress,
+          label: widget.label,
+          child: GestureDetector(
           onTapDown: canPress ? (_) => setState(() => _isPressed = true) : null,
           onTapUp: canPress ? (_) => setState(() => _isPressed = false) : null,
           onTapCancel: canPress
@@ -638,6 +724,7 @@ class _ParkFormButtonState extends State<_ParkFormButton> {
                       fontWeight: widget.fontWeight,
                     ),
                   ),
+          ),
           ),
         ),
       ),

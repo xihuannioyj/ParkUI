@@ -376,56 +376,61 @@ class _ParkMessageState extends State<ParkMessage> {
 
   Widget _buildBar(ParkThemeData park) {
     final bg = widget.backgroundColor ?? park.colors.infoLight;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        widget.onTap?.call();
-        widget.onClick?.call();
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: park.radius.brMd,
-        ),
-        child: Row(
-          children: [
-            if (widget.icon != null) ...[
-              widget.icon!,
-              SizedBox(width: park.spacing.sm),
-            ],
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: park.typography.body.copyWith(
-                      fontSize: park.typography.sizeBody,
-                      fontWeight: park.typography.weightMedium,
-                      color: park.colors.textPrimary,
-                    ),
-                  ),
-                  if (widget.content != null) ...[
-                    SizedBox(height: park.spacing.xs),
+    return Semantics(
+      liveRegion: true,
+      label: widget.title,
+      hint: widget.content,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          widget.onTap?.call();
+          widget.onClick?.call();
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: park.spacing.base,
+            vertical: park.spacing.md,
+          ),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: park.radius.brMd,
+          ),
+          child: Row(
+            children: [
+              if (widget.icon != null) ...[
+                widget.icon!,
+                SizedBox(width: park.spacing.sm),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      widget.content!,
+                      widget.title,
                       style: park.typography.body.copyWith(
-                        fontSize: park.typography.sizeBodySmall,
-                        color: park.colors.textSecondary,
+                        fontSize: park.typography.sizeBody,
+                        fontWeight: park.typography.weightMedium,
+                        color: park.colors.textPrimary,
                       ),
                     ),
+                    if (widget.content != null) ...[
+                      SizedBox(height: park.spacing.xs),
+                      Text(
+                        widget.content!,
+                        style: park.typography.body.copyWith(
+                          fontSize: park.typography.sizeBodySmall,
+                          color: park.colors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (widget.closable)
-              Icon(Icons.close, size: 18, color: park.colors.textSecondary),
-          ],
+              if (widget.closable)
+                Icon(Icons.close, size: 18, color: park.colors.textSecondary),
+            ],
+          ),
         ),
       ),
     );
@@ -568,7 +573,11 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
             bottom: MediaQuery.of(context).padding.bottom + park.spacing.sm,
           );
 
-    Widget messageWidget = SlideTransition(
+    Widget messageWidget = Semantics(
+      liveRegion: true,
+      label: widget.title,
+      hint: widget.content,
+      child: SlideTransition(
       position: _slideAnim,
       child: FadeTransition(
         opacity: _fadeAnim,
@@ -596,55 +605,78 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                     (widget.onTap == null && widget.onClick == null)
                         ? null
                         : _handleTap,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: park.spacing.base,
-                    vertical: park.spacing.md,
-                  ),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: park.radius.brMd,
-                    boxShadow: park.shadows.md,
-                  ),
-                  child: Row(
+                child: ClipRRect(
+                  borderRadius: park.radius.brMd,
+                  child: Stack(
                     children: [
-                      if (widget.icon != null) ...[
-                        widget.icon!,
-                        SizedBox(width: park.spacing.sm),
-                      ],
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: park.spacing.base,
+                          vertical: park.spacing.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: bg,
+                          borderRadius: park.radius.brMd,
+                          boxShadow: park.shadows.md,
+                        ),
+                        child: Row(
                           children: [
-                            Text(
-                              widget.title,
-                              style: park.typography.body.copyWith(
-                                fontSize: park.typography.sizeBody,
-                                fontWeight: park.typography.weightMedium,
-                                color: park.colors.textPrimary,
+                            if (widget.icon != null) ...[
+                              widget.icon!,
+                              SizedBox(width: park.spacing.sm),
+                            ],
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.title,
+                                    style: park.typography.body.copyWith(
+                                      fontSize: park.typography.sizeBody,
+                                      fontWeight: park.typography.weightMedium,
+                                      color: park.colors.textPrimary,
+                                    ),
+                                  ),
+                                  if (widget.content != null) ...[
+                                    SizedBox(height: park.spacing.xs),
+                                    Text(
+                                      widget.content!,
+                                      style: park.typography.body.copyWith(
+                                        fontSize: park.typography.sizeBodySmall,
+                                        color: park.colors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                            if (widget.content != null) ...[
-                              SizedBox(height: park.spacing.xs),
-                              Text(
-                                widget.content!,
-                                style: park.typography.body.copyWith(
-                                  fontSize: park.typography.sizeBodySmall,
+                            if (widget.closable)
+                              GestureDetector(
+                                onTap: close,
+                                child: Icon(
+                                  Icons.close,
+                                  size: 18,
                                   color: park.colors.textSecondary,
                                 ),
                               ),
-                            ],
                           ],
                         ),
                       ),
-                      if (widget.closable)
-                        GestureDetector(
-                          onTap: close,
-                          child: Icon(
-                            Icons.close,
-                            size: 18,
-                            color: park.colors.textSecondary,
+                      if (widget.accentColor != null)
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 3,
+                            decoration: BoxDecoration(
+                              color: widget.accentColor,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(park.radius.sm),
+                                bottomLeft: Radius.circular(park.radius.sm),
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -655,8 +687,8 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
           ),
         ),
       ),
+      ),
     );
-
     return messageWidget;
   }
 }

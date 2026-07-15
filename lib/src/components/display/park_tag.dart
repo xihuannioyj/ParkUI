@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Tag visual variant.
@@ -34,7 +35,7 @@ class ParkTag extends StatelessWidget {
     this.onPressed,
     this.checkable = false,
     this.checked = false,
-    this.onCheckedChanged,
+    this.onChecked,
     this.outline = false,
     this.light = false,
     this.href,
@@ -73,11 +74,11 @@ class ParkTag extends StatelessWidget {
   /// When true, tag toggles between checked/unchecked on tap.
   final bool checkable;
 
-  /// Current checked state for checkable tags.
-  final bool checked;
+  /// Current checked state for checkable tags (nullable for external control).
+  final bool? checked;
 
   /// Fires when the checked state should change.
-  final ValueChanged<bool>? onCheckedChanged;
+  final ValueChanged<bool>? onChecked;
 
   /// Convenience flag — renders with outline-only style
   /// (transparent background, colored border). Overrides [variant].
@@ -195,13 +196,13 @@ class ParkTag extends StatelessWidget {
     switch (v) {
       case ParkTagVariant.dark:
         // When checkable and checked, use brand color
-        if (checkable && checked) return park.colors.brand;
+        if (checkable && _isChecked) return park.colors.brand;
         return base;
       case ParkTagVariant.light:
-        if (checkable && checked) return park.colors.brand.withValues(alpha: 0.1);
+        if (checkable && _isChecked) return park.colors.brand.withValues(alpha: 0.1);
         return _themeLightColor(park);
       case ParkTagVariant.outline:
-        if (checkable && checked) return park.colors.brand.withValues(alpha: 0.06);
+        if (checkable && _isChecked) return park.colors.brand.withValues(alpha: 0.06);
         return Colors.transparent;
     }
   }
@@ -210,15 +211,15 @@ class ParkTag extends StatelessWidget {
     final v = _effectiveVariant;
     switch (v) {
       case ParkTagVariant.dark:
-        if (checkable && checked) return park.colors.textOnBrand;
+        if (checkable && _isChecked) return park.colors.textOnBrand;
         return theme == ParkTagTheme.defaultTheme
             ? park.colors.surface
             : park.colors.textOnBrand;
       case ParkTagVariant.light:
-        if (checkable && checked) return park.colors.brand;
+        if (checkable && _isChecked) return park.colors.brand;
         return _themeColor(park);
       case ParkTagVariant.outline:
-        if (checkable && checked) return park.colors.brand;
+        if (checkable && _isChecked) return park.colors.brand;
         return _themeColor(park);
     }
   }
@@ -226,11 +227,11 @@ class ParkTag extends StatelessWidget {
   Color _resolveBorder(ParkThemeData park) {
     final v = _effectiveVariant;
     if (v == ParkTagVariant.outline) {
-      if (checkable && checked) return park.colors.brand;
+      if (checkable && _isChecked) return park.colors.brand;
       return _themeColor(park);
     }
     // Show border when checkable and checked in light mode
-    if (checkable && checked && v == ParkTagVariant.light) {
+    if (checkable && _isChecked && v == ParkTagVariant.light) {
       return park.colors.brand.withValues(alpha: 0.3);
     }
     return Colors.transparent;
@@ -243,6 +244,9 @@ class ParkTag extends StatelessWidget {
     return BorderRadius.circular(park.radius.xs);
   }
 
+  /// Resolved checked state (null → false).
+  bool get _isChecked => checked ?? false;
+
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -254,7 +258,7 @@ class ParkTag extends StatelessWidget {
     final children = <Widget>[];
 
     // Checked icon for checkable tags
-    if (checkable && checked) {
+    if (checkable && _isChecked) {
       children.add(
         Padding(
           padding: EdgeInsets.only(right: park.spacing.xxs),
@@ -306,24 +310,28 @@ class ParkTag extends StatelessWidget {
 
     if (closable) {
       children.add(
-        GestureDetector(
-          onTap: onClose,
-          behavior: HitTestBehavior.opaque,
-          child: Padding(
-            padding: EdgeInsets.only(left: park.spacing.xs),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: animation, child: child),
-                );
-              },
-              child: Icon(
-                Icons.close,
-                key: ValueKey<String>('close_$text'),
-                size: _iconSize,
-                color: textColor.withValues(alpha: 0.7),
+        Semantics(
+          button: true,
+          label: ParkLocalizations.of(context).closeText,
+          child: GestureDetector(
+            onTap: onClose,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.only(left: park.spacing.xs),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(scale: animation, child: child),
+                  );
+                },
+                child: Icon(
+                  Icons.close,
+                  key: ValueKey<String>('close_$text'),
+                  size: _iconSize,
+                  color: textColor.withValues(alpha: 0.7),
+                ),
               ),
             ),
           ),
@@ -359,7 +367,7 @@ class ParkTag extends StatelessWidget {
       };
     } else if (checkable) {
       tapHandler = () {
-        onCheckedChanged?.call(!checked);
+        onChecked?.call(!_isChecked);
         onPressed?.call();
       };
     } else if (onPressed != null) {
@@ -367,12 +375,19 @@ class ParkTag extends StatelessWidget {
     }
 
     if (tapHandler != null) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: tapHandler,
-          behavior: HitTestBehavior.opaque,
-          child: tag,
+      final semanticsLabel = href ?? text;
+      return Semantics(
+        button: !checkable,
+        link: href != null,
+        toggled: checkable ? _isChecked : null,
+        label: semanticsLabel,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: tapHandler,
+            behavior: HitTestBehavior.opaque,
+            child: tag,
+          ),
         ),
       );
     }

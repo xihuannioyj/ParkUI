@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 弹出位置
@@ -78,8 +79,8 @@ class ParkPopup extends StatefulWidget {
     required BuildContext context,
     required String title,
     required Widget child,
-    String confirmText = '确定',
-    String cancelText = '取消',
+    String confirmText = '',
+    String cancelText = '',
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
     bool confirmEnabled = true,
@@ -171,6 +172,9 @@ class _ParkPopupState extends State<ParkPopup>
   late Animation<Offset> _slideAnim;
   bool _dismissTriggeredByBarrier = false;
 
+  /// B83b: Guard flag to prevent beforeClose reentry race condition.
+  bool _isCheckingBeforeClose = false;
+
   @override
   void initState() {
     super.initState();
@@ -226,11 +230,14 @@ class _ParkPopupState extends State<ParkPopup>
 
     if (widget.visible && !oldWidget.visible) {
       _dismissTriggeredByBarrier = false;
+      _isCheckingBeforeClose = false;
       _controller.forward();
     } else if (!widget.visible && oldWidget.visible) {
-      // Check beforeClose guard
-      if (widget.beforeClose != null) {
+      // B83b: Check beforeClose guard with reentry protection.
+      if (widget.beforeClose != null && !_isCheckingBeforeClose) {
+        _isCheckingBeforeClose = true;
         widget.beforeClose!().then((canClose) {
+          _isCheckingBeforeClose = false;
           if (!canClose) {
             // Prevent close by re-opening
             _controller.forward();
@@ -238,7 +245,7 @@ class _ParkPopupState extends State<ParkPopup>
           }
           _performClose();
         });
-      } else {
+      } else if (widget.beforeClose == null) {
         _performClose();
       }
     }
@@ -255,7 +262,7 @@ class _ParkPopupState extends State<ParkPopup>
   }
 
   void _handleBarrierTap() async {
-    if (!widget.dismissOnBarrierTap && !widget.maskClosable) {
+    if (!widget.dismissOnBarrierTap || !widget.maskClosable) {
       return;
     }
 
@@ -379,6 +386,9 @@ class _ParkPopupModal extends StatelessWidget {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
     final colors = park.colors;
+    final l10n = ParkLocalizations.of(context);
+    final cancelLabel = cancelText.isNotEmpty ? cancelText : l10n.cancelText;
+    final confirmLabel = confirmText.isNotEmpty ? confirmText : l10n.confirmText;
 
     return SafeArea(
       top: false,
@@ -409,21 +419,25 @@ class _ParkPopupModal extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      onCancel?.call();
-                      Navigator.pop(context, false);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: park.spacing.base,
-                        vertical: park.spacing.sm,
-                      ),
-                      child: Text(
-                        cancelText,
-                        style: TextStyle(
-                          fontSize: park.typography.sizeBody,
-                          color: colors.textSecondary,
+                  Semantics(
+                    label: cancelLabel,
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        onCancel?.call();
+                        Navigator.pop(context, false);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: park.spacing.base,
+                          vertical: park.spacing.sm,
+                        ),
+                        child: Text(
+                          cancelLabel,
+                          style: TextStyle(
+                            fontSize: park.typography.sizeBody,
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -438,24 +452,29 @@ class _ParkPopupModal extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: confirmEnabled
-                        ? () {
-                            onConfirm?.call();
-                            Navigator.pop(context, true);
-                          }
-                        : null,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: park.spacing.base,
-                        vertical: park.spacing.sm,
-                      ),
-                      child: Text(
-                        confirmText,
-                        style: TextStyle(
-                          fontSize: park.typography.sizeBody,
-                          fontWeight: park.typography.weightBold,
-                          color: confirmEnabled ? colors.brand : colors.textDisabled,
+                  Semantics(
+                    label: confirmLabel,
+                    button: true,
+                    enabled: confirmEnabled,
+                    child: GestureDetector(
+                      onTap: confirmEnabled
+                          ? () {
+                              onConfirm?.call();
+                              Navigator.pop(context, true);
+                            }
+                          : null,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: park.spacing.base,
+                          vertical: park.spacing.sm,
+                        ),
+                        child: Text(
+                          confirmLabel,
+                          style: TextStyle(
+                            fontSize: park.typography.sizeBody,
+                            fontWeight: park.typography.weightBold,
+                            color: confirmEnabled ? colors.brand : colors.textDisabled,
+                          ),
                         ),
                       ),
                     ),
@@ -494,6 +513,8 @@ class _ParkBottomSheetContent<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final park = Theme.of(context).extension<ParkThemeData>() ??
+        ParkThemeData.light();
     Widget content = builder(context);
     if (showDragHandle) {
       content = Column(
@@ -504,7 +525,7 @@ class _ParkBottomSheetContent<T> extends StatelessWidget {
             width: 32,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: park.colors.borderLight,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

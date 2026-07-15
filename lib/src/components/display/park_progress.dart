@@ -3,19 +3,20 @@ import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Progress bar type.
-enum ParkProgressType { line, circle, steps }
+enum ParkProgressType { line, dashboard }
 
 /// Progress status controlling color and end-of-bar status icon.
 enum ParkProgressStatus { normal, success, error, active }
 
-/// A progress indicator component supporting linear and circular styles.
+/// A progress indicator component supporting linear and dashboard (circular ring)
+/// styles, with optional step segmentation.
 ///
 /// Accepts a [value] from 0.0 to 1.0, optional label, and brand-colored fill.
 class ParkProgress extends StatelessWidget {
   /// Progress value between 0.0 and 1.0.
   final double value;
 
-  /// Linear bar or circular ring.
+  /// Linear bar or dashboard ring.
   final ParkProgressType type;
 
   /// Fill color. Defaults to brand color.
@@ -33,17 +34,23 @@ class ParkProgress extends StatelessWidget {
   /// - `String` → custom label text
   final Object? label;
 
-  /// Diameter of the circular variant.
+  /// Diameter of the dashboard ring variant.
   final double size;
 
-  /// 步骤数（steps 模式用）
-  final int steps;
+  /// When non-null, renders the progress as N discrete step blocks (antd
+  /// Progress `steps` style). Each completed step uses `park.colors.brand`;
+  /// incomplete steps use `park.colors.divider`.
+  final int? steps;
+
+  /// Width of each step block when [steps] is set.
+  final double stepWidth;
 
   /// Progress status controlling color and end-of-bar icon.
   final ParkProgressStatus status;
 
-  /// Custom text format callback. Receives percent (0-100) and returns display string.
-  final String Function(double percent)? format;
+  /// Custom text format callback. Receives the raw 0.0–1.0 progress value and
+  /// returns a display string. Default produces `'${(percent * 100).toInt()}%'`.
+  final String Function(double percent)? formatLabel;
 
   /// Background track color (alias for [trackColor], takes priority when both set).
   final Color? trailColor;
@@ -67,9 +74,10 @@ class ParkProgress extends StatelessWidget {
     this.strokeWidth = 6,
     this.label,
     this.size = 80,
-    this.steps = 5,
+    this.steps,
+    this.stepWidth = 8,
     this.status = ParkProgressStatus.normal,
-    this.format,
+    this.formatLabel,
     this.trailColor,
     this.gradient,
     this.strokeLinecap = StrokeCap.round,
@@ -80,7 +88,7 @@ class ParkProgress extends StatelessWidget {
 
   String _resolveLabel() {
     if (label == null) return '';
-    if (format != null) return format!(_clampedValue * 100);
+    if (formatLabel != null) return formatLabel!(_clampedValue);
     if (label is bool && label == true) {
       return '${(_clampedValue * 100).round()}%';
     }
@@ -121,13 +129,23 @@ class ParkProgress extends StatelessWidget {
     final labelText = _resolveLabel();
     final statusIcon = _resolveStatusIcon();
 
-    if (type == ParkProgressType.circle) {
-      return _buildCircle(park, fillColor, bg, showLabel, labelText);
+    final progressPercent = (_clampedValue * 100).round();
+    final semanticLabel = 'Progress: $progressPercent%';
+
+    Widget result;
+    if (steps != null) {
+      result = _buildSteps(park, fillColor, bg);
+    } else if (type == ParkProgressType.dashboard) {
+      result = _buildDashboard(park, fillColor, bg, showLabel, labelText);
+    } else {
+      result = _buildLine(park, fillColor, bg, showLabel, labelText, statusIcon);
     }
-    if (type == ParkProgressType.steps) {
-      return _buildSteps(park, fillColor, bg);
-    }
-    return _buildLine(park, fillColor, bg, showLabel, labelText, statusIcon);
+
+    return Semantics(
+      label: type == ParkProgressType.dashboard ? '$progressPercent%' : semanticLabel,
+      value: steps != null ? progressPercent.toString() : null,
+      child: result,
+    );
   }
 
   Widget _buildLine(
@@ -207,7 +225,7 @@ class ParkProgress extends StatelessWidget {
     );
   }
 
-  Widget _buildCircle(
+  Widget _buildDashboard(
     ParkThemeData park,
     Color fillColor,
     Color bg,
@@ -254,29 +272,24 @@ class ParkProgress extends StatelessWidget {
     Color fillColor,
     Color bg,
   ) {
-    final totalSteps = steps.clamp(1, 20);
+    final totalSteps = (steps ?? 5).clamp(1, 20);
     final filledSteps = (_clampedValue * totalSteps).round().clamp(0, totalSteps);
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(totalSteps * 2 - 1, (index) {
         if (index.isOdd) {
           // Gap between steps
-          return Expanded(
-            child: Container(
-              height: strokeWidth * 0.5,
-              color: (index ~/ 2) < filledSteps - 1 ? fillColor : bg,
-            ),
-          );
+          return SizedBox(width: stepWidth * 0.5);
         }
         final stepIndex = index ~/ 2;
         final isFilled = stepIndex < filledSteps;
-        return Expanded(
-          child: Container(
-            height: strokeWidth * 1.5,
-            decoration: BoxDecoration(
-              color: isFilled ? fillColor : bg,
-              borderRadius: BorderRadius.circular(strokeWidth * 0.3),
-            ),
+        return Container(
+          width: stepWidth,
+          height: strokeWidth * 1.5,
+          decoration: BoxDecoration(
+            color: isFilled ? park.colors.brand : park.colors.divider,
+            borderRadius: BorderRadius.circular(strokeWidth * 0.3),
           ),
         );
       }),

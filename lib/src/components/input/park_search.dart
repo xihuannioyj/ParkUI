@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 搜索框尺寸枚举
@@ -288,6 +289,7 @@ class _ParkSearchState extends State<ParkSearch>
   }
 
   Widget _buildSuggestionsPanel(ParkThemeData park) {
+    final l10n = ParkLocalizations.of(context);
     final suggestions = _filteredSuggestions;
     final query = _controller.text.trim();
 
@@ -312,7 +314,7 @@ class _ParkSearchState extends State<ParkSearch>
               Icon(Icons.history_rounded, size: 16, color: park.colors.textPlaceholder),
               SizedBox(width: park.spacing.xs),
               Text(
-                query.isEmpty ? '搜索历史' : '匹配历史',
+                query.isEmpty ? l10n.searchHistory : l10n.matchedHistory,
                 style: park.typography.caption.copyWith(
                   color: park.colors.textPlaceholder,
                 ),
@@ -327,15 +329,19 @@ class _ParkSearchState extends State<ParkSearch>
                     });
                     _hideSuggestionOverlay();
                   },
-                  child: Text(
-                    '清空',
-                    style: park.typography.caption.copyWith(
-                      color: park.colors.brand,
-                      fontWeight: park.typography.weightMedium,
+                  child: Semantics(
+                    button: true,
+                    label: l10n.clearText,
+                    child: Text(
+                      l10n.clearText,
+                      style: park.typography.caption.copyWith(
+                        color: park.colors.brand,
+                        fontWeight: park.typography.weightMedium,
+                      ),
                     ),
                   ),
                 ),
-            ],
+              ],
           ),
         ),
         // Items
@@ -344,7 +350,7 @@ class _ParkSearchState extends State<ParkSearch>
             padding: EdgeInsets.all(park.spacing.md),
             child: Center(
               child: Text(
-                '暂无搜索记录',
+                l10n.noSearchHistory,
                 style: park.typography.caption.copyWith(
                   color: park.colors.textPlaceholder,
                 ),
@@ -372,7 +378,11 @@ class _ParkSearchState extends State<ParkSearch>
   }
 
   Widget _buildHistoryItem(String item, ParkThemeData park) {
-    return InkWell(
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      button: true,
+      label: item,
+      child: InkWell(
       onTap: () => _onSuggestionTap(item),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -394,23 +404,28 @@ class _ParkSearchState extends State<ParkSearch>
               ),
             ),
             if (widget.cacheService != null)
-              GestureDetector(
-                onTap: () {
-                  widget.cacheService!.removeHistory(widget.cacheScope, item);
-                  setState(() {
-                    _historyList.remove(item);
-                    if (_historyList.isEmpty) {
-                      _hideSuggestionOverlay();
-                    }
-                  });
-                },
-                child: Icon(
-                  Icons.close_rounded, size: 16,
-                  color: park.colors.textPlaceholder,
+              Semantics(
+                button: true,
+                label: '${l10n.deleteText} $item',
+                child: GestureDetector(
+                  onTap: () {
+                    widget.cacheService!.removeHistory(widget.cacheScope, item);
+                    setState(() {
+                      _historyList.remove(item);
+                      if (_historyList.isEmpty) {
+                        _hideSuggestionOverlay();
+                      }
+                    });
+                  },
+                  child: Icon(
+                    Icons.close_rounded, size: 16,
+                    color: park.colors.textPlaceholder,
+                  ),
                 ),
               ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -476,6 +491,7 @@ class _ParkSearchState extends State<ParkSearch>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ParkLocalizations.of(context);
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
@@ -486,7 +502,7 @@ class _ParkSearchState extends State<ParkSearch>
         : park.radius.brSm;
 
     final bgColor =
-        isDisabled ? park.colors.disabledBg : park.colors.disabledBg;
+        isDisabled ? park.colors.disabledBg : park.colors.surface;
     final textColor =
         isDisabled ? park.colors.textDisabled : park.colors.textPrimary;
     final placeholderColor =
@@ -572,16 +588,20 @@ class _ParkSearchState extends State<ParkSearch>
                       ),
                     ),
                     if (widget.clearable && _controller.text.isNotEmpty && !isDisabled)
-                      GestureDetector(
-                        onTap: _clear,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: park.spacing.sm,
-                          ),
-                          child: Icon(
-                            CupertinoIcons.clear_circled_solid,
-                            size: 18,
-                            color: park.colors.textPlaceholder,
+                      Semantics(
+                        button: true,
+                        label: l10n.clearText,
+                        child: GestureDetector(
+                          onTap: _clear,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: park.spacing.sm,
+                            ),
+                            child: Icon(
+                              CupertinoIcons.clear_circled_solid,
+                              size: 18,
+                              color: park.colors.textPlaceholder,
+                            ),
                           ),
                         ),
                       ),
@@ -592,22 +612,27 @@ class _ParkSearchState extends State<ParkSearch>
             // Action text button
             if (widget.actionText != null) ...[
               SizedBox(width: park.spacing.sm),
-              GestureDetector(
-                onTap: widget.loading ? null : _onActionTap,
-                child: Container(
-                  height: _height,
-                  padding: EdgeInsets.symmetric(horizontal: park.spacing.base),
-                  decoration: BoxDecoration(
-                    color: park.colors.brand,
-                    borderRadius: borderRadius,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    widget.actionText!,
-                    style: park.typography.body.copyWith(
-                      fontSize: _fontSize,
-                      color: park.colors.textOnBrand,
-                      fontWeight: park.typography.weightMedium,
+              Semantics(
+                button: true,
+                label: widget.actionText,
+                enabled: !widget.loading,
+                child: GestureDetector(
+                  onTap: widget.loading ? null : _onActionTap,
+                  child: Container(
+                    height: _height,
+                    padding: EdgeInsets.symmetric(horizontal: park.spacing.base),
+                    decoration: BoxDecoration(
+                      color: park.colors.brand,
+                      borderRadius: borderRadius,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      widget.actionText!,
+                      style: park.typography.body.copyWith(
+                        fontSize: _fontSize,
+                        color: park.colors.textOnBrand,
+                        fontWeight: park.typography.weightMedium,
+                      ),
                     ),
                   ),
                 ),
@@ -616,12 +641,16 @@ class _ParkSearchState extends State<ParkSearch>
             // Cancel button
             if (widget.showCancel && _showCancel && !isDisabled) ...[
               SizedBox(width: park.spacing.sm),
-              GestureDetector(
-                onTap: _cancel,
-                child: Text(
-                  '取消',
-                  style: park.typography.body.copyWith(
-                    color: park.colors.brand,
+              Semantics(
+                button: true,
+                label: l10n.cancelText,
+                child: GestureDetector(
+                  onTap: _cancel,
+                  child: Text(
+                    l10n.cancelText,
+                    style: park.typography.body.copyWith(
+                      color: park.colors.brand,
+                    ),
                   ),
                 ),
               ),

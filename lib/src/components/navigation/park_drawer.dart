@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// Park 抽屉位置（向后兼容）
 enum ParkDrawerPosition {
@@ -158,6 +159,65 @@ class ParkDrawer extends StatefulWidget {
     this.getContainer,
   });
 
+  /// 通过 Overlay 展示抽屉，支持多级嵌套（使用 [rootOverlay: true]）。
+  ///
+  /// 返回 [OverlayEntry]，调用方可随时移除以关闭抽屉。
+  static OverlayEntry show(
+    BuildContext context, {
+    required Widget child,
+    Widget? header,
+    Widget? footer,
+    Widget? extra,
+    ParkDrawerPlacement? placement,
+    ParkDrawerPosition position = ParkDrawerPosition.left,
+    double width = 280,
+    bool closable = true,
+    bool keyboard = true,
+    bool loading = false,
+    bool destroyOnClose = false,
+    ParkDrawerSize size = ParkDrawerSize.medium,
+    bool mask = true,
+    bool maskClosable = true,
+    Color? maskColor,
+    VoidCallback? onClose,
+    VoidCallback? afterClose,
+    VoidCallback? onOpen,
+    int zIndex = 1000,
+    Widget? getContainer,
+  }) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+    entry = OverlayEntry(builder: (_) {
+      return ParkDrawer(
+        header: header,
+        footer: footer,
+        extra: extra,
+        placement: placement,
+        position: position,
+        width: width,
+        closable: closable,
+        keyboard: keyboard,
+        loading: loading,
+        destroyOnClose: destroyOnClose,
+        size: size,
+        mask: mask,
+        maskClosable: maskClosable,
+        maskColor: maskColor,
+        onClose: () {
+          onClose?.call();
+          entry.remove();
+        },
+        afterClose: afterClose,
+        onOpen: onOpen,
+        zIndex: zIndex,
+        getContainer: getContainer,
+        child: child,
+      );
+    });
+    overlay.insert(entry);
+    return entry;
+  }
+
   @override
   State<ParkDrawer> createState() => _ParkDrawerState();
 }
@@ -232,10 +292,9 @@ class _ParkDrawerState extends State<ParkDrawer> {
   }
 
   void _handleClose() {
-    if (widget.onClose != null) {
-      widget.onClose!.call();
-    }
-    if (widget.visible == null) {
+    widget.onClose?.call();
+    // mounted check: show() 通过 onClose 移除 OverlayEntry 后 widget 可能已 dispose
+    if (widget.visible == null && mounted) {
       setState(() {
         _internalVisible = false;
         if (widget.destroyOnClose) {
@@ -243,6 +302,8 @@ class _ParkDrawerState extends State<ParkDrawer> {
         }
       });
     }
+    // afterClose: 关闭动画完成后回调
+    widget.afterClose?.call();
   }
 
   void _handleKeyEvent(KeyEvent event) {
@@ -276,28 +337,30 @@ class _ParkDrawerState extends State<ParkDrawer> {
       );
     }
 
+    Widget result;
     if (_isHorizontal) {
       final maxWidth = MediaQuery.sizeOf(context).width;
       final effectiveWidth = resolvedSize.clamp(0.0, maxWidth).toDouble();
       Widget drawerContent = SizedBox(width: effectiveWidth, child: content);
 
       if (widget.mask) {
-        return Stack(
+        result = Stack(
+          key: ValueKey('dr_stack_${widget.zIndex}'),
           children: [
             Positioned.fill(
               child: GestureDetector(
                 onTap: widget.maskClosable ? _handleClose : null,
                 child: Container(
-                  color: widget.maskColor ??
-                      Colors.black.withValues(alpha: 0.45),
+                  color: widget.maskColor ?? park.colors.overlay,
                 ),
               ),
             ),
             drawerContent,
           ],
         );
+      } else {
+        result = drawerContent;
       }
-      return drawerContent;
     } else {
       final maxHeight = MediaQuery.sizeOf(context).height;
       final effectiveHeight = resolvedSize.clamp(0.0, maxHeight).toDouble();
@@ -305,23 +368,36 @@ class _ParkDrawerState extends State<ParkDrawer> {
           SizedBox(height: effectiveHeight, child: content);
 
       if (widget.mask) {
-        return Stack(
+        result = Stack(
+          key: ValueKey('dr_stack_${widget.zIndex}'),
           children: [
             Positioned.fill(
               child: GestureDetector(
                 onTap: widget.maskClosable ? _handleClose : null,
                 child: Container(
-                  color: widget.maskColor ??
-                      Colors.black.withValues(alpha: 0.45),
+                  color: widget.maskColor ?? park.colors.overlay,
                 ),
               ),
             ),
             drawerContent,
           ],
         );
+      } else {
+        result = drawerContent;
       }
-      return drawerContent;
     }
+
+    // getContainer: 指定自定义容器，用于限定 Drawer 渲染区域
+    if (widget.getContainer != null) {
+      result = Stack(
+        children: [
+          widget.getContainer!,
+          Positioned.fill(child: result),
+        ],
+      );
+    }
+
+    return result;
   }
 
   Widget _buildDrawerContent(ParkThemeData park, dynamic colors) {
@@ -329,24 +405,32 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
     // 顶/底方向使用自定义容器
     if (!_isHorizontal) {
-      return _buildVerticalDrawer(park, colors);
+      return Semantics(
+        container: true,
+        label: '导航抽屉',
+        child: _buildVerticalDrawer(park, colors),
+      );
     }
 
     // 左/右方向使用 Flutter Drawer
-    return Drawer(
-      shape: RoundedRectangleBorder(
-        borderRadius: placement == ParkDrawerPlacement.left
-            ? BorderRadius.only(
-                topRight: Radius.circular(park.radius.lg),
-                bottomRight: Radius.circular(park.radius.lg),
-              )
-            : BorderRadius.only(
-                topLeft: Radius.circular(park.radius.lg),
-                bottomLeft: Radius.circular(park.radius.lg),
-              ),
+    return Semantics(
+      container: true,
+      label: '导航抽屉',
+      child: Drawer(
+        shape: RoundedRectangleBorder(
+          borderRadius: placement == ParkDrawerPlacement.left
+              ? BorderRadius.only(
+                  topRight: Radius.circular(park.radius.lg),
+                  bottomRight: Radius.circular(park.radius.lg),
+                )
+              : BorderRadius.only(
+                  topLeft: Radius.circular(park.radius.lg),
+                  bottomLeft: Radius.circular(park.radius.lg),
+                ),
+        ),
+        backgroundColor: colors.surface,
+        child: _buildInnerContent(park, colors),
       ),
-      backgroundColor: colors.surface,
-      child: _buildInnerContent(park, colors),
     );
   }
 
@@ -367,7 +451,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
               ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: park.colors.textPrimary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: placement == ParkDrawerPlacement.top
                 ? const Offset(0, 4)
@@ -409,14 +493,17 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
         // Footer
         if (widget.footer != null)
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: colors.divider, width: 0.5),
+          Semantics(
+            container: true,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: colors.divider, width: 0.5),
+                ),
               ),
+              child: SafeArea(top: false, child: widget.footer!),
             ),
-            child: SafeArea(top: false, child: widget.footer!),
           ),
       ],
     );
@@ -447,7 +534,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
               onTap: _handleClose,
               child: Semantics(
                 button: true,
-                label: '关闭',
+                label: ParkLocalizations.of(context).closeText,
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: Icon(

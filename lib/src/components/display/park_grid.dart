@@ -126,11 +126,10 @@ class ParkGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final parkTheme = theme.extension<ParkThemeData>();
+    final parkTheme = Theme.of(context).extension<ParkThemeData>();
     final bgColor = backgroundColor ??
         parkTheme?.colors.surface ??
-        theme.colorScheme.surface;
+        Theme.of(context).colorScheme.surface;
 
     // 将 items 按 columnCount 分组
     final rows = <List<ParkGridItem>>[];
@@ -145,7 +144,7 @@ class ParkGrid extends StatelessWidget {
         border: bordered
             ? Border.all(
                 color: parkTheme?.colors.border ??
-                    theme.dividerColor,
+                    Theme.of(context).dividerColor,
                 width: 0.5,
               )
             : null,
@@ -163,7 +162,7 @@ class ParkGrid extends StatelessWidget {
                 Divider(
                   height: 0.5,
                   thickness: 0.5,
-                  color: parkTheme?.colors.divider ?? theme.dividerColor,
+                  color: parkTheme?.colors.divider ?? Theme.of(context).dividerColor,
                 )
               else
                 SizedBox(height: _rowSpacing),
@@ -247,16 +246,26 @@ class ParkGrid extends StatelessWidget {
       );
     }
 
-    return GestureDetector(
+    final bool isInteractive = onTap != null && !item.disabled;
+    final Widget cellWidget = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap != null ? () => onTap!(index) : null,
       child: cell,
     );
+
+    if (isInteractive) {
+      return Semantics(
+        button: true,
+        label: item.label,
+        child: cellWidget,
+      );
+    }
+
+    return cellWidget;
   }
 
   Widget _buildDefaultContent(BuildContext context, ParkGridItem item) {
-    final theme = Theme.of(context);
-    final parkTheme = theme.extension<ParkThemeData>();
+    final parkTheme = Theme.of(context).extension<ParkThemeData>();
 
     if (item.icon != null) {
       return _buildIconWithBadge(context, item);
@@ -267,7 +276,7 @@ class ParkGrid extends StatelessWidget {
         item.label!,
         style: TextStyle(
           fontSize: 14,
-          color: parkTheme?.colors.textPrimary ?? theme.textTheme.bodyMedium?.color,
+          color: parkTheme?.colors.textPrimary ?? Theme.of(context).textTheme.bodyMedium?.color,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -279,8 +288,7 @@ class ParkGrid extends StatelessWidget {
   }
 
   Widget _buildIconWithBadge(BuildContext context, ParkGridItem item) {
-    final theme = Theme.of(context);
-    final parkTheme = theme.extension<ParkThemeData>();
+    final parkTheme = Theme.of(context).extension<ParkThemeData>();
 
     return Stack(
       clipBehavior: Clip.none,
@@ -292,7 +300,7 @@ class ParkGrid extends StatelessWidget {
             Icon(
               item.icon,
               size: 24,
-              color: parkTheme?.colors.textPrimary ?? theme.iconTheme.color,
+              color: parkTheme?.colors.textPrimary ?? Theme.of(context).iconTheme.color,
             ),
             if (item.label != null) ...[
               const SizedBox(height: 4),
@@ -301,7 +309,7 @@ class ParkGrid extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: parkTheme?.colors.textSecondary ??
-                      theme.textTheme.bodySmall?.color,
+                      Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -322,9 +330,9 @@ class ParkGrid extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
                 item.badge!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white,
+                  color: parkTheme?.colors.textOnBrand ?? Colors.white,
                   height: 1.2,
                 ),
                 textAlign: TextAlign.center,

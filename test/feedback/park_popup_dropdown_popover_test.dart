@@ -83,16 +83,16 @@ void main() {
     });
 
     testWidgets('打开状态下更新 items 应保持菜单内容一致', (WidgetTester tester) async {
-      final ValueNotifier<List<ParkDropdownItem>> itemsNotifier =
-          ValueNotifier<List<ParkDropdownItem>>(const <ParkDropdownItem>[
-            ParkDropdownItem(label: '菜单项 A', value: 'a'),
+      final ValueNotifier<List<ParkDropdownMenuItem>> itemsNotifier =
+          ValueNotifier<List<ParkDropdownMenuItem>>(const <ParkDropdownMenuItem>[
+            ParkDropdownMenuItem(label: '菜单项 A', value: 'a'),
           ]);
 
       await tester.pumpWidget(
         _TestApp(
-          child: ValueListenableBuilder<List<ParkDropdownItem>>(
+          child: ValueListenableBuilder<List<ParkDropdownMenuItem>>(
             valueListenable: itemsNotifier,
-            builder: (BuildContext context, List<ParkDropdownItem> items, _) {
+            builder: (BuildContext context, List<ParkDropdownMenuItem> items, _) {
               return Center(
                 child: ParkDropdownMenu(
                   items: items,
@@ -109,8 +109,8 @@ void main() {
       expect(find.text('菜单项 A'), findsOneWidget);
       expect(find.text('菜单项 B'), findsNothing);
 
-      itemsNotifier.value = const <ParkDropdownItem>[
-        ParkDropdownItem(label: '菜单项 B', value: 'b'),
+      itemsNotifier.value = const <ParkDropdownMenuItem>[
+        ParkDropdownMenuItem(label: '菜单项 B', value: 'b'),
       ];
       await tester.pump();
       await tester.pumpAndSettle();
@@ -256,7 +256,7 @@ class _DropdownHarness extends StatelessWidget {
 
   final bool closeOnTapOutside;
   final bool closeOnSelect;
-  final ValueChanged<ParkDropdownItem>? onSelected;
+  final ValueChanged<ParkDropdownMenuItem>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -264,9 +264,9 @@ class _DropdownHarness extends StatelessWidget {
       child: ParkDropdownMenu(
         closeOnTapOutside: closeOnTapOutside,
         closeOnSelect: closeOnSelect,
-        items: const <ParkDropdownItem>[
-          ParkDropdownItem(label: '菜单项 A', value: 'a'),
-          ParkDropdownItem(label: '菜单项 B', value: 'b'),
+        items: const <ParkDropdownMenuItem>[
+          ParkDropdownMenuItem(label: '菜单项 A', value: 'a'),
+          ParkDropdownMenuItem(label: '菜单项 B', value: 'b'),
         ],
         onSelected: onSelected,
         trigger: Container(

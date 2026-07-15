@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// Park 侧边栏主题
 enum ParkSideBarTheme {
@@ -205,19 +206,24 @@ class _ParkSideBarState extends State<ParkSideBar>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final colors = park.colors;
+    final l10n = ParkLocalizations.of(context);
 
     final currentWidth = widget.collapsed
         ? widget.collapsedWidth
         : widget.width;
     final resolvedWidth = currentWidth.clamp(0.0, double.infinity);
 
+    final bool isDark = widget.theme == ParkSideBarTheme.dark;
+    final bgColor = isDark ? const Color(0xFF1D1D1D) : colors.surface;
+    final borderColor = isDark ? const Color(0xFF303030) : colors.divider;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       width: resolvedWidth,
       decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(right: BorderSide(color: colors.divider, width: 0.5)),
+        color: bgColor,
+        border: Border(right: BorderSide(color: borderColor, width: 0.5)),
       ),
       child: Column(
         children: [
@@ -231,10 +237,26 @@ class _ParkSideBarState extends State<ParkSideBar>
               ),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: colors.divider, width: 0.5),
+                  bottom: BorderSide(color: borderColor, width: 0.5),
                 ),
               ),
               child: widget.logo!,
+            ),
+
+          // Header area
+          if (widget.header != null)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: park.spacing.sm,
+                vertical: park.spacing.sm,
+              ),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: borderColor, width: 0.5),
+                ),
+              ),
+              child: widget.header!,
             ),
 
           // Menu items
@@ -279,18 +301,40 @@ class _ParkSideBarState extends State<ParkSideBar>
             ),
           ),
 
+          // Footer area
+          if (widget.footer != null)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: park.spacing.sm,
+                vertical: park.spacing.sm,
+              ),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: borderColor, width: 0.5),
+                ),
+              ),
+              child: widget.footer!,
+            ),
+
           // Collapse button
           if (widget.showCollapseButton)
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: colors.divider, width: 0.5),
+                  top: BorderSide(color: borderColor, width: 0.5),
                 ),
               ),
-              child: GestureDetector(
+              child: Semantics(
+                button: true,
+                label: l10n.collapseText,
+                child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: widget.onCollapseToggle,
+                onTap: () {
+                  widget.onCollapseToggle?.call();
+                  widget.onCollapse?.call(!widget.collapsed);
+                },
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: park.spacing.sm,
@@ -311,7 +355,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                       if (!widget.collapsed) ...[
                         SizedBox(width: park.spacing.xs),
                         Text(
-                          '收起',
+                          l10n.collapseText,
                           style: TextStyle(
                             color: colors.textSecondary,
                             fontSize: park.typography.sizeBodySmall,
@@ -321,6 +365,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                     ],
                   ),
                 ),
+              ),
               ),
             ),
         ],
@@ -336,7 +381,7 @@ class _ParkSideBarState extends State<ParkSideBar>
     required bool isExpanded,
     required ParkThemeData park,
   }) {
-    return widget.collapsed
+    final content = widget.collapsed
         ? Tooltip(
             message: item.tooltip ?? item.label,
             waitDuration: const Duration(milliseconds: 400),
@@ -358,6 +403,13 @@ class _ParkSideBarState extends State<ParkSideBar>
             isExpanded: isExpanded,
             park: park,
           );
+
+    return Semantics(
+      label: item.label,
+      button: true,
+      selected: isSelected,
+      child: content,
+    );
   }
 
   Widget _buildItemContent({
@@ -533,7 +585,11 @@ class _ParkSideBarState extends State<ParkSideBar>
         ? colors.brand.withValues(alpha: 0.08)
         : Colors.transparent;
 
-    return GestureDetector(
+    return Semantics(
+      label: child.label,
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         widget.onChildChanged?.call(parentIndex, childIndex);
@@ -592,6 +648,7 @@ class _ParkSideBarState extends State<ParkSideBar>
           ],
         ),
       ),
+    ),
     );
   }
 }

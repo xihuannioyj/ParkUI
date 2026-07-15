@@ -7,15 +7,15 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkSlider', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSlider()));
+      await tester.pumpWidget(_wrap(ParkSlider()));
       expect(find.byType(ParkSlider), findsOneWidget);
     });
     testWidgets('初始值', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSlider(value: 50)));
+      await tester.pumpWidget(_wrap(ParkSlider(value: 50)));
       expect(find.byType(ParkSlider), findsOneWidget);
     });
     testWidgets('min/max', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSlider(min: 10, max: 90, value: 50)));
+      await tester.pumpWidget(_wrap(ParkSlider(min: 10, max: 90, value: 50)));
       expect(find.byType(ParkSlider), findsOneWidget);
     });
   });

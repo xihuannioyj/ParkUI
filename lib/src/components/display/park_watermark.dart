@@ -1,5 +1,8 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import '../../theme/park_theme_data.dart';
 
 /// 水印组件
@@ -12,7 +15,7 @@ import '../../theme/park_theme_data.dart';
 ///   child: contentWidget,
 /// )
 /// ```
-class ParkWatermark extends StatelessWidget {
+class ParkWatermark extends StatefulWidget {
   /// 水印文字（与 [image] 二选一）。
   final String? text;
 
@@ -50,32 +53,112 @@ class ParkWatermark extends StatelessWidget {
   }) : assert(text != null || image != null, 'text 或 image 至少提供一个');
 
   @override
+  State<ParkWatermark> createState() => _ParkWatermarkState();
+}
+
+class _ParkWatermarkState extends State<ParkWatermark> {
+  /// GlobalKey for the RepaintBoundary wrapping the image widget.
+  final GlobalKey _imageKey = GlobalKey();
+
+  /// Captured ui.Image for tiling on canvas.
+  ui.Image? _capturedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.image != null) {
+      WidgetsBinding.instance.addPostFrameCallback(_captureImage);
+    }
+  }
+
+  @override
+  void didUpdateWidget(ParkWatermark oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.image != null && widget.image != oldWidget.image) {
+      WidgetsBinding.instance.addPostFrameCallback(_captureImage);
+    }
+  }
+
+  /// Capture the image widget as a ui.Image via RenderRepaintBoundary.
+  void _captureImage(_) {
+    if (!mounted) return;
+    final renderObject = _imageKey.currentContext?.findRenderObject();
+    if (renderObject is RenderRepaintBoundary) {
+      final dpr = MediaQuery.of(context).devicePixelRatio;
+      renderObject.toImage(pixelRatio: dpr).then((img) {
+        if (mounted) {
+          setState(() => _capturedImage = img);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final fgColor = color ?? park.colors.textPrimary.withAlpha(26);
+    final fgColor = widget.color ?? park.colors.textPrimary.withAlpha(26);
 
-    return Stack(
-      children: [
-        child,
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _WatermarkPainter(
-                text: text,
-                color: fgColor,
-                fontSize: fontSize,
-                rotate: rotate,
-                gapX: gapX,
-                gapY: gapY,
-              ),
+    return Semantics(
+      label: widget.text ?? '水印',
+      container: true,
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: _buildOverlay(fgColor),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  /// Build the watermark overlay based on whether text or image is provided.
+  Widget _buildOverlay(Color fgColor) {
+    // Image watermark mode
+    if (widget.image != null) {
+      return Stack(
+        children: [
+          // Hidden render of the image widget for capture via RepaintBoundary.
+          Opacity(
+            opacity: 0,
+            child: RepaintBoundary(
+              key: _imageKey,
+              child: widget.image,
+            ),
+          ),
+          // Tiled image watermark on canvas (once captured).
+          if (_capturedImage != null)
+            CustomPaint(
+              painter: _ImageWatermarkPainter(
+                image: _capturedImage!,
+                rotate: widget.rotate,
+                gapX: widget.gapX,
+                gapY: widget.gapY,
+              ),
+              size: Size.infinite,
+            ),
+        ],
+      );
+    }
+
+    // Text watermark mode (existing implementation)
+    return CustomPaint(
+      painter: _WatermarkPainter(
+        text: widget.text,
+        color: fgColor,
+        fontSize: widget.fontSize,
+        rotate: widget.rotate,
+        gapX: widget.gapX,
+        gapY: widget.gapY,
+      ),
+      size: Size.infinite,
     );
   }
 }
 
+/// Paints tiled text watermark on the canvas.
 class _WatermarkPainter extends CustomPainter {
   final String? text;
   final Color color;
@@ -122,4 +205,59 @@ class _WatermarkPainter extends CustomPainter {
   @override
   bool shouldRepaint(_WatermarkPainter old) =>
       text != old.text || color != old.color || fontSize != old.fontSize || rotate != old.rotate;
+}
+
+/// Paints tiled image watermark on the canvas using [canvas.drawImageRect].
+///
+/// The [image] is a [ui.Image] captured from the watermark's image widget
+/// via [RenderRepaintBoundary.toImage]. It is tiled across the canvas with
+/// rotation and spacing applied.
+class _ImageWatermarkPainter extends CustomPainter {
+  final ui.Image image;
+  final double rotate;
+  final double gapX;
+  final double gapY;
+
+  _ImageWatermarkPainter({
+    required this.image,
+    required this.rotate,
+    required this.gapX,
+    required this.gapY,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radians = rotate * math.pi / 180;
+    final imgW = image.width.toDouble();
+    final imgH = image.height.toDouble();
+
+    if (imgW == 0 || imgH == 0) return;
+
+    // Calculate the bounding box of the rotated image to ensure full coverage.
+    final cosA = math.cos(radians).abs();
+    final sinA = math.sin(radians).abs();
+    final rotatedW = imgW * cosA + imgH * sinA;
+    final rotatedH = imgW * sinA + imgH * cosA;
+
+    final stepX = rotatedW + gapX;
+    final stepY = rotatedH + gapY;
+
+    final srcRect = Rect.fromLTWH(0, 0, imgW, imgH);
+
+    // Tile across the canvas with extra margin for rotation overflow.
+    for (double y = -rotatedH; y < size.height + stepY; y += stepY) {
+      for (double x = -rotatedW; x < size.width + stepX; x += stepX) {
+        canvas.save();
+        canvas.translate(x + stepX / 2, y + stepY / 2);
+        canvas.rotate(radians);
+        final dstRect = Rect.fromLTWH(-imgW / 2, -imgH / 2, imgW, imgH);
+        canvas.drawImageRect(image, srcRect, dstRect, Paint());
+        canvas.restore();
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ImageWatermarkPainter old) =>
+      image != old.image || rotate != old.rotate || gapX != old.gapX || gapY != old.gapY;
 }

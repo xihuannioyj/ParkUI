@@ -75,7 +75,12 @@ class ParkBindingPath {
 
     final String key = keys[index];
     if (index == keys.length - 1) {
-      result[key] = value;
+      // 值为 null 时移除该键，保持缓存干净（B16：避免缓存残留 null 条目）。
+      if (value == null) {
+        result.remove(key);
+      } else {
+        result[key] = value;
+      }
       return result;
     }
 

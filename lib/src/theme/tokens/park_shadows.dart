@@ -152,6 +152,29 @@ class ParkShadows {
         Object.hashAll(lg),
       );
 
+  /// 逐级阴影平滑插值。
+  ///
+  /// 对 sm / md / lg 三级阴影列表逐一调用 [BoxShadow.lerp]。
+  /// 当两个列表长度不同时，较短一侧在 t >= 0.5 时切换到较长列表。
+  static ParkShadows lerp(ParkShadows a, ParkShadows b, double t) {
+    return ParkShadows._(
+      sm: _lerpShadowList(a.sm, b.sm, t),
+      md: _lerpShadowList(a.md, b.md, t),
+      lg: _lerpShadowList(a.lg, b.lg, t),
+    );
+  }
+
+  static List<BoxShadow> _lerpShadowList(
+      List<BoxShadow> a, List<BoxShadow> b, double t) {
+    if (a.length != b.length) {
+      return t < 0.5 ? a : b;
+    }
+    return List<BoxShadow>.generate(
+      a.length,
+      (int i) => BoxShadow.lerp(a[i], b[i], t)!,
+    );
+  }
+
   /// 比较两个 [BoxShadow] 列表元素逐一相等。
   static bool _boxShadowListEquals(
       List<BoxShadow> a, List<BoxShadow> b) {

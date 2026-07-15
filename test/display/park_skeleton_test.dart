@@ -15,7 +15,7 @@ void main() {
       expect(find.byType(ParkSkeleton), findsOneWidget);
     });
     testWidgets('圆形', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSkeleton.circle(size: 48)));
+      await tester.pumpWidget(_wrap(ParkSkeleton.avatar(size: 48)));
       expect(find.byType(ParkSkeleton), findsOneWidget);
     });
   });

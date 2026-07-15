@@ -7,17 +7,17 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkTag', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTag(label: '标签')));
+      await tester.pumpWidget(_wrap(const ParkTag(text: '标签')));
       expect(find.text('标签'), findsOneWidget);
     });
     testWidgets('可关闭标签', (tester) async {
       bool closed = false;
-      await tester.pumpWidget(_wrap(ParkTag(label: '可关闭', closable: true, onClose: () => closed = true)));
+      await tester.pumpWidget(_wrap(ParkTag(text: '可关闭', closable: true, onClose: () => closed = true)));
       await tester.tap(find.byIcon(Icons.close));
       expect(closed, true);
     });
     testWidgets('不同颜色', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTag(label: '红色', color: Colors.red)));
+      await tester.pumpWidget(_wrap(const ParkTag(text: '红色', customColor: Colors.red)));
       expect(find.text('红色'), findsOneWidget);
     });
   });

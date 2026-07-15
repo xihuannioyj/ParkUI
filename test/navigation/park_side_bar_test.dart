@@ -7,26 +7,26 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkSideBar', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkSideBar(
+      await tester.pumpWidget(_wrap(ParkSideBar(
         items: [
-          ParkSideBarItem(key: 'a', label: '选项A'),
-          ParkSideBarItem(key: 'b', label: '选项B'),
+          ParkSideBarItem(icon: Icons.circle, label: '选项A'),
+          ParkSideBarItem(icon: Icons.circle, label: '选项B'),
         ],
       )));
       expect(find.text('选项A'), findsOneWidget);
       expect(find.text('选项B'), findsOneWidget);
     });
     testWidgets('点击选择', (tester) async {
-      String selected = '';
+      int selected = -1;
       await tester.pumpWidget(_wrap(ParkSideBar(
         items: [
-          ParkSideBarItem(key: 'a', label: 'A'),
-          ParkSideBarItem(key: 'b', label: 'B'),
+          ParkSideBarItem(icon: Icons.circle, label: 'A'),
+          ParkSideBarItem(icon: Icons.circle, label: 'B'),
         ],
-        onChanged: (key) => selected = key,
+        onChanged: (index) => selected = index,
       )));
       await tester.tap(find.text('B'));
-      expect(selected, 'b');
+      expect(selected, 1);
     });
   });
 }

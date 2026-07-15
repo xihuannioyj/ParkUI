@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 操作项样式
@@ -159,6 +160,8 @@ class _ParkActionSheetContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
+    final effectiveCancelText = cancelText.isNotEmpty ? cancelText : l10n.cancelText;
 
     return SafeArea(
       child: Padding(
@@ -237,7 +240,7 @@ class _ParkActionSheetContent extends StatelessWidget {
                   color: park.colors.surface,
                   borderRadius: park.radius.brLg,
                 ),
-                child: _buildCancelItem(context, park),
+                child: _buildCancelItem(context, park, effectiveCancelText),
               ),
               SizedBox(height: park.spacing.sm),
             ],
@@ -261,60 +264,69 @@ class _ParkActionSheetContent extends StatelessWidget {
       textColor = park.colors.textPrimary;
     }
 
-    return GestureDetector(
-      onTap: isDisabled
-          ? null
-          : () {
-              action.onTap?.call();
-              if (closeOnTapAction) {
-                Navigator.of(context).pop(action);
-              }
-            },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: park.spacing.base),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: park.colors.divider, width: 0.5),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (action.icon != null) ...[
-              action.icon!,
-              SizedBox(width: park.spacing.xs),
-            ],
-            Text(
-              action.label,
-              style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
-                fontWeight: park.typography.weightMedium,
-                color: textColor,
-              ),
+    return Semantics(
+      button: !isDisabled,
+      enabled: !isDisabled,
+      label: action.label,
+      child: GestureDetector(
+        onTap: isDisabled
+            ? null
+            : () {
+                action.onTap?.call();
+                if (closeOnTapAction) {
+                  Navigator.of(context).pop(action);
+                }
+              },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: park.spacing.base),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: park.colors.divider, width: 0.5),
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (action.icon != null) ...[
+                action.icon!,
+                SizedBox(width: park.spacing.xs),
+              ],
+              Text(
+                action.label,
+                style: park.typography.body.copyWith(
+                  fontSize: park.typography.sizeBody,
+                  fontWeight: park.typography.weightMedium,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCancelItem(BuildContext context, ParkThemeData park) {
-    return GestureDetector(
-      onTap: () {
-        onCancel?.call();
-        Navigator.of(context).pop();
-      },
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: park.spacing.base),
-        child: Center(
-          child: Text(
-            cancelText,
-            style: park.typography.body.copyWith(
-              fontSize: park.typography.sizeBody,
-              fontWeight: park.typography.weightBold,
-              color: park.colors.textPrimary,
+  Widget _buildCancelItem(BuildContext context, ParkThemeData park, String text) {
+    return Semantics(
+      button: true,
+      label: text,
+      child: GestureDetector(
+        onTap: () {
+          onCancel?.call();
+          Navigator.of(context).pop();
+        },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: park.spacing.base),
+          child: Center(
+            child: Text(
+              text,
+              style: park.typography.body.copyWith(
+                fontSize: park.typography.sizeBody,
+                fontWeight: park.typography.weightBold,
+                color: park.colors.textPrimary,
+              ),
             ),
           ),
         ),
@@ -336,36 +348,41 @@ class _ParkActionSheetContent extends StatelessWidget {
       textColor = park.colors.textPrimary;
     }
 
-    return GestureDetector(
-      onTap: isDisabled
-          ? null
-          : () {
-              action.onTap?.call();
-              if (closeOnTapAction) {
-                Navigator.of(context).pop(action);
-              }
-            },
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (action.icon != null) ...[
-              action.icon!,
-              SizedBox(height: park.spacing.xs),
-            ],
-            Text(
-              action.label,
-              style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeCaption,
-                fontWeight: park.typography.weightMedium,
-                color: textColor,
+    return Semantics(
+      button: !isDisabled,
+      enabled: !isDisabled,
+      label: action.label,
+      child: GestureDetector(
+        onTap: isDisabled
+            ? null
+            : () {
+                action.onTap?.call();
+                if (closeOnTapAction) {
+                  Navigator.of(context).pop(action);
+                }
+              },
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (action.icon != null) ...[
+                action.icon!,
+                SizedBox(height: park.spacing.xs),
+              ],
+              Text(
+                action.label,
+                style: park.typography.body.copyWith(
+                  fontSize: park.typography.sizeCaption,
+                  fontWeight: park.typography.weightMedium,
+                  color: textColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

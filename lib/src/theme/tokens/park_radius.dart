@@ -34,19 +34,19 @@ enum ParkRadiusComponent {
 /// 提供从小到大的圆角预设值，覆盖按钮、卡片、输入框、弹窗等场景。
 @immutable
 class ParkRadius {
-  /// 2px — 微圆角（Tag、Badge 等小元素）
+  /// 4px — 微圆角（Tag、Badge 等小元素）
   final double xs;
 
-  /// 4px — 小圆角（按钮、输入框默认）
+  /// 8px — 小圆角（按钮、输入框默认）
   final double sm;
 
-  /// 8px — 中圆角（卡片、面板）
+  /// 12px — 中圆角（卡片、面板）
   final double md;
 
-  /// 12px — 大圆角（大卡片、底部弹窗）
+  /// 16px — 大圆角（大卡片、底部弹窗）
   final double lg;
 
-  /// 16px — 超大圆角（对话框、模态框）
+  /// 20px — 超大圆角（对话框、模态框）
   final double xl;
 
   /// 9999 — 全圆角（胶囊按钮、头像）

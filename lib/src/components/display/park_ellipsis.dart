@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// ParkEllipsis — 文本省略组件
 ///
@@ -145,7 +146,7 @@ class _ParkEllipsisTooltipState extends State<_ParkEllipsisTooltip> {
                 widget.text,
                 style: widget.park.typography.body.copyWith(
                   fontSize: widget.park.typography.sizeBodySmall,
-                  color: Colors.white,
+                  color: widget.park.colors.textOnBrand,
                 ),
               ),
             ),
@@ -225,18 +226,26 @@ class _ParkEllipsisExpandableState extends State<_ParkEllipsisExpandable> {
           style: widget.style,
           textAlign: widget.textAlign,
         ),
-        GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Padding(
+        Semantics(
+          button: true,
+          label: _expanded
+              ? ParkLocalizations.of(context).collapseText
+              : ParkLocalizations.of(context).expandText,
+          child: GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
             padding: EdgeInsets.only(top: widget.park.spacing.xs),
             child: Text(
-              _expanded ? '收起' : '展开',
+              _expanded
+                  ? ParkLocalizations.of(context).collapseText
+                  : ParkLocalizations.of(context).expandText,
               style: widget.style.copyWith(
                 color: widget.park.colors.brand,
                 fontSize: widget.park.typography.sizeBodySmall,
               ),
             ),
           ),
+        ),
         ),
         if (widget.suffix != null) widget.suffix!,
       ],

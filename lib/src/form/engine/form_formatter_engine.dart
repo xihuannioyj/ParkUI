@@ -76,10 +76,28 @@ class FormFormatterEngine {
   /// [config] 格式化配置。
   /// [value] 原始值。
   /// 返回最终展示文本。
+  ///
+  /// 流水线字符串接力修复（B18a）：
+  /// displayTransform 接收原始值（而非上一步格式化结果），
+  /// 避免因千分位逗号等符号导致 [double.tryParse] 失败。
   String applyAll(ParkFormFieldFormatterSchema config, dynamic value) {
-    String result = applyFormatter(config.formatterType, value, config.formatterPattern);
-    result = applyDisplayTransform(config.displayTransform, result);
-    result = applySuffix(config.suffixMode, result, config.suffixText);
+    if (value == null) return '';
+    final String rawStr = value.toString();
+
+    // Step 1: 格式化（千分位、百分比等）。
+    final String formatted =
+        applyFormatter(config.formatterType, value, config.formatterPattern);
+
+    // Step 2: 显示转换（中文金额、货币）。
+    // 使用原始字符串而非格式化后的文本，确保数字解析不受干扰（B18a）。
+    final String displayText = config.displayTransform != DisplayTransformType.none
+        ? applyDisplayTransform(config.displayTransform, rawStr)
+        : formatted;
+
+    // Step 3: 后缀/前缀附加。
+    final String result =
+        applySuffix(config.suffixMode, displayText, config.suffixText);
+
     return result;
   }
 
@@ -98,17 +116,23 @@ class FormFormatterEngine {
   /// 千分位格式化。
   ///
   /// [rawValue] 原始数字字符串。
+  ///
+  /// 修复（B65-Fix3）：先分离符号和绝对值，再分离整数和小数部分。
+  /// 小数部分为空或为 "0" 时不追加，避免 `-1234.0` 的小数部分得 `"0"`。
   static String _formatThousands(String rawValue) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
 
-    // 分离整数和小数部分
-    final String intPart = numValue.truncate().toString();
-    final String decPart = numValue.toString().contains('.')
-        ? numValue.toString().split('.').last
-        : '';
+    // 分离符号和绝对值（B65-Fix3）。
+    final bool isNegative = numValue < 0;
+    final double absValue = numValue.abs();
+    final String absStr = absValue.toString();
+    final List<String> parts = absStr.split('.');
+    final String intPart = parts[0];
+    final String? decPart =
+        parts.length > 1 && parts[1] != '0' ? parts[1] : null;
 
-    // 整数部分添加千分位分隔符
+    // 整数部分添加千分位分隔符。
     final StringBuffer buffer = StringBuffer();
     int count = 0;
     for (int i = intPart.length - 1; i >= 0; i--) {
@@ -122,30 +146,54 @@ class FormFormatterEngine {
     final String reversed = buffer.toString();
     final String intFormatted = reversed.split('').reversed.join();
 
-    if (decPart.isNotEmpty) {
-      return '$intFormatted.$decPart';
+    // 拼接符号、整数和小数部分。
+    final String sign = isNegative ? '-' : '';
+    if (decPart != null && decPart.isNotEmpty) {
+      return '$sign$intFormatted.$decPart';
     }
-    return intFormatted;
+    return '$sign$intFormatted';
   }
 
   /// 金额大写转换。
   ///
   /// [rawValue] 原始数字字符串。
+  ///
+  /// 修复（B18b）：
+  /// - 负数：先取绝对值转换，再补「负」前缀。
+  /// - 超 1 亿丢数位：扩展单位表到万亿级。
+  /// - 0 → "零元整"（已有正确处理，此处增强健壮性）。
   static String _formatChineseAmount(String rawValue) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
 
-    const List<String> digits = <String>['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
-    const List<String> intUnits = <String>['', '拾', '佰', '仟', '万', '拾', '佰', '仟', '亿'];
+    // 负数处理：记录符号，取绝对值格式化（B18b）。
+    final bool isNegative = numValue < 0;
+    final double absValue = numValue.abs();
+
+    const List<String> digits = <String>[
+      '零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖',
+    ];
+    // 扩展单位表至万亿级（B18b）：
+    // 索引 0-3:  个十百千
+    // 索引 4:    万
+    // 索引 5-7:  十万/百万/千万
+    // 索引 8:    亿
+    // 索引 9-11: 十亿/百亿/千亿
+    // 索引 12:   万亿
+    // 索引 13-15: 十万亿/百万亿/千万亿
+    const List<String> intUnits = <String>[
+      '', '拾', '佰', '仟', '万', '拾', '佰', '仟', '亿',
+      '拾', '佰', '仟', '万亿', '拾', '佰', '仟',
+    ];
     const List<String> decUnits = <String>['角', '分'];
 
     // 分离整数和小数部分
-    final int intPart = numValue.truncate();
-    final int decPart = ((numValue - intPart) * 100).round();
+    final int intPart = absValue.truncate();
+    final int decPart = ((absValue - intPart) * 100).round();
 
     final StringBuffer buffer = StringBuffer();
 
-    // 整数部分转换
+    // === 整数部分转换 ===
     if (intPart == 0) {
       buffer.write('零');
     } else {
@@ -159,23 +207,36 @@ class FormFormatterEngine {
             buffer.write(intUnits[unitIndex]);
           }
         } else {
-          // 处理连续零
-          if (buffer.isEmpty || !buffer.toString().endsWith('零')) {
+          // 处理连续零：只在遇到非零段之前写一个「零」。
+          if (buffer.isNotEmpty && !buffer.toString().endsWith('零')) {
             buffer.write('零');
           }
         }
       }
     }
+
+    // 去除整数部分末尾多余的「零」（如 100000000 → "壹亿零" → "壹亿"）。
+    // 仅在 intPart > 0 时进行，否则 intPart == 0 的 "零" 会被清空。
+    if (intPart > 0) {
+      String intText = buffer.toString();
+      while (intText.endsWith('零')) {
+        intText = intText.substring(0, intText.length - 1);
+      }
+      buffer.clear();
+      buffer.write(intText);
+    }
+
+    // === "元" 单位 ===
     buffer.write('元');
 
-    // 小数部分转换
+    // === 小数部分转换 ===
     if (decPart == 0) {
       buffer.write('整');
     } else {
       final int jiao = decPart ~/ 10;
       final int fen = decPart % 10;
       if (jiao > 0) {
-        buffer.write(digits[jiao.toInt()]);
+        buffer.write(digits[jiao]);
         buffer.write(decUnits[0]);
       }
       if (fen > 0) {
@@ -184,7 +245,13 @@ class FormFormatterEngine {
       }
     }
 
-    return buffer.toString();
+    // 负数补前缀（B18b）。
+    String result = buffer.toString();
+    if (isNegative) {
+      result = '负$result';
+    }
+
+    return result;
   }
 
   /// 货币格式化。

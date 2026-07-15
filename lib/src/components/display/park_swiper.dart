@@ -159,6 +159,11 @@ class _ParkSwiperState extends State<ParkSwiper>
   Timer? _autoPlayTimer;
   int _currentIndex = 0;
 
+  // Drag ratio tracking
+  Offset? _pointerDownPosition;
+  double _dragDistance = 0;
+  bool _isProgrammaticPageChange = false;
+
   @override
   void initState() {
     bindKey = widget.bindKey;
@@ -232,6 +237,30 @@ class _ParkSwiperState extends State<ParkSwiper>
 
   void _onPageChanged(int index) {
     final int realIndex = widget.children.isEmpty ? 0 : index % widget.children.length;
+
+    // Apply dragEndRatio: if user-initiated and drag distance is below threshold,
+    // animate back to the previous page.
+    if (!_isProgrammaticPageChange && widget.dragEndRatio != null) {
+      final renderBox = context.findRenderObject() as RenderBox?;
+      final viewportSize = widget.direction == Axis.horizontal
+          ? (renderBox?.size.width ?? widget.height)
+          : (renderBox?.size.height ?? widget.height);
+      final threshold = widget.dragEndRatio! * viewportSize;
+      if (_dragDistance < threshold) {
+        _isProgrammaticPageChange = true;
+        _pageController.animateToPage(
+          _currentIndex,
+          duration: widget.animationDuration ?? const Duration(milliseconds: 350),
+          curve: widget.curve ?? Curves.easeInOut,
+        );
+        Future.delayed(
+          widget.animationDuration ?? const Duration(milliseconds: 350),
+          () => _isProgrammaticPageChange = false,
+        );
+        return;
+      }
+    }
+
     setState(() => _currentIndex = realIndex);
     widget.onPageChanged?.call(realIndex);
     boundValue = realIndex;
@@ -277,25 +306,49 @@ class _ParkSwiperState extends State<ParkSwiper>
   }
 
   Widget _buildPageView(ParkThemeData park) {
+    Widget pageView;
+
     if (widget.effect == ParkSwiperEffect.fade) {
-      return _buildFadePageView(park);
+      pageView = _buildFadePageView(park);
+    } else if (widget.viewportFraction != null || widget.scale != null) {
+      pageView = _buildStackEffectPageView(park);
+    } else {
+      pageView = PageView.builder(
+        controller: _pageController,
+        scrollDirection: widget.direction,
+        onPageChanged: _onPageChanged,
+        itemCount: widget.loop ? null : widget.children.length,
+        itemBuilder: (BuildContext context, int index) {
+          final int realIndex = index % widget.children.length;
+          return widget.children[realIndex];
+        },
+      );
     }
 
-    // 卡片堆叠效果（viewportFraction + scale）
-    if (widget.viewportFraction != null || widget.scale != null) {
-      return _buildStackEffectPageView(park);
+    // Wrap with pointer Listener when drag ratios are configured.
+    // Tracks drag distance for dragEndRatio evaluation in _onPageChanged.
+    if (widget.dragStartRatio != null || widget.dragEndRatio != null) {
+      return Listener(
+        onPointerDown: (PointerDownEvent event) {
+          _pointerDownPosition = event.position;
+          _dragDistance = 0;
+        },
+        onPointerMove: (PointerMoveEvent event) {
+          if (_pointerDownPosition != null) {
+            if (widget.direction == Axis.horizontal) {
+              _dragDistance = (event.position.dx - _pointerDownPosition!.dx).abs();
+            } else {
+              _dragDistance = (event.position.dy - _pointerDownPosition!.dy).abs();
+            }
+          }
+        },
+        onPointerUp: (_) => _pointerDownPosition = null,
+        onPointerCancel: (_) => _pointerDownPosition = null,
+        child: pageView,
+      );
     }
 
-    return PageView.builder(
-      controller: _pageController,
-      scrollDirection: widget.direction,
-      onPageChanged: _onPageChanged,
-      itemCount: widget.loop ? null : widget.children.length,
-      itemBuilder: (BuildContext context, int index) {
-        final int realIndex = index % widget.children.length;
-        return widget.children[realIndex];
-      },
-    );
+    return pageView;
   }
 
   Widget _buildStackEffectPageView(ParkThemeData park) {

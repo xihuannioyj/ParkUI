@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 import 'park_skeleton.dart';
 
 /// ParkList item layout direction.
@@ -152,8 +153,8 @@ class _ParkListState<T> extends State<ParkList<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final park = Theme.of(context).extension<ParkThemeData>() ??
-        ParkThemeData.light();
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
     if (widget.items.isEmpty && !widget.loading) {
       return _buildEmpty(park);
@@ -181,7 +182,10 @@ class _ParkListState<T> extends State<ParkList<T>> {
         itemBuilder: (BuildContext context, int index) {
           final T item = widget.items[index];
           return _wrapWithDivider(
-              widget.itemBuilder(context, item, index), index, park);
+            widget.itemBuilder(context, item, index),
+            index,
+            park,
+          );
         },
       );
     } else {
@@ -204,70 +208,89 @@ class _ParkListState<T> extends State<ParkList<T>> {
       );
     }
 
-    children.add(Expanded(child: listView));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final contentChildren = <Widget>[...children];
+        final shouldExpandList = constraints.hasBoundedHeight;
 
-    // onLoadMore / loadingMore / noMore 状态底部指示器
-    if (widget.onLoadMore != null) {
-      if (widget.loadingMore) {
-        children.add(_buildLoadingMoreIndicator(park));
-      } else if (widget.noMore && widget.items.isNotEmpty) {
-        children.add(_buildNoMoreIndicator(park));
-      }
-    }
+        contentChildren.add(
+          shouldExpandList ? Expanded(child: listView) : listView,
+        );
 
-    if (widget.loadMore != null) {
-      children.add(widget.loadMore!);
-    }
+        // onLoadMore / loadingMore / noMore 状态底部指示器
+        if (widget.onLoadMore != null) {
+          if (widget.loadingMore) {
+            contentChildren.add(_buildLoadingMoreIndicator(park));
+          } else if (widget.noMore && widget.items.isNotEmpty) {
+            contentChildren.add(_buildNoMoreIndicator(park));
+          }
+        }
 
-    if (widget.footer != null) {
-      children.add(widget.footer!);
-    }
+        if (widget.loadMore != null) {
+          contentChildren.add(widget.loadMore!);
+        }
 
-    return Padding(
-      padding: widget.padding ?? EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
+        if (widget.footer != null) {
+          contentChildren.add(widget.footer!);
+        }
+
+        return Padding(
+          padding: widget.padding ?? EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: contentChildren,
+          ),
+        );
+      },
     );
   }
 
   Widget _buildLoadingMoreIndicator(ParkThemeData park) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(park.colors.brand),
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      label: l10n.loading,
+      container: true,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(park.colors.brand),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '加载中...',
-            style: TextStyle(
-              fontSize: park.typography.sizeCaption,
-              color: park.colors.textSecondary,
+            const SizedBox(width: 8),
+            Text(
+              l10n.loading,
+              style: TextStyle(
+                fontSize: park.typography.sizeCaption,
+                color: park.colors.textSecondary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNoMoreIndicator(ParkThemeData park) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
-      child: Center(
-        child: Text(
-          '已加载全部数据',
-          style: TextStyle(
-            fontSize: park.typography.sizeCaption,
-            color: park.colors.textPlaceholder,
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      label: l10n.loadedAllData,
+      container: true,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+        child: Center(
+          child: Text(
+            l10n.loadedAllData,
+            style: TextStyle(
+              fontSize: park.typography.sizeCaption,
+              color: park.colors.textPlaceholder,
+            ),
           ),
         ),
       ),
@@ -290,9 +313,7 @@ class _ParkListState<T> extends State<ParkList<T>> {
               children: [
                 ParkSkeleton.avatar(size: 40),
                 SizedBox(width: park.spacing.md),
-                Expanded(
-                  child: ParkSkeleton.text(lines: 2),
-                ),
+                Expanded(child: ParkSkeleton.text(lines: 2)),
               ],
             ),
           ),
@@ -315,15 +336,21 @@ class _ParkListState<T> extends State<ParkList<T>> {
   }
 
   Widget _buildEmpty(ParkThemeData park) {
-    final content = widget.emptyWidget ??
-        Center(
-          child: Padding(
-            padding: EdgeInsets.all(park.spacing.xl),
-            child: Text(
-              '暂无数据',
-              style: TextStyle(
-                fontSize: park.typography.sizeBody,
-                color: park.colors.textPlaceholder,
+    final l10n = ParkLocalizations.of(context);
+    final content =
+        widget.emptyWidget ??
+        Semantics(
+          label: l10n.noData,
+          container: true,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(park.spacing.xl),
+              child: Text(
+                l10n.noData,
+                style: TextStyle(
+                  fontSize: park.typography.sizeBody,
+                  color: park.colors.textPlaceholder,
+                ),
               ),
             ),
           ),
@@ -333,12 +360,7 @@ class _ParkListState<T> extends State<ParkList<T>> {
       padding: widget.padding ?? EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          ?widget.header,
-          content,
-          ?widget.loadMore,
-          ?widget.footer,
-        ],
+        children: [?widget.header, content, ?widget.loadMore, ?widget.footer],
       ),
     );
   }

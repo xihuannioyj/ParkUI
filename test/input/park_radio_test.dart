@@ -7,25 +7,43 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkRadio', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkRadio(value: 'a', groupValue: 'a')));
+      await tester.pumpWidget(_wrap(ParkRadio(
+        options: const [ParkRadioOption(label: '选项A', value: 'a')],
+        value: 'a',
+      )));
       expect(find.byType(ParkRadio), findsOneWidget);
     });
     testWidgets('显示label', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkRadio(value: 'a', groupValue: null, label: '选项A')));
+      await tester.pumpWidget(_wrap(ParkRadio(
+        options: const [ParkRadioOption(label: '选项A', value: 'a')],
+        value: null,
+      )));
       expect(find.text('选项A'), findsOneWidget);
     });
     testWidgets('选中状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkRadio(value: 'a', groupValue: 'a')));
-      expect(find.byIcon(Icons.radio_button_checked), findsOneWidget);
+      await tester.pumpWidget(_wrap(ParkRadio(
+        options: const [ParkRadioOption(label: '选项A', value: 'a')],
+        value: 'a',
+      )));
+      final item = tester.widget<ParkRadioItem>(find.byType(ParkRadioItem));
+      expect(item.isSelected, isTrue);
     });
     testWidgets('未选中状态', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkRadio(value: 'a', groupValue: 'b')));
-      expect(find.byIcon(Icons.radio_button_unchecked), findsOneWidget);
+      await tester.pumpWidget(_wrap(ParkRadio(
+        options: const [ParkRadioOption(label: '选项A', value: 'a')],
+        value: 'b',
+      )));
+      final item = tester.widget<ParkRadioItem>(find.byType(ParkRadioItem));
+      expect(item.isSelected, isFalse);
     });
     testWidgets('点击切换', (tester) async {
       String? val;
-      await tester.pumpWidget(_wrap(ParkRadio(value: 'a', groupValue: val, onChanged: (v) => val = v)));
-      await tester.tap(find.byType(ParkRadio));
+      await tester.pumpWidget(_wrap(ParkRadio(
+        options: const [ParkRadioOption(label: '选项A', value: 'a')],
+        value: val,
+        onChanged: (v) => val = v,
+      )));
+      await tester.tap(find.byType(ParkRadioItem));
       expect(val, 'a');
     });
   });

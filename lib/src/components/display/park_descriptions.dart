@@ -1,6 +1,29 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 
+/// 描述列表的尺寸枚举。
+///
+/// 控制内边距和字体大小。
+enum ParkDescriptionsSize {
+  /// 紧凑模式 — 更小的内边距和字体。
+  small,
+
+  /// 默认尺寸。
+  defaultSize,
+
+  /// 宽松模式 — 更大的内边距和字体。
+  large,
+}
+
+/// 描述列表的布局方向枚举。
+enum ParkDescriptionsLayout {
+  /// 水平布局：label 在左，value 在右。
+  horizontal,
+
+  /// 垂直布局：label 在上，value 在下。
+  vertical,
+}
+
 /// 描述列表单项。
 ///
 /// 用于 [ParkDescriptions] 中展示一组 label-value 对。
@@ -49,16 +72,16 @@ class ParkDescriptions extends StatelessWidget {
   /// 标题（可选）。
   final String? title;
 
-  /// 列数（1/2/3，默认 2）。
+  /// 列数（1/2/3，默认 1）。
   final int column;
 
-  /// 是否显示边框（true=表格风格 label 灰底，false=简洁分隔线风格）。
+  /// 是否显示边框（true=单元格边框 + label 灰底，false=简洁分隔线风格）。
   final bool bordered;
 
   /// 数据项列表。
   final List<ParkDescriptionItem> items;
 
-  /// label 固定宽度（null=使用默认宽度 100）。
+  /// label 固定宽度（null=使用默认宽度 100）。仅 [layout] 为 [ParkDescriptionsLayout.horizontal] 时有效。
   final double? labelWidth;
 
   /// 空值占位符（默认 '—'）。
@@ -67,26 +90,76 @@ class ParkDescriptions extends StatelessWidget {
   /// 标题栏右侧操作 Widget（如编辑按钮）。
   final Widget? action;
 
+  /// 尺寸。控制内边距和字体大小。
+  final ParkDescriptionsSize size;
+
+  /// 布局方向。
+  final ParkDescriptionsLayout layout;
+
   /// 创建一个描述列表组件。
   const ParkDescriptions({
     super.key,
     this.title,
-    this.column = 2,
-    this.bordered = true,
+    this.column = 1,
+    this.bordered = false,
     required this.items,
     this.labelWidth,
     this.emptyText = '—',
     this.action,
+    this.size = ParkDescriptionsSize.defaultSize,
+    this.layout = ParkDescriptionsLayout.horizontal,
   });
 
   /// label 默认宽度（当 labelWidth 为 null 时使用）。
   static const double _defaultLabelWidth = 100.0;
 
-  /// cell 水平内边距。
-  static const double _cellHorizontalPadding = 12.0;
+  /// 依据尺寸返回水平内边距。
+  static double _hPad(ParkDescriptionsSize s) {
+    switch (s) {
+      case ParkDescriptionsSize.small:
+        return 8.0;
+      case ParkDescriptionsSize.defaultSize:
+        return 12.0;
+      case ParkDescriptionsSize.large:
+        return 16.0;
+    }
+  }
 
-  /// cell 垂直内边距。
-  static const double _cellVerticalPadding = 10.0;
+  /// 依据尺寸返回垂直内边距。
+  static double _vPad(ParkDescriptionsSize s) {
+    switch (s) {
+      case ParkDescriptionsSize.small:
+        return 5.0;
+      case ParkDescriptionsSize.defaultSize:
+        return 10.0;
+      case ParkDescriptionsSize.large:
+        return 14.0;
+    }
+  }
+
+  /// 依据尺寸返回 label 字体大小。
+  static double _labelFontSize(ParkDescriptionsSize s) {
+    switch (s) {
+      case ParkDescriptionsSize.small:
+        return 12.0;
+      case ParkDescriptionsSize.defaultSize:
+        return 13.0;
+      case ParkDescriptionsSize.large:
+        return 14.0;
+    }
+  }
+
+  /// 依据尺寸返回 value 字体大小。
+  static double _valueFontSize(ParkDescriptionsSize s) {
+    switch (s) {
+      case ParkDescriptionsSize.small:
+        return 12.0;
+      case ParkDescriptionsSize.defaultSize:
+        return 13.0;
+      case ParkDescriptionsSize.large:
+        return 14.0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,23 +170,27 @@ class ParkDescriptions extends StatelessWidget {
     // 将 items 按列数和 span 分组为行
     final rows = _groupIntoRows(items, cols);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: park.colors.surface,
-        borderRadius: BorderRadius.circular(park.radius.sm),
-        border: Border.all(color: park.colors.border, width: 0.5),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (title != null) _buildTitleBar(park),
-          if (bordered)
-            _buildBorderedRows(rows, park, cols)
-          else
-            _buildBorderlessRows(rows, park),
-        ],
+    return Semantics(
+      container: true,
+      label: title,
+      child: Container(
+        decoration: BoxDecoration(
+          color: park.colors.surface,
+          borderRadius: BorderRadius.circular(park.radius.sm),
+          border: Border.all(color: park.colors.border, width: 0.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (title != null) _buildTitleBar(park),
+            if (bordered)
+              _buildBorderedRows(rows, park, cols)
+            else
+              _buildBorderlessRows(rows, park),
+          ],
+        ),
       ),
     );
   }
@@ -164,9 +241,9 @@ class ParkDescriptions extends StatelessWidget {
   /// 构建标题栏。
   Widget _buildTitleBar(ParkThemeData park) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: _cellHorizontalPadding,
-        vertical: _cellVerticalPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: _hPad(size),
+        vertical: _vPad(size),
       ),
       decoration: BoxDecoration(
         color: park.colors.background,
@@ -174,21 +251,24 @@ class ParkDescriptions extends StatelessWidget {
           bottom: BorderSide(color: park.colors.border, width: 0.5),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title!,
-              style: TextStyle(
-                fontSize: 15.0,
-                fontWeight: park.typography.weightMedium,
-                color: park.colors.textPrimary,
-                fontFamily: park.typography.fontFamily,
+      child: Semantics(
+        header: true,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title!,
+                style: TextStyle(
+                  fontSize: park.typography.sizeBody,
+                  fontWeight: park.typography.weightMedium,
+                  color: park.colors.textPrimary,
+                  fontFamily: park.typography.fontFamily,
+                ),
               ),
             ),
-          ),
-          if (action != null) action!,
-        ],
+            if (action != null) action!,
+          ],
+        ),
       ),
     );
   }
@@ -200,18 +280,49 @@ class ParkDescriptions extends StatelessWidget {
   /// 构建表格风格的多行。
   Widget _buildBorderedRows(
       List<List<_RowItem>> rows, ParkThemeData park, int cols) {
+    if (layout == ParkDescriptionsLayout.vertical) {
+      return _buildBorderedVerticalRows(rows, park, cols);
+    }
+    return _buildBorderedHorizontalRows(rows, park, cols);
+  }
+
+  /// 构建表格风格（水平布局）的多行。
+  Widget _buildBorderedHorizontalRows(
+      List<List<_RowItem>> rows, ParkThemeData park, int cols) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < rows.length; i++)
-          _buildBorderedRow(rows[i], park, cols, isLastRow: i == rows.length - 1),
+          _buildBorderedHorizontalRow(rows[i], park, cols,
+              isLastRow: i == rows.length - 1),
       ],
     );
   }
 
-  /// 构建表格风格的单行。
-  Widget _buildBorderedRow(
+  /// 构建表格风格（垂直布局）的多行。
+  ///
+  /// 每组数据行渲染为两行：label 行（灰底）+ value 行。
+  Widget _buildBorderedVerticalRows(
+      List<List<_RowItem>> rows, ParkThemeData park, int cols) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          // label 行
+          _buildBorderedVerticalLabelRow(rows[i], park, cols,
+              isLastDataRow: i == rows.length - 1),
+          // value 行
+          _buildBorderedVerticalValueRow(rows[i], park, cols,
+              isLastDataRow: i == rows.length - 1),
+        ],
+      ],
+    );
+  }
+
+  /// 构建表格风格（水平布局）的单行。
+  Widget _buildBorderedHorizontalRow(
       List<_RowItem> rowItems, ParkThemeData park, int cols,
       {required bool isLastRow}) {
     final cells = <Widget>[];
@@ -272,6 +383,99 @@ class ParkDescriptions extends StatelessWidget {
     );
   }
 
+  /// 构建表格风格（垂直布局）的 label 行。
+  Widget _buildBorderedVerticalLabelRow(
+      List<_RowItem> rowItems, ParkThemeData park, int cols,
+      {required bool isLastDataRow}) {
+    final cells = <Widget>[];
+    final usedSpan = rowItems.fold(0, (sum, ri) => sum + ri.span);
+
+    for (var i = 0; i < rowItems.length; i++) {
+      final rowItem = rowItems[i];
+      final isLastInRow = i == rowItems.length - 1 && usedSpan >= cols;
+
+      cells.add(
+        Expanded(
+          flex: rowItem.span,
+          child: _buildBorderedVerticalLabelCell(
+            rowItem.item,
+            park,
+            isLastInRow: isLastInRow,
+            isLastRow: isLastDataRow,
+          ),
+        ),
+      );
+    }
+
+    // 填充剩余空列
+    final remainingSpan = cols - usedSpan;
+    if (remainingSpan > 0) {
+      cells.add(
+        Expanded(
+          flex: remainingSpan,
+          child: _buildBorderedEmptyLabelCell(
+            park,
+            isLastRow: isLastDataRow,
+          ),
+        ),
+      );
+    }
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: cells,
+      ),
+    );
+  }
+
+  /// 构建表格风格（垂直布局）的 value 行。
+  Widget _buildBorderedVerticalValueRow(
+      List<_RowItem> rowItems, ParkThemeData park, int cols,
+      {required bool isLastDataRow}) {
+    final cells = <Widget>[];
+    final usedSpan = rowItems.fold(0, (sum, ri) => sum + ri.span);
+
+    for (var i = 0; i < rowItems.length; i++) {
+      final rowItem = rowItems[i];
+      final isLastInRow = i == rowItems.length - 1 && usedSpan >= cols;
+
+      cells.add(
+        Expanded(
+          flex: rowItem.span,
+          child: _buildBorderedVerticalValueCell(
+            rowItem.item,
+            park,
+            isLastInRow: isLastInRow,
+            isLastRow: isLastDataRow,
+          ),
+        ),
+      );
+    }
+
+    // 填充剩余空列
+    final remainingSpan = cols - usedSpan;
+    if (remainingSpan > 0) {
+      cells.add(
+        Expanded(
+          flex: remainingSpan,
+          child: _buildBorderedEmptyValueCell(
+            park,
+            isLastInRow: true,
+            isLastRow: isLastDataRow,
+          ),
+        ),
+      );
+    }
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: cells,
+      ),
+    );
+  }
+
   /// 构建表格风格的 label 单元格。
   Widget _buildBorderedLabelCell(
       ParkDescriptionItem item, ParkThemeData park,
@@ -279,9 +483,9 @@ class ParkDescriptions extends StatelessWidget {
     final width = labelWidth ?? _defaultLabelWidth;
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(
-        horizontal: _cellHorizontalPadding,
-        vertical: _cellVerticalPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: _hPad(size),
+        vertical: _vPad(size),
       ),
       decoration: BoxDecoration(
         color: park.colors.background,
@@ -293,13 +497,16 @@ class ParkDescriptions extends StatelessWidget {
         ),
       ),
       alignment: Alignment.centerLeft,
-      child: Text(
-        item.label,
-        style: TextStyle(
-          fontSize: park.typography.sizeCaption,
-          fontWeight: park.typography.weightRegular,
-          color: park.colors.textSecondary,
-          fontFamily: park.typography.fontFamily,
+      child: Semantics(
+        label: '${item.label}',
+        child: Text(
+          item.label,
+          style: TextStyle(
+            fontSize: _labelFontSize(size),
+            fontWeight: park.typography.weightRegular,
+            color: park.colors.textSecondary,
+            fontFamily: park.typography.fontFamily,
+          ),
         ),
       ),
     );
@@ -312,9 +519,9 @@ class ParkDescriptions extends StatelessWidget {
     return Expanded(
       flex: span,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: _cellHorizontalPadding,
-          vertical: _cellVerticalPadding,
+        padding: EdgeInsets.symmetric(
+          horizontal: _hPad(size),
+          vertical: _vPad(size),
         ),
         decoration: BoxDecoration(
           border: Border(
@@ -329,6 +536,64 @@ class ParkDescriptions extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: _buildValueWidget(item, park),
       ),
+    );
+  }
+
+  /// 构建表格风格（垂直布局）的 label 单元格。
+  Widget _buildBorderedVerticalLabelCell(
+      ParkDescriptionItem item, ParkThemeData park,
+      {required bool isLastInRow, required bool isLastRow}) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _hPad(size),
+        vertical: _vPad(size),
+      ),
+      decoration: BoxDecoration(
+        color: park.colors.background,
+        border: Border(
+          right: isLastInRow
+              ? BorderSide.none
+              : BorderSide(color: park.colors.border, width: 0.5),
+          bottom: BorderSide(color: park.colors.border, width: 0.5),
+        ),
+      ),
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        label: '${item.label}',
+        child: Text(
+          item.label,
+          style: TextStyle(
+            fontSize: _labelFontSize(size),
+            fontWeight: park.typography.weightRegular,
+            color: park.colors.textSecondary,
+            fontFamily: park.typography.fontFamily,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建表格风格（垂直布局）的 value 单元格。
+  Widget _buildBorderedVerticalValueCell(
+      ParkDescriptionItem item, ParkThemeData park,
+      {required bool isLastInRow, required bool isLastRow}) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _hPad(size),
+        vertical: _vPad(size),
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          right: isLastInRow
+              ? BorderSide.none
+              : BorderSide(color: park.colors.border, width: 0.5),
+          bottom: isLastRow
+              ? BorderSide.none
+              : BorderSide(color: park.colors.border, width: 0.5),
+        ),
+      ),
+      alignment: Alignment.centerLeft,
+      child: _buildValueWidget(item, park),
     );
   }
 
@@ -392,9 +657,9 @@ class ParkDescriptions extends StatelessWidget {
   /// 构建分隔线风格的单行。
   Widget _buildBorderlessRow(List<_RowItem> rowItems, ParkThemeData park) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: _cellHorizontalPadding,
-        vertical: _cellVerticalPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: _hPad(size),
+        vertical: _vPad(size),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +668,9 @@ class ParkDescriptions extends StatelessWidget {
             if (i > 0) SizedBox(width: park.spacing.lg),
             Expanded(
               flex: rowItems[i].span,
-              child: _buildBorderlessPair(rowItems[i].item, park),
+              child: (layout == ParkDescriptionsLayout.vertical)
+                  ? _buildBorderlessVerticalItem(rowItems[i].item, park)
+                  : _buildBorderlessPair(rowItems[i].item, park),
             ),
           ],
         ],
@@ -411,7 +678,7 @@ class ParkDescriptions extends StatelessWidget {
     );
   }
 
-  /// 构建分隔线风格的 label:value 对。
+  /// 构建分隔线风格的 label:value 对（水平布局）。
   Widget _buildBorderlessPair(ParkDescriptionItem item, ParkThemeData park) {
     final width = labelWidth ?? _defaultLabelWidth;
     return Row(
@@ -419,13 +686,16 @@ class ParkDescriptions extends StatelessWidget {
       children: [
         SizedBox(
           width: width,
-          child: Text(
-            item.label,
-            style: TextStyle(
-              fontSize: park.typography.sizeCaption,
-              fontWeight: park.typography.weightRegular,
-              color: park.colors.textSecondary,
-              fontFamily: park.typography.fontFamily,
+          child: Semantics(
+            label: '${item.label}',
+            child: Text(
+              item.label,
+              style: TextStyle(
+                fontSize: _labelFontSize(size),
+                fontWeight: park.typography.weightRegular,
+                color: park.colors.textSecondary,
+                fontFamily: park.typography.fontFamily,
+              ),
             ),
           ),
         ),
@@ -433,6 +703,31 @@ class ParkDescriptions extends StatelessWidget {
         Expanded(
           child: _buildValueWidget(item, park),
         ),
+      ],
+    );
+  }
+
+  /// 构建分隔线风格的垂直项（label 在上，value 在下）。
+  Widget _buildBorderlessVerticalItem(
+      ParkDescriptionItem item, ParkThemeData park) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Semantics(
+          label: '${item.label}',
+          child: Text(
+            item.label,
+            style: TextStyle(
+              fontSize: _labelFontSize(size),
+              fontWeight: park.typography.weightRegular,
+              color: park.colors.textSecondary,
+              fontFamily: park.typography.fontFamily,
+            ),
+          ),
+        ),
+        SizedBox(height: park.spacing.xxs),
+        _buildValueWidget(item, park),
       ],
     );
   }
@@ -452,13 +747,16 @@ class ParkDescriptions extends StatelessWidget {
     final isEmpty = value == null || value.isEmpty;
 
     if (isEmpty) {
-      return Text(
-        emptyText,
-        style: TextStyle(
-          fontSize: park.typography.sizeCaption,
-          fontWeight: park.typography.weightRegular,
-          color: park.colors.textPlaceholder,
-          fontFamily: park.typography.fontFamily,
+      return Semantics(
+        label: '空',
+        child: Text(
+          emptyText,
+          style: TextStyle(
+            fontSize: _valueFontSize(size),
+            fontWeight: park.typography.weightRegular,
+            color: park.colors.textPlaceholder,
+            fontFamily: park.typography.fontFamily,
+          ),
         ),
       );
     }
@@ -466,7 +764,7 @@ class ParkDescriptions extends StatelessWidget {
     return Text(
       value,
       style: TextStyle(
-        fontSize: park.typography.sizeCaption,
+        fontSize: _valueFontSize(size),
         fontWeight: park.typography.weightRegular,
         color: park.colors.textPrimary,
         fontFamily: park.typography.fontFamily,

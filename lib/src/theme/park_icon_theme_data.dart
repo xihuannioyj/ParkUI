@@ -68,6 +68,31 @@ class ParkIconThemeData {
     );
   }
 
+  /// 逐属性平滑插值。
+  static ParkIconThemeData lerp(
+    ParkIconThemeData a,
+    ParkIconThemeData b,
+    double t,
+  ) {
+    return ParkIconThemeData(
+      defaultColor: Color.lerp(a.defaultColor, b.defaultColor, t),
+      cellIconColor: Color.lerp(a.cellIconColor, b.cellIconColor, t),
+      cellIconSize: _lerpNullableDouble(a.cellIconSize, b.cellIconSize, t),
+      smallSize: _lerpNullableDouble(a.smallSize, b.smallSize, t),
+      mediumSize: _lerpNullableDouble(a.mediumSize, b.mediumSize, t),
+      largeSize: _lerpNullableDouble(a.largeSize, b.largeSize, t),
+      xlargeSize: _lerpNullableDouble(a.xlargeSize, b.xlargeSize, t),
+    );
+  }
+
+  /// 可空 double 的线性插值：任一为 null 时使用阶跃。
+  static double? _lerpNullableDouble(double? a, double? b, double t) {
+    if (a == null && b == null) return null;
+    if (a == null) return t < 0.5 ? null : b;
+    if (b == null) return t < 0.5 ? a : null;
+    return a + (b - a) * t;
+  }
+
   ParkIconThemeData copyWith({
     Color? defaultColor,
     Color? cellIconColor,
@@ -87,4 +112,28 @@ class ParkIconThemeData {
       xlargeSize: xlargeSize ?? this.xlargeSize,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ParkIconThemeData &&
+        other.defaultColor == defaultColor &&
+        other.cellIconColor == cellIconColor &&
+        other.cellIconSize == cellIconSize &&
+        other.smallSize == smallSize &&
+        other.mediumSize == mediumSize &&
+        other.largeSize == largeSize &&
+        other.xlargeSize == xlargeSize;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    defaultColor,
+    cellIconColor,
+    cellIconSize,
+    smallSize,
+    mediumSize,
+    largeSize,
+    xlargeSize,
+  );
 }

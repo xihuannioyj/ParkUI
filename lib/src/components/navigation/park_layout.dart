@@ -76,11 +76,15 @@ class ParkLayout extends StatelessWidget {
   }
 
   Widget _buildSidebar(ParkThemeData park) {
-    return SizedBox(
-      width: sidebarWidth,
-      child: Material(
-        color: park.colors.surface,
-        child: sidebar!,
+    return Semantics(
+      label: '侧边栏',
+      container: true,
+      child: SizedBox(
+        width: sidebarWidth,
+        child: Material(
+          color: park.colors.surface,
+          child: sidebar!,
+        ),
       ),
     );
   }

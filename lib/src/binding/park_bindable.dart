@@ -60,18 +60,26 @@ class ParkBindable<T> extends ValueNotifier<T> {
 
   /// 类型安全的值更新方法。
   ///
-  /// 与直接设置 [value] 不同，[update] 用于在已知值变化的场景下
-  /// 强制更新（跳过相等检测）。例如 [ParkBindingService.updateModel]
-  /// 在批量更新时已做过差值比对，此时应使用 [update] 强制通知。
+  /// 与直接设置 [value] 语义相同，内部通过 [value=] 赋值，
+  /// 同样走值相等检测：若 [newValue == 当前值]，则不触发通知。
+  ///
+  /// 此方法主要用于批量更新场景（如 [ParkBindingService.updateModel]），
+  /// 调用方需自行确保值确实已变更；若需跳过相等判定，请改用 [forceUpdate]。
   void update(T newValue) {
     value = newValue;
   }
 
+  /// 是否已释放（防止重复 dispose）。
+  bool _disposed = false;
+
   /// 释放资源。
   ///
   /// 如果设置了 [owner]，会自动通知 [ParkBindingService] 移除本绑定的注册引用。
+  /// 重复调用 [dispose] 是安全的——第二次起直接跳过。
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     // 通知所属服务移除引用
     try {
       // ignore: avoid_dynamic_calls

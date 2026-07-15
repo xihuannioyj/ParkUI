@@ -86,8 +86,23 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
   final Map<String, List<Map<String, dynamic>>> _dynamicOptions =
       <String, List<Map<String, dynamic>>>{};
 
+  /// 字段 GlobalKey 映射（fieldName → GlobalKey），用于滚动定位首个错误字段（B11）。
+  final Map<String, GlobalKey> _fieldKeys = <String, GlobalKey>{};
+
   /// 是否正在提交中。
   bool _submitting = false;
+
+  /// 提交序列号（B65-Fix2）。
+  ///
+  /// 每次提交递增，异步校验返回后检查序列号是否匹配，
+  /// 不匹配则丢弃结果，防止 await 期间用户修改值导致竞态。
+  int _submitSequence = 0;
+
+  /// 绑定服务 watchEffect 句柄（B31：双向绑定回流）。
+  WatchEffectHandle? _bindingEffectHandle;
+
+  /// 首次运行标记，初始时跳过 setState（initState 内不可调用 setState）。
+  bool _bindingEffectFirstRun = true;
 
   @override
   void initState() {
@@ -95,6 +110,13 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     widget.configureEngine?.call(_engine);
     _values = _engine.buildInitialValues(widget.schema);
     _applyInitialReactions();
+    _setupBindingSubscription();
+  }
+
+  @override
+  void dispose() {
+    _teardownBindingSubscription();
+    super.dispose();
   }
 
   @override
@@ -110,6 +132,12 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
       _dynamicOptions.clear();
       _runtimeOverrides = const ParkFormRuntimeOverrides();
       _applyInitialReactions();
+    }
+    // 当 bindingService 或 schema 变化时重新建立绑定订阅（B31）。
+    if (oldWidget.bindingService != widget.bindingService ||
+        oldWidget.schema != widget.schema) {
+      _teardownBindingSubscription();
+      _setupBindingSubscription();
     }
   }
 
@@ -135,7 +163,9 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
         ? _buildSectionBasedLayout(visibleFields, formLayout)
         : _buildGroupBasedLayout(visibleFields);
 
-    return ParkForm(
+    // 注入 ParkBindingFormScope，使子组件可通过
+    // ParkBindingFormScope.of(context) 获取绑定服务（B31）。
+    Widget result = ParkForm(
       submitting: _submitting,
       submitLabel: widget.submitText,
       resetLabel: widget.resetText,
@@ -144,6 +174,15 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
       onReset: _handleReset,
       children: formChildren,
     );
+
+    if (widget.bindingService != null) {
+      result = ParkBindingFormScope(
+        service: widget.bindingService!,
+        child: result,
+      );
+    }
+
+    return result;
   }
 
   /// 按 ParkFormLayout.sections 分组渲染字段。
@@ -332,7 +371,10 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
                 layout_models.ParkLabelLayout.stacked);
     final double gutter = formLayout?.gutter ?? 12.0;
 
+    final GlobalKey fieldKey =
+        _fieldKeys.putIfAbsent(field.fieldName, () => GlobalKey());
     return Padding(
+      key: fieldKey,
       padding: EdgeInsets.only(bottom: gutter),
       child: ParkFormFieldWidget(
         field: field,
@@ -420,11 +462,21 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
   /// 引用了 `$form.[changedFieldName]` 的字段，对其调用
   /// [_engine.dataSourceResolver.resolve] 重新获取选项，
   /// 结果存入 [_dynamicOptions] 并触发重建。
-  void _refreshDependentOptions(String changedFieldName) {
+  ///
+  /// [resolvedFields] 已处理字段集合（B65-Fix5），
+  /// 用于跨多次调用去重，防止同一字段被重复 resolve。
+  void _refreshDependentOptions(
+    String changedFieldName, {
+    Set<String>? resolvedFields,
+  }) {
     final String formRef = '\$form.$changedFieldName';
     for (final ParkFormFieldSchema dep in widget.schema.fields) {
       // 跳过自身。
       if (dep.fieldName == changedFieldName) continue;
+      // 跳过已 resolve 的字段，防止重复网络请求（B65-Fix5）。
+      if (resolvedFields != null && resolvedFields.contains(dep.fieldName)) {
+        continue;
+      }
       // 仅处理有数据源且 dataSourceParams 引用了变化字段的字段。
       if (dep.dataSourceType == ParkDataSourceType.none ||
           dep.dataSourceType == ParkDataSourceType.staticOptions) {
@@ -435,6 +487,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
       );
       if (!depends) continue;
 
+      resolvedFields?.add(dep.fieldName);
       _engine.dataSourceResolver.resolve(dep, currentValues: _values).then((
         List<Map<String, dynamic>> options,
       ) {
@@ -448,12 +501,19 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
 
   /// 按字段集合刷新动态选项。
   void _refreshOptionsForFields(Set<String> fieldNames) {
+    // 已处理字段集合，防止同一字段 resolve 两次触发重复网络请求（B65-Fix5）。
+    final Set<String> resolvedFields = <String>{};
+
     for (final String fieldName in fieldNames) {
-      _refreshDependentOptions(fieldName);
+      _refreshDependentOptions(fieldName, resolvedFields: resolvedFields);
     }
 
     for (final ParkFormFieldSchema field in widget.schema.fields) {
       if (!fieldNames.contains(field.fieldName)) {
+        continue;
+      }
+      // 跳过已在上一轮作为依赖字段被 resolve 过的字段（B65-Fix5）。
+      if (resolvedFields.contains(field.fieldName)) {
         continue;
       }
       if (field.dataSourceType == ParkDataSourceType.none ||
@@ -472,12 +532,52 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     }
   }
 
+  /// 建立绑定订阅：通过 watchEffect 监听外部 bindingService 变更，
+  /// 将外部值回灌到 _values 中，实现双向绑定回流（B31）。
+  void _setupBindingSubscription() {
+    final ParkBindingService? svc = widget.bindingService;
+    if (svc == null) return;
+    _bindingEffectFirstRun = true;
+    _bindingEffectHandle = svc.watchEffect(() {
+      bool changed = false;
+      final Map<String, dynamic> newValues = Map<String, dynamic>.from(_values);
+      for (final ParkFormFieldSchema field in widget.schema.fields) {
+        final dynamic svcValue = svc.getValue<dynamic>(field.fieldName);
+        if (svcValue != null) {
+          final dynamic currentValue = newValues[field.fieldName];
+          if (currentValue != svcValue) {
+            newValues[field.fieldName] = svcValue;
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        _values = newValues;
+        // 首次运行在 initState 中，不可调用 setState。
+        if (!_bindingEffectFirstRun && mounted) {
+          setState(() {});
+        }
+      }
+      _bindingEffectFirstRun = false;
+    });
+  }
+
+  /// 清除绑定订阅（B31）。
+  void _teardownBindingSubscription() {
+    _bindingEffectHandle?.call();
+    _bindingEffectHandle = null;
+    _bindingEffectFirstRun = true;
+  }
+
   /// 提交表单。
   ///
   /// 先执行同步校验，再执行异步校验。
   /// 校验通过后自动定位首个错误字段或调用 [onSubmit]。
   Future<void> _handleSubmit() async {
     setState(() => _submitting = true);
+    // 递增提交序列号（B65-Fix2）。
+    _submitSequence++;
+    final int currentSeq = _submitSequence;
 
     try {
       // 同步校验。
@@ -497,6 +597,8 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
           widget.asyncValidator!,
           overrides: _runtimeOverrides,
         );
+        // 序列号不匹配说明有新的提交启动，丢弃本次结果（B65-Fix2）。
+        if (_submitSequence != currentSeq) return;
         mergedErrors.addAll(asyncErrors);
       } else if (widget.asyncValidatorRegistry.isNotEmpty) {
         _engine.registerAsyncValidators(widget.asyncValidatorRegistry);
@@ -506,6 +608,8 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
           null,
           overrides: _runtimeOverrides,
         );
+        // 序列号不匹配说明有新的提交启动，丢弃本次结果（B65-Fix2）。
+        if (_submitSequence != currentSeq) return;
         mergedErrors.addAll(asyncErrors);
       }
 
@@ -515,6 +619,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
           ..addAll(mergedErrors);
       });
 
+      if (!mounted) return;
       if (_errors.isEmpty) {
         widget.onSubmit(_engine.exportValues(_values));
       } else {
@@ -528,12 +633,26 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     }
   }
 
-  /// 滚动到首个错误字段位置。
+  /// 滚动到首个错误字段位置（B11）。
+  ///
+  /// 通过字段对应的 [GlobalKey] 调用 [Scrollable.ensureVisible] 定位。
+  /// 若字段尚未挂载或不存在可滚动祖先，则静默忽略。
   ///
   /// [fieldKey] 首个错误字段的键名。
   void _scrollToFirstError(String fieldKey) {
-    // 简易实现：通过 Scrollable.ensureVisible 需要 GlobalKey。
-    // 当前版本暂不实现精确滚动，仅保留占位。
+    final GlobalKey? key = _fieldKeys[fieldKey];
+    if (key == null) return;
+    final BuildContext? context = key.currentContext;
+    if (context == null) return;
+    try {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } catch (_) {
+      // 无滚动祖先时忽略。
+    }
   }
 
   /// 重置表单。

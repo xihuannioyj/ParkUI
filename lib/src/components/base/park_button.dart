@@ -209,7 +209,7 @@ class ParkButton extends StatefulWidget {
     );
   }
 
-  bool get _enabled => (onPressed != null || asyncOnPressed != null) && !loading;
+  bool get _enabled => (onPressed != null || asyncOnPressed != null || onLongPress != null) && !loading;
 
   @override
   State<ParkButton> createState() => _ParkButtonState();
@@ -270,7 +270,7 @@ class _ParkButtonState extends State<ParkButton> {
         : (_isHovered
             ? (widget.hoverColor ??
                 (rawBg != null && rawBg != Colors.transparent
-                    ? Color.lerp(rawBg, Colors.white, 0.12)!
+                    ? Color.lerp(rawBg, colors.surface, 0.12)!
                     : rawBg))
             : rawBg);
     final fg = widget.style?.foregroundColor ?? variantStyle.foregroundColor;
@@ -291,7 +291,7 @@ class _ParkButtonState extends State<ParkButton> {
         : widget.shape == ParkButtonShape.round
             ? BorderRadius.circular(height / 2)
             : BorderRadius.circular(
-                widget.style?.borderRadius ?? variantStyle.borderRadius ?? radiusTokens.sm,
+                widget.style?.borderRadius ?? radiusTokens.sm,
               );
 
     // 按下态
@@ -375,7 +375,9 @@ class _ParkButtonState extends State<ParkButton> {
     ),
     );
 
-    final btn = widget.block ? button : button;
+    final btn = widget.block
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
     if (widget.tooltip != null) {
       return Tooltip(
         message: widget.tooltip!,
@@ -551,16 +553,42 @@ class _ParkButtonState extends State<ParkButton> {
     final hasText = textChild != null;
     final hasSuffix = widget.suffix != null;
 
-    final textWidget = hasText
+    // 对纯文字 child 自动启用溢出省略，避免在 tight 父约束下出现 right overflowed
+    final bool textChildNeedsEllipsis = textChild is Text && textChild.overflow == null;
+    final Widget effectiveTextChild = textChildNeedsEllipsis
+        ? Text(
+            textChild.data ?? '',
+            style: textChild.style,
+            strutStyle: textChild.strutStyle,
+            textAlign: textChild.textAlign,
+            textDirection: textChild.textDirection,
+            locale: textChild.locale,
+            softWrap: textChild.softWrap,
+            overflow: TextOverflow.ellipsis,
+            textScaleFactor: textChild.textScaleFactor,
+            maxLines: textChild.maxLines ?? 1,
+            semanticsLabel: textChild.semanticsLabel,
+            textWidthBasis: textChild.textWidthBasis,
+            textHeightBehavior: textChild.textHeightBehavior,
+            selectionColor: textChild.selectionColor,
+          )
+        : (textChild ?? const SizedBox.shrink());
+
+    final Widget? textWidget = hasText
         ? DefaultTextStyle(
             style: TextStyle(
               color: fgColor,
               fontSize: fontSize,
               fontWeight: fontWeight,
             ),
-            child: textChild,
+            child: effectiveTextChild,
           )
         : null;
+
+    // 纯文字按钮在 tight 父约束下需要 Flexible 提供可用宽度，ellipsis 才能生效
+    final Widget? flexibleTextWidget = hasText && textChildNeedsEllipsis
+        ? Flexible(child: textWidget!)
+        : textWidget;
 
     final iconWidget = hasIcon
         ? IconTheme(
@@ -583,14 +611,14 @@ class _ParkButtonState extends State<ParkButton> {
 
     if (hasIcon && hasText) {
       if (widget.iconPosition == ParkIconPosition.start) {
-        children.addAll([iconWidget!, gap, textWidget!]);
+        children.addAll([iconWidget!, gap, flexibleTextWidget!]);
       } else {
-        children.addAll([textWidget!, gap, iconWidget!]);
+        children.addAll([flexibleTextWidget!, gap, iconWidget!]);
       }
     } else if (hasIcon) {
       children.add(iconWidget!);
     } else if (hasText) {
-      children.add(textWidget!);
+      children.add(flexibleTextWidget!);
     }
 
     // Append suffix at the end
@@ -731,7 +759,6 @@ class _VariantStyle {
   final Color? borderColor;
   final double? borderWidth;
   final FontWeight? fontWeight;
-  final double? borderRadius;
 
   const _VariantStyle({
     this.backgroundColor,
@@ -739,7 +766,6 @@ class _VariantStyle {
     this.borderColor,
     this.borderWidth,
     this.fontWeight,
-    this.borderRadius,
   });
 }
 

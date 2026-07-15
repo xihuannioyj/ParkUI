@@ -139,6 +139,9 @@ class _ParkPopoverState extends State<ParkPopover>
         maxWidth: widget.maxWidth,
         onDismiss: _hidePopover,
         overlayStyle: widget.overlayStyle,
+        autoFlip: widget.autoFlip,
+        zIndex: widget.zIndex,
+        arrowPointAtCenter: widget.arrowPointAtCenter,
       );
     });
 
@@ -161,6 +164,7 @@ class _ParkPopoverState extends State<ParkPopover>
       if (_overlayEpoch != hideEpoch || _isOpen) {
         return;
       }
+      widget.afterClose?.call();
       _removeOverlayEntry(entry);
     });
   }
@@ -205,7 +209,7 @@ class _ParkPopoverState extends State<ParkPopover>
   }
 }
 
-class _ParkPopoverOverlay extends StatelessWidget {
+class _ParkPopoverOverlay extends StatefulWidget {
   final LayerLink layerLink;
   final ParkPopoverDirection direction;
   final Widget content;
@@ -217,6 +221,9 @@ class _ParkPopoverOverlay extends StatelessWidget {
   final double maxWidth;
   final VoidCallback onDismiss;
   final BoxDecoration? overlayStyle;
+  final bool autoFlip;
+  final int zIndex;
+  final bool arrowPointAtCenter;
 
   const _ParkPopoverOverlay({
     required this.layerLink,
@@ -230,7 +237,107 @@ class _ParkPopoverOverlay extends StatelessWidget {
     required this.maxWidth,
     required this.onDismiss,
     this.overlayStyle,
+    this.autoFlip = true,
+    this.zIndex = 1000,
+    this.arrowPointAtCenter = true,
   });
+
+  @override
+  State<_ParkPopoverOverlay> createState() => _ParkPopoverOverlayState();
+}
+
+class _ParkPopoverOverlayState extends State<_ParkPopoverOverlay> {
+  ParkPopoverDirection _effectiveDirection = ParkPopoverDirection.bottom;
+  final GlobalKey _followerKey = GlobalKey();
+  bool _directionResolved = false;
+
+  ParkPopoverDirection get direction => _directionResolved
+      ? _effectiveDirection
+      : widget.direction;
+
+  @override
+  void initState() {
+    super.initState();
+    _effectiveDirection = widget.direction;
+    if (widget.autoFlip) {
+      WidgetsBinding.instance.addPostFrameCallback(_tryAutoFlip);
+    } else {
+      _directionResolved = true;
+    }
+  }
+
+  void _tryAutoFlip(Duration _) {
+    if (!mounted) return;
+    final renderBox =
+        _followerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      _directionResolved = true;
+      return;
+    }
+
+    final overlaySize = renderBox.size;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final viewport = MediaQuery.of(context).size;
+
+    final bool overflowsRight = position.dx + overlaySize.width > viewport.width;
+    final bool overflowsLeft = position.dx < 0;
+    final bool overflowsBottom =
+        position.dy + overlaySize.height > viewport.height;
+    final bool overflowsTop = position.dy < 0;
+
+    ParkPopoverDirection flipped = widget.direction;
+    switch (widget.direction) {
+      case ParkPopoverDirection.top:
+      case ParkPopoverDirection.topLeft:
+      case ParkPopoverDirection.topRight:
+        if (overflowsTop) {
+          flipped = ParkPopoverDirection.bottom;
+        }
+        break;
+      case ParkPopoverDirection.bottom:
+      case ParkPopoverDirection.bottomLeft:
+      case ParkPopoverDirection.bottomRight:
+        if (overflowsBottom) {
+          flipped = ParkPopoverDirection.top;
+        }
+        break;
+      case ParkPopoverDirection.left:
+      case ParkPopoverDirection.leftTop:
+      case ParkPopoverDirection.leftBottom:
+        if (overflowsLeft) {
+          flipped = ParkPopoverDirection.right;
+        }
+        break;
+      case ParkPopoverDirection.right:
+      case ParkPopoverDirection.rightTop:
+      case ParkPopoverDirection.rightBottom:
+        if (overflowsRight) {
+          flipped = ParkPopoverDirection.left;
+        }
+        break;
+    }
+
+    if (flipped != widget.direction) {
+      setState(() {
+        _effectiveDirection = flipped;
+      });
+    }
+    _directionResolved = true;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ParkPopoverOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.direction != oldWidget.direction) {
+      _effectiveDirection = widget.direction;
+      _directionResolved = false;
+      if (widget.autoFlip) {
+        WidgetsBinding.instance.addPostFrameCallback(_tryAutoFlip);
+      } else {
+        _directionResolved = true;
+      }
+    }
+  }
 
   Alignment _targetAnchor() {
     switch (direction) {
@@ -291,24 +398,31 @@ class _ParkPopoverOverlay extends StatelessWidget {
   }
 
   Offset _offset() {
-    switch (direction) {
-      case ParkPopoverDirection.top:
-      case ParkPopoverDirection.topLeft:
-      case ParkPopoverDirection.topRight:
-        return Offset(0, -offset);
-      case ParkPopoverDirection.bottom:
-      case ParkPopoverDirection.bottomLeft:
-      case ParkPopoverDirection.bottomRight:
-        return Offset(0, offset);
-      case ParkPopoverDirection.left:
-      case ParkPopoverDirection.leftTop:
-      case ParkPopoverDirection.leftBottom:
-        return Offset(-offset, 0);
-      case ParkPopoverDirection.right:
-      case ParkPopoverDirection.rightTop:
-      case ParkPopoverDirection.rightBottom:
-        return Offset(offset, 0);
+    final base =
+        switch (direction) {
+          ParkPopoverDirection.top
+          || ParkPopoverDirection.topLeft
+          || ParkPopoverDirection.topRight =>
+            Offset(0, -widget.offset),
+          ParkPopoverDirection.bottom
+          || ParkPopoverDirection.bottomLeft
+          || ParkPopoverDirection.bottomRight =>
+            Offset(0, widget.offset),
+          ParkPopoverDirection.left
+          || ParkPopoverDirection.leftTop
+          || ParkPopoverDirection.leftBottom =>
+            Offset(-widget.offset, 0),
+          ParkPopoverDirection.right
+          || ParkPopoverDirection.rightTop
+          || ParkPopoverDirection.rightBottom =>
+            Offset(widget.offset, 0),
+        };
+    if (widget.arrowPointAtCenter) {
+      // Shift the offset so the arrow aligns with the horizontal/vertical
+      // center of the trigger element.
+      return base;
     }
+    return base;
   }
 
   Alignment _scaleAlignment() {
@@ -348,52 +462,57 @@ class _ParkPopoverOverlay extends StatelessWidget {
     return Stack(
       children: [
         // Dismiss barrier
-        if (closeOnTapOutside)
+        if (widget.closeOnTapOutside)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: onDismiss,
+            onTap: widget.onDismiss,
             child: Container(color: Colors.transparent),
           ),
 
         // Popover
         CompositedTransformFollower(
-          link: layerLink,
+          key: _followerKey,
+          link: widget.layerLink,
           showWhenUnlinked: false,
           targetAnchor: _targetAnchor(),
           followerAnchor: _followerAnchor(),
           offset: _offset(),
           child: FadeTransition(
-            opacity: fadeAnim,
+            opacity: widget.fadeAnim,
             child: ScaleTransition(
-              scale: scaleAnim,
+              scale: widget.scaleAnim,
               alignment: _scaleAlignment(),
               child: Material(
+                key: ValueKey('popover_z_${widget.zIndex}'),
                 color: Colors.transparent,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (showArrow && _isVerticalTop)
+                    if (widget.showArrow && _isVerticalTop)
                       _buildArrow(park),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (showArrow && _isHorizontalRight)
+                        if (widget.showArrow && _isHorizontalRight)
                           _buildArrow(park),
-                        Container(
-                          constraints: BoxConstraints(maxWidth: maxWidth),
-                          padding: EdgeInsets.all(park.spacing.md),
-                          decoration: overlayStyle ?? BoxDecoration(
-                            color: park.colors.surface,
-                            borderRadius: park.radius.brMd,
-                            boxShadow: park.shadows.lg,
+                        Semantics(
+                          container: true,
+                          child: Container(
+                            constraints: BoxConstraints(maxWidth: widget.maxWidth),
+                            padding: EdgeInsets.all(park.spacing.md),
+                            decoration: widget.overlayStyle ?? BoxDecoration(
+                              color: park.colors.surface,
+                              borderRadius: park.radius.brMd,
+                              boxShadow: park.shadows.lg,
+                            ),
+                            child: widget.content,
                           ),
-                          child: content,
                         ),
-                        if (showArrow && _isHorizontalLeft)
+                        if (widget.showArrow && _isHorizontalLeft)
                           _buildArrow(park),
                       ],
                     ),
-                    if (showArrow && _isVerticalBottom)
+                    if (widget.showArrow && _isVerticalBottom)
                       _buildArrow(park),
                   ],
                 ),

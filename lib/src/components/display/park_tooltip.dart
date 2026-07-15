@@ -46,9 +46,10 @@ class ParkTooltip extends StatefulWidget {
     this.richMessage,
     this.placement = ParkTooltipPlacement.top,
     this.trigger = ParkTooltipTrigger.hover,
-    this.arrow = true,
-    this.visible,
-    this.onVisibleChange,
+    this.showArrow = true,
+    this.arrowPadding,
+    this.open,
+    this.onOpenChange,
     this.delay = const Duration(milliseconds: 100),
     this.duration,
     this.color,
@@ -79,15 +80,32 @@ class ParkTooltip extends StatefulWidget {
   final ParkTooltipTrigger trigger;
 
   /// Whether to render the small triangle arrow pointing at the child.
-  final bool arrow;
+  final bool showArrow;
 
-  /// Controlled visibility. When non-null, the tooltip ignores pointer
-  /// events and uses this value exclusively.
-  final bool? visible;
+  /// Arrow offset relative to its default centered position.
+  ///
+  /// When non-null, the arrow is shifted by this amount:
+  /// - For [ParkTooltipPlacement.top]/[ParkTooltipPlacement.bottom]:
+  ///   [EdgeInsets.left]/[EdgeInsets.right] moves the arrow horizontally.
+  /// - For [ParkTooltipPlacement.left]/[ParkTooltipPlacement.right]:
+  ///   [EdgeInsets.top]/[EdgeInsets.bottom] moves the arrow vertically.
+  /// - [EdgeInsets] values for the opposite axis are ignored.
+  final EdgeInsets? arrowPadding;
+
+  /// Controlled open state.
+  ///
+  /// * `true` — forces the tooltip to show.
+  /// * `false` — forces the tooltip to hide.
+  /// * `null` (default) — uses default hover/tap behavior.
+  ///
+  /// When non-null, pointer events (hover/tap) are ignored in favor of
+  /// this value, making the tooltip fully controlled by the parent.
+  final bool? open;
 
   /// Called when the tooltip wants to change visibility.
-  /// The parent widget can use this to control [visible].
-  final ValueChanged<bool>? onVisibleChange;
+  ///
+  /// The parent widget can use this to control [open].
+  final ValueChanged<bool>? onOpenChange;
 
   /// Delay before the tooltip appears (hover trigger only).
   final Duration delay;
@@ -140,7 +158,7 @@ class _ParkTooltipState extends State<ParkTooltip>
   late Animation<double> _scaleAnimation;
 
   /// Whether the tooltip should currently be shown.
-  bool get _isVisible => widget.visible ?? _internalVisible;
+  bool get _isVisible => widget.open ?? _internalVisible;
 
   @override
   void initState() {
@@ -157,8 +175,8 @@ class _ParkTooltipState extends State<ParkTooltip>
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
 
-    // If controlled visible is true from the start, show immediately.
-    if (widget.visible == true) {
+    // If controlled open is true from the start, show immediately.
+    if (widget.open == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _show());
     }
   }
@@ -166,8 +184,8 @@ class _ParkTooltipState extends State<ParkTooltip>
   @override
   void didUpdateWidget(covariant ParkTooltip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.visible != null && widget.visible != oldWidget.visible) {
-      if (widget.visible!) {
+    if (widget.open != null && widget.open != oldWidget.open) {
+      if (widget.open!) {
         _show();
       } else {
         _hide();
@@ -206,10 +224,10 @@ class _ParkTooltipState extends State<ParkTooltip>
     if (_isVisible && _overlayEntry != null) return;
     if (widget.message == null && widget.richMessage == null) return;
 
-    if (widget.visible == null) {
+    if (widget.open == null) {
       setState(() => _internalVisible = true);
     }
-    widget.onVisibleChange?.call(true);
+    widget.onOpenChange?.call(true);
 
     _ensureOverlay();
     _animController.forward();
@@ -224,10 +242,10 @@ class _ParkTooltipState extends State<ParkTooltip>
     _autoHideTimer?.cancel();
     _animController.reverse().then((_) {
       if (!mounted) return;
-      if (widget.visible == null) {
+      if (widget.open == null) {
         setState(() => _internalVisible = false);
       }
-      widget.onVisibleChange?.call(false);
+      widget.onOpenChange?.call(false);
       _removeOverlay();
     });
   }
@@ -308,10 +326,11 @@ class _ParkTooltipState extends State<ParkTooltip>
     );
 
     // Wrap with arrow if enabled.
-    if (widget.arrow) {
+    if (widget.showArrow) {
       bubble = _TooltipWithArrow(
         placement: widget.placement,
         color: bgColor,
+        arrowPadding: widget.arrowPadding,
         child: bubble,
       );
     }
@@ -343,13 +362,18 @@ class _ParkTooltipState extends State<ParkTooltip>
     final followerAnchor = _followerAnchor(widget.placement);
     final targetAnchor = _targetAnchor(widget.placement);
 
-    return CompositedTransformFollower(
-      link: _layerLink,
-      showWhenUnlinked: false,
-      offset: followerOffset,
-      targetAnchor: targetAnchor,
-      followerAnchor: followerAnchor,
-      child: animated,
+    return Semantics(
+      label: widget.message,
+      container: true,
+      liveRegion: true,
+      child: CompositedTransformFollower(
+        link: _layerLink,
+        showWhenUnlinked: false,
+        offset: followerOffset,
+        targetAnchor: targetAnchor,
+        followerAnchor: followerAnchor,
+        child: animated,
+      ),
     );
   }
 
@@ -481,11 +505,13 @@ class _TooltipWithArrow extends StatelessWidget {
     required this.placement,
     required this.color,
     required this.child,
+    this.arrowPadding,
   });
 
   final ParkTooltipPlacement placement;
   final Color color;
   final Widget child;
+  final EdgeInsets? arrowPadding;
 
   static const double _arrowSize = 6.0;
 
@@ -499,9 +525,10 @@ class _TooltipWithArrow extends StatelessWidget {
           color: color,
           edge: arrowEdge,
           arrowSize: _arrowSize,
+          arrowPadding: arrowPadding,
         ),
         child: Padding(
-          padding: _arrowPadding(arrowEdge),
+          padding: _effectivePadding(arrowEdge),
           child: child,
         ),
       ),
@@ -526,7 +553,40 @@ class _TooltipWithArrow extends StatelessWidget {
     }
   }
 
-  EdgeInsets _arrowPadding(_ArrowEdge edge) {
+  EdgeInsets _effectivePadding(_ArrowEdge edge) {
+    final base = _basePadding(edge);
+    if (arrowPadding == null) return base;
+
+    // Apply only the relevant axis from arrowPadding.
+    switch (edge) {
+      case _ArrowEdge.top:
+        return EdgeInsets.only(
+          top: base.top,
+          left: arrowPadding!.left,
+          right: arrowPadding!.right,
+        );
+      case _ArrowEdge.bottom:
+        return EdgeInsets.only(
+          bottom: base.bottom,
+          left: arrowPadding!.left,
+          right: arrowPadding!.right,
+        );
+      case _ArrowEdge.left:
+        return EdgeInsets.only(
+          left: base.left,
+          top: arrowPadding!.top,
+          bottom: arrowPadding!.bottom,
+        );
+      case _ArrowEdge.right:
+        return EdgeInsets.only(
+          right: base.right,
+          top: arrowPadding!.top,
+          bottom: arrowPadding!.bottom,
+        );
+    }
+  }
+
+  EdgeInsets _basePadding(_ArrowEdge edge) {
     switch (edge) {
       case _ArrowEdge.top:
         return const EdgeInsets.only(top: _arrowSize);
@@ -548,11 +608,13 @@ class _ArrowPainter extends CustomPainter {
     required this.color,
     required this.edge,
     required this.arrowSize,
+    this.arrowPadding,
   });
 
   final Color color;
   final _ArrowEdge edge;
   final double arrowSize;
+  final EdgeInsets? arrowPadding;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -562,37 +624,41 @@ class _ArrowPainter extends CustomPainter {
 
     final path = Path();
 
+    // Arrow center offset from arrowPadding.
+    final dx = (arrowPadding?.left ?? 0) - (arrowPadding?.right ?? 0);
+    final dy = (arrowPadding?.top ?? 0) - (arrowPadding?.bottom ?? 0);
+
     switch (edge) {
       case _ArrowEdge.bottom:
-        // Triangle pointing down, centered horizontally.
+        // Triangle pointing down, centered horizontally + dx offset.
         path
-          ..moveTo(size.width / 2 - arrowSize, size.height - arrowSize)
-          ..lineTo(size.width / 2, size.height)
-          ..lineTo(size.width / 2 + arrowSize, size.height - arrowSize)
+          ..moveTo(size.width / 2 - arrowSize + dx, size.height - arrowSize)
+          ..lineTo(size.width / 2 + dx, size.height)
+          ..lineTo(size.width / 2 + arrowSize + dx, size.height - arrowSize)
           ..close();
         break;
       case _ArrowEdge.top:
-        // Triangle pointing up, centered horizontally.
+        // Triangle pointing up, centered horizontally + dx offset.
         path
-          ..moveTo(size.width / 2 - arrowSize, arrowSize)
-          ..lineTo(size.width / 2, 0)
-          ..lineTo(size.width / 2 + arrowSize, arrowSize)
+          ..moveTo(size.width / 2 - arrowSize + dx, arrowSize)
+          ..lineTo(size.width / 2 + dx, 0)
+          ..lineTo(size.width / 2 + arrowSize + dx, arrowSize)
           ..close();
         break;
       case _ArrowEdge.left:
-        // Triangle pointing left, centered vertically.
+        // Triangle pointing left, centered vertically + dy offset.
         path
-          ..moveTo(arrowSize, size.height / 2 - arrowSize)
-          ..lineTo(0, size.height / 2)
-          ..lineTo(arrowSize, size.height / 2 + arrowSize)
+          ..moveTo(arrowSize, size.height / 2 - arrowSize + dy)
+          ..lineTo(0, size.height / 2 + dy)
+          ..lineTo(arrowSize, size.height / 2 + arrowSize + dy)
           ..close();
         break;
       case _ArrowEdge.right:
-        // Triangle pointing right, centered vertically.
+        // Triangle pointing right, centered vertically + dy offset.
         path
-          ..moveTo(size.width - arrowSize, size.height / 2 - arrowSize)
-          ..lineTo(size.width, size.height / 2)
-          ..lineTo(size.width - arrowSize, size.height / 2 + arrowSize)
+          ..moveTo(size.width - arrowSize, size.height / 2 - arrowSize + dy)
+          ..lineTo(size.width, size.height / 2 + dy)
+          ..lineTo(size.width - arrowSize, size.height / 2 + arrowSize + dy)
           ..close();
         break;
     }
@@ -602,5 +668,7 @@ class _ArrowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ArrowPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.edge != edge;
+      oldDelegate.color != color ||
+      oldDelegate.edge != edge ||
+      oldDelegate.arrowPadding != arrowPadding;
 }

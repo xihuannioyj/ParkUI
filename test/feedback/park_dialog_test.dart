@@ -30,6 +30,7 @@ void main() {
       await tester.pumpWidget(_wrap(ParkDialog(
         title: '确认',
         content: '是否继续？',
+        cancelText: '取消',
         onCancel: () => cancelled = true,
       )));
       await tester.tap(find.text('取消'));
@@ -49,7 +50,6 @@ void main() {
       await tester.pumpWidget(_wrap(ParkDialog(
         title: '提示',
         content: '单按钮',
-        showCancel: false,
         onConfirm: () {},
       )));
       expect(find.text('取消'), findsNothing);

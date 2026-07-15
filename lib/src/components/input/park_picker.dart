@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 选择器选项
@@ -117,7 +118,7 @@ class ParkPicker extends StatefulWidget {
     this.value,
     this.onConfirm,
     this.searchable = false,
-    this.searchHintText = '搜索选项',
+    this.searchHintText = '',
     this.multiColumn = false,
     this.columns,
     this.onMultiConfirm,
@@ -139,7 +140,7 @@ class ParkPicker extends StatefulWidget {
     String? value,
     ValueChanged<String>? onConfirm,
     bool searchable = false,
-    String searchHintText = '搜索选项',
+    String searchHintText = '',
     String? confirmText,
     String? cancelText,
     ParkPickerItemBuilder? itemBuilder,
@@ -282,6 +283,8 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
   late List<int> _multiSelectedIndexes;
   String _keyword = '';
 
+  ParkLocalizations get _l10n => ParkLocalizations.of(context);
+
   @override
   void initState() {
     bindKey = widget.bindKey;
@@ -376,7 +379,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
                   },
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: widget.searchHintText,
+                    hintText: widget.searchHintText.isNotEmpty ? widget.searchHintText : _l10n.searchOptionsHint,
                     prefixIcon: const Icon(Icons.search, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(radius.md),
@@ -429,7 +432,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
     if (visibleItems.isEmpty) {
       return Center(
         child: Text(
-          '暂无数据',
+          _l10n.noData,
           style: TextStyle(
             fontSize: park.typography.sizeBodySmall,
             color: park.colors.textPlaceholder,
@@ -452,7 +455,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
         }
         return Center(
           child: Text(
-            item.disabled ? '${item.label}（禁用）' : item.label,
+            item.disabled ? _l10n.disabledLabel(item.label) : item.label,
             style: TextStyle(
               fontSize: park.typography.sizeBody,
               color: item.disabled
@@ -470,7 +473,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
     if (cols.isEmpty) {
       return Center(
         child: Text(
-          '暂无数据',
+          _l10n.noData,
           style: TextStyle(
             fontSize: park.typography.sizeBodySmall,
             color: park.colors.textPlaceholder,
@@ -496,7 +499,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
               }
               return Center(
                 child: Text(
-                  item.disabled ? '${item.label}（禁用）' : item.label,
+                  item.disabled ? _l10n.disabledLabel(item.label) : item.label,
                   style: TextStyle(
                     fontSize: park.typography.sizeBody,
                     color: item.disabled
@@ -512,13 +515,29 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
     );
   }
 
+  /// 安全关闭面板
+  ///
+  /// 检查当前是否在 BottomSheet 的 Overlay 上下文中，
+  /// 仅在模态弹出模式下调用 [Navigator.pop]，
+  /// 内联模式下不操作导航栈，避免错误关闭宿主页面。
+  void _dismiss({dynamic result}) {
+    final overlay = context.findAncestorStateOfType<OverlayState>();
+    final route = ModalRoute.of(context);
+    // PopupRoute 是 showModalBottomSheet 使用的路由类型，
+    // 内联模式下 ModalRoute 为 PageRoute，不会命中此分支
+    if (overlay != null && route is PopupRoute) {
+      Navigator.of(context).pop(result);
+    }
+    // 内联模式：不操作导航栈
+  }
+
   Widget _buildHeader(ParkThemeData park) {
     final colors = park.colors;
     final typo = park.typography;
     final spacing = park.spacing;
 
-    final cancelLabel = widget.cancelText ?? '取消';
-    final confirmLabel = widget.confirmText ?? '确认';
+    final cancelLabel = widget.cancelText ?? _l10n.cancelText;
+    final confirmLabel = widget.confirmText ?? _l10n.confirmText;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -529,13 +548,17 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // 取消按钮
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Text(
-              cancelLabel,
-              style: TextStyle(
-                fontSize: typo.sizeBody,
-                color: colors.textSecondary,
+          Semantics(
+            label: cancelLabel,
+            button: true,
+            child: GestureDetector(
+              onTap: () => _dismiss(),
+              child: Text(
+                cancelLabel,
+                style: TextStyle(
+                  fontSize: typo.sizeBody,
+                  color: colors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -554,20 +577,24 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
             const SizedBox.shrink(),
 
           // 确认按钮
-          GestureDetector(
-            onTap: () {
-              if (widget.multiColumn) {
-                _handleMultiColumnConfirm();
-              } else {
-                _handleSingleColumnConfirm();
-              }
-            },
-            child: Text(
-              confirmLabel,
-              style: TextStyle(
-                fontSize: typo.sizeBody,
-                color: colors.brand,
-                fontWeight: typo.weightMedium,
+          Semantics(
+            label: confirmLabel,
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                if (widget.multiColumn) {
+                  _handleMultiColumnConfirm();
+                } else {
+                  _handleSingleColumnConfirm();
+                }
+              },
+              child: Text(
+                confirmLabel,
+                style: TextStyle(
+                  fontSize: typo.sizeBody,
+                  color: colors.brand,
+                  fontWeight: typo.weightMedium,
+                ),
               ),
             ),
           ),
@@ -595,7 +622,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
     if (selected.disabled) return;
     widget.onConfirm?.call(selected.value);
     boundValue = selected.value;
-    Navigator.of(context).pop(selected.value);
+    _dismiss(result: selected.value);
   }
 
   void _handleMultiColumnConfirm() {
@@ -611,6 +638,6 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
       }
     }
     widget.onMultiConfirm?.call(result);
-    Navigator.of(context).pop(result);
+    _dismiss(result: result);
   }
 }

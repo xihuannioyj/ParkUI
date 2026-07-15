@@ -6,6 +6,7 @@ import '../../theme/tokens/park_sizing.dart';
 import '../../theme/tokens/park_colors.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import '../base/park_button.dart';
 import '../base/park_button_style.dart';
 
@@ -55,6 +56,10 @@ class ParkInput extends FormField<String> {
   /// 绑定服务实例。不设时尝试从 [ParkBindingFormScope] 获取。
   final ParkBindingService? bindingService;
 
+  /// 外部传入的 [TextEditingController]，用于受控模式（B17）。
+  /// 为 null 时由组件内部创建并持有。
+  final TextEditingController? _extController;
+
   ParkInput({
     super.key,
     this.bindKey,
@@ -103,12 +108,14 @@ class ParkInput extends FormField<String> {
     this.prefixText,
     this.suffixText,
     this.borderless = false,
+    @Deprecated('使用 readOnly 代替')
     this.readonly = false,
     this.contentPadding,
     this.style,
     this.onCompositionStart,
     this.onCompositionEnd,
-  }) : super(
+  }) : _extController = controller,
+       super(
          initialValue: controller?.text ?? initialValue ?? '',
          builder: (FormFieldState<String> field) {
            final state = field as _ParkInputState;
@@ -220,7 +227,10 @@ class ParkInput extends FormField<String> {
   /// 无边框变体（完全去除边框和背景，比 bordered: false 更彻底）
   final bool borderless;
 
-  /// 是否只读（readOnly 的别名，兼容 AntD 命名）
+  /// 是否只读（readOnly 的别名，兼容 AntD 命名）。
+  ///
+  /// 已废弃：请使用 [readOnly]。
+  @Deprecated('使用 readOnly 代替')
   final bool readonly;
 
   /// 输入内容内边距。不设时根据 [size] 自动计算。
@@ -273,12 +283,22 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _obscured = false;
+  /// 是否由本状态类拥有 _controller（外部未传入 controller 时为 true）。
+  bool _ownsController = false;
 
   @override
   void initState() {
     super.initState();
     final widget = this.widget as ParkInput;
-    _controller = TextEditingController(text: widget.initialValue);
+    // 优先使用调用方传入的 controller，实现受控模式（B17）；
+    // 未传入时内部创建，并在 dispose 时释放。
+    if (widget._extController != null) {
+      _controller = widget._extController;
+      _ownsController = false;
+    } else {
+      _controller = TextEditingController(text: widget.initialValue);
+      _ownsController = true;
+    }
     _obscured = widget.obscureText;
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_onFocusChanged);
@@ -287,6 +307,22 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
     final b = bindable;
     if (b != null) {
       _controller.text = b.value.toString();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ParkInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final widget = this.widget as ParkInput;
+    // 外部 controller 发生替换时，释放旧的（内部创建的）controller 并接管新的。
+    if (widget._extController != oldWidget._extController) {
+      if (_ownsController) {
+        _controller.dispose();
+        _ownsController = false;
+      }
+      _controller =
+          widget._extController ?? TextEditingController(text: widget.initialValue);
+      _ownsController = widget._extController == null;
     }
   }
 
@@ -325,7 +361,9 @@ class _ParkInputState extends FormFieldState<String> with BindableFormFieldMixin
     if ((widget as ParkInput).focusNode == null) {
       _focusNode.dispose();
     }
-    _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -428,6 +466,18 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     }
   }
 
+  /// 根据尺寸返回 prefix/suffix icon 的最小高度，避免 small 尺寸溢出。
+  double get _iconMinHeight {
+    switch ((widget.state.widget as ParkInput).size) {
+      case ParkInputSize.small:
+        return 28;
+      case ParkInputSize.medium:
+        return 40;
+      case ParkInputSize.large:
+        return 48;
+    }
+  }
+
   /// 根据 status 和 validator 计算最终边框颜色
   Color _resolveBorderColor({
     required ParkInputStatus? status,
@@ -490,32 +540,46 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         state._controller.text.isNotEmpty &&
         !isDisabled &&
         !inputWidget.readOnly &&
+        // ignore: deprecated_member_use
         !inputWidget.readonly) {
       suffixWidgets.add(
-        GestureDetector(
-          onTap: state._clear,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: park.spacing.xs),
-            child: Icon(
-              CupertinoIcons.clear_circled_solid,
-              size: 18,
-              color: park.colors.textPlaceholder,
+        Semantics(
+          label: ParkLocalizations.of(context).clearText,
+          button: true,
+          child: GestureDetector(
+            onTap: state._clear,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: park.spacing.xs),
+              child: Icon(
+                CupertinoIcons.clear_circled_solid,
+                size: 18,
+                color: park.colors.textPlaceholder,
+              ),
             ),
           ),
         ),
       );
     }
 
-    if (inputWidget.obscureText) {
+    final bool hasCustomSuffix =
+        inputWidget.suffixIcon != null || inputWidget.suffix != null;
+
+    if (inputWidget.obscureText && !hasCustomSuffix) {
       suffixWidgets.add(
-        GestureDetector(
-          onTap: state._toggleObscure,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: park.spacing.xs),
-            child: Icon(
-              state._obscured ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
-              size: 18,
-              color: park.colors.textSecondary,
+        Semantics(
+          label: state._obscured
+              ? ParkLocalizations.of(context).obscureTextDisplayed
+              : ParkLocalizations.of(context).obscureTextHidden,
+          button: true,
+          child: GestureDetector(
+            onTap: state._toggleObscure,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: park.spacing.xs),
+              child: Icon(
+                state._obscured ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
+                size: 18,
+                color: park.colors.textSecondary,
+              ),
             ),
           ),
         ),
@@ -534,6 +598,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
       controller: state._controller,
       focusNode: state._focusNode,
       enabled: inputWidget.enabled,
+      // ignore: deprecated_member_use
       readOnly: inputWidget.readOnly || inputWidget.readonly,
       obscureText: state._obscured,
       maxLength: inputWidget.maxLength,
@@ -561,8 +626,19 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         hintText: inputWidget.hintText,
         hintStyle: hintStyle,
         counterText: '',
+        isDense: true, // 收紧 prefix/suffix 内部 padding，让光标与文本在 48/40/56 高度内垂直居中
         prefixText: inputWidget.prefixText,
         suffixText: inputWidget.suffixText,
+        // 固定 prefixIcon/suffixIcon 占位框高度，避免被主题默认 24px icon 把整行顶高导致光标贴顶
+        // minHeight 根据 size 动态设置，避免 small 尺寸溢出 InputGroup 容器
+        prefixIconConstraints: BoxConstraints(
+          minWidth: 40,
+          minHeight: _iconMinHeight,
+        ),
+        suffixIconConstraints: BoxConstraints(
+          minWidth: 24,
+          minHeight: _iconMinHeight,
+        ),
         prefixIcon: inputWidget.prefixIcon != null
             ? IconTheme.merge(
                 data: IconThemeData(
@@ -575,7 +651,11 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
               )
             : null,
         suffixIcon: suffixWidgets.isNotEmpty
-            ? Row(mainAxisSize: MainAxisSize.min, children: suffixWidgets)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: suffixWidgets,
+              )
             : null,
         contentPadding: inputWidget.contentPadding ??
             EdgeInsets.symmetric(
@@ -656,7 +736,10 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         duration: park.motion.standard,
         clipBehavior: Clip.antiAlias,
         constraints: BoxConstraints(
-          minHeight: inputWidget.maxLines == 1 ? _height(widget.park.sizing) : _height(widget.park.sizing),
+          // 不再强制 _height，让 container 紧贴 TextField 实际渲染高度。
+          // TextField 内部由 prefixIconConstraints(40) + contentPadding + 字号决定实际行高，
+          // 此处只保证不低于 _height - 8 即可，避免上空或下空。
+          minHeight: _height(widget.park.sizing) - 8,
         ),
         decoration: BoxDecoration(
           color: bgColor,
@@ -674,7 +757,8 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         duration: park.motion.standard,
         clipBehavior: Clip.antiAlias,
         constraints: BoxConstraints(
-          minHeight: inputWidget.maxLines == 1 ? _height(widget.park.sizing) : _height(widget.park.sizing),
+          // 同 bordered 分支，避免白色多余区域
+          minHeight: _height(widget.park.sizing) - 8,
         ),
         decoration: BoxDecoration(
           color: Colors.transparent,
@@ -717,32 +801,38 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (inputWidget.labelWidget != null || inputWidget.label != null) ...[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (inputWidget.required)
-                  Padding(
-                    padding: EdgeInsets.only(right: park.spacing.xs),
-                    child: Text(
-                      '*',
-                      style: TextStyle(
-                        color: park.colors.error,
-                        fontSize: park.typography.sizeBody,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                Flexible(
-                  child: inputWidget.labelWidget ??
-                      Text(
-                        inputWidget.label!,
-                        style: park.typography.bodySmall.copyWith(
-                          color: labelColor,
-                          fontWeight: park.typography.weightMedium,
+            Semantics(
+              header: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (inputWidget.required)
+                    Semantics(
+                      label: ParkLocalizations.of(context).requiredHint,
+                      child: Padding(
+                        padding: EdgeInsets.only(right: park.spacing.xs),
+                        child: Text(
+                          '*',
+                          style: TextStyle(
+                            color: park.colors.error,
+                            fontSize: park.typography.sizeBody,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                ),
-              ],
+                    ),
+                  Flexible(
+                    child: inputWidget.labelWidget ??
+                        Text(
+                          inputWidget.label!,
+                          style: park.typography.bodySmall.copyWith(
+                            color: labelColor,
+                            fontWeight: park.typography.weightMedium,
+                          ),
+                        ),
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: park.spacing.xs),
           ],
@@ -811,7 +901,8 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     final ParkInput inputWidget = widget.state.widget as ParkInput;
     final dynamic cfg = inputWidget.searchButton;
     final bool isCfg = cfg is ParkInputSearchButtonConfig;
-    final String text = isCfg ? cfg.text : '搜索';
+    final l10n = ParkLocalizations.of(widget.state.context);
+    final String text = isCfg ? cfg.text : l10n.searchText;
     final IconData? icon = isCfg ? (cfg).icon : Icons.search;
     final bool loading = isCfg ? (cfg).loading : false;
     final ParkButtonVariant variant =
@@ -834,20 +925,24 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
             ],
           );
 
-    return SizedBox(
-      height: _height(widget.park.sizing),
-      child: ParkButton(
-        variant: variant,
+    return Semantics(
+      label: l10n.searchText,
+      button: true,
+      child: SizedBox(
         height: _height(widget.park.sizing),
-        loading: loading,
-        onPressed: enabled
-            ? () {
-                final ValueChanged<String>? cb =
-                    cfgOnSearch ?? inputWidget.onSearch;
-                cb?.call(widget.state._controller.text);
-              }
-            : null,
-        child: childContent,
+        child: ParkButton(
+          variant: variant,
+          height: _height(widget.park.sizing),
+          loading: loading,
+          onPressed: enabled
+              ? () {
+                  final ValueChanged<String>? cb =
+                      cfgOnSearch ?? inputWidget.onSearch;
+                  cb?.call(widget.state._controller.text);
+                }
+              : null,
+          child: childContent,
+        ),
       ),
     );
   }

@@ -239,7 +239,10 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     final bg = _bgColor(park);
     final fg = _textColor(park);
 
-    return FadeTransition(
+    return Semantics(
+      liveRegion: true,
+      label: widget.text,
+      child: FadeTransition(
       opacity: _fadeAnim,
       child: Container(
         padding: EdgeInsets.symmetric(
@@ -301,6 +304,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

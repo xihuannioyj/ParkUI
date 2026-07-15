@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 下拉选项数据
 class ParkSelectOption {
@@ -22,6 +23,43 @@ class ParkSelectOption {
     required this.value,
     this.disabled = false,
     this.group,
+  });
+}
+
+/// 分组选项数据 / Grouped option data
+///
+/// 用于将 [ParkSelectOption] 按逻辑分组展示，每组带有独立标题。
+/// Used to display [ParkSelectOption] items in logical groups with headers.
+///
+/// ```dart
+/// ParkSelect(
+///   groupedOptions: [
+///     ParkSelectGroupOption(
+///       groupLabel: '一线城市',
+///       options: [
+///         ParkSelectOption(label: '北京', value: 'bj'),
+///         ParkSelectOption(label: '上海', value: 'sh'),
+///       ],
+///     ),
+///     ParkSelectGroupOption(
+///       groupLabel: '其他',
+///       options: [
+///         ParkSelectOption(label: '成都', value: 'cd'),
+///       ],
+///     ),
+///   ],
+/// )
+/// ```
+class ParkSelectGroupOption {
+  /// 分组标题 / Group label
+  final String groupLabel;
+
+  /// 该分组下的选项列表 / Options within this group
+  final List<ParkSelectOption> options;
+
+  const ParkSelectGroupOption({
+    required this.groupLabel,
+    required this.options,
   });
 }
 
@@ -138,6 +176,26 @@ class ParkSelect extends FormField<String> {
   /// 是否启用虚拟滚动（大量选项时的性能优化）
   final bool virtual;
 
+  /// 虚拟化渲染模式 / Virtualization mode
+  ///
+  /// 为 `true` 时强制启用虚拟化渲染（使用 [ListView.builder]）；
+  /// 为 `false` 时强制禁用；为 `null`（默认）时自动判断——
+  /// 当选项数量超过 50 个时自动启用虚拟化渲染。
+  ///
+  /// When `true`, force virtualized rendering via [ListView.builder];
+  /// when `false`, force disabled; when `null` (default), auto-detect —
+  /// virtualization is enabled automatically when items exceed 50.
+  final bool? virtualize;
+
+  /// 分组选项列表 / Grouped options
+  ///
+  /// 设置后按分组渲染选项，每组显示分组标题。
+  /// 与 [items] 二选一使用，[groupedOptions] 优先级更高。
+  ///
+  /// When set, options are rendered in groups with headers.
+  /// Mutually exclusive with [items]; [groupedOptions] takes precedence.
+  final List<ParkSelectGroupOption>? groupedOptions;
+
   /// 下拉面板宽度是否与选择器宽度一致。默认 true。
   final bool popupMatchSelectWidth;
 
@@ -188,6 +246,8 @@ class ParkSelect extends FormField<String> {
     this.filterOption,
     this.optionRender,
     this.virtual = false,
+    this.virtualize,
+    this.groupedOptions,
     this.popupMatchSelectWidth = true,
     this.onSearch,
     this.dropdownRender,
@@ -246,6 +306,25 @@ class ParkSelect extends FormField<String> {
     }
   }
 
+  /// 从 items 或 groupedOptions 中查找指定 value 的选项。
+  /// Find an option by value from either items or groupedOptions.
+  static ParkSelectOption? _findOption(
+    ParkSelect widget,
+    String value,
+  ) {
+    // 先在 items 中查找 / Search in items first
+    final opt = widget.items.where((o) => o.value == value).firstOrNull;
+    if (opt != null) return opt;
+    // 再在 groupedOptions 中查找 / Then search in groupedOptions
+    if (widget.groupedOptions != null) {
+      for (final group in widget.groupedOptions!) {
+        final match = group.options.where((o) => o.value == value).firstOrNull;
+        if (match != null) return match;
+      }
+    }
+    return null;
+  }
+
   static double _fontSize(ParkSelectSize size, ParkThemeData park) {
     switch (size) {
       case ParkSelectSize.small:
@@ -286,33 +365,44 @@ class ParkSelect extends FormField<String> {
     } else if (widget.multiple) {
       final labels = <String>[];
       for (final v in selectedValues) {
-        final opt = widget.items.where((o) => o.value == v).firstOrNull;
+        final opt = _findOption(widget, v);
         if (opt != null) labels.add(opt.label);
       }
       displayText = labels.join(', ');
     } else {
-      final opt = widget.items
-          .where((o) => o.value == currentValue)
-          .firstOrNull;
+      final opt = _findOption(widget, currentValue ?? '');
       displayText = opt?.label ?? currentValue ?? '';
     }
 
     // maxTagCount: determine visible chips and overflow count
+    // Show maxTagCount-1 visible chips, then +remainCount overflow chip
     final int? maxTag = widget.maxTagCount;
-    final List<String> visibleChipValues =
-        (widget.multiple && hasValue && maxTag != null && maxTag >= 0)
-            ? selectedValues.take(maxTag).toList()
-            : (widget.multiple && hasValue ? selectedValues : <String>[]);
-    final int overflowCount =
-        (widget.multiple && hasValue && maxTag != null && maxTag >= 0)
-            ? (selectedValues.length - maxTag).clamp(0, selectedValues.length)
-            : 0;
+    final List<String> visibleChipValues;
+    final int overflowCount;
+    if (widget.multiple &&
+        hasValue &&
+        maxTag != null &&
+        maxTag > 0 &&
+        selectedValues.length > maxTag) {
+      // Overflow mode: show (maxTag-1) visible chips, then +N
+      final int showCount = maxTag - 1;
+      visibleChipValues = selectedValues.take(showCount).toList();
+      overflowCount = selectedValues.length - showCount;
+    } else {
+      visibleChipValues = widget.multiple && hasValue
+          ? selectedValues
+          : <String>[];
+      overflowCount = 0;
+    }
 
     final borderColor = _borderColor(widget.status, state.hasError, park);
     final minH = _minHeight(widget.size);
     final fontSize = _fontSize(widget.size, park);
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      child: GestureDetector(
       onTap: isDisabled ? null : () => _showSheet(state),
       child: AnimatedContainer(
         duration: park.motion.standard,
@@ -347,9 +437,7 @@ class ParkSelect extends FormField<String> {
                       runSpacing: spacing.xs,
                       children: [
                         ...visibleChipValues.map((v) {
-                          final opt = widget.items
-                              .where((o) => o.value == v)
-                              .firstOrNull;
+                          final opt = _findOption(widget, v);
                           return _buildChip(
                             opt?.label ?? v,
                             park,
@@ -368,6 +456,7 @@ class ParkSelect extends FormField<String> {
                           _buildChip(
                             '+$overflowCount',
                             park,
+                            onTap: () => _showOverflowSheet(state),
                           ),
                       ],
                     )
@@ -376,7 +465,7 @@ class ParkSelect extends FormField<String> {
                           ? widget.loadingText
                           : hasValue
                           ? displayText
-                          : (widget.hintText ?? '请选择'),
+                          : (widget.hintText ?? ParkLocalizations.of(state.context).selectPlaceholder),
                       style: TextStyle(
                         fontSize: fontSize,
                         color: isDisabled
@@ -392,7 +481,10 @@ class ParkSelect extends FormField<String> {
             SizedBox(width: spacing.xs),
             // 清除按钮
             if (widget.clearable && hasValue && !isDisabled)
-              GestureDetector(
+              Semantics(
+                label: ParkLocalizations.of(state.context).clearText,
+                button: true,
+                child: GestureDetector(
                 onTap: () {
                   state.didChange(null);
                   widget.onChanged?.call(null);
@@ -403,6 +495,7 @@ class ParkSelect extends FormField<String> {
                   size: 18,
                   color: colors.textPlaceholder,
                 ),
+              ),
               ),
             // 后缀图标 / 下拉箭头
             if (widget.loading)
@@ -425,6 +518,7 @@ class ParkSelect extends FormField<String> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -432,32 +526,40 @@ class ParkSelect extends FormField<String> {
     String label,
     ParkThemeData park, {
     VoidCallback? onRemove,
+    VoidCallback? onTap,
   }) {
     final colors = park.colors;
     final typo = park.typography;
     final radius = park.radius;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: colors.brandLight.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(radius.sm),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: typo.sizeBodySmall, color: colors.brand),
-          ),
-          if (onRemove != null) ...[
-            const SizedBox(width: 2),
-            GestureDetector(
-              onTap: onRemove,
-              child: Icon(Icons.close, size: 14, color: colors.brand),
+    return Semantics(
+      label: label,
+      button: onTap != null || onRemove != null,
+      child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: colors.brandLight.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(radius.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontSize: typo.sizeBodySmall, color: colors.brand),
             ),
+            if (onRemove != null) ...[
+              const SizedBox(width: 2),
+              GestureDetector(
+                onTap: onRemove,
+                child: Icon(Icons.close, size: 14, color: colors.brand),
+              ),
+            ],
           ],
-        ],
+        ),
+      ),
       ),
     );
   }
@@ -467,6 +569,32 @@ class ParkSelect extends FormField<String> {
     return value.split(',').where((v) => v.isNotEmpty).toList();
   }
 
+  /// 显示溢出标签展开的 BottomSheet，展示所有已选项。
+  static void _showOverflowSheet(_ParkSelectState state) {
+    final widget = state.widget;
+    final context = state.context;
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final currentValues = _parseValues(state.value);
+
+    showModalBottomSheet<List<String>?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _OverflowSheet(
+        selectedValues: currentValues,
+        items: widget.items,
+        park: park,
+      ),
+    ).then((result) {
+      if (result != null) {
+        final newVal = result.isEmpty ? null : result.join(',');
+        state.didChange(newVal);
+        widget.onChanged?.call(newVal);
+      }
+    });
+  }
+
   static void _showSheet(_ParkSelectState state) async {
     final widget = state.widget;
     final context = state.context;
@@ -474,6 +602,14 @@ class ParkSelect extends FormField<String> {
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
     final currentValues = _parseValues(state.value);
+
+    // 计算有效虚拟化设置 / Compute effective virtualization
+    final int totalItemCount = widget.groupedOptions != null
+        ? widget.groupedOptions!
+            .fold<int>(0, (sum, g) => sum + g.options.length)
+        : widget.items.length;
+    final bool effectiveVirtual = widget.virtualize ??
+        (widget.virtual || totalItemCount > 50);
 
     final result = await showModalBottomSheet<List<String>>(
       context: context,
@@ -494,7 +630,8 @@ class ParkSelect extends FormField<String> {
           notFoundContent: widget.notFoundContent,
           allowCreate: widget.allowCreate,
           maxSelection: widget.maxSelection,
-          virtual: widget.virtual,
+          virtual: effectiveVirtual,
+          groupedOptions: widget.groupedOptions,
         );
       },
     );
@@ -531,6 +668,7 @@ class _SelectSheet extends StatefulWidget {
   final bool allowCreate;
   final int? maxSelection;
   final bool virtual;
+  final List<ParkSelectGroupOption>? groupedOptions;
 
   const _SelectSheet({
     required this.items,
@@ -547,6 +685,7 @@ class _SelectSheet extends StatefulWidget {
     required this.allowCreate,
     this.maxSelection,
     this.virtual = false,
+    this.groupedOptions,
   });
 
   @override
@@ -562,7 +701,20 @@ class _SelectSheetState extends State<_SelectSheet> {
   void initState() {
     super.initState();
     _tempSelected = List<String>.from(widget.selectedValues);
-    _mutableItems = List<ParkSelectOption>.from(widget.items);
+    if (widget.groupedOptions != null) {
+      _mutableItems = <ParkSelectOption>[
+        for (final group in widget.groupedOptions!)
+          for (final opt in group.options)
+            ParkSelectOption(
+              label: opt.label,
+              value: opt.value,
+              disabled: opt.disabled,
+              group: group.groupLabel,
+            ),
+      ];
+    } else {
+      _mutableItems = List<ParkSelectOption>.from(widget.items);
+    }
   }
 
   void _toggleItem(String value) {
@@ -627,7 +779,10 @@ class _SelectSheetState extends State<_SelectSheet> {
   }
 
   List<_SelectRenderItem> _buildRenderItems(List<ParkSelectOption> items) {
-    if (!widget.grouped) {
+    // 当提供 groupedOptions 时强制按分组渲染 / Force grouped rendering when groupedOptions is set
+    final bool useGrouped = widget.grouped || widget.groupedOptions != null;
+
+    if (!useGrouped) {
       return items
           .map((item) => _SelectRenderItem.option(option: item))
           .toList();
@@ -639,7 +794,7 @@ class _SelectSheetState extends State<_SelectSheet> {
     for (final ParkSelectOption item in items) {
       final String normalizedGroup =
           (item.group == null || item.group!.trim().isEmpty)
-          ? '默认分组'
+          ? ParkLocalizations.of(context).defaultGroupLabel
           : item.group!.trim();
       if (normalizedGroup != currentGroup) {
         currentGroup = normalizedGroup;
@@ -710,7 +865,11 @@ class _SelectSheetState extends State<_SelectSheet> {
     final bool isSelected = _tempSelected.contains(item.value);
     final bool isDisabled = item.disabled;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      selected: isSelected,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: isDisabled
           ? null
@@ -751,6 +910,7 @@ class _SelectSheetState extends State<_SelectSheet> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -761,7 +921,9 @@ class _SelectSheetState extends State<_SelectSheet> {
     final typo = park.typography;
     final spacing = park.spacing;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _createAndSelect(_keyword.trim()),
       child: Container(
@@ -775,7 +937,7 @@ class _SelectSheetState extends State<_SelectSheet> {
             SizedBox(width: spacing.xs),
             Expanded(
               child: Text(
-                '创建 "${_keyword.trim()}"',
+                ParkLocalizations.of(context).createOption(_keyword.trim()),
                 style: TextStyle(
                   fontSize: typo.sizeBody,
                   color: colors.brand,
@@ -785,6 +947,7 @@ class _SelectSheetState extends State<_SelectSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -822,27 +985,35 @@ class _SelectSheetState extends State<_SelectSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
+                  Semantics(
+                    button: true,
+                    label: ParkLocalizations.of(context).cancelText,
+                    child: GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Text(
-                      '取消',
+                      ParkLocalizations.of(context).cancelText,
                       style: TextStyle(
                         fontSize: typo.sizeBody,
                         color: colors.textSecondary,
                       ),
                     ),
                   ),
+                  ),
                   if (widget.multiple)
-                    GestureDetector(
+                    Semantics(
+                      button: true,
+                      label: ParkLocalizations.of(context).confirmText,
+                      child: GestureDetector(
                       onTap: () => Navigator.of(context).pop(_tempSelected),
                       child: Text(
-                        '确认${_tempSelected.isNotEmpty ? '(${_tempSelected.length})' : ''}',
+                        '${ParkLocalizations.of(context).confirmText}${_tempSelected.isNotEmpty ? ' (${_tempSelected.length})' : ''}',
                         style: TextStyle(
                           fontSize: typo.sizeBody,
                           color: colors.brand,
                           fontWeight: typo.weightMedium,
                         ),
                       ),
+                    ),
                     )
                   else
                     const SizedBox.shrink(),
@@ -873,7 +1044,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                   },
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: '搜索选项',
+                    hintText: ParkLocalizations.of(context).searchOptionsHint,
                     prefixIcon: const Icon(Icons.search, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(radius.md),
@@ -902,7 +1073,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                     ),
                     SizedBox(width: spacing.xs),
                     Text(
-                      '搜索中…',
+                      ParkLocalizations.of(context).searchingText,
                       style: TextStyle(
                         fontSize: typo.sizeCaption,
                         color: colors.textSecondary,
@@ -969,4 +1140,125 @@ class _SelectRenderItem {
   const _SelectRenderItem.option({required this.option}) : groupTitle = null;
 
   bool get isGroupHeader => groupTitle != null;
+}
+
+/// 内部：溢出标签展开面板，展示所有已选项并支持移除。
+class _OverflowSheet extends StatelessWidget {
+  final List<String> selectedValues;
+  final List<ParkSelectOption> items;
+  final ParkThemeData park;
+
+  const _OverflowSheet({
+    required this.selectedValues,
+    required this.items,
+    required this.park,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = park.colors;
+    final typo = park.typography;
+    final radius = park.radius;
+    final spacing = park.spacing;
+
+    final maxHeight = MediaQuery.of(context).size.height * 0.5;
+
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(radius.lg)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 拖拽指示条
+            Padding(
+              padding: EdgeInsets.only(top: spacing.sm),
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+            // 标题
+            Padding(
+              padding: EdgeInsets.all(spacing.base),
+              child: Text(
+                ParkLocalizations.of(context).confirmText,
+                style: TextStyle(
+                  fontSize: typo.sizeBody,
+                  color: colors.textPrimary,
+                  fontWeight: typo.weightMedium,
+                ),
+              ),
+            ),
+            Divider(height: 1, color: colors.divider),
+            // 已选项列表
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: selectedValues.length,
+                itemBuilder: (context, index) {
+                  final value = selectedValues[index];
+                  final opt = items.where((o) => o.value == value).firstOrNull;
+                  final label = opt?.label ?? value;
+                  return Semantics(
+                    button: true,
+                    label: ParkLocalizations.of(context).deleteText,
+                    child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final newValues = List<String>.from(selectedValues)
+                        ..remove(value);
+                      Navigator.of(context).pop(newValues);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: spacing.base,
+                        vertical: spacing.md,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check,
+                            size: 18,
+                            color: colors.brand,
+                          ),
+                          SizedBox(width: spacing.sm),
+                          Expanded(
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: typo.sizeBody,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.close,
+                            size: 16,
+                            color: colors.textPlaceholder,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: spacing.base),
+          ],
+        ),
+      ),
+    );
+  }
 }

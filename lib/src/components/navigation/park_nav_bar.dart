@@ -214,16 +214,22 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
                         ],
                       )
                     : _buildTitle(fgColor, park),
-                trailing: rightActions != null && rightActions!.isNotEmpty
+                trailing: (rightActions != null && rightActions!.isNotEmpty)
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: rightActions!,
                       )
-                    : null,
+                    : (actions != null && actions!.isNotEmpty
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: actions!,
+                          )
+                        : null),
                 middleSpacing: park.spacing.sm,
                 centerMiddle: centerTitle,
               ),
             ),
+            if (bottom != null) bottom!,
           ],
         ),
       ),

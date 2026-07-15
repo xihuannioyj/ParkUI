@@ -18,10 +18,11 @@ void main() {
         onClose: () => closed = true,
       )));
       await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
       expect(closed, true);
     });
     testWidgets('不同主题', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkNoticeBar(text: '警告', type: ParkNoticeBarType.warning)));
+      await tester.pumpWidget(_wrap(const ParkNoticeBar(text: '警告', variant: ParkNoticeBarVariant.warning)));
       expect(find.text('警告'), findsOneWidget);
     });
   });

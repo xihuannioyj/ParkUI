@@ -209,7 +209,7 @@ class _ParkTabBarState extends State<ParkTabBar>
             : (widget.fixed && widget.elevation > 0
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: park.colors.textPrimary.withValues(alpha: 0.08),
                       blurRadius: widget.elevation,
                       offset: Offset(0, -(widget.elevation * 0.25)),
                     ),

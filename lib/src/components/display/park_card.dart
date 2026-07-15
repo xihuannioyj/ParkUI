@@ -44,7 +44,10 @@ class ParkCard extends StatefulWidget {
   /// 是否显示边框
   final bool bordered;
 
-  /// 阴影高度（null 使用主题默认值）
+  /// 阴影高度（null 使用主题默认值）。
+  ///
+  /// 注意：仅在 `ParkSurfaceStyle.stripe` 主题风格下生效，
+  /// 其他表面风格（flat / glass / neo / neon）使用各自内置阴影，忽略此参数。
   final double? elevation;
 
   /// 内容区内边距
@@ -133,8 +136,13 @@ class _ParkCardState extends State<ParkCard> {
     final ParkRadius radius = park.radius;
     final ParkSpacing spacing = park.spacing;
 
-    final ({Color? color, Border? border, List<BoxShadow>? shadows, bool useGlass})
-        surface = _resolveSurface(park);
+    final ({
+      Color? color,
+      Border? border,
+      List<BoxShadow>? shadows,
+      bool useGlass,
+    })
+    surface = _resolveSurface(park);
 
     final BorderRadius cardRadius = widget.borderRadius ?? radius.brMd;
     final EdgeInsetsGeometry defaultPadding = widget.size == ParkCardSize.small
@@ -142,7 +150,8 @@ class _ParkCardState extends State<ParkCard> {
         : EdgeInsets.all(spacing.base);
     final EdgeInsetsGeometry cardPadding = widget.padding ?? defaultPadding;
 
-    final bool hasHeader = widget.title != null ||
+    final bool hasHeader =
+        widget.title != null ||
         widget.titleText != null ||
         widget.extra != null ||
         widget.collapsible ||
@@ -151,8 +160,9 @@ class _ParkCardState extends State<ParkCard> {
         widget.showIndicator;
 
     // 卡片内容（加载时显示骨架屏）
-    final Widget bodyContent =
-        widget.loading ? _buildSkeletonContent(park) : widget.child;
+    final Widget bodyContent = widget.loading
+        ? _buildSkeletonContent(park)
+        : widget.child;
 
     final Widget cardContent = Material(
       color: Colors.transparent,
@@ -192,8 +202,8 @@ class _ParkCardState extends State<ParkCard> {
                                 ),
                               )
                             : null,
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             // 图标或指示条
                             if (widget.icon != null)
@@ -219,24 +229,35 @@ class _ParkCardState extends State<ParkCard> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: widget.title ??
+                                        child:
+                                            widget.title ??
                                             (widget.titleText != null
                                                 ? Text(
                                                     widget.titleText!,
-                                                    style: park.typography.body.copyWith(
-                                                      fontSize: park.typography.sizeH3,
-                                                      fontWeight: park.typography.weightBold,
-                                                      color: colors.textPrimary,
-                                                    ),
+                                                    style: park.typography.body
+                                                        .copyWith(
+                                                          fontSize: park
+                                                              .typography
+                                                              .sizeH3,
+                                                          fontWeight: park
+                                                              .typography
+                                                              .weightBold,
+                                                          color: colors
+                                                              .textPrimary,
+                                                        ),
                                                     maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   )
                                                 : const SizedBox.shrink()),
                                       ),
                                       if (widget.extra != null) widget.extra!,
                                       if (widget.collapsible)
                                         Icon(
-                                          _isCollapsed ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
+                                          _isCollapsed
+                                              ? Icons
+                                                    .keyboard_arrow_down_rounded
+                                              : Icons.keyboard_arrow_up_rounded,
                                           size: 20,
                                           color: colors.textPlaceholder,
                                         ),
@@ -261,7 +282,9 @@ class _ParkCardState extends State<ParkCard> {
                         ),
                       ),
                     ),
-                    SizedBox(height: widget.headStyle ? spacing.md : spacing.base),
+                    SizedBox(
+                      height: widget.headStyle ? spacing.md : spacing.base,
+                    ),
                   ],
                   if (!_isCollapsed) bodyContent,
                 ],
@@ -274,7 +297,10 @@ class _ParkCardState extends State<ParkCard> {
       ),
     );
 
-    return MouseRegion(
+    return Semantics(
+      container: true,
+      label: widget.titleText,
+      child: MouseRegion(
       onEnter: widget.hoverable || widget.onPressed != null
           ? (_) => setState(() => _isHovered = true)
           : null,
@@ -318,20 +344,22 @@ class _ParkCardState extends State<ParkCard> {
               ),
               child: cardContent,
             ),
+          ),
     );
   }
 
   /// 根据当前 [ParkThemeData.surfaceStyle] 解析卡片的表面材质：
   /// 颜色 / 边框 / 阴影 / 是否使用毛玻璃。
   ({Color? color, Border? border, List<BoxShadow>? shadows, bool useGlass})
-      _resolveSurface(ParkThemeData park) {
+  _resolveSurface(ParkThemeData park) {
     final ParkColors colors = park.colors;
     final bool isGhost = widget.variant == ParkCardVariant.ghost;
     final Color? explicit = widget.color;
 
     switch (park.surfaceStyle) {
       case ParkSurfaceStyle.flat:
-        final Color color = explicit ?? (isGhost ? Colors.transparent : colors.surface);
+        final Color color =
+            explicit ?? (isGhost ? Colors.transparent : colors.surface);
         final Border? border = widget.bordered
             ? Border.all(
                 color: _isHovered && widget.hoverable
@@ -345,11 +373,12 @@ class _ParkCardState extends State<ParkCard> {
       case ParkSurfaceStyle.glass:
         final Color color = explicit ?? colors.surface.withValues(alpha: 0.55);
         final Border? border = widget.bordered
-            ? Border.all(color: Colors.white.withValues(alpha: 0.40), width: 1)
+            ? Border.all(
+                color: colors.textOnBrand.withValues(alpha: 0.40), width: 1)
             : null;
         final List<BoxShadow> shadows = <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: colors.textPrimary.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -357,17 +386,18 @@ class _ParkCardState extends State<ParkCard> {
         return (color: color, border: border, shadows: shadows, useGlass: true);
 
       case ParkSurfaceStyle.neo:
-        final Color color = explicit ?? (isGhost ? Colors.transparent : colors.background);
+        final Color color =
+            explicit ?? (isGhost ? Colors.transparent : colors.background);
         final List<BoxShadow> shadows = isGhost
             ? <BoxShadow>[]
             : <BoxShadow>[
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: colors.textOnBrand.withValues(alpha: 0.9),
                   blurRadius: 12,
                   offset: const Offset(-5, -5),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: colors.textPrimary.withValues(alpha: 0.12),
                   blurRadius: 12,
                   offset: const Offset(5, 5),
                 ),
@@ -376,7 +406,8 @@ class _ParkCardState extends State<ParkCard> {
 
       case ParkSurfaceStyle.neon:
         final bool isDark = colors.background.computeLuminance() < 0.5;
-        final Color color = explicit ??
+        final Color color =
+            explicit ??
             (isGhost
                 ? Colors.transparent
                 : (isDark ? colors.textPrimary : colors.surface));
@@ -392,10 +423,16 @@ class _ParkCardState extends State<ParkCard> {
                   offset: const Offset(0, 4),
                 ),
               ];
-        return (color: color, border: border, shadows: shadows, useGlass: false);
+        return (
+          color: color,
+          border: border,
+          shadows: shadows,
+          useGlass: false,
+        );
 
       case ParkSurfaceStyle.stripe:
-        final Color color = explicit ?? (isGhost ? Colors.transparent : colors.surface);
+        final Color color =
+            explicit ?? (isGhost ? Colors.transparent : colors.surface);
         final Border? border = _defaultBorder(park);
         final double baseElevation = widget.elevation ?? 0;
         final double currentElevation =
@@ -403,13 +440,18 @@ class _ParkCardState extends State<ParkCard> {
         final List<BoxShadow>? shadows = currentElevation > 0
             ? <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: colors.textPrimary.withValues(alpha: 0.08),
                   blurRadius: currentElevation * 4,
                   offset: Offset(0, currentElevation * 2),
                 ),
               ]
             : null;
-        return (color: color, border: border, shadows: shadows, useGlass: false);
+        return (
+          color: color,
+          border: border,
+          shadows: shadows,
+          useGlass: false,
+        );
     }
   }
 
@@ -466,9 +508,7 @@ class _ParkCardState extends State<ParkCard> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: park.colors.divider, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: park.colors.divider, width: 0.5)),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -483,9 +523,7 @@ class _ParkCardState extends State<ParkCard> {
                 color: park.colors.divider,
               );
             }
-            yield Expanded(
-              child: Center(child: action),
-            );
+            yield Expanded(child: Center(child: action));
           }).toList(),
         ),
       ),

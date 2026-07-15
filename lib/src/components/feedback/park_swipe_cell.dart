@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 滑动操作项数据模型
 class ParkSwipeAction {
   final String label;
   final Widget? icon;
-  final Color color;
+
+  /// 操作按钮背景色。若为 null 则使用主题色 [park.colors.textPrimary]。
+  final Color? color;
+
   final VoidCallback? onTap;
 
   /// 确认模式下的按钮文字（默认 '确认'）
@@ -14,7 +18,7 @@ class ParkSwipeAction {
   const ParkSwipeAction({
     required this.label,
     this.icon,
-    this.color = const Color(0xFF333333),
+    this.color,
     this.onTap,
     this.confirmText = '确认',
   });
@@ -182,7 +186,9 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    return GestureDetector(
+    return Semantics(
+      container: true,
+      child: GestureDetector(
       onHorizontalDragStart: widget.disabled ? null : _onHorizontalDragStart,
       onHorizontalDragUpdate: widget.disabled ? null : _onHorizontalDragUpdate,
       onHorizontalDragEnd: widget.disabled ? null : _onHorizontalDragEnd,
@@ -237,6 +243,7 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -247,44 +254,48 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
     int index,
   ) {
     final isConfirming = widget.confirmMode && _pendingConfirmIndex == index;
+    final l10n = ParkLocalizations.of(context);
+    final displayText = isConfirming ? l10n.confirmText : action.label;
 
-    return GestureDetector(
-      onTap: () {
-        if (widget.confirmMode) {
-          if (isConfirming) {
-            // Second tap: execute
-            _pendingConfirmIndex = null;
+    return Semantics(
+      button: true,
+      label: displayText,
+      child: GestureDetector(
+        onTap: () {
+          if (widget.confirmMode) {
+            if (isConfirming) {
+              _pendingConfirmIndex = null;
+              _close();
+              action.onTap?.call();
+            } else {
+              setState(() => _pendingConfirmIndex = index);
+            }
+          } else {
             _close();
             action.onTap?.call();
-          } else {
-            // First tap: show confirm state
-            setState(() => _pendingConfirmIndex = index);
           }
-        } else {
-          _close();
-          action.onTap?.call();
-        }
-      },
-      child: Container(
-        width: _actionButtonWidth,
-        height: double.infinity,
-        color: isConfirming ? park.colors.error : action.color,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (action.icon != null && !isConfirming) ...[
-              action.icon!,
-              SizedBox(height: park.spacing.xs),
-            ],
-            Text(
-              isConfirming ? action.confirmText : action.label,
-              style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeCaption,
-                color: Colors.white,
-                fontWeight: park.typography.weightMedium,
+        },
+        child: Container(
+          width: _actionButtonWidth,
+          height: double.infinity,
+          color: isConfirming ? park.colors.error : (action.color ?? park.colors.textPrimary),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (action.icon != null && !isConfirming) ...[
+                action.icon!,
+                SizedBox(height: park.spacing.xs),
+              ],
+              Text(
+                displayText,
+                style: park.typography.body.copyWith(
+                  fontSize: park.typography.sizeCaption,
+                  color: park.colors.textOnBrand,
+                  fontWeight: park.typography.weightMedium,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

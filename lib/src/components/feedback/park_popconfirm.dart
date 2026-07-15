@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 import '../base/park_button.dart';
 import '../base/park_button_style.dart';
@@ -63,8 +64,8 @@ class ParkPopconfirm extends StatefulWidget {
     this.description,
     this.titleWidget,
     this.descriptionWidget,
-    this.confirmText = '确定',
-    this.cancelText = '取消',
+    this.confirmText = '',
+    this.cancelText = '',
     this.onConfirm,
     this.onCancel,
     this.autoCloseAfterConfirm = true,
@@ -79,26 +80,79 @@ class ParkPopconfirm extends StatefulWidget {
 }
 
 class _ParkPopconfirmState extends State<ParkPopconfirm> {
-  final _overlayKey = GlobalKey();
+  final _triggerKey = GlobalKey();
+  final _bubbleKey = GlobalKey();
   bool _isVisible = false;
   OverlayEntry? _overlayEntry;
+  double _bubbleTop = 0;
+  double _bubbleLeft = 0;
 
   void _showPopconfirm() {
     if (_isVisible) return;
     _isVisible = true;
 
-    final renderBox = _overlayKey.currentContext?.findRenderObject() as RenderBox?;
+    final renderBox =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;
 
     final overlay = Overlay.of(context);
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
+    final childPosition = renderBox.localToGlobal(Offset.zero);
+    final childSize = renderBox.size;
+    final viewport = MediaQuery.of(context).size;
+
+    // Default position: below the trigger, aligned left
+    _bubbleTop = childPosition.dy + childSize.height + 8;
+    _bubbleLeft = childPosition.dx;
 
     _overlayEntry = OverlayEntry(
-      builder: (_) => _buildPopover(position, size),
+      builder: (_) => _buildPopover(childPosition, childSize),
     );
 
     overlay.insert(_overlayEntry!);
+
+    // Adjust position after first layout to prevent viewport overflow
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _overlayEntry != null) {
+        _adjustBubbleBounds(childPosition, childSize, viewport);
+      }
+    });
+  }
+
+  /// Checks whether the bubble overflows the viewport and adjusts position.
+  ///
+  /// Uses [_bubbleKey] to measure the actual rendered size of the bubble,
+  /// then flips vertically or clamps horizontally as needed.
+  void _adjustBubbleBounds(
+      Offset childPosition, Size childSize, Size viewport) {
+    final bubbleBox =
+        _bubbleKey.currentContext?.findRenderObject() as RenderBox?;
+    if (bubbleBox == null || !bubbleBox.hasSize) return;
+
+    final bubbleSize = bubbleBox.size;
+    bool needsRebuild = false;
+
+    // Vertical: flip above trigger if overflowing bottom
+    final defaultTop = childPosition.dy + childSize.height + 8;
+    if (defaultTop + bubbleSize.height > viewport.height) {
+      final flippedTop = childPosition.dy - 8 - bubbleSize.height;
+      _bubbleTop = flippedTop >= 0 ? flippedTop : 4.0;
+      needsRebuild = true;
+    }
+
+    // Horizontal: clamp to prevent right overflow
+    if (_bubbleLeft + bubbleSize.width > viewport.width) {
+      _bubbleLeft = viewport.width - bubbleSize.width - 8;
+      needsRebuild = true;
+    }
+    // Prevent left overflow
+    if (_bubbleLeft < 0) {
+      _bubbleLeft = 4.0;
+      needsRebuild = true;
+    }
+
+    if (needsRebuild) {
+      _overlayEntry?.markNeedsBuild();
+    }
   }
 
   void _hidePopconfirm() {
@@ -117,8 +171,14 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
     widget.onCancel?.call();
   }
 
-  Widget _buildPopover(Offset position, Size childSize) {
-    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+  Widget _buildPopover(Offset childPosition, Size childSize) {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
+    final confirmLabel =
+        widget.confirmText.isNotEmpty ? widget.confirmText : l10n.confirmText;
+    final cancelLabel =
+        widget.cancelText.isNotEmpty ? widget.cancelText : l10n.cancelText;
 
     return Stack(
       children: [
@@ -131,92 +191,105 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
         ),
         // 气泡
         Positioned(
-          top: position.dy + childSize.height + 8,
-          left: position.dx,
+          top: _bubbleTop,
+          left: _bubbleLeft,
           child: Material(
+            key: _bubbleKey,
             color: Colors.transparent,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 280),
-              padding: EdgeInsets.all(park.spacing.base),
-              decoration: BoxDecoration(
-                color: park.colors.surface,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(26),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题区域
-                  if (widget.titleWidget != null || widget.title != null)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: park.spacing.sm),
-                      child: widget.titleWidget ??
-                          Row(
-                            children: [
-                              if (widget.icon != null) ...[
-                                Icon(widget.icon,
-                                    size: 18,
-                                    color: widget.danger
-                                        ? park.colors.error
-                                        : park.colors.brand),
-                                park.spacing.hSm,
-                              ],
-                              Expanded(
-                                child: Text(
-                                  widget.title!,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: park.colors.textPrimary,
+            child: Semantics(
+              label: widget.title ?? '',
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 280),
+                padding: EdgeInsets.all(park.spacing.base),
+                decoration: BoxDecoration(
+                  color: park.colors.surface,
+                  borderRadius: BorderRadius.circular(park.radius.lg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: park.colors.overlay.withValues(alpha: 0.1),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 标题区域
+                    if (widget.titleWidget != null || widget.title != null)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: park.spacing.sm),
+                        child: widget.titleWidget ??
+                            Row(
+                              children: [
+                                if (widget.icon != null) ...[
+                                  Icon(widget.icon,
+                                      size: 18,
+                                      color: widget.danger
+                                          ? park.colors.error
+                                          : park.colors.brand),
+                                  park.spacing.hSm,
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    widget.title!,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: park.colors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                    ),
-                  // 描述区域
-                  if (widget.descriptionWidget != null || widget.description != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: widget.descriptionWidget ??
-                          Text(
-                            widget.description!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: park.colors.textSecondary,
+                              ],
                             ),
+                      ),
+                    // 描述区域
+                    if (widget.descriptionWidget != null ||
+                        widget.description != null)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: park.spacing.base),
+                        child: widget.descriptionWidget ??
+                            Text(
+                              widget.description!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: park.colors.textSecondary,
+                              ),
+                            ),
+                      ),
+                    // 按钮区域
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Semantics(
+                          label: cancelLabel,
+                          button: true,
+                          child: ParkButton(
+                            child: Text(cancelLabel),
+                            variant: ParkButtonVariant.secondary,
+                            size: ParkButtonSize.small,
+                            onPressed: _handleCancel,
                           ),
+                        ),
+                        SizedBox(width: park.spacing.sm),
+                        Semantics(
+                          label: confirmLabel,
+                          button: true,
+                          child: ParkButton(
+                            child: Text(confirmLabel),
+                            variant: widget.danger
+                                ? ParkButtonVariant.danger
+                                : ParkButtonVariant.primary,
+                            size: ParkButtonSize.small,
+                            loading: widget.confirmLoading,
+                            onPressed: _handleConfirm,
+                          ),
+                        ),
+                      ],
                     ),
-                  // 按钮区域
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ParkButton(
-                        child: Text(widget.cancelText),
-                        variant: ParkButtonVariant.secondary,
-                        size: ParkButtonSize.small,
-                        onPressed: _handleCancel,
-                      ),
-                      const SizedBox(width: 8),
-                      ParkButton(
-                        child: Text(widget.confirmText),
-                        variant: widget.danger
-                            ? ParkButtonVariant.danger
-                            : ParkButtonVariant.primary,
-                        size: ParkButtonSize.small,
-                        loading: widget.confirmLoading,
-                        onPressed: _handleConfirm,
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -226,9 +299,18 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
   }
 
   @override
+  void dispose() {
+    if (_overlayEntry != null && _overlayEntry!.mounted) {
+      _overlayEntry!.remove();
+    }
+    _overlayEntry = null;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      key: _overlayKey,
+      key: _triggerKey,
       onTap: _showPopconfirm,
       child: widget.child,
     );

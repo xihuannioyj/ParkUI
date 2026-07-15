@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 加载指示器类型
@@ -57,47 +60,49 @@ class ParkLoading extends StatefulWidget {
     ParkLoadingType type = ParkLoadingType.circular,
     Color? color,
   }) {
-    _currentController?.dismiss();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _currentController?.dismiss();
 
-    final overlay = Overlay.of(context, rootOverlay: true);
-    late OverlayEntry entry;
-    bool removed = false;
-    final GlobalKey<_ParkLoadingOverlayState> key =
-        GlobalKey<_ParkLoadingOverlayState>();
-    late final _ParkLoadingOverlayController controller;
+      final overlay = Overlay.of(context, rootOverlay: true);
+      late OverlayEntry entry;
+      bool removed = false;
+      final GlobalKey<_ParkLoadingOverlayState> key =
+          GlobalKey<_ParkLoadingOverlayState>();
+      late final _ParkLoadingOverlayController controller;
 
-    void removeEntry() {
-      if (removed) return;
-      removed = true;
-      if (identical(_currentController, controller)) {
-        _currentController = null;
-      }
-      entry.remove();
-    }
-
-    controller = _ParkLoadingOverlayController(
-      dismiss: () async {
-        final _ParkLoadingOverlayState? state = key.currentState;
-        if (state == null) {
-          removeEntry();
-          return;
+      void removeEntry() {
+        if (removed) return;
+        removed = true;
+        if (identical(_currentController, controller)) {
+          _currentController = null;
         }
-        await state.dismiss();
-      },
-    );
-    _currentController = controller;
+        entry.remove();
+      }
 
-    entry = OverlayEntry(
-      builder: (_) => _ParkLoadingOverlay(
-        key: key,
-        message: message,
-        type: type,
-        color: color,
-        onRemoved: removeEntry,
-      ),
-    );
+      controller = _ParkLoadingOverlayController(
+        dismiss: () async {
+          final _ParkLoadingOverlayState? state = key.currentState;
+          if (state == null) {
+            removeEntry();
+            return;
+          }
+          await state.dismiss();
+        },
+      );
+      _currentController = controller;
 
-    overlay.insert(entry);
+      entry = OverlayEntry(
+        builder: (_) => _ParkLoadingOverlay(
+          key: key,
+          message: message,
+          type: type,
+          color: color,
+          onRemoved: removeEntry,
+        ),
+      );
+
+      overlay.insert(entry);
+    });
   }
 
   /// 隐藏全屏 loading
@@ -187,10 +192,14 @@ class _ParkLoadingState extends State<ParkLoading>
         children: [
           widget.child!,
           Positioned.fill(
-            child: Container(
-              color: park.colors.overlay.withValues(alpha: 0.3),
-              child: Center(
-                child: widget.indicator ?? _buildDefaultIndicator(park, indicatorColor),
+            child: Semantics(
+              label: ParkLocalizations.of(context).loading,
+              liveRegion: true,
+              child: Container(
+                color: park.colors.overlay.withValues(alpha: 0.3),
+                child: Center(
+                  child: widget.indicator ?? _buildDefaultIndicator(park, indicatorColor),
+                ),
               ),
             ),
           ),
@@ -228,6 +237,12 @@ class _ParkLoadingState extends State<ParkLoading>
           ),
         ],
       ],
+    );
+
+    content = Semantics(
+      label: widget.text ?? ParkLocalizations.of(context).loading,
+      liveRegion: true,
+      child: content,
     );
 
     if (widget.mask) {
@@ -311,21 +326,8 @@ class _ParkDotsIndicator extends StatelessWidget {
   }
 
   double _bounceCurve(double t) {
-    // Simple sine-based bounce
-    return (1 + _sin(t * 3.14159 * 2)) / 2;
-  }
-
-  double _sin(double x) {
-    // Approximate sine using Taylor series for small values, or just use dart:math
-    // Actually, we can import dart:math... but we shouldn't per the rules.
-    // Let's use a simple approximation
-    x = x % (2 * 3.14159);
-    if (x > 3.14159) x -= 2 * 3.14159;
-    final x2 = x * x;
-    final x3 = x2 * x;
-    final x5 = x3 * x2;
-    final x7 = x5 * x2;
-    return x - x3 / 6 + x5 / 120 - x7 / 5040;
+    // Use dart:math sin for full double-precision accuracy
+    return (1 + math.sin(t * math.pi * 2)) / 2;
   }
 }
 

@@ -162,6 +162,7 @@ void main() {
         _TestApp(
           child: ParkSteps(
             direction: ParkStepsDirection.vertical,
+            clickable: true,
             onStepTap: (int index) => tappedIndex = index,
             steps: const <ParkStep>[
               ParkStep(title: '步骤一'),

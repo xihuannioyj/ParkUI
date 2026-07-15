@@ -7,11 +7,11 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkUpload', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkUpload()));
+      await tester.pumpWidget(_wrap(const ParkUpload(files: [])));
       expect(find.byType(ParkUpload), findsOneWidget);
     });
     testWidgets('显示上传按钮', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkUpload()));
+      await tester.pumpWidget(_wrap(const ParkUpload(files: [])));
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
   });

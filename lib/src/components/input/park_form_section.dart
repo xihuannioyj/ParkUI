@@ -91,6 +91,22 @@ class _ParkFormSectionState extends State<ParkFormSection>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant ParkFormSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.collapsible != oldWidget.collapsible ||
+        widget.defaultCollapsed != oldWidget.defaultCollapsed) {
+      setState(() {
+        _collapsed = widget.collapsible ? widget.defaultCollapsed : false;
+      });
+      if (_collapsed && !_animController.isDismissed) {
+        _animController.reverse();
+      } else if (!_collapsed && !_animController.isCompleted) {
+        _animController.forward();
+      }
+    }
+  }
+
   void _toggleCollapse() {
     setState(() {
       _collapsed = !_collapsed;
@@ -127,7 +143,10 @@ class _ParkFormSectionState extends State<ParkFormSection>
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (widget.showHeader)
-            GestureDetector(
+            Semantics(
+              button: widget.collapsible,
+              label: widget.collapsible ? widget.title : null,
+              child: GestureDetector(
               onTap: widget.collapsible ? _toggleCollapse : null,
               behavior: HitTestBehavior.opaque,
               child: Row(
@@ -176,6 +195,7 @@ class _ParkFormSectionState extends State<ParkFormSection>
                     widget.trailing!,
                   ],
                 ],
+              ),
               ),
             ),
           if (widget.showHeader && widget.children.isNotEmpty)

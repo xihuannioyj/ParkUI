@@ -385,7 +385,6 @@ void main() {
       test('disposeBindable removes single binding', () {
         final service = ParkBindingService({'a': 1, 'b': 2});
         final ba = service.bind<int>('a');
-        final bb = service.bind<int>('b');
         service.disposeBindable('a');
         // After dispose, 'a' bindable is removed but model data remains
         // getValue falls back to model so it still returns 1

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 警告提示组件
@@ -63,6 +64,7 @@ class ParkAlert extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     final (Color bgColor, Color borderColor, Color iconColor, IconData defaultIcon) =
         _getTypeColors(park);
@@ -95,7 +97,7 @@ class ParkAlert extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: park.typography.sizeBodySmall,
                       fontWeight: FontWeight.w600,
                       color: park.colors.textPrimary,
                     ),
@@ -111,7 +113,7 @@ class ParkAlert extends StatelessWidget {
                     child: Text(
                       description!,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: park.typography.sizeCaption,
                         color: park.colors.textSecondary,
                       ),
                     ),
@@ -120,14 +122,18 @@ class ParkAlert extends StatelessWidget {
             ),
           ),
           if (closable)
-            GestureDetector(
-              onTap: onClose,
-              child: Padding(
-                padding: EdgeInsets.only(left: park.spacing.md),
-                child: Icon(
-                  Icons.close,
-                  size: 16,
-                  color: park.colors.textSecondary,
+            Semantics(
+              button: true,
+              label: l10n.closeText,
+              child: GestureDetector(
+                onTap: onClose,
+                child: Padding(
+                  padding: EdgeInsets.only(left: park.spacing.md),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: park.colors.textSecondary,
+                  ),
                 ),
               ),
             ),

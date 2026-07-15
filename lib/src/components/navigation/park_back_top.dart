@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Park 回到顶部按钮
@@ -155,26 +156,11 @@ class _ParkBackTopState extends State<ParkBackTop>
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
     final colors = park.colors;
-
-    if (_visible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _onScroll();
-      });
-    }
 
     if (!_effectiveController.hasClients) {
       return const SizedBox.shrink();
-    }
-
-    if (!_effectiveController.hasClients && _visible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        if (!_effectiveController.hasClients && _visible) {
-          setState(() => _visible = false);
-          _animController.value = 0;
-        }
-      });
     }
 
     return AnimatedBuilder(
@@ -193,9 +179,12 @@ class _ParkBackTopState extends State<ParkBackTop>
               opacity: _fadeAnim,
               child: ScaleTransition(
                 scale: _scaleAnim,
-                child: GestureDetector(
-                  onTap: _handlePress,
-                  child: Container(
+                child: Semantics(
+                  button: true,
+                  label: l10n.backTop,
+                  child: GestureDetector(
+                    onTap: _handlePress,
+                    child: Container(
                     width: widget.size,
                     height: widget.size,
                     decoration: BoxDecoration(
@@ -214,8 +203,9 @@ class _ParkBackTopState extends State<ParkBackTop>
               ),
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 }

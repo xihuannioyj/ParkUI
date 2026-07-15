@@ -7,12 +7,16 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkTreeSelect', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTreeSelect()));
+      await tester.pumpWidget(_wrap(ParkTreeSelect(
+        nodes: const [ParkTreeNode(key: '1', label: '研发部')],
+      )));
       expect(find.byType(ParkTreeSelect), findsOneWidget);
     });
-    testWidgets('显示placeholder', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTreeSelect(hintText: '请选择分类')));
-      expect(find.text('请选择分类'), findsOneWidget);
+    testWidgets('显示节点', (tester) async {
+      await tester.pumpWidget(_wrap(ParkTreeSelect(
+        nodes: const [ParkTreeNode(key: '1', label: '研发部')],
+      )));
+      expect(find.text('研发部'), findsOneWidget);
     });
   });
 }

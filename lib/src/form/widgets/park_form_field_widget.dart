@@ -68,7 +68,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.richText:
         return _buildTextField();
       case ParkFieldType.select:
-        return _buildSelect();
+        return _buildSelect(context);
       case ParkFieldType.radio:
         return _buildRadio();
       case ParkFieldType.checkbox:
@@ -100,6 +100,16 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.upload:
         return _buildUpload();
     }
+  }
+
+  /// 应用字段格式化配置。
+  ///
+  /// 若 [field.format] 不为 null，调用 [FormFormatterEngine.applyAll] 对值
+  /// 进行格式化（千分位、百分比、中文大写、货币、后缀/前缀等），
+  /// 否则返回原始值的字符串形式（B32）。
+  String _formatValue(dynamic rawValue) {
+    if (field.format == null) return rawValue?.toString() ?? '';
+    return const FormFormatterEngine().applyAll(field.format!, rawValue);
   }
 
   // --------------------------------------------------------------------------
@@ -255,8 +265,9 @@ class ParkFormFieldWidget extends StatelessWidget {
       );
     }
 
-    Widget input = ParkInput(
-      initialValue: value?.toString() ?? '',
+    final String displayValue = _formatValue(value);
+    Widget input = _TextFieldAdapter(
+      value: displayValue,
       readOnly: field.isReadonly || disabled,
       enabled: !disabled,
       maxLines: effectiveMaxLines,
@@ -288,7 +299,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - searchable → 可搜索下拉（searchable=true）。
   /// - grouped → 分组下拉（grouped=true）。
   /// - single（默认）→ 标准单选下拉。
-  Widget _buildSelect() {
+  Widget _buildSelect(BuildContext context) {
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final String? fc = field.fieldControl;
@@ -314,7 +325,8 @@ class ParkFormFieldWidget extends StatelessWidget {
         GestureDetector(
           onTap: (disabled || field.isReadonly)
               ? null
-              : () => _showMultiSelectBottomSheet(opts, lk, vk, currentSelected),
+              : () => _showMultiSelectBottomSheet(
+                  context, opts, lk, vk, currentSelected),
           child: Container(
             width: double.infinity,
             constraints: const BoxConstraints(minHeight: 42),
@@ -374,15 +386,42 @@ class ParkFormFieldWidget extends StatelessWidget {
   }
 
   /// 显示多选底部弹窗。
+  ///
+  /// 弹出带搜索过滤的多选 BottomSheet，选项通过 [CheckboxListTile] 展示，
+  /// 底部提供确认/取消按钮。
+  /// 已选项在列表中保持勾选状态，确认后通过 [onChanged] 回传。
   Future<void> _showMultiSelectBottomSheet(
+    BuildContext context,
     List<Map<String, dynamic>> opts,
     String lk,
     String vk,
     List<dynamic> currentSelected,
   ) async {
-    // 简化实现：使用 ParkPicker 单选回退。
-    // 完整多选 BottomSheet 需要额外的有状态组件，此处保留占位。
-    // TODO(park): 实现完整的多选 BottomSheet 交互。
+    final List<dynamic>? result = await showModalBottomSheet<List<dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(
+            Theme.of(context).extension<ParkThemeData>()?.radius.lg ?? 16,
+          ),
+          topRight: Radius.circular(
+            Theme.of(context).extension<ParkThemeData>()?.radius.lg ?? 16,
+          ),
+        ),
+      ),
+      builder: (BuildContext ctx) {
+        return _MultiSelectSheetContent(
+          options: opts,
+          labelKey: lk,
+          valueKey: vk,
+          initialSelected: currentSelected,
+        );
+      },
+    );
+    if (result != null) {
+      onChanged(result);
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -480,13 +519,17 @@ class ParkFormFieldWidget extends StatelessWidget {
       }
     }
 
+    final List<ParkCheckboxOption> checkboxOptions = optionLabels
+        .map((String label) => ParkCheckboxOption(label: label, value: label))
+        .toList();
+
     return _wrapWithFieldContainer(
       ParkCheckboxGroup(
-        options: optionLabels,
+        options: checkboxOptions,
         value: selectedLabels,
         layout: ParkCheckboxGroupLayout.vertical,
         disabled: disabled || field.isReadonly,
-        onChanged: (List<String> newSelectedLabels) {
+        onChanged: (List<String> newSelectedLabels, List<ParkCheckboxOption> selectedOptions) {
           // Convert selected labels back to option values.
           final List<dynamic> newValues = <dynamic>[];
           for (int i = 0; i < optionLabels.length; i++) {
@@ -906,7 +949,13 @@ class ParkFormFieldWidget extends StatelessWidget {
         onRemove: disabled
             ? null
             : (ParkUploadFile file) {
-                onChanged(null);
+                // B33：仅移除当前文件，回传剔除该项后的剩余路径列表，
+                // 不再 onChanged(null) 清空全部（参见 开发文档.md §7.10）。
+                final List<String> remaining = files
+                    .where((ParkUploadFile f) => f.path != file.path)
+                    .map((ParkUploadFile f) => f.path)
+                    .toList();
+                onChanged(remaining);
               },
       ),
     );
@@ -1252,6 +1301,209 @@ class ParkFormFieldWidget extends StatelessWidget {
 }
 
 // =============================================================================
+// 多选 BottomSheet 内容组件（B10）
+// =============================================================================
+
+/// 多选底部弹窗内容。
+///
+/// 包含搜索框 + 选项列表（CheckboxListTile）+ 底部确认/取消按钮。
+/// 支持搜索过滤，已选项在列表中保持勾选状态。
+class _MultiSelectSheetContent extends StatefulWidget {
+  /// 完整选项列表。
+  final List<Map<String, dynamic>> options;
+
+  /// 选项标签键名。
+  final String labelKey;
+
+  /// 选项值键名。
+  final String valueKey;
+
+  /// 初始已选值列表。
+  final List<dynamic> initialSelected;
+
+  const _MultiSelectSheetContent({
+    required this.options,
+    required this.labelKey,
+    required this.valueKey,
+    required this.initialSelected,
+  });
+
+  @override
+  State<_MultiSelectSheetContent> createState() =>
+      _MultiSelectSheetContentState();
+}
+
+class _MultiSelectSheetContentState
+    extends State<_MultiSelectSheetContent> {
+  /// 搜索文本控制器。
+  final TextEditingController _searchController = TextEditingController();
+
+  /// 当前选中值集合（用于勾选状态跟踪）。
+  late Set<dynamic> _selectedValues;
+
+  /// 搜索过滤文本。
+  String _searchQuery = '';
+
+  /// 经过搜索过滤后的选项列表。
+  List<Map<String, dynamic>> get _filteredOptions {
+    if (_searchQuery.isEmpty) return widget.options;
+    final String query = _searchQuery.toLowerCase();
+    return widget.options.where((Map<String, dynamic> opt) {
+      final String label = opt[widget.labelKey]?.toString().toLowerCase() ?? '';
+      final String value = opt[widget.valueKey]?.toString().toLowerCase() ?? '';
+      return label.contains(query) || value.contains(query);
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValues = widget.initialSelected.toSet();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// 切换勾选状态。
+  void _toggleSelection(dynamic value) {
+    setState(() {
+      if (_selectedValues.contains(value)) {
+        _selectedValues.remove(value);
+      } else {
+        _selectedValues.add(value);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final park = Theme.of(context).extension<ParkThemeData>();
+    final l10n = ParkLocalizations.of(context);
+    final double bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Semantics(
+        label: l10n.selectPlaceholder,
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // 拖拽指示条
+              Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 4),
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: park?.colors.border ?? Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // 搜索框
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  park?.spacing.md ?? 16,
+                  park?.spacing.sm ?? 8,
+                  park?.spacing.md ?? 16,
+                  park?.spacing.xs ?? 4,
+                ),
+                child: ParkInput(
+                  controller: _searchController,
+                  hintText: l10n.searchText,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                ),
+              ),
+              // 选项列表（最大高度限制）
+              Flexible(
+                child: _filteredOptions.isEmpty
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: park?.spacing.lg ?? 32,
+                        ),
+                        child: Text(
+                          l10n.noData,
+                          style: TextStyle(
+                            color: park?.colors.textSecondary ??
+                                Colors.grey.shade500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: park?.spacing.sm ?? 8,
+                        ),
+                        itemCount: _filteredOptions.length,
+                        itemBuilder: (BuildContext ctx, int index) {
+                          final Map<String, dynamic> item =
+                              _filteredOptions[index];
+                          final String label =
+                              item[widget.labelKey]?.toString() ?? '';
+                          final dynamic val = item[widget.valueKey];
+                          final bool isChecked =
+                              _selectedValues.contains(val);
+                          return Semantics(
+                            label: label,
+                            checked: isChecked,
+                            child: CheckboxListTile(
+                              title: Text(label),
+                              value: isChecked,
+                              onChanged: (_) => _toggleSelection(val),
+                              dense: true,
+                              controlAffinity:
+                                  ListTileControlAffinity.trailing,
+                              activeColor:
+                                  park?.colors.brand,
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              // 底部操作按钮
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  park?.spacing.md ?? 16,
+                  park?.spacing.sm ?? 8,
+                  park?.spacing.md ?? 16,
+                  park?.spacing.md ?? 16,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: ParkButton(
+                        variant: ParkButtonVariant.secondary,
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(l10n.cancelText),
+                      ),
+                    ),
+                    SizedBox(width: park?.spacing.sm ?? 12),
+                    Expanded(
+                      child: ParkButton(
+                        variant: ParkButtonVariant.primary,
+                        onPressed: () =>
+                            Navigator.of(context).pop(_selectedValues.toList()),
+                        child: Text(l10n.confirmText),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
 // 受控适配器组件
 //
 // Park UI 的 FormField 组件管理自己的内部状态。在动态表单场景中，
@@ -1525,6 +1777,91 @@ class _SearchAdapterState extends State<_SearchAdapter> {
     return ParkSearch(
       controller: _controller,
       hintText: widget.hintText,
+      onChanged: (String v) => widget.onChanged(v),
+    );
+  }
+}
+
+/// 文本类字段受控适配器（B17 / 开发文档.md §7.10）。
+///
+/// 文本 / 数字 / 多行 / 富文本字段此前依赖 [ParkInput] 的 `initialValue`，
+/// 而 [FormField] 的 initialValue 在初始化后不再随父级 value 变化刷新，
+/// 导致表单重置或外部改值后文本框内容失效（日期 / select / radio 走 value 可更新，
+/// 唯独文本类失效）。
+///
+/// 本适配器自持 [TextEditingController]，并在 [didUpdateWidget] 中监听外部 value
+/// 变化同步到控制器，确保受控刷新。
+class _TextFieldAdapter extends StatefulWidget {
+  final String value;
+  final bool readOnly;
+  final bool enabled;
+  final int maxLines;
+  final int? maxLength;
+  final TextInputType keyboardType;
+  final bool obscureText;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final String? hintText;
+  final String? label;
+  final ValueChanged<dynamic> onChanged;
+
+  const _TextFieldAdapter({
+    required this.value,
+    required this.readOnly,
+    required this.enabled,
+    required this.maxLines,
+    required this.maxLength,
+    required this.keyboardType,
+    required this.obscureText,
+    required this.prefixIcon,
+    required this.suffixIcon,
+    required this.hintText,
+    required this.label,
+    required this.onChanged,
+  });
+
+  @override
+  State<_TextFieldAdapter> createState() => _TextFieldAdapterState();
+}
+
+class _TextFieldAdapterState extends State<_TextFieldAdapter> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(covariant _TextFieldAdapter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 外部 value 变化（如表单重置）时同步文本框内容（B17）。
+    if (oldWidget.value != widget.value && _controller.text != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ParkInput(
+      controller: _controller,
+      readOnly: widget.readOnly,
+      enabled: widget.enabled,
+      maxLines: widget.maxLines,
+      maxLength: widget.maxLength,
+      keyboardType: widget.keyboardType,
+      obscureText: widget.obscureText,
+      prefixIcon: widget.prefixIcon,
+      suffixIcon: widget.suffixIcon,
+      hintText: widget.hintText,
+      label: widget.label,
       onChanged: (String v) => widget.onChanged(v),
     );
   }

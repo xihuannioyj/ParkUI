@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 刷新状态
@@ -233,15 +234,19 @@ class _ParkRefreshState extends State<ParkRefresh>
               bottom: 0,
               left: 0,
               right: 0,
-              child: Container(
-                height: widget.headerHeight,
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(park.colors.brand),
+              child: Semantics(
+                label: ParkLocalizations.of(context).loading,
+                liveRegion: true,
+                child: Container(
+                  height: widget.headerHeight,
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(park.colors.brand),
+                    ),
                   ),
                 ),
               ),
@@ -272,6 +277,32 @@ class _ParkRefreshState extends State<ParkRefresh>
     if (widget.headerBuilder != null) {
       return widget.headerBuilder!(_state);
     }
+
+    final l10n = ParkLocalizations.of(context);
+
+    return Semantics(
+      label: _semanticLabel(l10n),
+      liveRegion: _state == ParkRefreshState.refreshing,
+      child: _buildIndicatorIcon(park),
+    );
+  }
+
+  String _semanticLabel(ParkLocalizations l10n) {
+    switch (_state) {
+      case ParkRefreshState.idle:
+        return l10n.pullToRefresh;
+      case ParkRefreshState.pulling:
+        return 'Pulling';
+      case ParkRefreshState.armed:
+        return l10n.releaseToRefresh;
+      case ParkRefreshState.refreshing:
+        return l10n.refreshing;
+      case ParkRefreshState.done:
+        return l10n.success;
+    }
+  }
+
+  Widget _buildIndicatorIcon(ParkThemeData park) {
 
     switch (_state) {
       case ParkRefreshState.idle:

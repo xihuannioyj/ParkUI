@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Timeline content positioning mode.
@@ -66,8 +68,8 @@ class ParkTimelineItem {
 /// dot indicators.
 ///
 /// Supports left/right/alternate content positioning, sequential fade-in
-/// animation, a pending (loading) indicator on the last item, and custom
-/// dot widgets per item.
+/// animation, a pending (loading) indicator at the end, reverse ordering,
+/// and custom dot widgets per item.
 ///
 /// ```dart
 /// ParkTimeline(
@@ -76,6 +78,7 @@ class ParkTimelineItem {
 ///     ParkTimelineItem(title: 'Shipped', time: '14:30', color: Colors.green),
 ///   ],
 ///   mode: ParkTimelineMode.alternate,
+///   pending: true,
 /// )
 /// ```
 class ParkTimeline extends StatefulWidget {
@@ -83,9 +86,9 @@ class ParkTimeline extends StatefulWidget {
   const ParkTimeline({
     super.key,
     required this.items,
-    this.mode = ParkTimelineMode.right,
+    this.mode = ParkTimelineMode.left,
     this.pending = false,
-    this.pendingText = 'Loading...',
+    this.pendingLabel,
     this.reverse = false,
     this.dotSize = 12.0,
     this.lineWidth = 2.0,
@@ -105,8 +108,9 @@ class ParkTimeline extends StatefulWidget {
   /// When true, shows a loading indicator at the last item's position.
   final bool pending;
 
-  /// Text shown next to the loading indicator when [pending] is true.
-  final String pendingText;
+  /// Text shown next to the pending indicator when [pending] is true.
+  /// When null, uses [ParkLocalizations.loading].
+  final String? pendingLabel;
 
   /// When true, the first item in [items] is rendered at the bottom.
   final bool reverse;
@@ -225,35 +229,38 @@ class _ParkTimelineState extends State<ParkTimeline> {
         final isAlternate = mode == ParkTimelineMode.alternate;
         final isLeftOnly = mode == ParkTimelineMode.left;
 
-        return Column(
-          crossAxisAlignment: isLeftOnly
-              ? CrossAxisAlignment.end
-              : isAlternate
-                  ? CrossAxisAlignment.stretch
-                  : CrossAxisAlignment.start,
-          children: [
-            for (int i = 0; i < orderedItems.length; i++) ...[
-              if (i > 0) SizedBox(height: widget.itemSpacing),
-              _buildItem(
-                context,
-                park,
-                orderedItems[i],
-                i,
-                orderedItems.length,
-                mode,
-              ),
+        return Semantics(
+          label: 'Timeline',
+          child: Column(
+            crossAxisAlignment: isLeftOnly
+                ? CrossAxisAlignment.end
+                : isAlternate
+                    ? CrossAxisAlignment.stretch
+                    : CrossAxisAlignment.start,
+            children: [
+              for (int i = 0; i < orderedItems.length; i++) ...[
+                if (i > 0) SizedBox(height: widget.itemSpacing),
+                _buildItem(
+                  context,
+                  park,
+                  orderedItems[i],
+                  i,
+                  orderedItems.length,
+                  mode,
+                ),
+              ],
+              if (widget.pending) ...[
+                if (orderedItems.isNotEmpty)
+                  SizedBox(height: widget.itemSpacing),
+                _buildPendingItem(
+                  context,
+                  park,
+                  orderedItems.length,
+                  mode,
+                ),
+              ],
             ],
-            if (widget.pending) ...[
-              if (orderedItems.isNotEmpty)
-                SizedBox(height: widget.itemSpacing),
-              _buildPendingItem(
-                context,
-                park,
-                orderedItems.length,
-                mode,
-              ),
-            ],
-          ],
+          ),
         );
       },
     );
@@ -307,29 +314,40 @@ class _ParkTimelineState extends State<ParkTimeline> {
     int index,
     ParkTimelineMode mode,
   ) {
+    final l10n = ParkLocalizations.of(context);
     final isLeft = _isLeftSide(index, mode);
     final isAlternate = mode == ParkTimelineMode.alternate;
     final isRevealed = index < _revealedCount;
 
-    final pendingDot = SizedBox(
-      width: widget.dotSize,
-      height: widget.dotSize,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: park.colors.brand,
-      ),
-    );
+    final pendingDot = widget.pendingDot ??
+        SizedBox(
+          width: widget.dotSize + 8,
+          height: widget.dotSize + 8,
+          child: CustomPaint(
+            painter: _DashedCirclePainter(
+              color: park.colors.textDisabled,
+              strokeWidth: 2.0,
+              dashWidth: 3.0,
+              dashGap: 2.0,
+            ),
+          ),
+        );
+
+    final label = widget.pendingLabel ?? l10n.loading;
 
     final pendingContent = Padding(
       padding: EdgeInsets.only(
         left: isLeft ? 0 : park.spacing.md,
         right: isLeft ? park.spacing.md : 0,
       ),
-      child: Text(
-        widget.pendingText,
-        style: TextStyle(
-          fontSize: park.typography.sizeCaption,
-          color: park.colors.textSecondary,
+      child: Semantics(
+        label: label,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: park.typography.sizeCaption,
+            color: park.colors.textDisabled,
+          ),
         ),
       ),
     );
@@ -337,18 +355,20 @@ class _ParkTimelineState extends State<ParkTimeline> {
     return _AnimatedReveal(
       visible: isRevealed,
       duration: widget.animationDuration,
-      child: _TimelineRow(
-        dotSize: widget.dotSize,
-        lineWidth: widget.lineWidth,
-        lineColor: park.colors.border,
-        dot: pendingDot,
-        content: pendingContent,
-        isLeft: isLeft,
-        isAlternate: isAlternate,
-        showLineAbove: true,
-        showLineBelow: false,
-        lineAboveHeight: widget.itemSpacing,
-        lineBelowHeight: 0,
+      child: _BlinkingPending(
+        child: _TimelineRow(
+          dotSize: widget.dotSize,
+          lineWidth: widget.lineWidth,
+          lineColor: park.colors.border,
+          dot: pendingDot,
+          content: pendingContent,
+          isLeft: isLeft,
+          isAlternate: isAlternate,
+          showLineAbove: true,
+          showLineBelow: false,
+          lineAboveHeight: widget.itemSpacing,
+          lineBelowHeight: 0,
+        ),
       ),
     );
   }
@@ -409,39 +429,42 @@ class _ParkTimelineState extends State<ParkTimeline> {
   Widget _buildContent(ParkThemeData park, ParkTimelineItem item) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            item.title,
-            style: TextStyle(
-              fontSize: park.typography.sizeBody,
-              fontWeight: park.typography.weightMedium,
-              color: park.colors.textPrimary,
-            ),
-          ),
-          if (item.description != null) ...[
-            SizedBox(height: park.spacing.xs),
+      child: Semantics(
+        label: '${item.title}${item.description != null ? ', ${item.description}' : ''}${item.time != null ? ', ${item.time}' : ''}',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Text(
-              item.description!,
+              item.title,
               style: TextStyle(
-                fontSize: park.typography.sizeCaption,
-                color: park.colors.textSecondary,
+                fontSize: park.typography.sizeBody,
+                fontWeight: park.typography.weightMedium,
+                color: park.colors.textPrimary,
               ),
             ),
-          ],
-          if (item.time != null) ...[
-            SizedBox(height: park.spacing.xs),
-            Text(
-              item.time!,
-              style: TextStyle(
-                fontSize: park.typography.sizeCaption,
-                color: park.colors.textPlaceholder,
+            if (item.description != null) ...[
+              SizedBox(height: park.spacing.xs),
+              Text(
+                item.description!,
+                style: TextStyle(
+                  fontSize: park.typography.sizeCaption,
+                  color: park.colors.textSecondary,
+                ),
               ),
-            ),
+            ],
+            if (item.time != null) ...[
+              SizedBox(height: park.spacing.xs),
+              Text(
+                item.time!,
+                style: TextStyle(
+                  fontSize: park.typography.sizeCaption,
+                  color: park.colors.textPlaceholder,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -594,5 +617,100 @@ class _AnimatedReveal extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+/// Blinking animation (fade in/out) for the pending indicator.
+class _BlinkingPending extends StatefulWidget {
+  const _BlinkingPending({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_BlinkingPending> createState() => _BlinkingPendingState();
+}
+
+class _BlinkingPendingState extends State<_BlinkingPending>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller.drive(CurveTween(curve: Curves.easeInOut)),
+      child: widget.child,
+    );
+  }
+}
+
+/// Paints a dashed circle outline used for the pending dot indicator.
+class _DashedCirclePainter extends CustomPainter {
+  _DashedCirclePainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.dashWidth,
+    required this.dashGap,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashGap;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+    final circumference = 2 * math.pi * radius;
+
+    final totalDash = dashWidth + dashGap;
+    final dashCount = (circumference / totalDash).floor();
+
+    if (dashCount == 0) return;
+
+    final adjustedTotal = circumference / dashCount;
+    final adjustedDashWidth = adjustedTotal * (dashWidth / totalDash);
+    final adjustedGap = adjustedTotal * (dashGap / totalDash);
+
+    for (int i = 0; i < dashCount; i++) {
+      final startAngle = (i * (adjustedDashWidth + adjustedGap)) / radius;
+      final sweepAngle = adjustedDashWidth / radius;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedCirclePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashWidth != dashWidth ||
+        oldDelegate.dashGap != dashGap;
   }
 }

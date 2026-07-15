@@ -1,14 +1,14 @@
 import 'dart:async';
+import 'dart:ui';
 import 'park_binding_path.dart';
 import 'park_bindable.dart';
 import 'park_binding_scheduler.dart';
 
 /// 依赖追踪上下文（用于 [watchEffect] 自动收集依赖）。
-class _TrackContext {
-  static final _TrackContext _instance = _TrackContext._();
-  factory _TrackContext() => _instance;
-  _TrackContext._();
-
+///
+/// 每个 [ParkBindingService] 实例持有独立的 [TrackContext]，
+/// 避免跨实例的自动依赖追踪串扰（B52）。
+class TrackContext {
   /// 当前正在执行的副作用函数。
   void Function()? activeEffect;
 
@@ -16,10 +16,9 @@ class _TrackContext {
   Set<String>? collectedDeps;
 
   /// 记录一个依赖路径。
-  static void trackPath(String path) {
-    final ctx = _TrackContext._instance;
-    if (ctx.activeEffect != null && ctx.collectedDeps != null) {
-      ctx.collectedDeps!.add(path);
+  void trackPath(String path) {
+    if (activeEffect != null && collectedDeps != null) {
+      collectedDeps!.add(path);
     }
   }
 }
@@ -60,11 +59,17 @@ class ParkBindingService {
   final Set<ParkBindable<dynamic>> _disposedGuard =
       <ParkBindable<dynamic>>{};
 
+  /// bind() 注册的监听引用（path → listener），用于 dispose 时精确移除，避免监听器泄漏（B15）。
+  final Map<String, VoidCallback> _bindListeners = <String, VoidCallback>{};
+
   /// 批量调度器（微任务合并）。
   final ParkBindingScheduler _scheduler = ParkBindingScheduler();
 
   /// 批量模式嵌套深度（>0 表示在 batch 作用域内）。
   int _batchDepth = 0;
+
+  /// 本实例独立的依赖追踪上下文（B52：不再使用全局单例）。
+  final TrackContext _trackContext = TrackContext();
 
   /// 创建 [ParkBindingService]。
   ///
@@ -126,10 +131,18 @@ class ParkBindingService {
   /// - [defaultValue] 在路径值不存在时生效。
   ParkBindable<T> bind<T>(String path, {T? defaultValue}) {
     // 自动追踪：如果当前在 [watchEffect] 内，记录此路径
-    _TrackContext.trackPath(path);
-    // 检查是否已绑定
+    _trackContext.trackPath(path);
+    // 检查是否已绑定（缓存按 path 区分，但泛型 T 必须一致，否则抛明确异常，见 B16）。
     if (_bindables.containsKey(path)) {
-      return _bindables[path]! as ParkBindable<T>;
+      final ParkBindable<dynamic> existing = _bindables[path]!;
+      if (existing is! ParkBindable<T>) {
+        throw StateError(
+          'ParkBindingService.bind: 路径 "$path" 已以类型 '
+          '${existing.runtimeType} 绑定，无法以类型 $T 重复绑定。'
+          '同一路径必须使用相同的泛型类型。',
+        );
+      }
+      return existing;
     }
 
     // 从模型中获取初始值
@@ -140,10 +153,14 @@ class ParkBindingService {
     bindable.setupOwner(this);
     _bindables[path] = bindable;
 
-    // 监听 bindable 变化，同步到 _model
-    bindable.addListener(() {
+    // 监听 bindable 变化：同步到 _model，并经调度器合帧触发依赖副作用（D2）。
+    // 保存引用以便 dispose 时精确移除，避免监听器泄漏（B15）。
+    final VoidCallback listener = () {
       _syncToModel(path, bindable.value);
-    });
+      _scheduler.scheduleNotify(() => _triggerEffects(path));
+    };
+    _bindListeners[path] = listener;
+    bindable.addListener(listener);
 
     return bindable;
   }
@@ -175,19 +192,10 @@ class ParkBindingService {
   /// ```
   void setValue<T>(String path, T value) {
     if (_bindables.containsKey(path)) {
-      final bindable = _bindables[path]! as ParkBindable<T>;
-      if (_batchDepth > 0) {
-        final oldValue = bindable.value;
-        if (value != oldValue) {
-          (bindable as dynamic).value = value;
-          _triggerEffects(path);
-        }
-      } else {
-        if (bindable.value != value) {
-          bindable.value = value;
-          _triggerEffects(path);
-        }
-      }
+      // 设置值会触发 bindable 的监听器（model-sync + 经调度器合帧的副作用）。
+      // 在 batch 作用域内，这些通知由 ParkBindingScheduler 合并到单次微任务帧（D2）。
+      final ParkBindable<T> bindable = _bindables[path]! as ParkBindable<T>;
+      bindable.value = value;
     } else {
       _model = ParkBindingPath.set(path, _model, value);
     }
@@ -202,7 +210,7 @@ class ParkBindingService {
   /// ```
   T? getValue<T>(String path) {
     // 自动依赖追踪
-    _TrackContext.trackPath(path);
+    _trackContext.trackPath(path);
 
     if (_bindables.containsKey(path)) {
       final bindable = _bindables[path]! as ParkBindable<T>;
@@ -224,27 +232,16 @@ class ParkBindingService {
     final oldModel = Map<String, dynamic>.from(_model);
     _model = Map<String, dynamic>.from(newModel);
 
-    if (_batchDepth > 0) {
-      // 批量模式：将变化的 bindable 通过调度器排队
-      for (final entry in _bindables.entries) {
-        final bindable = entry.value;
-        if (_disposedGuard.contains(bindable)) continue;
-        final newValue = ParkBindingPath.resolve(entry.key, _model);
-        final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
-        if (newValue != oldValue) {
-          bindable.update(newValue);
-        }
-      }
-    } else {
-      // 非批量模式：用调度器批量通知
-      for (final entry in _bindables.entries) {
-        final bindable = entry.value;
-        if (_disposedGuard.contains(bindable)) continue;
-        final newValue = ParkBindingPath.resolve(entry.key, _model);
-        final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
-        if (newValue != oldValue) {
-          bindable.update(newValue);
-        }
+    // 仅对实际变化的 bindable 更新值。值的更新会触发其监听器
+    // （model-sync + 经调度器合帧的副作用）。在 batch 作用域内，
+    // 这些通知会被 ParkBindingScheduler 合并到单次微任务帧（D2）。
+    for (final entry in _bindables.entries) {
+      final bindable = entry.value;
+      if (_disposedGuard.contains(bindable)) continue;
+      final newValue = ParkBindingPath.resolve(entry.key, _model);
+      final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
+      if (newValue != oldValue) {
+        bindable.update(newValue);
       }
     }
   }
@@ -253,6 +250,8 @@ class ParkBindingService {
   void disposeBindable(String path) {
     final bindable = _bindables.remove(path);
     if (bindable != null) {
+      final VoidCallback? listener = _bindListeners.remove(path);
+      if (listener != null) bindable.removeListener(listener);
       _disposedGuard.add(bindable);
       bindable.dispose();
     }
@@ -266,8 +265,10 @@ class ParkBindingService {
       effect.stop();
     }
     _watchEffects.clear();
+    // 移除 bind() 注册的监听器引用，避免泄漏（B15）。
+    _bindListeners.clear();
     _scheduler.dispose();
-    for (final bindable in _bindables.values) {
+    for (final bindable in _bindables.values.toList()) {
       _disposedGuard.add(bindable);
       bindable.dispose();
     }
@@ -352,7 +353,7 @@ class _WatchEffect {
     if (_disposed) return;
     _deps.clear();
 
-    final ctx = _TrackContext();
+    final ctx = _service._trackContext;
     ctx.activeEffect = _fn;
     ctx.collectedDeps = _deps;
     try {

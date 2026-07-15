@@ -74,8 +74,14 @@ class ParkBindingScheduler {
       try {
         listener();
       } catch (e, stack) {
-        // 通知异常不应影响其他监听器
-        debugPrint('ParkBindingScheduler: listener error: $e\n$stack');
+        // 通知异常不应影响其他监听器；通过 FlutterError.onError 上报，
+        // 确保 release 模式下也能被错误收集工具捕获。
+        FlutterError.onError?.call(FlutterErrorDetails(
+          exception: e,
+          stack: stack,
+          library: 'park_binding',
+          context: ErrorDescription('While notifying binding listeners'),
+        ));
       }
     }
 

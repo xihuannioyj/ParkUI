@@ -6,13 +6,40 @@ import '../../binding/park_binding_service.dart';
 /// Park UI 评分
 ///
 /// 基于 [FormField<double>] 封装的星级评分控件，支持整星和半星评分、
-/// 只读模式、自定义星星数量和尺寸。
+/// 只读模式、自定义星星数量和尺寸、自定义字符/图标。
 ///
 /// ```dart
 /// ParkRate(
 ///   value: 3.5,
 ///   count: 5,
 ///   allowHalf: true,
+///   onChanged: (v) => print(v),
+/// )
+/// ```
+///
+/// 使用自定义字符：
+/// ```dart
+/// ParkRate(
+///   value: 2,
+///   count: 5,
+///   character: Icon(ParkIcons.heart, color: Colors.red),
+///   allowHalf: true,
+///   onChanged: (v) => print(v),
+/// )
+/// ```
+///
+/// 每项独立字符：
+/// ```dart
+/// ParkRate(
+///   value: 3,
+///   count: 5,
+///   characters: [
+///     Icon(ParkIcons.emoji_sad),
+///     Icon(ParkIcons.emoji_neutral),
+///     Icon(ParkIcons.emoji_smile),
+///     Icon(ParkIcons.emoji_laugh),
+///     Icon(ParkIcons.emoji_celebrate),
+///   ],
 ///   onChanged: (v) => print(v),
 /// )
 /// ```
@@ -37,6 +64,7 @@ class ParkRate extends FormField<double> {
     this.inactiveColor,
     this.icon,
     this.character,
+    this.characters,
     this.tooltips,
     this.showText = false,
     this.textBuilder,
@@ -70,6 +98,12 @@ class ParkRate extends FormField<double> {
 
   /// 完全自定义的评分项 widget（覆盖 icon）。
   final Widget? character;
+
+  /// 每个评分项的独立自定义字符（数量需与 [count] 匹配）。
+  ///
+  /// 优先级高于 [character]。当某个索引未提供对应字符时，降级使用 [character]
+  /// 或默认星星。
+  final List<Widget>? characters;
 
   /// 每个评分项的 tooltip 文字。
   final List<String>? tooltips;
@@ -122,8 +156,30 @@ class _ParkRateBuilder extends StatelessWidget {
     final effectiveGap = widget.gap ?? 0.0;
 
     final stars = List.generate(widget.count, (index) {
+      // 字符优先级：characters[index] > character > 默认星星
+      final bool useCharacters = widget.characters != null &&
+          index < widget.characters!.length;
+      final bool useCharacter = widget.character != null;
+
       Widget item;
-      if (widget.character != null) {
+      if (useCharacters) {
+        item = _CharacterItem(
+          index: index,
+          value: currentValue,
+          size: widget.size,
+          activeColor: effectiveActiveColor,
+          inactiveColor: effectiveInactiveColor,
+          allowHalf: widget.allowHalf,
+          readOnly: widget.readOnly || widget.disabled,
+          allowClear: widget.allowClear,
+          character: widget.characters![index],
+          onTap: isInteractive
+              ? (selectedValue) {
+                  state.didChange(selectedValue);
+                }
+              : null,
+        );
+      } else if (useCharacter) {
         item = _CharacterItem(
           index: index,
           value: currentValue,
@@ -223,8 +279,12 @@ class _StarItem extends StatelessWidget {
     final starValue = index + 1.0;
     final isFull = value >= starValue;
     final isHalf = allowHalf && !isFull && value >= index + 0.5;
+    final displayValue = isFull ? starValue : (isHalf ? index + 0.5 : 0.0);
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      value: displayValue.toString(),
+      child: GestureDetector(
       onTap: onTap == null
           ? null
           : () {
@@ -288,6 +348,7 @@ class _StarItem extends StatelessWidget {
               ),
             )
           : _buildStar(isFull ? 1.0 : 0.0),
+      ),
     );
   }
 
@@ -349,6 +410,7 @@ class _CharacterItem extends StatelessWidget {
     final isFull = value >= starValue;
     final isHalf = allowHalf && !isFull && value >= index + 0.5;
     final double fill = isFull ? 1.0 : (isHalf ? 0.5 : 0.0);
+    final displayValue = isFull ? starValue : (isHalf ? index + 0.5 : 0.0);
 
     Widget content = SizedBox(
       width: size,
@@ -376,7 +438,10 @@ class _CharacterItem extends StatelessWidget {
       ),
     );
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      value: displayValue.toString(),
+      child: GestureDetector(
       onTap: onTap == null
           ? null
           : () {
@@ -440,6 +505,7 @@ class _CharacterItem extends StatelessWidget {
               ),
             )
           : content,
+      ),
     );
   }
 }

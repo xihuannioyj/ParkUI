@@ -423,10 +423,10 @@ void main() {
       final darkTheme = ParkThemeData.dark();
       // t=0 时返回 light
       final lerped0 = lightTheme.lerp(darkTheme, 0.0);
-      expect(lerped0?.sizing, equals(ParkSizing.defaults()));
+      expect(lerped0.sizing, equals(ParkSizing.defaults()));
       // t=1 时返回 dark
       final lerped1 = lightTheme.lerp(darkTheme, 1.0);
-      expect(lerped1?.sizing, equals(ParkSizing.defaults()));
+      expect(lerped1.sizing, equals(ParkSizing.defaults()));
     });
   });
 }

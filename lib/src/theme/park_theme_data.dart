@@ -146,17 +146,16 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
   ParkThemeData lerp(ThemeExtension<ParkThemeData>? other, double t) {
     if (other is! ParkThemeData) return this;
 
-    // 对于 Color 做线性插值，其他令牌类型直接切换
     return ParkThemeData(
       colors: _lerpColors(colors, other.colors, t),
-      typography: t < 0.5 ? typography : other.typography,
-      spacing: t < 0.5 ? spacing : other.spacing,
+      typography: ParkTypography.lerp(typography, other.typography, t),
+      spacing: ParkSpacing.lerp(spacing, other.spacing, t),
       radius: _lerpRadius(radius, other.radius, t),
-      shadows: t < 0.5 ? shadows : other.shadows,
+      shadows: ParkShadows.lerp(shadows, other.shadows, t),
       surfaceStyle: t < 0.5 ? surfaceStyle : other.surfaceStyle,
-      iconTheme: t < 0.5 ? iconTheme : other.iconTheme,
-      motion: t < 0.5 ? motion : other.motion,
-      sizing: t < 0.5 ? sizing : other.sizing,
+      iconTheme: ParkIconThemeData.lerp(iconTheme, other.iconTheme, t),
+      motion: ParkMotion.lerp(motion, other.motion, t),
+      sizing: ParkSizing.lerp(sizing, other.sizing, t),
     );
   }
 
@@ -202,4 +201,32 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       full: 9999.0,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ParkThemeData &&
+        other.colors == colors &&
+        other.spacing == spacing &&
+        other.radius == radius &&
+        other.typography == typography &&
+        other.shadows == shadows &&
+        other.surfaceStyle == surfaceStyle &&
+        other.iconTheme == iconTheme &&
+        other.motion == motion &&
+        other.sizing == sizing;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        colors,
+        spacing,
+        radius,
+        typography,
+        shadows,
+        surfaceStyle,
+        iconTheme,
+        motion,
+        sizing,
+      );
 }

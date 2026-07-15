@@ -4,6 +4,7 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import 'park_input.dart';
 
 /// Park UI 多行文本输入框
@@ -349,13 +350,17 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
       clearButton = Positioned(
         right: park.spacing.sm,
         bottom: park.spacing.sm,
-        child: GestureDetector(
+        child: Semantics(
+          button: true,
+          label: ParkLocalizations.of(context).clearText,
+          child: GestureDetector(
           onTap: state._clear,
           child: Icon(
             CupertinoIcons.clear_circled_solid,
             size: 18,
             color: park.colors.textPlaceholder,
           ),
+        ),
         ),
       );
     }
@@ -388,14 +393,20 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
     // Stack the clear button on top of the container
     Widget textareaArea;
     if (textareaWidget.clearable) {
-      textareaArea = Stack(
+      textareaArea = Semantics(
+        textField: true,
+        child: Stack(
         children: [
           borderedContainer,
           ?clearButton,
         ],
+      ),
       );
     } else {
-      textareaArea = borderedContainer;
+      textareaArea = Semantics(
+        textField: true,
+        child: borderedContainer,
+      );
     }
 
     return MouseRegion(

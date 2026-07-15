@@ -13,8 +13,8 @@ void main() {
   group('ParkLink - 基本渲染', () {
     testWidgets('创建不抛异常', (tester) async {
       await tester.pumpWidget(_wrap(const ParkLink(
-        text: '链接文本',
-        onPressed: null,
+        '链接文本',
+        onTap: null,
       )));
       expect(find.text('链接文本'), findsOneWidget);
     });
@@ -22,8 +22,8 @@ void main() {
     testWidgets('可点击', (tester) async {
       int pressed = 0;
       await tester.pumpWidget(_wrap(ParkLink(
-        text: '点我',
-        onPressed: () => pressed++,
+        '点我',
+        onTap: () => pressed++,
       )));
       await tester.tap(find.text('点我'));
       expect(pressed, 1);
@@ -32,9 +32,9 @@ void main() {
     testWidgets('disabled 不可点击', (tester) async {
       int pressed = 0;
       await tester.pumpWidget(_wrap(ParkLink(
-        text: '禁用',
+        '禁用',
         disabled: true,
-        onPressed: () => pressed++,
+        onTap: () => pressed++,
       )));
       await tester.tap(find.text('禁用'));
       expect(pressed, 0);

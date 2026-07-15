@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 import '../base/park_button.dart';
 import '../base/park_button_style.dart';
 
 /// 穿梭框组件
 ///
-/// 双栏列表选择，支持搜索、全选、拖拽排序。
+/// 双栏列表选择，支持搜索、全选、单向模式。
 /// 用于权限分配、角色选择、字段映射等场景。
 ///
 /// ```dart
@@ -18,6 +19,10 @@ import '../base/park_button_style.dart';
 ///   onChange: (keys, direction) => print('$direction: $keys'),
 /// )
 /// ```
+///
+/// [showSearch] 为 true 时左右面板顶部显示搜索框。
+/// [oneWay] 为 true 时仅允许从左到右移动。
+/// [leftTitle] / [rightTitle] 为自定义标题 Widget，null 时不显示。
 class ParkTransfer extends StatefulWidget {
   /// 所有可选项列表。
   final List<ParkTransferItem> dataSource;
@@ -28,14 +33,17 @@ class ParkTransfer extends StatefulWidget {
   /// 选中变更回调（返回当前目标 keys + 移动方向）。
   final void Function(List<String> targetKeys, TransferDirection direction)? onChange;
 
-  /// 左侧标题。
-  final String? leftTitle;
+  /// 左侧标题 Widget。null 时不显示标题。
+  final Widget? leftTitle;
 
-  /// 右侧标题。
-  final String? rightTitle;
+  /// 右侧标题 Widget。null 时不显示标题。
+  final Widget? rightTitle;
 
   /// 是否显示搜索框。
   final bool showSearch;
+
+  /// 是否仅允许从左到右单向移动。
+  final bool oneWay;
 
   /// 是否禁用。
   final bool disabled;
@@ -49,9 +57,10 @@ class ParkTransfer extends StatefulWidget {
     required this.dataSource,
     this.targetKeys,
     this.onChange,
-    this.leftTitle = '待选',
-    this.rightTitle = '已选',
+    this.leftTitle,
+    this.rightTitle,
     this.showSearch = false,
+    this.oneWay = false,
     this.disabled = false,
     this.renderItem,
   });
@@ -80,13 +89,23 @@ class _ParkTransferState extends State<ParkTransfer> {
   late Set<String> _targetKeys;
   final _leftController = TextEditingController();
   final _rightController = TextEditingController();
-  Set<String> _leftSelected = {};
-  Set<String> _rightSelected = {};
+  final Set<String> _leftSelected = {};
+  final Set<String> _rightSelected = {};
 
   @override
   void initState() {
     super.initState();
     _targetKeys = Set<String>.from(widget.targetKeys ?? []);
+  }
+
+  @override
+  void didUpdateWidget(covariant ParkTransfer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.targetKeys != oldWidget.targetKeys) {
+      setState(() {
+        _targetKeys = Set<String>.from(widget.targetKeys ?? []);
+      });
+    }
   }
 
   List<ParkTransferItem> get _leftItems =>
@@ -121,80 +140,105 @@ class _ParkTransferState extends State<ParkTransfer> {
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
     final leftItems = _filtered(_leftItems, _leftController.text);
     final rightItems = _filtered(_rightItems, _rightController.text);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: _buildPanel(park, widget.leftTitle ?? '待选', leftItems, _leftSelected, true, _leftController)),
+        Expanded(child: _buildPanel(park, l10n, widget.leftTitle, leftItems, _leftSelected, _leftController)),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 12),
+          padding: EdgeInsets.symmetric(vertical: park.spacing.xl, horizontal: park.spacing.base),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ParkButton(
-                child: const Icon(Icons.chevron_right, size: 20),
-                variant: ParkButtonVariant.secondary,
-                size: ParkButtonSize.small,
-                onPressed: _leftSelected.isEmpty || widget.disabled ? null : () => _transfer(TransferDirection.leftToRight),
+              Semantics(
+                label: '右移',
+                child: ParkButton(
+                  variant: ParkButtonVariant.secondary,
+                  size: ParkButtonSize.small,
+                  onPressed: _leftSelected.isEmpty || widget.disabled ? null : () => _transfer(TransferDirection.leftToRight),
+                  child: const Icon(Icons.chevron_right, size: 20),
+                ),
               ),
-              const SizedBox(height: 8),
-              ParkButton(
-                child: const Icon(Icons.chevron_left, size: 20),
-                variant: ParkButtonVariant.secondary,
-                size: ParkButtonSize.small,
-                onPressed: _rightSelected.isEmpty || widget.disabled ? null : () => _transfer(TransferDirection.rightToLeft),
-              ),
+              SizedBox(height: park.spacing.sm),
+              if (!widget.oneWay)
+                Semantics(
+                  label: '左移',
+                  child: ParkButton(
+                    variant: ParkButtonVariant.secondary,
+                    size: ParkButtonSize.small,
+                    onPressed: _rightSelected.isEmpty || widget.disabled ? null : () => _transfer(TransferDirection.rightToLeft),
+                    child: const Icon(Icons.chevron_left, size: 20),
+                  ),
+                ),
             ],
           ),
         ),
-        Expanded(child: _buildPanel(park, widget.rightTitle ?? '已选', rightItems, _rightSelected, false, _rightController)),
+        Expanded(child: _buildPanel(park, l10n, widget.rightTitle, rightItems, _rightSelected, _rightController)),
       ],
     );
   }
 
-  Widget _buildPanel(ParkThemeData park, String title, List<ParkTransferItem> items, Set<String> selected, bool isLeft, TextEditingController searchCtrl) {
+  Widget _buildPanel(ParkThemeData park, ParkLocalizations l10n, Widget? title, List<ParkTransferItem> items, Set<String> selected, TextEditingController searchCtrl) {
     final allSelected = items.isNotEmpty && items.every((i) => selected.contains(i.key));
+    final hasTitle = title != null;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: park.colors.surface,
-            border: Border.all(color: park.colors.border),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        // Title header
+        if (hasTitle)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: park.spacing.base, vertical: park.spacing.sm),
+            decoration: BoxDecoration(
+              color: park.colors.surface,
+              border: Border.all(color: park.colors.border),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(park.radius.sm)),
+            ),
+            child: Row(
+              children: [
+                DefaultTextStyle(
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: park.colors.textPrimary),
+                  child: title,
+                ),
+                const Spacer(),
+                Semantics(
+                  label: '共 ${items.length} 项',
+                  child: Text('${items.length}', style: TextStyle(fontSize: 12, color: park.colors.textSecondary)),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: park.colors.textPrimary)),
-              const Spacer(),
-              Text('${items.length}', style: TextStyle(fontSize: 12, color: park.colors.textSecondary)),
-            ],
-          ),
-        ),
         // Search
         if (widget.showSearch)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: park.colors.border), right: BorderSide(color: park.colors.border))),
-            child: TextField(
-              controller: searchCtrl,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: '搜索...',
-                hintStyle: TextStyle(fontSize: 13, color: park.colors.textPlaceholder),
-                border: InputBorder.none,
-                isDense: true,
-                prefixIconConstraints: const BoxConstraints(maxWidth: 24),
-                prefixIcon: Icon(Icons.search, size: 16, color: park.colors.textSecondary),
+            padding: EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: park.colors.border),
+                right: BorderSide(color: park.colors.border),
+                top: hasTitle ? BorderSide.none : BorderSide(color: park.colors.border),
               ),
-              style: TextStyle(fontSize: 13, color: park.colors.textPrimary),
+            ),
+            child: Semantics(
+              label: l10n.searchPlaceholder,
+              child: TextField(
+                controller: searchCtrl,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: l10n.searchPlaceholder,
+                  hintStyle: TextStyle(fontSize: 13, color: park.colors.textPlaceholder),
+                  border: InputBorder.none,
+                  isDense: true,
+                  prefixIconConstraints: const BoxConstraints(maxWidth: 24),
+                  prefixIcon: Icon(Icons.search, size: 16, color: park.colors.textSecondary),
+                ),
+                style: TextStyle(fontSize: 13, color: park.colors.textPrimary),
+              ),
             ),
           ),
         // Body
@@ -204,30 +248,44 @@ class _ParkTransferState extends State<ParkTransfer> {
             width: double.infinity,
             decoration: BoxDecoration(
               border: Border.all(color: park.colors.border),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(park.radius.sm)),
             ),
             child: items.isEmpty
-                ? Center(child: Text('暂无数据', style: TextStyle(fontSize: 13, color: park.colors.textPlaceholder)))
+                ? Center(
+                    child: Semantics(
+                      label: l10n.noData,
+                      child: Text(l10n.noData, style: TextStyle(fontSize: 13, color: park.colors.textPlaceholder)),
+                    ),
+                  )
                 : Column(
                     children: [
                       // Select all
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (allSelected) selected.clear();
-                            else items.forEach((i) => selected.add(i.key));
-                          });
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: park.colors.borderLight))),
-                          child: Row(
-                            children: [
-                              Icon(allSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: park.colors.brand),
-                              const SizedBox(width: 6),
-                              Text('全选', style: TextStyle(fontSize: 13, color: park.colors.textSecondary)),
-                            ],
+                      Semantics(
+                        label: l10n.selectAllText,
+                        child: InkWell(
+                          onTap: () {
+                            if (widget.disabled) return;
+                            setState(() {
+                              if (allSelected) {
+                                selected.clear();
+                              } else {
+                                for (final i in items) {
+                                  selected.add(i.key);
+                                }
+                              }
+                            });
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: park.colors.borderLight))),
+                            child: Row(
+                              children: [
+                                Icon(allSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: park.colors.brand),
+                                const SizedBox(width: 6),
+                                Text(l10n.selectAllText, style: TextStyle(fontSize: 13, color: park.colors.textSecondary)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -248,25 +306,32 @@ class _ParkTransferState extends State<ParkTransfer> {
 
   Widget _buildItem(ParkTransferItem item, Set<String> selected, ParkThemeData park) {
     final isSel = selected.contains(item.key);
-    if (widget.renderItem != null) return widget.renderItem!(item, isSel);
+    if (widget.renderItem != null) {
+      final custom = widget.renderItem!(item, isSel);
+      if (widget.disabled) return IgnorePointer(child: custom);
+      return custom;
+    }
 
-    return InkWell(
-      onTap: () => setState(() { isSel ? selected.remove(item.key) : selected.add(item.key); }),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSel ? park.colors.brand.withAlpha(13) : null,
-          border: Border(bottom: BorderSide(color: park.colors.borderLight)),
-        ),
-        child: Row(
-          children: [
-            Icon(isSel ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: isSel ? park.colors.brand : park.colors.textSecondary),
-            const SizedBox(width: 8),
-            Expanded(child: Text(item.title, style: TextStyle(fontSize: 13, color: park.colors.textPrimary))),
-            if (item.subtitle != null)
-              Text(item.subtitle!, style: TextStyle(fontSize: 11, color: park.colors.textPlaceholder)),
-          ],
+    return Semantics(
+      label: '${item.title}${item.subtitle != null ? ', ${item.subtitle}' : ''}${isSel ? ', 已选' : ''}',
+      child: InkWell(
+        onTap: widget.disabled ? null : () => setState(() { isSel ? selected.remove(item.key) : selected.add(item.key); }),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSel ? park.colors.brand.withAlpha(13) : null,
+            border: Border(bottom: BorderSide(color: park.colors.borderLight)),
+          ),
+          child: Row(
+            children: [
+              Icon(isSel ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: isSel ? park.colors.brand : park.colors.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(item.title, style: TextStyle(fontSize: 13, color: park.colors.textPrimary))),
+              if (item.subtitle != null)
+                Text(item.subtitle!, style: TextStyle(fontSize: 11, color: park.colors.textPlaceholder)),
+            ],
+          ),
         ),
       ),
     );

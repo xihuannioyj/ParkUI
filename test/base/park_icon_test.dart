@@ -17,7 +17,7 @@ void main() {
     });
 
     testWidgets('自定义大小', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkIcon(Icons.star, size: 48)));
+      await tester.pumpWidget(_wrap(const ParkIcon(Icons.star, pixelSize: 48)));
       expect(find.byIcon(Icons.star), findsOneWidget);
     });
 

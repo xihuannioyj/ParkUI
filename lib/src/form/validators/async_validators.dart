@@ -6,6 +6,10 @@ import '../models/form_field_schema.dart';
 /// key="username_unique"
 /// Mock 模式：若值为 "admin" 或 "test_user" 返回"用户名已存在"，否则通过。
 /// Real 模式：调用后端 API 校验用户名唯一性。
+///
+/// 注意（B19 / 开发文档.md §7.10）：[realValidate] 为占位实现，真实后端接入前
+/// 不得静默通过。当前显式抛 [UnimplementedError]，强制调用方先完成后端对接，
+/// 避免「未实现却返回通过」导致的隐蔽数据风险。
 class UsernameUniqueValidator {
   /// 校验器注册键。
   static const String key = 'username_unique';
@@ -59,14 +63,15 @@ class UsernameUniqueValidator {
   /// Real 校验逻辑。
   ///
   /// 调用后端 API 校验用户名唯一性。
-  /// 当前为占位实现，返回 null（表示通过）。
+  /// 占位实现：真实后端接入前显式抛 [UnimplementedError]，不静默通过
+  /// （B19 / 开发文档.md §7.10）。
   Future<String?> realValidate(ParkFormFieldSchema field, dynamic value) async {
-    // TODO: 接入真实 API 后替换
-    // 当前返回 null，表示校验通过
-    await Future<void>.delayed(
-      Duration(milliseconds: config.defaultTimeoutMs),
+    // 占位实现：真实后端 API 接入前不得静默返回通过。
+    // TODO: 接入真实 API 后替换为实际校验逻辑。
+    throw UnimplementedError(
+      'UsernameUniqueValidator.realValidate 尚未接入真实后端，'
+      '请先实现用户名唯一性校验 API（config.useMockMode=false 时调用）。',
     );
-    return null;
   }
 }
 
@@ -75,6 +80,9 @@ class UsernameUniqueValidator {
 /// key="email_unique"
 /// Mock 模式：若值为特定已注册邮箱返回"邮箱已注册"，否则通过。
 /// Real 模式：调用后端 API 校验邮箱唯一性。
+///
+/// 注意（B19 / 开发文档.md §7.10）：[realValidate] 为占位实现，真实后端接入前
+/// 不得静默通过。当前显式抛 [UnimplementedError]，强制调用方先完成后端对接。
 class EmailUniqueValidator {
   /// 校验器注册键。
   static const String key = 'email_unique';
@@ -118,12 +126,17 @@ class EmailUniqueValidator {
   }
 
   /// Real 校验逻辑。
+  ///
+  /// 调用后端 API 校验邮箱唯一性。
+  /// 占位实现：真实后端接入前显式抛 [UnimplementedError]，不静默通过
+  /// （B19 / 开发文档.md §7.10）。
   Future<String?> realValidate(ParkFormFieldSchema field, dynamic value) async {
-    // TODO: 接入真实 API 后替换
-    await Future<void>.delayed(
-      Duration(milliseconds: config.defaultTimeoutMs),
+    // 占位实现：真实后端 API 接入前不得静默返回通过。
+    // TODO: 接入真实 API 后替换为实际校验逻辑。
+    throw UnimplementedError(
+      'EmailUniqueValidator.realValidate 尚未接入真实后端，'
+      '请先实现邮箱唯一性校验 API（config.useMockMode=false 时调用）。',
     );
-    return null;
   }
 }
 
@@ -132,6 +145,9 @@ class EmailUniqueValidator {
 /// key="id_card_format"
 /// Mock 模式：校验身份证号长度和基本格式，返回"身份证号格式错误"或 null。
 /// Real 模式：调用后端 API 校验身份证号合法性。
+///
+/// 注意（B19 / 开发文档.md §7.10）：[realValidate] 为占位实现，真实后端接入前
+/// 不得静默通过。当前显式抛 [UnimplementedError]，强制调用方先完成后端对接。
 class IdCardFormatValidator {
   /// 校验器注册键。
   static const String key = 'id_card_format';
@@ -186,11 +202,16 @@ class IdCardFormatValidator {
   }
 
   /// Real 校验逻辑。
+  ///
+  /// 调用后端 API 校验身份证号合法性。
+  /// 占位实现：真实后端接入前显式抛 [UnimplementedError]，不静默通过
+  /// （B19 / 开发文档.md §7.10）。
   Future<String?> realValidate(ParkFormFieldSchema field, dynamic value) async {
-    // TODO: 接入真实 API 后替换
-    await Future<void>.delayed(
-      Duration(milliseconds: config.defaultTimeoutMs),
+    // 占位实现：真实后端 API 接入前不得静默返回通过。
+    // TODO: 接入真实 API 后替换为实际校验逻辑。
+    throw UnimplementedError(
+      'IdCardFormatValidator.realValidate 尚未接入真实后端，'
+      '请先实现身份证号合法性校验 API（config.useMockMode=false 时调用）。',
     );
-    return null;
   }
 }

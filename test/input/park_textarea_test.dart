@@ -7,7 +7,7 @@ Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThem
 void main() {
   group('ParkTextarea', () {
     testWidgets('创建不抛异常', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTextarea(hintText: '请输入备注')));
+      await tester.pumpWidget(_wrap(ParkTextarea(hintText: '请输入备注')));
       expect(find.byType(ParkTextarea), findsOneWidget);
     });
     testWidgets('输入文本', (tester) async {
@@ -17,7 +17,7 @@ void main() {
       expect(val, '多行文本');
     });
     testWidgets('maxLength限制', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkTextarea(hintText: '限制', maxLength: 100)));
+      await tester.pumpWidget(_wrap(ParkTextarea(hintText: '限制', maxLength: 100, showCount: true)));
       expect(find.text('0/100'), findsOneWidget);
     });
   });

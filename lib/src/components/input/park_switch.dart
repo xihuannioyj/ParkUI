@@ -53,6 +53,10 @@ class ParkSwitch extends FormField<dynamic> {
     this.label,
     this.readOnly = false,
     this.thumbIcon,
+    this.checkedChild,
+    this.uncheckedChild,
+    this.checkedLabel,
+    this.uncheckedLabel,
     this.tooltip,
     super.validator,
     super.autovalidateMode,
@@ -99,6 +103,22 @@ class ParkSwitch extends FormField<dynamic> {
 
   /// 拇指上的自定义图标。
   final IconData? thumbIcon;
+
+  /// 选中状态下在滑块（thumb）上显示的自定义元素。
+  /// 当 [loading] 为 true 时不显示。常见用法：`Icon(Icons.check)`。
+  final Widget? checkedChild;
+
+  /// 未选中状态下在滑块（thumb）上显示的自定义元素。
+  /// 当 [loading] 为 true 时不显示。常见用法：`Icon(Icons.close)`。
+  final Widget? uncheckedChild;
+
+  /// 选中状态的语义标签，用于 [ParkFormItem] 和无障碍（Semantics）。
+  /// 当提供时，开关开启时 Semantics.label 优先使用此值。
+  final String? checkedLabel;
+
+  /// 未选中状态的语义标签，用于 [ParkFormItem] 和无障碍（Semantics）。
+  /// 当提供时，开关关闭时 Semantics.label 优先使用此值。
+  final String? uncheckedLabel;
 
   /// 鼠标悬停时显示的提示文字。
   final String? tooltip;
@@ -189,7 +209,17 @@ class _ParkSwitchBuilder extends StatelessWidget {
     // Thumb offset: how far the thumb center is from the left edge
     final thumbOffset = isOn ? trackWidth - thumbSize - thumbInset : thumbInset;
 
-    Widget switchWidget = GestureDetector(
+    final semanticsLabel = isOn
+        ? (widget.checkedLabel ?? widget.label ?? widget.tooltip)
+        : (widget.uncheckedLabel ?? widget.label ?? widget.tooltip);
+
+    Widget switchWidget = Semantics(
+      toggled: isOn,
+      button: true,
+      enabled: !isDisabled && !widget.readOnly,
+      label: semanticsLabel,
+      onTap: state.toggle,
+      child: GestureDetector(
       onTap: state.toggle,
       child: AnimatedContainer(
         duration: park.motion.standard,
@@ -198,7 +228,7 @@ class _ParkSwitchBuilder extends StatelessWidget {
         height: trackHeight,
         decoration: BoxDecoration(
           color: finalTrackColor,
-          borderRadius: BorderRadius.circular(trackHeight / 2),
+          borderRadius: BorderRadius.circular(park.radius.full),
         ),
         child: Stack(
           children: [
@@ -256,15 +286,9 @@ class _ParkSwitchBuilder extends StatelessWidget {
                 width: thumbSize,
                 height: thumbSize,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: park.colors.surface,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
+                  boxShadow: park.shadows.sm,
                 ),
                 child: isLoading
                     ? Padding(
@@ -274,17 +298,24 @@ class _ParkSwitchBuilder extends StatelessWidget {
                           color: isOn ? activeColor : park.colors.textSecondary,
                         ),
                       )
-                    : widget.thumbIcon != null
-                        ? Icon(
-                            widget.thumbIcon!,
-                            size: thumbSize * 0.55,
-                            color: isOn ? activeColor : park.colors.textSecondary,
-                          )
-                        : null,
+                    : isOn && widget.checkedChild != null
+                        ? widget.checkedChild!
+                        : !isOn && widget.uncheckedChild != null
+                            ? widget.uncheckedChild!
+                            : widget.thumbIcon != null
+                                ? Icon(
+                                    widget.thumbIcon!,
+                                    size: thumbSize * 0.55,
+                                    color: isOn
+                                        ? activeColor
+                                        : park.colors.textSecondary,
+                                  )
+                                : null,
               ),
             ),
           ],
         ),
+      ),
       ),
     );
 

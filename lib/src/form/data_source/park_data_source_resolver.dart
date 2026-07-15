@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import '../../binding/park_binding_path.dart';
 import '../models/form_field_schema.dart';
 
 /// 数据源解析回调。
@@ -46,6 +49,12 @@ class ParkDataSourceResolver {
   /// 存储外部注入的缓存键值对，在异步接口数据源参数解析时，
   /// `$cache.xxx` 语法将从此存储中取值。
   final Map<String, dynamic> _cacheStore = <String, dynamic>{};
+
+  /// 可选的错误回调钩子。
+  ///
+  /// 当异步数据源获取器抛出异常时调用，传入异常对象和堆栈信息。
+  /// 用于外部接入错误上报系统（如 Sentry、Crashlytics）。
+  void Function(Object error, StackTrace stack)? onError;
 
   /// 注册异步数据源获取器。
   ///
@@ -187,45 +196,61 @@ class ParkDataSourceResolver {
     final ParkDataSourceFetcher? fetcher = _fetchers[dsKey];
     if (fetcher == null) return field.options;
 
-    // 解析动态参数：支持 $form.xxx、$cache.xxx 及普通字段名引用。
+    // 解析动态参数：仅支持 $form.xxx / $cache.xxx 点号路径引用。
     final Map<String, dynamic> resolvedParams = <String, dynamic>{};
     for (final MapEntry<String, dynamic> entry in field.dataSourceParams.entries) {
       resolvedParams[entry.key] = _resolveParamValue(entry.value, currentValues);
     }
 
-    return fetcher(field, resolvedParams);
+    // fetcher 抛错时回退空列表，避免传递到 build 导致 UI 崩溃（B20）。
+    try {
+      return await fetcher(field, resolvedParams);
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('[ParkDataSourceResolver] _resolveApi 失败，回退空列表: $e\n$stack');
+      }
+      // 在所有模式（含 release）下上报错误，避免静默吞异常（B76）。
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: stack,
+        library: 'park_ui',
+        context: ErrorDescription(
+          'ParkDataSourceResolver._resolveApi failed for key "$dsKey"',
+        ),
+      ));
+      onError?.call(e, stack);
+      return <Map<String, dynamic>>[];
+    }
   }
 
   /// 解析单个参数值。
   ///
   /// 按优先级依次尝试以下解析策略：
-  /// 1. `$form.xxx` 前缀 → 从 [currentValues] 中取 `xxx`。
-  /// 2. `$cache.xxx` 前缀 → 从 [_cacheStore] 中取 `xxx`。
-  /// 3. 普通字符串且匹配已有表单字段 → 从 [currentValues] 中取值。
-  /// 4. 其他情况 → 原样返回。
+  /// 1. `$form.xxx` 前缀 → 沿点号路径从 [currentValues] 中取 `xxx`（支持嵌套 `a.b`）。
+  /// 2. `$cache.xxx` 前缀 → 沿点号路径从 [_cacheStore] 中取 `xxx`（支持嵌套 `a.b`）。
+  /// 3. 其他情况 → 原样返回。
+  ///
+  /// 注意：不再把普通字段名（如 `{'type':'status'}`）当作字段引用替换成字段值，
+  /// 避免隐式替换带来的意外行为（B20）。
   ///
   /// [val] 原始参数值。
   /// [currentValues] 当前表单值。
   dynamic _resolveParamValue(dynamic val, Map<String, dynamic> currentValues) {
     if (val is! String) return val;
 
-    // 解析 $form.xxx 前缀：从表单当前值中取字段值。
+    // 解析 $form.xxx 前缀：沿点号路径从表单当前值中取字段值。
     if (val.startsWith(r'$form.')) {
-      final String fieldName = val.substring(6);
-      return currentValues[fieldName];
+      final String path = val.substring(6);
+      return ParkBindingPath.resolve(path, currentValues);
     }
 
-    // 解析 $cache.xxx 前缀：从缓存存储中取键值。
+    // 解析 $cache.xxx 前缀：沿点号路径从缓存存储中取键值。
     if (val.startsWith(r'$cache.')) {
-      final String cacheKey = val.substring(7);
-      return _cacheStore[cacheKey];
+      final String path = val.substring(7);
+      return ParkBindingPath.resolve(path, _cacheStore);
     }
 
-    // 兼容旧逻辑：若参数值是已有字段名，替换为该字段的当前值。
-    if (currentValues.containsKey(val)) {
-      return currentValues[val];
-    }
-
+    // 普通字段名不再隐式替换，原样返回。
     return val;
   }
 

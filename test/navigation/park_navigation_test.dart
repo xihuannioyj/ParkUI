@@ -128,6 +128,7 @@ void main() {
               ParkStep(title: '第一步'),
               ParkStep(title: '第二步'),
             ],
+            clickable: true,
             onStepTap: (int index) => tappedStep = index,
           ),
         ),

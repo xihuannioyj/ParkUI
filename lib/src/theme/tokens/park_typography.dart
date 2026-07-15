@@ -104,68 +104,97 @@ class ParkTypography {
 
   /// 超大标题样式
   TextStyle get display => TextStyle(
-        fontSize: sizeDisplay,
-        height: lineHeightTitle,
-        fontWeight: weightBold,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeDisplay,
+    height: lineHeightTitle,
+    fontWeight: weightBold,
+    fontFamily: fontFamily,
+  );
 
   /// 一级标题样式
   TextStyle get h1 => TextStyle(
-        fontSize: sizeH1,
-        height: lineHeightTitle,
-        fontWeight: weightBold,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeH1,
+    height: lineHeightTitle,
+    fontWeight: weightBold,
+    fontFamily: fontFamily,
+  );
 
   /// 二级标题样式
   TextStyle get h2 => TextStyle(
-        fontSize: sizeH2,
-        height: lineHeightTitle,
-        fontWeight: weightBold,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeH2,
+    height: lineHeightTitle,
+    fontWeight: weightBold,
+    fontFamily: fontFamily,
+  );
 
   /// 三级标题样式
   TextStyle get h3 => TextStyle(
-        fontSize: sizeH3,
-        height: lineHeightTitle,
-        fontWeight: weightMedium,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeH3,
+    height: lineHeightTitle,
+    fontWeight: weightMedium,
+    fontFamily: fontFamily,
+  );
 
   /// 正文样式
   TextStyle get body => TextStyle(
-        fontSize: sizeBody,
-        height: lineHeightBody,
-        fontWeight: weightRegular,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeBody,
+    height: lineHeightBody,
+    fontWeight: weightRegular,
+    fontFamily: fontFamily,
+  );
 
   /// 小号正文样式
   TextStyle get bodySmall => TextStyle(
-        fontSize: sizeBodySmall,
-        height: lineHeightBody,
-        fontWeight: weightRegular,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeBodySmall,
+    height: lineHeightBody,
+    fontWeight: weightRegular,
+    fontFamily: fontFamily,
+  );
 
   /// 辅助文字样式
   TextStyle get caption => TextStyle(
-        fontSize: sizeCaption,
-        height: lineHeightBody,
-        fontWeight: weightRegular,
-        fontFamily: fontFamily,
-      );
+    fontSize: sizeCaption,
+    height: lineHeightBody,
+    fontWeight: weightRegular,
+    fontFamily: fontFamily,
+  );
 
   /// 超小文字样式
   TextStyle get overline => TextStyle(
-        fontSize: sizeOverline,
-        height: lineHeightTitle,
-        fontWeight: weightMedium,
-        fontFamily: fontFamily,
-        letterSpacing: letterSpacingOverline,
-      );
+    fontSize: sizeOverline,
+    height: lineHeightTitle,
+    fontWeight: weightMedium,
+    fontFamily: fontFamily,
+    letterSpacing: letterSpacingOverline,
+  );
+
+  /// 逐属性平滑插值。
+  ///
+  /// 数值字段（字号、行高、字距）做线性插值；
+  /// 字重（FontWeight）和字体族（String）无法连续插值，在 t < 0.5 时使用 a。
+  static ParkTypography lerp(ParkTypography a, ParkTypography b, double t) {
+    return ParkTypography(
+      sizeDisplay: a.sizeDisplay + (b.sizeDisplay - a.sizeDisplay) * t,
+      sizeH1: a.sizeH1 + (b.sizeH1 - a.sizeH1) * t,
+      sizeH2: a.sizeH2 + (b.sizeH2 - a.sizeH2) * t,
+      sizeH3: a.sizeH3 + (b.sizeH3 - a.sizeH3) * t,
+      sizeBody: a.sizeBody + (b.sizeBody - a.sizeBody) * t,
+      sizeBodySmall: a.sizeBodySmall + (b.sizeBodySmall - a.sizeBodySmall) * t,
+      sizeCaption: a.sizeCaption + (b.sizeCaption - a.sizeCaption) * t,
+      sizeOverline: a.sizeOverline + (b.sizeOverline - a.sizeOverline) * t,
+      letterSpacingOverline:
+          a.letterSpacingOverline +
+          (b.letterSpacingOverline - a.letterSpacingOverline) * t,
+      lineHeightTitle:
+          a.lineHeightTitle + (b.lineHeightTitle - a.lineHeightTitle) * t,
+      lineHeightBody:
+          a.lineHeightBody + (b.lineHeightBody - a.lineHeightBody) * t,
+      weightBold: t < 0.5 ? a.weightBold : b.weightBold,
+      weightRegular: t < 0.5 ? a.weightRegular : b.weightRegular,
+      weightMedium: t < 0.5 ? a.weightMedium : b.weightMedium,
+      weightLight: t < 0.5 ? a.weightLight : b.weightLight,
+      fontFamily: t < 0.5 ? a.fontFamily : b.fontFamily,
+    );
+  }
 
   ParkTypography copyWith({
     double? sizeDisplay,
@@ -230,21 +259,21 @@ class ParkTypography {
 
   @override
   int get hashCode => Object.hash(
-        sizeDisplay,
-        sizeH1,
-        sizeH2,
-        sizeH3,
-        sizeBody,
-        sizeBodySmall,
-        sizeCaption,
-        sizeOverline,
-        letterSpacingOverline,
-        lineHeightTitle,
-        lineHeightBody,
-        weightBold,
-        weightRegular,
-        weightMedium,
-        weightLight,
-        fontFamily,
-      );
+    sizeDisplay,
+    sizeH1,
+    sizeH2,
+    sizeH3,
+    sizeBody,
+    sizeBodySmall,
+    sizeCaption,
+    sizeOverline,
+    letterSpacingOverline,
+    lineHeightTitle,
+    lineHeightBody,
+    weightBold,
+    weightRegular,
+    weightMedium,
+    weightLight,
+    fontFamily,
+  );
 }

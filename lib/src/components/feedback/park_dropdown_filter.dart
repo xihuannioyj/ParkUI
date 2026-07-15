@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 import 'park_dropdown_sheet.dart';
 
 // ============================================================================
@@ -323,8 +324,8 @@ class _ParkDropdownFilterState extends State<ParkDropdownFilter> {
         selectedValues: currentSelected,
         height: item.height,
         isCheck: item.isCheck,
-        confirmText: '确定',
-        cancelText: '取消',
+        confirmText: ParkLocalizations.of(context).confirmText,
+        cancelText: ParkLocalizations.of(context).cancelText,
         onChange: (values) {
           item.onChange?.call(values);
         },
@@ -362,8 +363,8 @@ class _ParkDropdownFilterState extends State<ParkDropdownFilter> {
       title: item.label,
       child: item.child!,
       height: item.height,
-      confirmText: '确定',
-      cancelText: '取消',
+      confirmText: ParkLocalizations.of(context).confirmText,
+      cancelText: ParkLocalizations.of(context).cancelText,
       onConfirm: () {
         item.onConfirm?.call(_selectedValues[index] ?? <String>{});
         widget.onFilterChanged?.call(index, _selectedValues[index] ?? <String>{});
@@ -432,10 +433,13 @@ class _FilterLabel extends StatelessWidget {
     final bgColor = style?.backgroundColor;
     final borderRadius = style?.borderRadius;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: disabled ? null : onTap,
-      child: AnimatedContainer(
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: disabled ? null : onTap,
+        child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
         padding:
@@ -494,6 +498,7 @@ class _FilterLabel extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -574,7 +579,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
     if (widget.isCheck && _selected.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请先选择一项')));
+      ).showSnackBar(SnackBar(content: Text(ParkLocalizations.of(context).pleaseSelectFirst)));
       return;
     }
     widget.onConfirm?.call(_selected);
@@ -684,7 +689,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
         padding: EdgeInsets.all(park.spacing.xl),
         child: Center(
           child: Text(
-            '暂无选项',
+            ParkLocalizations.of(context).noOptions,
             style: TextStyle(color: park.colors.textPlaceholder),
           ),
         ),
@@ -728,9 +733,13 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
 
   Widget _buildListItem(
       DropdownFilterOption option, bool isSelected, ParkThemeData park) {
-    return GestureDetector(
-      onTap: () => _toggleOption(option),
-      child: AnimatedContainer(
+    return Semantics(
+      button: true,
+      label: option.label,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () => _toggleOption(option),
+        child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
         margin: EdgeInsets.symmetric(vertical: park.spacing.xs),
@@ -754,7 +763,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
             BoxShadow(
               color: isSelected
                   ? park.colors.brand.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.03),
+                  : park.colors.textPrimary.withValues(alpha: 0.03),
               blurRadius: isSelected ? 10 : 6,
               offset: Offset(0, isSelected ? 4 : 2),
             ),
@@ -816,6 +825,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -844,9 +854,13 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
 
   Widget _buildGridItem(
       DropdownFilterOption option, bool isSelected, ParkThemeData park) {
-    return GestureDetector(
-      onTap: () => _toggleOption(option),
-      child: AnimatedContainer(
+    return Semantics(
+      button: true,
+      label: option.label,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () => _toggleOption(option),
+        child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
         decoration: BoxDecoration(
@@ -863,7 +877,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
             BoxShadow(
               color: isSelected
                   ? park.colors.brand.withValues(alpha: 0.10)
-                  : Colors.black.withValues(alpha: 0.04),
+                  : park.colors.textPrimary.withValues(alpha: 0.04),
               blurRadius: isSelected ? 12 : 6,
               offset: const Offset(0, 2),
             ),
@@ -901,6 +915,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -910,9 +925,12 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
     required ParkThemeData park,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return Semantics(
+      button: true,
+      label: text,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: park.spacing.base,
           vertical: park.spacing.sm,
@@ -947,6 +965,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
                 : park.colors.textSecondary,
           ),
         ),
+      ),
       ),
     );
   }

@@ -5,7 +5,7 @@ import '../../theme/park_theme_data.dart';
 enum ParkBadgeSize { small, medium }
 
 /// Badge status — renders a colored status dot (no count).
-enum ParkBadgeStatus { success, processing, defaultStatus, warning, error }
+enum ParkBadgeStatus { success, info, defaultStatus, warning, error }
 
 /// Ribbon placement on the child widget.
 enum ParkRibbonPlacement { topRight, topLeft }
@@ -48,7 +48,9 @@ class ParkBadge extends StatelessWidget {
   /// Maximum count before showing "maxCount+".
   final int maxCount;
 
-  /// Background color of the badge. Defaults to red.
+  /// Background color of the badge / status dot color.
+  /// When [status] is set, this overrides the default status color.
+  /// When [status] is null, defaults to red (error color).
   final Color? color;
 
   /// Text color inside the badge. Defaults to white.
@@ -103,11 +105,13 @@ class ParkBadge extends StatelessWidget {
   double get _padding => size == ParkBadgeSize.small ? 4 : 6;
 
   Color _statusColor(ParkThemeData park) {
+    // color parameter takes highest priority
+    if (color != null) return color!;
     switch (status) {
       case ParkBadgeStatus.success:
         return park.colors.success;
-      case ParkBadgeStatus.processing:
-        return park.colors.brand;
+      case ParkBadgeStatus.info:
+        return park.colors.info;
       case ParkBadgeStatus.defaultStatus:
         return park.colors.textSecondary;
       case ParkBadgeStatus.warning:
@@ -115,7 +119,7 @@ class ParkBadge extends StatelessWidget {
       case ParkBadgeStatus.error:
         return park.colors.error;
       case null:
-        return color ?? park.colors.error;
+        return park.colors.error;
     }
   }
 
@@ -166,7 +170,8 @@ class ParkBadge extends StatelessWidget {
         ),
       );
     } else {
-      final label = count! > maxCount ? '$maxCount+' : '$count';
+      final int effectiveLimit = overflowCount ?? maxCount;
+      final label = count! > effectiveLimit ? '$effectiveLimit+' : '$count';
       indicator = Container(
         constraints: BoxConstraints(minWidth: _minWidth),
         height: _height,
@@ -214,47 +219,40 @@ class ParkBadge extends StatelessWidget {
   /// Standalone mode: status dot with optional text label, no child.
   Widget _buildStandaloneStatusDot(ParkThemeData park) {
     final statusColor = _statusColor(park);
-    final dotSize = _dotSize + 2;
 
     Widget dot = Container(
-      width: dotSize,
-      height: dotSize,
+      width: 6,
+      height: 6,
       decoration: BoxDecoration(
         color: statusColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: park.colors.surface,
-          width: 1.5,
-        ),
       ),
     );
 
-    if (status == ParkBadgeStatus.processing) {
-      dot = _ProcessingDot(
-        color: statusColor,
-        size: dotSize,
-        borderColor: park.colors.surface,
-      );
-    }
-
     if (standaloneText != null) {
-      return _wrapTooltip(Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          dot,
-          SizedBox(width: park.spacing.xs),
-          Text(
-            standaloneText!,
-            style: TextStyle(
-              fontSize: park.typography.sizeBodySmall,
-              color: park.colors.textPrimary,
+      return _wrapTooltip(Semantics(
+        label: '$standaloneText',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            dot,
+            SizedBox(width: park.spacing.xs),
+            Text(
+              standaloneText!,
+              style: TextStyle(
+                fontSize: park.typography.sizeBodySmall,
+                color: park.colors.textPrimary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ));
     }
 
-    return _wrapTooltip(dot);
+    return _wrapTooltip(Semantics(
+      label: status?.name ?? 'status',
+      child: dot,
+    ));
   }
 
   /// Standalone mode: numeric or dot indicator with optional text, no child.
@@ -277,8 +275,9 @@ class ParkBadge extends StatelessWidget {
         ),
       );
     } else {
+      final int effectiveLimit = overflowCount ?? maxCount;
       final label = count != null
-          ? (count! > maxCount ? '$maxCount+' : '$count')
+          ? (count! > effectiveLimit ? '$effectiveLimit+' : '$count')
           : '';
       indicator = Container(
         constraints: BoxConstraints(minWidth: _minWidth),
@@ -328,43 +327,26 @@ class ParkBadge extends StatelessWidget {
 
   Widget _buildStatusDot(ParkThemeData park) {
     final statusColor = _statusColor(park);
-    final dotSize = _dotSize + 2; // slightly larger than regular dot
 
     Widget statusIndicator = Container(
-      width: dotSize,
-      height: dotSize,
+      width: 6,
+      height: 6,
       decoration: BoxDecoration(
         color: statusColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: park.colors.surface,
-          width: 1.5,
-        ),
       ),
     );
 
-    // Add pulse animation for processing status
-    if (status == ParkBadgeStatus.processing) {
-      statusIndicator = _ProcessingDot(
-        color: statusColor,
-        size: dotSize,
-        borderColor: park.colors.surface,
-      );
-    }
-
-    final dx = offset?.dx ?? 0;
-    final dy = offset?.dy ?? 0;
-
-    Widget result = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child!,
-        Positioned(
-          top: -4 + dy,
-          right: -4 + dx,
-          child: statusIndicator,
-        ),
-      ],
+    Widget result = Semantics(
+      label: status?.name ?? 'status',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          statusIndicator,
+          SizedBox(width: park.spacing.xs),
+          child!,
+        ],
+      ),
     );
 
     return _wrapTooltip(result);
@@ -380,7 +362,7 @@ class ParkBadge extends StatelessWidget {
         color: color,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
+            color: park.colors.textPrimary.withValues(alpha: 0.15),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -428,89 +410,5 @@ class ParkBadge extends StatelessWidget {
       );
     }
     return widget;
-  }
-}
-
-/// Animated processing dot with a subtle pulse effect.
-class _ProcessingDot extends StatefulWidget {
-  final Color color;
-  final double size;
-  final Color borderColor;
-
-  const _ProcessingDot({
-    required this.color,
-    required this.size,
-    required this.borderColor,
-  });
-
-  @override
-  State<_ProcessingDot> createState() => _ProcessingDotState();
-}
-
-class _ProcessingDotState extends State<_ProcessingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.6).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _opacityAnimation = Tween<double>(begin: 0.6, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Pulse ring
-            Transform.scale(
-              scale: _scaleAnimation.value,
-              child: Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  color: widget.color.withValues(alpha: _opacityAnimation.value),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            // Solid dot
-            Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                color: widget.color,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: widget.borderColor,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

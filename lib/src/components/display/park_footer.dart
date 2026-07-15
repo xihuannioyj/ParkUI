@@ -135,7 +135,10 @@ class ParkFooter extends StatelessWidget {
       spacing: park.spacing.lg,
       runSpacing: park.spacing.sm,
       children: links.map((link) {
-        return GestureDetector(
+        return Semantics(
+          button: true,
+          label: link.label,
+          child: GestureDetector(
           onTap: link.onTap,
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -149,6 +152,7 @@ class ParkFooter extends StatelessWidget {
               ),
             ),
           ),
+        ),
         );
       }).toList(),
     );

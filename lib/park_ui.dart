@@ -1,6 +1,6 @@
 /// Park UI — 独立、可插拔的 Flutter UI 组件集
 ///
-/// 提供完整的设计令牌系统和 85+ 个自定义控件。
+/// 提供完整的设计令牌系统和 100+ 个自定义控件。
 /// 所有组件独立工作，不依赖 GetX / Provider 等全局状态管理。
 ///
 /// 快速开始：
@@ -29,6 +29,7 @@ library;
 export 'src/theme/park_theme.dart';
 export 'src/theme/park_theme_data.dart';
 export 'src/theme/park_icon_theme_data.dart';
+export 'src/theme/park_config_provider.dart';
 
 // ============================================================================
 // 本地化
@@ -57,12 +58,16 @@ export 'src/components/base/park_fab.dart';
 export 'src/components/base/park_link.dart';
 export 'src/components/base/park_space.dart';
 export 'src/components/base/park_ink_well.dart';
+export 'src/components/base/park_grid_row.dart';
+export 'src/components/base/park_typography.dart';
+export 'src/components/base/park_flex.dart';
 
 // ============================================================================
 // 输入组件
 // ============================================================================
 
 export 'src/components/input/park_input.dart';
+export 'src/components/input/park_mentions.dart';
 export 'src/components/input/park_textarea.dart';
 export 'src/components/input/park_search.dart';
 export 'src/components/input/park_switch.dart';
@@ -73,6 +78,7 @@ export 'src/components/input/park_checkbox.dart';
 export 'src/components/input/park_radio.dart';
 export 'src/components/input/park_picker.dart';
 export 'src/components/input/park_date_picker.dart';
+export 'src/components/input/park_date_preset.dart';
 export 'src/components/input/park_date_range_picker.dart';
 export 'src/components/input/park_select.dart';
 export 'src/components/input/park_cascader.dart';
@@ -125,21 +131,23 @@ export 'src/components/display/park_progress.dart';
 export 'src/components/display/park_result.dart';
 export 'src/components/display/park_skeleton.dart';
 export 'src/components/display/park_swiper.dart';
-export 'src/components/display/park_table.dart';
-export 'src/components/display/park_tag.dart';
-export 'src/components/display/park_counter.dart';
-export 'src/components/display/park_footer.dart';
-export 'src/components/display/park_grid.dart';
+  export 'src/components/display/park_table.dart';
+  export 'src/components/display/park_tag.dart';
+  export 'src/components/display/park_footer.dart';
+  export 'src/components/display/park_grid.dart';
 export 'src/components/display/park_sticky.dart';
 export 'src/components/display/park_card.dart';
 export 'src/components/display/park_countdown.dart';
 export 'src/components/display/park_qrcode.dart';
 export 'src/components/display/park_list.dart';
+export 'src/components/display/park_masonry.dart';
 export 'src/components/display/park_ellipsis.dart';
 export 'src/components/display/park_timeline.dart';
+export 'src/components/display/park_statistic.dart';
 export 'src/components/display/park_tooltip.dart';
 export 'src/components/display/park_watermark.dart';
 export 'src/components/display/park_tree.dart';
+export 'src/components/display/park_splitter.dart';
 
 // ============================================================================
 // 反馈组件
@@ -161,6 +169,7 @@ export 'src/components/feedback/park_refresh.dart';
 export 'src/components/feedback/park_swipe_cell.dart';
 export 'src/components/feedback/park_notification.dart';
 export 'src/components/feedback/park_overlay.dart';
+export 'src/components/feedback/park_tour.dart';
 export 'src/components/feedback/park_popconfirm.dart';
 
 // ============================================================================

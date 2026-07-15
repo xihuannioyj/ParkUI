@@ -64,6 +64,23 @@ class ParkSizing {
   /// 默认尺寸令牌
   factory ParkSizing.defaults() => const ParkSizing();
 
+  /// 逐尺寸值平滑插值。
+  static ParkSizing lerp(ParkSizing a, ParkSizing b, double t) {
+    return ParkSizing(
+      buttonHeightSm: a.buttonHeightSm + (b.buttonHeightSm - a.buttonHeightSm) * t,
+      buttonHeightMd: a.buttonHeightMd + (b.buttonHeightMd - a.buttonHeightMd) * t,
+      buttonHeightLg: a.buttonHeightLg + (b.buttonHeightLg - a.buttonHeightLg) * t,
+      inputHeightSm: a.inputHeightSm + (b.inputHeightSm - a.inputHeightSm) * t,
+      inputHeightMd: a.inputHeightMd + (b.inputHeightMd - a.inputHeightMd) * t,
+      inputHeightLg: a.inputHeightLg + (b.inputHeightLg - a.inputHeightLg) * t,
+      buttonHorizontalPaddingMd:
+          a.buttonHorizontalPaddingMd + (b.buttonHorizontalPaddingMd - a.buttonHorizontalPaddingMd) * t,
+      buttonVerticalPaddingMd:
+          a.buttonVerticalPaddingMd + (b.buttonVerticalPaddingMd - a.buttonVerticalPaddingMd) * t,
+      minTouchTarget: a.minTouchTarget + (b.minTouchTarget - a.minTouchTarget) * t,
+    );
+  }
+
   ParkSizing copyWith({
     double? buttonHeightSm,
     double? buttonHeightMd,

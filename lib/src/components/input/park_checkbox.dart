@@ -3,6 +3,7 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 
 // ============================================================================
 // ParkCheckbox
@@ -175,9 +176,14 @@ class _ParkCheckboxBuilder extends StatelessWidget {
 
     return Focus(
       autofocus: widget.autoFocus,
-      child: GestureDetector(
-        onTap: state.toggle,
-        child: Row(
+      child: Semantics(
+        button: true,
+        label: widget.label != null ? '${isChecked ? '✓' : '○'} ${widget.label}' : null,
+        enabled: !isDisabled,
+        checked: isChecked,
+        child: GestureDetector(
+          onTap: state.toggle,
+          child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -228,6 +234,7 @@ class _ParkCheckboxBuilder extends StatelessWidget {
           ],
         ],
       ),
+    ),
     ),
     );
   }
@@ -291,29 +298,35 @@ enum ParkCheckboxGroupLayout {
 class ParkCheckboxGroup extends StatefulWidget {
   const ParkCheckboxGroup({
     super.key,
-    this.options = const <String>[],
+    this.options = const <ParkCheckboxOption>[],
+    @Deprecated('使用 options（List<ParkCheckboxOption>）代替')
     this.options2,
     this.value = const [],
     this.onChanged,
+    @Deprecated('使用 onChanged 代替')
     this.onChange2,
     this.layout = ParkCheckboxGroupLayout.vertical,
     this.disabled = false,
     this.selectAll = false,
   });
 
-  /// 选项列表（简单字符串模式，向后兼容）
-  final List<String> options;
+  /// 选项列表（富模型，单一真源 API）。
+  final List<ParkCheckboxOption> options;
 
-  /// 选项列表（富模型模式）。当提供时优先于 [options] 使用。
+  /// 选项列表（富模型）。[options] 的兼容别名，已废弃，请使用 [options]。
+  @Deprecated('使用 options（List<ParkCheckboxOption>）代替')
   final List<ParkCheckboxOption>? options2;
 
   /// 已选中的值
   final List<String> value;
 
-  /// 选中值变化回调
-  final ValueChanged<List<String>>? onChanged;
+  /// 选中值变化回调。
+  ///
+  /// [values] 当前选中的值列表；[selectedOptions] 当前选中的富选项列表。
+  final void Function(List<String> values, List<ParkCheckboxOption> selectedOptions)? onChanged;
 
-  /// 选中值变化回调（富模型），提供变化后的选项列表。
+  /// 选中值变化回调（富模型）。[onChanged] 的兼容别名，已废弃，请使用 [onChanged]。
+  @Deprecated('使用 onChanged 代替')
   final void Function(List<String> values, List<ParkCheckboxOption> changedOptions)? onChange2;
 
   /// 布局方式
@@ -335,9 +348,7 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   /// 统一解析后的选项列表
   List<ParkCheckboxOption> get _resolvedOptions {
     if (widget.options2 != null) return widget.options2!;
-    return widget.options
-        .map((String s) => ParkCheckboxOption(label: s, value: s))
-        .toList();
+    return widget.options;
   }
 
   @override
@@ -389,13 +400,11 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   }
 
   void _fireCallbacks() {
-    widget.onChanged?.call(List<String>.from(_selected));
-    widget.onChange2?.call(
-      List<String>.from(_selected),
-      _resolvedOptions
-          .where((ParkCheckboxOption o) => _selected.contains(o.value))
-          .toList(),
-    );
+    final List<ParkCheckboxOption> selected = _resolvedOptions
+        .where((ParkCheckboxOption o) => _selected.contains(o.value))
+        .toList();
+    widget.onChanged?.call(List<String>.from(_selected), selected);
+    widget.onChange2?.call(List<String>.from(_selected), selected);
   }
 
   @override
@@ -430,7 +439,7 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
       selectAllWidget = ParkCheckbox(
         value: allSelected,
         indeterminate: !allSelected && someSelected,
-        label: const Text('全选'),
+        label: Text(ParkLocalizations.of(context).selectAllText),
         disabled: widget.disabled,
         onChanged: (_) => _toggleAll(allSelected),
       );

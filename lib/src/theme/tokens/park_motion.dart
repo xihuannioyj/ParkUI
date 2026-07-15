@@ -44,6 +44,22 @@ class ParkMotion {
 
   static const defaults = ParkMotion();
 
+  /// 逐属性平滑插值。
+  ///
+  /// 时长字段（standardMs / quickMs / slowMs / staggerMs）做线性插值；
+  /// 缓动曲线（Curve）无法连续插值，在 t < 0.5 时使用 a，否则使用 b。
+  static ParkMotion lerp(ParkMotion a, ParkMotion b, double t) {
+    return ParkMotion(
+      standardMs: (a.standardMs + (b.standardMs - a.standardMs) * t).round(),
+      quickMs: (a.quickMs + (b.quickMs - a.quickMs) * t).round(),
+      slowMs: (a.slowMs + (b.slowMs - a.slowMs) * t).round(),
+      staggerMs: (a.staggerMs + (b.staggerMs - a.staggerMs) * t).round(),
+      enterEasing: t < 0.5 ? a.enterEasing : b.enterEasing,
+      defaultEasing: t < 0.5 ? a.defaultEasing : b.defaultEasing,
+      exitEasing: t < 0.5 ? a.exitEasing : b.exitEasing,
+    );
+  }
+
   ParkMotion copyWith({
     int? standardMs,
     int? quickMs,

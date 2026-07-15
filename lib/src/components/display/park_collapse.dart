@@ -3,6 +3,15 @@ import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
 
+/// Where the expand/collapse icon is placed in the panel header.
+enum ParkExpandIconPosition {
+  /// Icon is placed at the start (left) of the header, before the title.
+  start,
+
+  /// Icon is placed at the end (right) of the header, after the title and extra.
+  end,
+}
+
 /// Controls how a collapse panel can be toggled.
 enum ParkCollapseCollapsible {
   /// Can be toggled by clicking anywhere on the header.
@@ -75,6 +84,8 @@ class ParkCollapse extends StatefulWidget {
     this.shape,
     this.headerPadding,
     this.contentPadding,
+    this.expandIcon,
+    this.expandIconPosition = ParkExpandIconPosition.end,
   });
 
   /// The list of collapsible items.
@@ -122,6 +133,14 @@ class ParkCollapse extends StatefulWidget {
   ///
   /// When null, defaults to `EdgeInsets.fromLTRB(16, 0, 16, 16)`.
   final EdgeInsetsGeometry? contentPadding;
+
+  /// Custom expand/collapse icon for all panels (overridden by [ParkCollapseItem.expandIcon]).
+  final Widget? expandIcon;
+
+  /// Where the expand/collapse icon is placed in the header.
+  ///
+  /// Defaults to [ParkExpandIconPosition.end] for backward compatibility.
+  final ParkExpandIconPosition expandIconPosition;
 
   @override
   State<ParkCollapse> createState() => _ParkCollapseState();
@@ -180,7 +199,7 @@ class _ParkCollapseState extends State<ParkCollapse>
       children: [
         for (int i = 0; i < widget.items.length; i++) ...[
           _buildItem(park, widget.items[i]),
-          if (widget.bordered && i < widget.items.length - 1)
+          if (widget.bordered && !widget.ghost && i < widget.items.length - 1)
             Container(height: 0.5, color: park.colors.divider),
         ],
       ],
@@ -209,7 +228,26 @@ class _ParkCollapseState extends State<ParkCollapse>
             ? Colors.transparent
             : park.colors.surface;
 
-    final Widget header = GestureDetector(
+    final Widget iconWidget = item.expandIcon ??
+        (widget.expandIcon ??
+            AnimatedRotation(
+              turns: isOpen ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                size: 20,
+                color: isDisabled
+                    ? park.colors.textDisabled
+                    : park.colors.textSecondary,
+              ),
+            ));
+
+    final Widget header = Semantics(
+      button: true,
+      label: item.title,
+      expanded: isOpen,
+      enabled: !isDisabled,
+      child: GestureDetector(
       onTap: isDisabled ? null : () => _toggle(item.key),
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -218,7 +256,7 @@ class _ParkCollapseState extends State<ParkCollapse>
             ? null
             : BoxDecoration(
                 color: bgColor,
-                border: widget.bordered
+                border: widget.bordered && !widget.ghost
                     ? Border(
                         bottom: BorderSide(color: park.colors.divider, width: 0.5),
                       )
@@ -226,6 +264,10 @@ class _ParkCollapseState extends State<ParkCollapse>
               ),
         child: Row(
           children: [
+            if (widget.expandIconPosition == ParkExpandIconPosition.start) ...[
+              iconWidget,
+              SizedBox(width: park.spacing.sm),
+            ],
             if (item.icon != null) ...[
               Icon(
                 item.icon,
@@ -249,19 +291,13 @@ class _ParkCollapseState extends State<ParkCollapse>
               item.extra!,
               SizedBox(width: park.spacing.sm),
             ],
-            item.expandIcon ??
-                AnimatedRotation(
-                  turns: isOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 20,
-                    color: isDisabled ? park.colors.textDisabled : park.colors.textSecondary,
-                  ),
-                ),
+            if (widget.expandIconPosition == ParkExpandIconPosition.end) ...[
+              iconWidget,
+            ],
           ],
         ),
       ),
+    ),
     );
 
     final Widget body = AnimatedCrossFade(

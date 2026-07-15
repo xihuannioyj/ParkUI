@@ -11,7 +11,7 @@ void main() {
       expect(find.byType(ParkProgress), findsOneWidget);
     });
     testWidgets('百分比显示', (tester) async {
-      await tester.pumpWidget(_wrap(const ParkProgress(value: 0.75, showLabel: true)));
+      await tester.pumpWidget(_wrap(const ParkProgress(value: 0.75, label: true)));
       expect(find.text('75%'), findsOneWidget);
     });
     testWidgets('自定义颜色', (tester) async {

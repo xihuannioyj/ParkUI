@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Park 分页器尺寸
@@ -46,11 +47,17 @@ class ParkPagination extends StatefulWidget {
   /// 是否显示每页条数选择器
   final bool showSizeChanger;
 
-  /// 可选的每页条数列表
-  final List<int> pageSizeOptions;
+  /// 可选的每页条数列表（为 null 时使用默认值 [10, 20, 50, 100]）
+  final List<int>? pageSizeOptions;
 
   /// 是否显示快速跳转输入框
   final bool showQuickJumper;
+
+  /// 每页条数变更回调（仅在 [showSizeChanger] 为 true 时生效）
+  ///
+  /// 参数：[currentPage] 为重置后的页码（1-based），[size] 为变更后的每页条数。
+  /// 注意：[onChange] 也会在每页条数变更时触发，[onShowSizeChange] 是额外的专有回调。
+  final void Function(int currentPage, int size)? onShowSizeChange;
 
   /// 是否显示总条数信息（"共 X 条"）
   final bool showTotal;
@@ -83,8 +90,9 @@ class ParkPagination extends StatefulWidget {
     this.pageSize = 10,
     this.onChange,
     this.showSizeChanger = false,
-    this.pageSizeOptions = const [10, 20, 50, 100],
+    this.pageSizeOptions,
     this.showQuickJumper = false,
+    this.onShowSizeChange,
     this.showTotal = false,
     this.simple = false,
     this.disabled = false,
@@ -94,6 +102,16 @@ class ParkPagination extends StatefulWidget {
     this.bindKey,
     this.bindingService,
   });
+
+  /// 获取有效的每页条数选项列表
+  List<int> get effectivePageSizeOptions {
+    final options = pageSizeOptions ?? const [10, 20, 50, 100];
+    // 确保 defaultPageSize 在选项中
+    if (!options.contains(defaultPageSize)) {
+      return options.toList()..insert(0, defaultPageSize);
+    }
+    return options;
+  }
 
   @override
   State<ParkPagination> createState() => _ParkPaginationState();
@@ -206,11 +224,10 @@ class _ParkPaginationState extends State<ParkPagination>
 
   void _onPageSizeChanged(int newSize) {
     if (widget.disabled) return;
-    // 调整页码，确保不超出范围
-    final newTotalPages =
-        (widget.total / newSize).ceil().clamp(1, 99999);
-    final newCurrent = widget.current.clamp(1, newTotalPages);
+    // 切换每页条数时重置当前页为 1，避免超出新总数范围
+    const newCurrent = 1;
     widget.onChange?.call(newCurrent, newSize);
+    widget.onShowSizeChange?.call(newCurrent, newSize);
     boundValue = newCurrent;
   }
 
@@ -230,6 +247,7 @@ class _ParkPaginationState extends State<ParkPagination>
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     if (widget.simple) {
       return _buildSimple(park);
@@ -261,20 +279,23 @@ class _ParkPaginationState extends State<ParkPagination>
     // 下一页
     children.add(_buildNextButton(park));
 
+    // 响应式布局：窄屏时隐藏每页条数选择器和快速跳转
+    final bool hideSecondary = widget.responsive && _isNarrowScreen(context);
+
     // 每页条数选择器
-    if (widget.showSizeChanger) {
+    if (widget.showSizeChanger && !hideSecondary) {
       children.add(SizedBox(width: park.spacing.sm));
       children.add(_buildSizeChanger(park));
     }
 
     // 快速跳转
-    if (widget.showQuickJumper) {
+    if (widget.showQuickJumper && !hideSecondary) {
       children.add(SizedBox(width: park.spacing.sm));
       children.add(_buildQuickJumper(park));
     }
 
     return Semantics(
-      label: '分页导航，共 $_totalPages 页，当前第 ${widget.current} 页',
+      label: l10n.paginationSemantics(_totalPages, widget.current),
       child: Opacity(
         opacity: widget.disabled ? 0.45 : 1.0,
         child: IgnorePointer(
@@ -289,28 +310,37 @@ class _ParkPaginationState extends State<ParkPagination>
     );
   }
 
+  bool _isNarrowScreen(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width < 480;
+  }
+
   // ==========================================================================
   // 简洁模式
   // ==========================================================================
 
   Widget _buildSimple(ParkThemeData park) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        _buildPrevButton(park),
-        SizedBox(width: park.spacing.sm),
-        Text(
-          '${widget.current} / $_totalPages',
-          style: TextStyle(
-            color: park.colors.textPrimary,
-            fontSize: _fontSize,
-            fontWeight: park.typography.weightMedium,
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      label: l10n.paginationSemantics(_totalPages, widget.current),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildPrevButton(park),
+          SizedBox(width: park.spacing.sm),
+          Text(
+            '${widget.current} / $_totalPages',
+            style: TextStyle(
+              color: park.colors.textPrimary,
+              fontSize: _fontSize,
+              fontWeight: park.typography.weightMedium,
+            ),
           ),
-        ),
-        SizedBox(width: park.spacing.sm),
-        _buildNextButton(park),
-      ],
+          SizedBox(width: park.spacing.sm),
+          _buildNextButton(park),
+        ],
+      ),
     );
   }
 
@@ -319,11 +349,15 @@ class _ParkPaginationState extends State<ParkPagination>
   // ==========================================================================
 
   Widget _buildTotalInfo(ParkThemeData park) {
-    return Text(
-      '共 ${widget.total} 条',
-      style: TextStyle(
-        color: park.colors.textSecondary,
-        fontSize: _fontSize,
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      label: l10n.totalInfo(widget.total),
+      child: Text(
+        l10n.totalInfo(widget.total),
+        style: TextStyle(
+          color: park.colors.textSecondary,
+          fontSize: _fontSize,
+        ),
       ),
     );
   }
@@ -338,7 +372,7 @@ class _ParkPaginationState extends State<ParkPagination>
       park: park,
       icon: Icons.chevron_left,
       isDisabled: isDisabled,
-      semanticLabel: '上一页',
+      semanticLabel: ParkLocalizations.of(context).previousPage,
       onTap: () => _goToPage(widget.current - 1),
     );
   }
@@ -349,7 +383,7 @@ class _ParkPaginationState extends State<ParkPagination>
       park: park,
       icon: Icons.chevron_right,
       isDisabled: isDisabled,
-      semanticLabel: '下一页',
+      semanticLabel: ParkLocalizations.of(context).nextPage,
       onTap: () => _goToPage(widget.current + 1),
     );
   }
@@ -388,8 +422,9 @@ class _ParkPaginationState extends State<ParkPagination>
 
   Widget _buildPageButton(ParkThemeData park, int page) {
     final isActive = page == widget.current;
+    final l10n = ParkLocalizations.of(context);
     return Semantics(
-      label: '第 $page 页',
+      label: l10n.pageButtonSemantics(page),
       selected: isActive,
       button: true,
       child: _ParkPageButtonBase(
@@ -419,17 +454,20 @@ class _ParkPaginationState extends State<ParkPagination>
   // ==========================================================================
 
   Widget _buildEllipsis(ParkThemeData park) {
-    return SizedBox(
-      width: _buttonSize,
-      height: _buttonSize,
-      child: Center(
-        child: Text(
-          '...',
-          style: TextStyle(
-            color: park.colors.textSecondary,
-            fontSize: _fontSize,
-            fontWeight: park.typography.weightBold,
-            height: 1.0,
+    return Semantics(
+      label: '...',
+      child: SizedBox(
+        width: _buttonSize,
+        height: _buttonSize,
+        child: Center(
+          child: Text(
+            '...',
+            style: TextStyle(
+              color: park.colors.textSecondary,
+              fontSize: _fontSize,
+              fontWeight: park.typography.weightBold,
+              height: 1.0,
+            ),
           ),
         ),
       ),
@@ -441,8 +479,10 @@ class _ParkPaginationState extends State<ParkPagination>
   // ==========================================================================
 
   Widget _buildSizeChanger(ParkThemeData park) {
+    final l10n = ParkLocalizations.of(context);
+    final options = widget.effectivePageSizeOptions;
     return Semantics(
-      label: '每页显示 ${widget.pageSize} 条',
+      label: l10n.pageSizeSemantics(widget.pageSize),
       child: Container(
         height: _buttonSize,
         padding: EdgeInsets.symmetric(horizontal: park.spacing.sm),
@@ -453,7 +493,9 @@ class _ParkPaginationState extends State<ParkPagination>
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int>(
-            value: widget.pageSize,
+            value: options.contains(widget.pageSize)
+                ? widget.pageSize
+                : options.first,
             isDense: true,
             icon: Icon(
               Icons.arrow_drop_down,
@@ -466,14 +508,17 @@ class _ParkPaginationState extends State<ParkPagination>
             ),
             dropdownColor: park.colors.surface,
             borderRadius: park.radius.brMd,
-            items: widget.pageSizeOptions.map((size) {
+            items: options.map((size) {
               return DropdownMenuItem<int>(
                 value: size,
-                child: Text(
-                  '$size 条/页',
-                  style: TextStyle(
-                    color: park.colors.textPrimary,
-                    fontSize: _fontSize,
+                child: Semantics(
+                  label: l10n.pageSizeOption(size),
+                  child: Text(
+                    l10n.pageSizeOption(size),
+                    style: TextStyle(
+                      color: park.colors.textPrimary,
+                      fontSize: _fontSize,
+                    ),
                   ),
                 ),
               );
@@ -492,71 +537,79 @@ class _ParkPaginationState extends State<ParkPagination>
   // ==========================================================================
 
   Widget _buildQuickJumper(ParkThemeData park) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '跳至',
-          style: TextStyle(
-            color: park.colors.textSecondary,
-            fontSize: _fontSize,
-          ),
-        ),
-        SizedBox(width: park.spacing.xs),
-        SizedBox(
-          width: _buttonSize * 1.5,
-          height: _buttonSize,
-          child: TextField(
-            controller: _jumperController,
-            enabled: !widget.disabled,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
+    final l10n = ParkLocalizations.of(context);
+    return Semantics(
+      label: l10n.jumpTo,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.jumpTo,
             style: TextStyle(
-              color: park.colors.textPrimary,
+              color: park.colors.textSecondary,
               fontSize: _fontSize,
             ),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: park.spacing.xs,
-                vertical: park.spacing.xs,
+          ),
+          SizedBox(width: park.spacing.xs),
+          SizedBox(
+            width: _buttonSize * 1.5,
+            height: _buttonSize,
+            child: Semantics(
+              textField: true,
+              label: l10n.jumpTo,
+              child: TextField(
+                controller: _jumperController,
+                enabled: !widget.disabled,
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                style: TextStyle(
+                  color: park.colors.textPrimary,
+                  fontSize: _fontSize,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: park.spacing.xs,
+                    vertical: park.spacing.xs,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: park.radius.brSm,
+                    borderSide: BorderSide(color: park.colors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: park.radius.brSm,
+                    borderSide: BorderSide(color: park.colors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: park.radius.brSm,
+                    borderSide: BorderSide(color: park.colors.brand, width: 1.5),
+                  ),
+                  disabledBorder: OutlineInputBorder(
+                    borderRadius: park.radius.brSm,
+                    borderSide: BorderSide(color: park.colors.borderLight),
+                  ),
+                  filled: true,
+                  fillColor: widget.disabled
+                      ? park.colors.disabledBg
+                      : park.colors.surface,
+                ),
+                onSubmitted: _onJumperSubmitted,
               ),
-              border: OutlineInputBorder(
-                borderRadius: park.radius.brSm,
-                borderSide: BorderSide(color: park.colors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: park.radius.brSm,
-                borderSide: BorderSide(color: park.colors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: park.radius.brSm,
-                borderSide: BorderSide(color: park.colors.brand, width: 1.5),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: park.radius.brSm,
-                borderSide: BorderSide(color: park.colors.borderLight),
-              ),
-              filled: true,
-              fillColor: widget.disabled
-                  ? park.colors.disabledBg
-                  : park.colors.surface,
             ),
-            onSubmitted: _onJumperSubmitted,
           ),
-        ),
-        SizedBox(width: park.spacing.xs),
-        Text(
-          '页',
-          style: TextStyle(
-            color: park.colors.textSecondary,
-            fontSize: _fontSize,
+          SizedBox(width: park.spacing.xs),
+          Text(
+            l10n.page,
+            style: TextStyle(
+              color: park.colors.textSecondary,
+              fontSize: _fontSize,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 自动完成输入组件
@@ -49,6 +50,7 @@ class ParkAutoComplete extends StatefulWidget {
 class _ParkAutoCompleteState extends State<ParkAutoComplete> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   List<String> _filtered = [];
 
@@ -89,32 +91,40 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
 
   Widget _buildDropdown() {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final renderBox = context.findRenderObject() as RenderBox;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final height = renderBox.size.height;
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    final double inputWidth = renderBox?.size.width ?? 200;
 
-    return Positioned(
-      left: offset.dx,
-      top: offset.dy + height + 4,
-      width: renderBox.size.width,
-      child: Material(
-        elevation: 8,
-        borderRadius: park.radius.brSm,
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 200),
-          decoration: BoxDecoration(
-            color: park.colors.surface,
-            borderRadius: park.radius.brSm,
-            border: Border.all(color: park.colors.border),
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _filtered.length,
-            itemBuilder: (_, i) => InkWell(
-              onTap: () => _select(_filtered[i]),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: 10),
-                child: Text(_filtered[i], style: TextStyle(fontSize: 14, color: park.colors.textPrimary)),
+    return CompositedTransformFollower(
+      link: _layerLink,
+      targetAnchor: Alignment.bottomLeft,
+      followerAnchor: Alignment.topLeft,
+      offset: const Offset(0, 4),
+      child: SizedBox(
+        width: inputWidth,
+        child: Material(
+          elevation: 8,
+          borderRadius: park.radius.brSm,
+          shadowColor: park.colors.textPrimary.withValues(alpha: 0.12),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: park.colors.surface,
+              borderRadius: park.radius.brSm,
+              border: Border.all(color: park.colors.border),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filtered.length,
+              itemBuilder: (_, i) => Semantics(
+                button: true,
+                label: _filtered[i],
+                child: InkWell(
+                  onTap: () => _select(_filtered[i]),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm + 2),
+                    child: Text(_filtered[i], style: TextStyle(fontSize: park.typography.sizeBodySmall, color: park.colors.textPrimary)),
+                  ),
+                ),
               ),
             ),
           ),
@@ -134,26 +144,34 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          decoration: InputDecoration(
-            hintText: widget.hintText ?? '请输入搜索',
-            hintStyle: TextStyle(fontSize: 14, color: park.colors.textPlaceholder),
-            border: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
-            contentPadding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: 10),
-            suffixIcon: _hasInput
-                ? IconButton(icon: Icon(Icons.close, size: 16), onPressed: () { _controller.clear(); _onTextChanged(''); })
-                : null,
+    final l10n = ParkLocalizations.of(context);
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            decoration: InputDecoration(
+              hintText: widget.hintText ?? l10n.searchHintText,
+              hintStyle: TextStyle(fontSize: park.typography.sizeBodySmall, color: park.colors.textPlaceholder),
+              border: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
+              contentPadding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm + 2),
+              suffixIcon: _hasInput
+                  ? Semantics(
+                      button: true,
+                      label: l10n.clearText,
+                      child: IconButton(icon: Icon(Icons.close, size: 16), onPressed: () { _controller.clear(); _onTextChanged(''); }),
+                    )
+                  : null,
+            ),
+            onChanged: _onTextChanged,
+            onTap: () { if (_hasInput) _onTextChanged(_controller.text); },
           ),
-          onChanged: _onTextChanged,
-          onTap: () { if (_hasInput) _onTextChanged(_controller.text); },
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
