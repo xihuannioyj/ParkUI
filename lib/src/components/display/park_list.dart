@@ -131,6 +131,28 @@ class _ParkListState<T> extends State<ParkList<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant ParkList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      // Remove listener from old controller
+      final ScrollController? oldController =
+          oldWidget.controller ?? _internalController;
+      oldController?.removeListener(_onScroll);
+      // If old widget used an internal controller and new one provides external, dispose it
+      if (oldWidget.controller == null && widget.controller != null) {
+        _internalController?.dispose();
+        _internalController = null;
+      }
+      // If new widget has no external controller, create internal one
+      if (widget.controller == null && _internalController == null) {
+        _internalController = ScrollController();
+      }
+      // Add listener to new controller
+      _effectiveController.addListener(_onScroll);
+    }
+  }
+
+  @override
   void dispose() {
     _effectiveController.removeListener(_onScroll);
     _internalController?.dispose();
@@ -171,12 +193,12 @@ class _ParkListState<T> extends State<ParkList<T>> {
       // Show skeleton items
       listView = _buildSkeletonList(park);
     } else if (widget.itemExtent != null) {
-      // Virtualized mode
+      // Virtualized mode — shrinkWrap intentionally omitted to preserve
+      // lazy building (R3-23). Parent Expanded widget provides bounded height.
       listView = ListView.builder(
         controller: _effectiveController,
         scrollDirection: widget.scrollDirection,
         reverse: widget.reverse,
-        shrinkWrap: true,
         itemCount: widget.items.length,
         itemExtent: widget.itemExtent,
         itemBuilder: (BuildContext context, int index) {
@@ -325,12 +347,16 @@ class _ParkListState<T> extends State<ParkList<T>> {
   }
 
   Widget _wrapWithDivider(Widget child, int index, ParkThemeData park) {
-    if (!widget._showDividers || index == 0) return child;
+    final semanticallyWrapped = Semantics(
+      container: true,
+      child: child,
+    );
+    if (!widget._showDividers || index == 0) return semanticallyWrapped;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Divider(height: 1, color: park.colors.divider),
-        child,
+        semanticallyWrapped,
       ],
     );
   }

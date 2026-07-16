@@ -114,10 +114,10 @@ class ParkSelect extends FormField<String> {
   final bool loading;
 
   /// 加载文案。
-  final String loadingText;
+  final String? loadingText;
 
   /// 空态文案。
-  final String emptyText;
+  final String? emptyText;
 
   /// 是否启用搜索。
   final bool searchable;
@@ -225,8 +225,8 @@ class ParkSelect extends FormField<String> {
     super.enabled = true,
     this.readOnly = false,
     this.loading = false,
-    this.loadingText = '加载中…',
-    this.emptyText = '暂无选项',
+    this.loadingText,
+    this.emptyText,
     this.searchable = false,
     this.onSearchChanged,
     this.searching = false,
@@ -462,7 +462,7 @@ class ParkSelect extends FormField<String> {
                     )
                   : Text(
                       widget.loading
-                          ? widget.loadingText
+                          ? (widget.loadingText ?? ParkLocalizations.of(state.context).loadingOptionsText)
                           : hasValue
                           ? displayText
                           : (widget.hintText ?? ParkLocalizations.of(state.context).selectPlaceholder),
@@ -587,6 +587,7 @@ class ParkSelect extends FormField<String> {
         park: park,
       ),
     ).then((result) {
+      if (!state.mounted) return;
       if (result != null) {
         final newVal = result.isEmpty ? null : result.join(',');
         state.didChange(newVal);
@@ -600,6 +601,7 @@ class ParkSelect extends FormField<String> {
     final context = state.context;
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     final currentValues = _parseValues(state.value);
 
@@ -621,7 +623,7 @@ class ParkSelect extends FormField<String> {
           selectedValues: List<String>.from(currentValues),
           multiple: widget.multiple,
           park: park,
-          emptyText: widget.emptyText,
+          emptyText: widget.emptyText ?? l10n.selectEmptyText,
           searchable: widget.searchable,
           onSearchChanged: widget.onSearchChanged,
           searching: widget.searching,
@@ -632,10 +634,12 @@ class ParkSelect extends FormField<String> {
           maxSelection: widget.maxSelection,
           virtual: effectiveVirtual,
           groupedOptions: widget.groupedOptions,
+          filterOption: widget.filterOption,
         );
       },
     );
 
+    if (!state.mounted) return;
     if (result != null) {
       final newVal = result.isEmpty ? null : result.join(',');
       state.didChange(newVal);
@@ -670,6 +674,9 @@ class _SelectSheet extends StatefulWidget {
   final bool virtual;
   final List<ParkSelectGroupOption>? groupedOptions;
 
+  /// 自定义过滤函数 / Custom filter function
+  final dynamic filterOption;
+
   const _SelectSheet({
     required this.items,
     required this.selectedValues,
@@ -686,6 +693,7 @@ class _SelectSheet extends StatefulWidget {
     this.maxSelection,
     this.virtual = false,
     this.groupedOptions,
+    this.filterOption,
   });
 
   @override
@@ -758,13 +766,29 @@ class _SelectSheetState extends State<_SelectSheet> {
   List<ParkSelectOption> _filteredItems() {
     if (_keyword.trim().isEmpty) return _mutableItems;
     final String lower = _keyword.trim().toLowerCase();
-    return _mutableItems
-        .where(
-          (ParkSelectOption item) =>
-              item.label.toLowerCase().contains(lower) ||
-              item.value.toLowerCase().contains(lower),
-        )
-        .toList();
+    final dynamic filterOpt = widget.filterOption;
+    // filterOption is a Function: call it with (searchText, option) to determine visibility
+    if (filterOpt is Function) {
+      return _mutableItems.where((ParkSelectOption item) {
+        try {
+          return filterOpt(_keyword.trim(), item) == true;
+        } catch (_) {
+          return false;
+        }
+      }).toList();
+    }
+    // filterOption is true (bool): use default case-insensitive contains filtering
+    if (filterOpt == true) {
+      return _mutableItems
+          .where(
+            (ParkSelectOption item) =>
+                item.label.toLowerCase().contains(lower) ||
+                item.value.toLowerCase().contains(lower),
+          )
+          .toList();
+    }
+    // filterOption is false/null: show all items (no filtering)
+    return _mutableItems;
   }
 
   bool get _canCreateNew {

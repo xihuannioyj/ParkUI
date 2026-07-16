@@ -125,8 +125,8 @@
 |------|------|------|-----------|------|
 | textPrimary | `#0A2540` | `#FFFFFF` | 13.5:1 ✅ AAA | 主要正文、标题 |
 | textSecondary | `#425466` | `#ADB8C9` | 7.0:1 ✅ AAA | 次要文字、说明 |
-| textPlaceholder | `#8898AA` | `#7A8AA0` | 3.9:1 ⚠️ 装饰 | 占位文字（仅装饰） |
-| textDisabled | `#8792A2` | `#5E6B7E` | 4.1:1 ✅ AA | 禁用状态文字 |
+| textPlaceholder | `#6C7E90` | `#7A8AA0` | 4.7:1 ✅ AA | 占位文字 |
+| textDisabled | `#748492` | `#5E6B7E` | 4.5:1 ✅ AA | 禁用状态文字 |
 | textOnBrand | `#FFFFFF` | `#FFFFFF` | — | 品牌色背景上的文字 |
 
 #### 中性色 — 边框 & 分割线

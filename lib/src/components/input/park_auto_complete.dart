@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
@@ -53,31 +55,39 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   List<String> _filtered = [];
+  Timer? _debounceTimer;
 
   bool get _hasInput => _controller.text.isNotEmpty;
 
   void _onTextChanged(String value) {
     widget.onChanged?.call(value);
     if (value.isEmpty) {
+      _debounceTimer?.cancel();
       _hideSuggestions();
       return;
     }
-    final fn = widget.filterFn ?? ((input, opt) => opt.toLowerCase().contains(input.toLowerCase()));
-    _filtered = widget.options.where((opt) => fn(value, opt)).take(widget.maxSuggestions).toList();
-    if (_filtered.isEmpty) {
-      _hideSuggestions();
-    } else {
-      _showSuggestions();
-    }
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      final fn = widget.filterFn ?? ((input, opt) => opt.toLowerCase().contains(input.toLowerCase()));
+      _filtered = widget.options.where((opt) => fn(value, opt)).take(widget.maxSuggestions).toList();
+      if (_filtered.isEmpty) {
+        _hideSuggestions();
+      } else {
+        _showSuggestions();
+      }
+    });
   }
 
   void _showSuggestions() {
+    if (!mounted) return;
     _overlayEntry?.remove();
     _overlayEntry = OverlayEntry(builder: (_) => _buildDropdown());
     Overlay.of(context).insert(_overlayEntry!);
   }
 
   void _hideSuggestions() {
+    if (!mounted) return;
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
@@ -135,6 +145,7 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _controller.dispose();
     _focusNode.dispose();
     _hideSuggestions();

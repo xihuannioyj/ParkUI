@@ -65,46 +65,50 @@ class ParkFooter extends StatelessWidget {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: park.spacing.xl,
-        vertical: park.spacing.lg,
-      ),
-      decoration: BoxDecoration(
-        color: park.colors.background,
-        border: divider
-            ? Border(
-                top: BorderSide(color: park.colors.divider, width: 1),
-              )
-            : null,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Logo + 文字
-          _buildBrandRow(park),
+    return Semantics(
+      container: true,
+      label: 'Footer',
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: park.spacing.xl,
+          vertical: park.spacing.lg,
+        ),
+        decoration: BoxDecoration(
+          color: park.colors.background,
+          border: divider
+              ? Border(
+                  top: BorderSide(color: park.colors.divider, width: 1),
+                )
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Logo + 文字
+            _buildBrandRow(park),
 
-          // 链接行
-          if (links.isNotEmpty) ...[
-            SizedBox(height: park.spacing.md),
-            _buildLinkRow(park),
-          ],
+            // 链接行
+            if (links.isNotEmpty) ...[
+              SizedBox(height: park.spacing.md),
+              _buildLinkRow(park),
+            ],
 
-          // 版权信息
-          if (copyright != null) ...[
-            SizedBox(height: park.spacing.md),
-            Text(
-              copyright!,
-              style: TextStyle(
-                color: park.colors.textSecondary.withValues(alpha: 0.6),
-                fontSize: park.typography.sizeCaption,
-                fontWeight: park.typography.weightRegular,
+            // 版权信息
+            if (copyright != null) ...[
+              SizedBox(height: park.spacing.md),
+              Text(
+                copyright!,
+                style: TextStyle(
+                  color: park.colors.textSecondary.withValues(alpha: 0.6),
+                  fontSize: park.typography.sizeCaption,
+                  fontWeight: park.typography.weightRegular,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -187,6 +187,31 @@ class _ParkSliderState extends FormFieldState<double>
   }
 
   @override
+  void didUpdateWidget(covariant FormField<double> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldSlider = oldWidget as ParkSlider;
+    final newSlider = widget as ParkSlider;
+    if (newSlider.range) {
+      final newStart = (newSlider.rangeStart ?? newSlider.min)
+          .clamp(newSlider.min, newSlider.max);
+      final newEnd = (newSlider.rangeEnd ?? newSlider.max)
+          .clamp(newSlider.min, newSlider.max);
+      if (newStart != _rangeStart || newEnd != _rangeEnd) {
+        setState(() {
+          _rangeStart = newStart;
+          _rangeEnd = newEnd;
+        });
+      }
+    }
+    // Sync single value if changed externally
+    final newInitial = newSlider.initialValue;
+    final oldInitial = oldSlider.initialValue;
+    if (newInitial != null && newInitial != oldInitial && newInitial != value) {
+      setValue(newInitial.clamp(newSlider.min, newSlider.max));
+    }
+  }
+
+  @override
   void didChange(double? value) {
     super.didChange(value);
     (widget as ParkSlider).onChanged?.call(value ?? 0);
@@ -420,6 +445,7 @@ class _ParkSliderBuilder extends StatelessWidget {
     return Semantics(
       slider: true,
       value: _formatValue(currentValue, effDivisions),
+      enabled: isInteractive,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -690,6 +716,7 @@ class _ParkSliderBuilder extends StatelessWidget {
       slider: true,
       value:
           '${_formatValue(startVal, effDivisions)} - ${_formatValue(endVal, effDivisions)}',
+      enabled: isInteractive,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

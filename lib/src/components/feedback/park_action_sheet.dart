@@ -24,7 +24,7 @@ class ParkAction {
 class ParkActionSheet extends StatefulWidget {
   final String? title;
   final List<ParkAction> actions;
-  final String cancelText;
+  final String? cancelText;
   final bool showCancel;
   final bool closeOnTapAction;
   final bool isDismissible;
@@ -55,7 +55,7 @@ class ParkActionSheet extends StatefulWidget {
     super.key,
     this.title,
     required this.actions,
-    this.cancelText = '取消',
+    this.cancelText,
     this.showCancel = true,
     this.closeOnTapAction = true,
     this.isDismissible = true,
@@ -74,7 +74,7 @@ class ParkActionSheet extends StatefulWidget {
     BuildContext context, {
     String? title,
     required List<ParkAction> actions,
-    String cancelText = '取消',
+    String? cancelText,
     bool showCancel = true,
     bool closeOnTapAction = true,
     bool isDismissible = true,
@@ -134,7 +134,7 @@ class _ParkActionSheetState extends State<ParkActionSheet> {
 class _ParkActionSheetContent extends StatelessWidget {
   final String? title;
   final List<ParkAction> actions;
-  final String cancelText;
+  final String? cancelText;
   final bool showCancel;
   final bool closeOnTapAction;
   final String? description;
@@ -146,7 +146,7 @@ class _ParkActionSheetContent extends StatelessWidget {
   const _ParkActionSheetContent({
     this.title,
     required this.actions,
-    required this.cancelText,
+    this.cancelText,
     required this.showCancel,
     required this.closeOnTapAction,
     this.description,
@@ -161,7 +161,7 @@ class _ParkActionSheetContent extends StatelessWidget {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final l10n = ParkLocalizations.of(context);
-    final effectiveCancelText = cancelText.isNotEmpty ? cancelText : l10n.cancelText;
+    final effectiveCancelText = cancelText ?? l10n.cancelText;
 
     return SafeArea(
       child: Padding(

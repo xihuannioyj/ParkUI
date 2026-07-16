@@ -24,39 +24,43 @@ class ParkDateRangeShortcut {
   });
 
   /// 今天
-  static const today = ParkDateRangeShortcut(
-    label: '今天',
-    offset: Duration.zero,
-  );
+  static ParkDateRangeShortcut today(ParkLocalizations l10n) =>
+      ParkDateRangeShortcut(
+        label: l10n.shortcutToday,
+        offset: Duration.zero,
+      );
 
   /// 最近 7 天
-  static const last7Days = ParkDateRangeShortcut(
-    label: '近 7 天',
-    offset: Duration(days: -6),
-  );
+  static ParkDateRangeShortcut last7Days(ParkLocalizations l10n) =>
+      ParkDateRangeShortcut(
+        label: l10n.shortcutLast7Days,
+        offset: Duration(days: -6),
+      );
 
   /// 最近 30 天
-  static const last30Days = ParkDateRangeShortcut(
-    label: '近 30 天',
-    offset: Duration(days: -29),
-  );
+  static ParkDateRangeShortcut last30Days(ParkLocalizations l10n) =>
+      ParkDateRangeShortcut(
+        label: l10n.shortcutLast30Days,
+        offset: Duration(days: -29),
+      );
 
   /// 本月
-  static ParkDateRangeShortcut get thisMonth {
+  static ParkDateRangeShortcut thisMonth(ParkLocalizations l10n) {
     final now = DateTime.now();
     final firstDay = DateTime(now.year, now.month, 1);
     final diff = firstDay.difference(now);
     return ParkDateRangeShortcut(
-      label: '本月',
+      label: l10n.shortcutThisMonth,
       offset: Duration(days: diff.inDays),
     );
   }
 
   /// 最近 90 天
-  static const last90Days = ParkDateRangeShortcut(
-    label: '近 90 天',
-    offset: Duration(days: -89),
-  );
+  static ParkDateRangeShortcut last90Days(ParkLocalizations l10n) =>
+      ParkDateRangeShortcut(
+        label: l10n.shortcutLast90Days,
+        offset: Duration(days: -89),
+      );
 }
 
 /// 日期范围选择器结果
@@ -140,13 +144,13 @@ class ParkDateRangePicker extends StatefulWidget {
   final String? label;
 
   /// 起始日期占位文字
-  final String startHintText;
+  final String? startHintText;
 
   /// 结束日期占位文字
-  final String endHintText;
+  final String? endHintText;
 
   /// 重置按钮文字
-  final String resetText;
+  final String? resetText;
 
   /// 是否显示重置按钮
   final bool showReset;
@@ -171,11 +175,11 @@ class ParkDateRangePicker extends StatefulWidget {
     this.firstDate,
     this.lastDate,
     this.showShortcuts = true,
-    this.shortcuts = ParkDateRangePicker.defaultShortcuts,
+    this.shortcuts = const [],
     this.label,
-    this.startHintText = '开始日期',
-    this.endHintText = '结束日期',
-    this.resetText = '重置',
+    this.startHintText,
+    this.endHintText,
+    this.resetText,
     this.showReset = true,
     this.bindKey,
     this.bindingService,
@@ -184,12 +188,13 @@ class ParkDateRangePicker extends StatefulWidget {
   });
 
   /// 默认快捷预设（4 项：今天 / 近7天 / 近30天 / 本月至今）。
-  static const List<ParkDateRangeShortcut> defaultShortcuts = [
-    ParkDateRangeShortcut(label: '今天', offset: Duration.zero),
-    ParkDateRangeShortcut(label: '近 7 天', offset: Duration(days: -6)),
-    ParkDateRangeShortcut(label: '近 30 天', offset: Duration(days: -29)),
-    ParkDateRangeShortcut(label: '本月至今', offset: Duration.zero),
-  ];
+  /// 需要运行时传入 [ParkLocalizations] 以获取本地化标签。
+  static List<ParkDateRangeShortcut> defaultShortcuts(ParkLocalizations l10n) => [
+        ParkDateRangeShortcut.today(l10n),
+        ParkDateRangeShortcut.last7Days(l10n),
+        ParkDateRangeShortcut.last30Days(l10n),
+        ParkDateRangeShortcut.thisMonth(l10n),
+      ];
 
   /// 以静态方法弹出日期范围选择面板
   ///
@@ -201,10 +206,12 @@ class ParkDateRangePicker extends StatefulWidget {
     DateTime? firstDate,
     DateTime? lastDate,
     bool showShortcuts = true,
-    List<ParkDateRangeShortcut> shortcuts = ParkDateRangePicker.defaultShortcuts,
+    List<ParkDateRangeShortcut>? shortcuts,
     List<ParkDatePreset>? presets,
     Widget? renderExtraFooter,
   }) {
+    final l10n = ParkLocalizations.of(context);
+    final resolvedShortcuts = shortcuts ?? ParkDateRangePicker.defaultShortcuts(l10n);
     return showModalBottomSheet<ParkDateRange>(
       context: context,
       isScrollControlled: true,
@@ -215,7 +222,7 @@ class ParkDateRangePicker extends StatefulWidget {
         firstDate: firstDate,
         lastDate: lastDate,
         showShortcuts: showShortcuts,
-        shortcuts: shortcuts,
+        shortcuts: resolvedShortcuts,
         presets: presets,
         renderExtraFooter: renderExtraFooter,
       ),
@@ -252,6 +259,10 @@ class _ParkDateRangePickerState extends State<ParkDateRangePicker>
   }
 
   void _open() {
+    final l10n = ParkLocalizations.of(context);
+    final resolvedShortcuts = widget.shortcuts.isNotEmpty
+        ? widget.shortcuts
+        : ParkDateRangePicker.defaultShortcuts(l10n);
     ParkDateRangePicker.show(
       context,
       startTime: _localStartDate,
@@ -259,7 +270,7 @@ class _ParkDateRangePickerState extends State<ParkDateRangePicker>
       firstDate: widget.firstDate,
       lastDate: widget.lastDate,
       showShortcuts: widget.showShortcuts,
-      shortcuts: widget.shortcuts,
+      shortcuts: resolvedShortcuts,
       presets: widget.presets,
       renderExtraFooter: widget.renderExtraFooter,
     ).then((result) {
@@ -373,7 +384,7 @@ class _DateRangePickerSheet extends StatefulWidget {
     this.firstDate,
     this.lastDate,
     this.showShortcuts = true,
-    this.shortcuts = ParkDateRangePicker.defaultShortcuts,
+    this.shortcuts = const [],
     this.presets,
     this.renderExtraFooter,
   });

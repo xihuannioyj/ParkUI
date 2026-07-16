@@ -170,7 +170,8 @@ class ParkTypography {
   /// 逐属性平滑插值。
   ///
   /// 数值字段（字号、行高、字距）做线性插值；
-  /// 字重（FontWeight）和字体族（String）无法连续插值，在 t < 0.5 时使用 a。
+  /// 字重（FontWeight）通过 [FontWeight.lerp] 平滑过渡；
+  /// 字体族（String）无法连续插值，在 t < 0.5 时使用 a。
   static ParkTypography lerp(ParkTypography a, ParkTypography b, double t) {
     return ParkTypography(
       sizeDisplay: a.sizeDisplay + (b.sizeDisplay - a.sizeDisplay) * t,
@@ -188,10 +189,10 @@ class ParkTypography {
           a.lineHeightTitle + (b.lineHeightTitle - a.lineHeightTitle) * t,
       lineHeightBody:
           a.lineHeightBody + (b.lineHeightBody - a.lineHeightBody) * t,
-      weightBold: t < 0.5 ? a.weightBold : b.weightBold,
-      weightRegular: t < 0.5 ? a.weightRegular : b.weightRegular,
-      weightMedium: t < 0.5 ? a.weightMedium : b.weightMedium,
-      weightLight: t < 0.5 ? a.weightLight : b.weightLight,
+      weightBold: FontWeight.lerp(a.weightBold, b.weightBold, t),
+      weightRegular: FontWeight.lerp(a.weightRegular, b.weightRegular, t),
+      weightMedium: FontWeight.lerp(a.weightMedium, b.weightMedium, t),
+      weightLight: FontWeight.lerp(a.weightLight, b.weightLight, t),
       fontFamily: t < 0.5 ? a.fontFamily : b.fontFamily,
     );
   }

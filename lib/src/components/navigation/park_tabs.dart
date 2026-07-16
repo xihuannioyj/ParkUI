@@ -231,7 +231,7 @@ class ParkTabs extends StatefulWidget {
     this.bindingService,
   }) : assert(
          children == null || children.length == tabs.length,
-         '当提供 children 时，必须同时提供 tabs，且数量一致。',
+         'When children are provided, tabs must also be provided and their lengths must match.',
        );
 
   @override

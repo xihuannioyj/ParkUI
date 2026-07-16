@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// Park 结果状态类型
 ///
@@ -85,8 +86,8 @@ class ParkResult extends StatelessWidget {
   /// 403 Forbidden preset.
   factory ParkResult.forbidden({
     Key? key,
-    String title = '无权访问',
-    String? description = '您没有权限访问此页面，请联系管理员。',
+    String? title,
+    String? description,
     Widget? descriptionWidget,
     List<Widget>? actions,
     List<Widget>? extra,
@@ -95,7 +96,7 @@ class ParkResult extends StatelessWidget {
       key: key,
       status: ParkResultStatus.status403,
       icon: const Icon(Icons.lock, size: 56),
-      title: title,
+      title: title ?? '',
       description: description,
       descriptionWidget: descriptionWidget,
       actions: actions,
@@ -106,8 +107,8 @@ class ParkResult extends StatelessWidget {
   /// 404 Not Found preset.
   factory ParkResult.notFound({
     Key? key,
-    String title = '页面未找到',
-    String? description = '您访问的页面不存在或已被移除。',
+    String? title,
+    String? description,
     Widget? descriptionWidget,
     List<Widget>? actions,
     List<Widget>? extra,
@@ -116,7 +117,7 @@ class ParkResult extends StatelessWidget {
       key: key,
       status: ParkResultStatus.status404,
       icon: const Icon(Icons.search_off, size: 56),
-      title: title,
+      title: title ?? '',
       description: description,
       descriptionWidget: descriptionWidget,
       actions: actions,
@@ -127,8 +128,8 @@ class ParkResult extends StatelessWidget {
   /// 500 Server Error preset.
   factory ParkResult.serverError({
     Key? key,
-    String title = '服务器错误',
-    String? description = '服务器遇到内部错误，请稍后重试。',
+    String? title,
+    String? description,
     Widget? descriptionWidget,
     List<Widget>? actions,
     List<Widget>? extra,
@@ -137,7 +138,7 @@ class ParkResult extends StatelessWidget {
       key: key,
       status: ParkResultStatus.status500,
       icon: const Icon(Icons.bug_report, size: 56),
-      title: title,
+      title: title ?? '',
       description: description,
       descriptionWidget: descriptionWidget,
       actions: actions,
@@ -170,6 +171,7 @@ class ParkResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
     final statusColor = _statusColor(park);
     final statusIcon = _statusIcon(park);
     final isHttp = _isHttpStatus;
@@ -177,17 +179,33 @@ class ParkResult extends StatelessWidget {
     final iconContainerSize = isHttp ? 96.0 : 72.0;
     final iconSize = isHttp ? 56.0 : 40.0;
 
+    // Resolve title/description from l10n for HTTP status presets
+    final resolvedTitle = (title.isEmpty && isHttp)
+        ? switch (status) {
+            ParkResultStatus.status403 => l10n.forbiddenTitle,
+            ParkResultStatus.status404 => l10n.notFoundTitle,
+            ParkResultStatus.status500 => l10n.serverErrorTitle,
+            _ => title,
+          }
+        : title;
+    final resolvedDescription = (description == null && isHttp)
+        ? switch (status) {
+            ParkResultStatus.status403 => l10n.forbiddenDesc,
+            ParkResultStatus.status404 => l10n.notFoundDesc,
+            ParkResultStatus.status500 => l10n.serverErrorDesc,
+            _ => description,
+          }
+        : description;
+
     // Build semantics label
-    final buffer = StringBuffer(title);
-    if (description != null) {
-      buffer.write('，$description');
-    }
-    if (codeText != null) {
-      buffer.write('，状态码 $codeText');
-    }
+    final semanticsLabel = l10n.statusCodeSemantic(
+      resolvedTitle,
+      resolvedDescription,
+      codeText,
+    );
 
     return Semantics(
-      label: buffer.toString(),
+      label: semanticsLabel,
       child: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: park.spacing.xl),
@@ -229,7 +247,7 @@ class ParkResult extends StatelessWidget {
 
               // 标题
               Text(
-                title,
+                resolvedTitle,
                 style: TextStyle(
                   color: park.colors.textPrimary,
                   fontSize: park.typography.sizeH3,
@@ -242,10 +260,10 @@ class ParkResult extends StatelessWidget {
               if (descriptionWidget != null) ...[
                 SizedBox(height: park.spacing.sm),
                 descriptionWidget!,
-              ] else if (description != null) ...[
+              ] else if (resolvedDescription != null) ...[
                 SizedBox(height: park.spacing.sm),
                 Text(
-                  description!,
+                  resolvedDescription!,
                   style: TextStyle(
                     color: park.colors.textSecondary,
                     fontSize: park.typography.sizeBody,

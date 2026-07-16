@@ -214,8 +214,8 @@ class _ParkSideBarState extends State<ParkSideBar>
     final resolvedWidth = currentWidth.clamp(0.0, double.infinity);
 
     final bool isDark = widget.theme == ParkSideBarTheme.dark;
-    final bgColor = isDark ? const Color(0xFF1D1D1D) : colors.surface;
-    final borderColor = isDark ? const Color(0xFF303030) : colors.divider;
+    final bgColor = isDark ? colors.background : colors.surface;
+    final borderColor = isDark ? colors.border : colors.divider;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),

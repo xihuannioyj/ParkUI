@@ -320,6 +320,7 @@ class _ParkImageViewerState extends State<ParkImageViewer> {
 
   /// 构建底部预览工具条：缩放+、缩放−、旋转、水平翻转、垂直翻转
   Widget _buildToolbar(ParkThemeData park) {
+    final l10n = ParkLocalizations.of(context);
     return Positioned(
       bottom: 0,
       left: 0,
@@ -353,19 +354,19 @@ class _ParkImageViewerState extends State<ParkImageViewer> {
                 SizedBox(width: park.spacing.lg),
                 _ToolbarButton(
                   icon: Icons.rotate_right,
-                  semanticLabel: '旋转',
+                  semanticLabel: l10n.rotateLabel,
                   onTap: _rotate,
                 ),
                 SizedBox(width: park.spacing.lg),
                 _ToolbarButton(
                   icon: Icons.flip,
-                  semanticLabel: '水平翻转',
+                  semanticLabel: l10n.flipHorizontal,
                   onTap: _flipHorizontal,
                 ),
                 SizedBox(width: park.spacing.lg),
                 _ToolbarButton(
                   icon: Icons.flip_to_front,
-                  semanticLabel: '垂直翻转',
+                  semanticLabel: l10n.flipVertical,
                   onTap: _flipVertical,
                 ),
               ],

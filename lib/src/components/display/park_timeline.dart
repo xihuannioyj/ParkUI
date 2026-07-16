@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
@@ -140,16 +139,16 @@ class ParkTimeline extends StatefulWidget {
   State<ParkTimeline> createState() => _ParkTimelineState();
 }
 
-class _ParkTimelineState extends State<ParkTimeline> {
-  /// Tracks how many items have been revealed by the staggered animation.
-  int _revealedCount = 0;
-
-  /// Timers for the staggered reveal animation.
-  final List<Timer> _revealTimers = [];
+class _ParkTimelineState extends State<ParkTimeline>
+    with SingleTickerProviderStateMixin {
+  /// Single controller driving the staggered reveal animation.
+  late AnimationController _revealController;
 
   @override
   void initState() {
     super.initState();
+    _revealController = AnimationController(vsync: this);
+    _revealController.addListener(_onRevealTick);
     _startRevealAnimation();
   }
 
@@ -159,37 +158,45 @@ class _ParkTimelineState extends State<ParkTimeline> {
     // Re-run animation when the item list changes.
     if (oldWidget.items.length != widget.items.length ||
         oldWidget.reverse != widget.reverse) {
-      _cancelRevealTimers();
-      _revealedCount = 0;
       _startRevealAnimation();
     }
   }
 
   @override
   void dispose() {
-    _cancelRevealTimers();
+    _revealController.dispose();
     super.dispose();
-  }
-
-  void _cancelRevealTimers() {
-    for (final timer in _revealTimers) {
-      timer.cancel();
-    }
-    _revealTimers.clear();
   }
 
   void _startRevealAnimation() {
     final totalItems = widget.items.length + (widget.pending ? 1 : 0);
-    for (int i = 0; i < totalItems; i++) {
-      final timer = Timer(widget.animationDelay * i, () {
-        if (mounted) {
-          setState(() {
-            _revealedCount = i + 1;
-          });
-        }
-      });
-      _revealTimers.add(timer);
-    }
+    if (totalItems <= 0) return;
+
+    // Total duration = delay between items * (count - 1) + each item's fade duration.
+    final totalDuration = widget.animationDuration +
+        widget.animationDelay * (totalItems - 1);
+    _revealController.duration = totalDuration;
+    _revealController.reset();
+    _revealController.forward();
+  }
+
+  void _onRevealTick() {
+    if (mounted) setState(() {});
+  }
+
+  /// Whether the item at [index] should be visible given the current
+  /// animation progress.
+  bool _isRevealed(int index) {
+    final totalItems = widget.items.length + (widget.pending ? 1 : 0);
+    if (totalItems <= 0) return false;
+    final totalDuration = widget.animationDuration +
+        widget.animationDelay * (totalItems - 1);
+    if (totalDuration.inMilliseconds == 0) return true;
+
+    // Each item starts its fade-in at (index * animationDelay) into the timeline.
+    final itemStartMs = (widget.animationDelay * index).inMilliseconds;
+    final fraction = itemStartMs / totalDuration.inMilliseconds;
+    return _revealController.value >= fraction;
   }
 
   /// Returns the effective mode for the given viewport width.
@@ -277,7 +284,7 @@ class _ParkTimelineState extends State<ParkTimeline> {
   ) {
     final isLeft = _isLeftSide(index, mode);
     final isAlternate = mode == ParkTimelineMode.alternate;
-    final isRevealed = index < _revealedCount;
+    final isRevealed = _isRevealed(index);
     final dotColor = item.color ?? park.colors.brand;
 
     final dot = _buildDot(park, item, dotColor);
@@ -317,7 +324,7 @@ class _ParkTimelineState extends State<ParkTimeline> {
     final l10n = ParkLocalizations.of(context);
     final isLeft = _isLeftSide(index, mode);
     final isAlternate = mode == ParkTimelineMode.alternate;
-    final isRevealed = index < _revealedCount;
+    final isRevealed = _isRevealed(index);
 
     final pendingDot = widget.pendingDot ??
         SizedBox(

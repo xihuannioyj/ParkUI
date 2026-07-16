@@ -52,6 +52,7 @@ class ParkLoading extends StatefulWidget {
   });
 
   static _ParkLoadingOverlayController? _currentController;
+  static bool _entryReady = false;
 
   /// 全屏显示 loading 遮罩
   static void show(
@@ -60,6 +61,14 @@ class ParkLoading extends StatefulWidget {
     ParkLoadingType type = ParkLoadingType.circular,
     Color? color,
   }) {
+    // Guard: if a previous entry is already live, dismiss it first to avoid leaking.
+    if (_entryReady && _currentController != null) {
+      _currentController!.dismiss();
+      _entryReady = false;
+      _currentController = null;
+    }
+
+    _entryReady = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _currentController?.dismiss();
 
@@ -73,6 +82,7 @@ class ParkLoading extends StatefulWidget {
       void removeEntry() {
         if (removed) return;
         removed = true;
+        _entryReady = false;
         if (identical(_currentController, controller)) {
           _currentController = null;
         }
@@ -102,6 +112,7 @@ class ParkLoading extends StatefulWidget {
       );
 
       overlay.insert(entry);
+      _entryReady = true;
     });
   }
 
@@ -112,6 +123,14 @@ class ParkLoading extends StatefulWidget {
 
   /// 关闭全屏 loading（等同于 [hide]）。
   static void dismiss() {
+    if (!_entryReady) {
+      // Entry hasn't been inserted yet (show uses postFrameCallback).
+      // Schedule dismissal after the entry is ready.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _currentController?.dismiss();
+      });
+      return;
+    }
     _currentController?.dismiss();
   }
 

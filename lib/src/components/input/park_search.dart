@@ -63,7 +63,7 @@ class ParkSearch extends StatefulWidget {
   const ParkSearch({
     super.key,
     this.controller,
-    this.hintText = '搜索',
+    this.hintText,
     this.onChanged,
     this.onSubmitted,
     this.onClear,
@@ -85,7 +85,7 @@ class ParkSearch extends StatefulWidget {
   });
 
   final TextEditingController? controller;
-  final String hintText;
+  final String? hintText;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onClear;
@@ -236,6 +236,7 @@ class _ParkSearchState extends State<ParkSearch>
   }
 
   void _showSuggestionOverlay() {
+    if (!mounted) return;
     _hideSuggestionOverlay();
     final suggestions = _filteredSuggestions;
     if (suggestions.isEmpty) return;
@@ -284,6 +285,7 @@ class _ParkSearchState extends State<ParkSearch>
   }
 
   void _hideSuggestionOverlay() {
+    if (!mounted) return;
     _suggestionOverlay?.remove();
     _suggestionOverlay = null;
   }
@@ -311,7 +313,10 @@ class _ParkSearchState extends State<ParkSearch>
           ),
           child: Row(
             children: [
-              Icon(Icons.history_rounded, size: 16, color: park.colors.textPlaceholder),
+              Semantics(
+                label: l10n.searchHistory,
+                child: Icon(Icons.history_rounded, size: 16, color: park.colors.textPlaceholder),
+              ),
               SizedBox(width: park.spacing.xs),
               Text(
                 query.isEmpty ? l10n.searchHistory : l10n.matchedHistory,
@@ -570,7 +575,7 @@ class _ParkSearchState extends State<ParkSearch>
                           boundValue = v;
                         },
                         decoration: InputDecoration(
-                          hintText: widget.hintText,
+                          hintText: widget.hintText ?? l10n.searchText,
                           hintStyle: park.typography.body.copyWith(
                             fontSize: _fontSize,
                             color: placeholderColor,

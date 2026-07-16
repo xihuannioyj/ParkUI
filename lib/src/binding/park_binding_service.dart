@@ -59,6 +59,9 @@ class ParkBindingService {
   final Set<ParkBindable<dynamic>> _disposedGuard =
       <ParkBindable<dynamic>>{};
 
+  /// Counter for periodic cleanup of [_disposedGuard] (R5-011).
+  int _disposeCounter = 0;
+
   /// bind() 注册的监听引用（path → listener），用于 dispose 时精确移除，避免监听器泄漏（B15）。
   final Map<String, VoidCallback> _bindListeners = <String, VoidCallback>{};
 
@@ -198,6 +201,8 @@ class ParkBindingService {
       bindable.value = value;
     } else {
       _model = ParkBindingPath.set(path, _model, value);
+      // 未绑定路径也需要触发依赖此路径的 watchEffect。
+      _triggerEffects(path);
     }
   }
 
@@ -254,6 +259,12 @@ class ParkBindingService {
       if (listener != null) bindable.removeListener(listener);
       _disposedGuard.add(bindable);
       bindable.dispose();
+      // R5-011: Periodic cleanup every 100 disposals to prevent infinite growth.
+      _disposeCounter++;
+      if (_disposeCounter >= 100) {
+        _disposedGuard.clear();
+        _disposeCounter = 0;
+      }
     }
     _triggerEffects(path);
   }
@@ -280,6 +291,7 @@ class ParkBindingService {
   /// 内部：移除 bindable 引用（由 ParkBindable.dispose 调用）。
   void removeBindable(String path) {
     _bindables.remove(path);
+    _bindListeners.remove(path);
   }
 
   /// 等待所有待处理的批量更新完成。
@@ -330,10 +342,13 @@ class ParkBindingService {
   }
 
   /// 内部：触发所有依赖了 [path] 的副作用。
-  void _triggerEffects(String path) {
+  ///
+  /// B124：增加最大深度限制（10），防止循环依赖导致栈溢出。
+  void _triggerEffects(String path, [int depth = 0]) {
+    if (depth > 10) return;
     for (final effect in _watchEffects.toList()) {
       if (effect._deps.contains(path)) {
-        effect._run();
+        effect._run(depth);
       }
     }
   }
@@ -346,11 +361,25 @@ class _WatchEffect {
   final Set<String> _deps = {};
   bool _disposed = false;
 
+  /// B124：当前是否正在执行中，用于检测重入。
+  bool _isRunning = false;
+
+  /// 重入期间如果有新的触发，标记为 dirty，执行完后调度一次重跑。
+  bool _dirty = false;
+
   _WatchEffect(this._fn, this._service);
 
   /// 执行副作用并收集依赖。
-  void _run() {
+  ///
+  /// [depth] 当前触发链深度，用于限制递归深度（B124）。
+  void _run([int depth = 0]) {
     if (_disposed) return;
+    // B124：重入检测 — 如果当前 effect 正在执行，标记 dirty 以便执行完后重跑。
+    if (_isRunning) {
+      _dirty = true;
+      return;
+    }
+    _isRunning = true;
     _deps.clear();
 
     final ctx = _service._trackContext;
@@ -361,6 +390,12 @@ class _WatchEffect {
     } finally {
       ctx.activeEffect = null;
       ctx.collectedDeps = null;
+      _isRunning = false;
+      // 如果执行期间有新的触发，调度一次微任务重跑。
+      if (_dirty) {
+        _dirty = false;
+        scheduleMicrotask(() => _run());
+      }
     }
   }
 

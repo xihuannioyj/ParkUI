@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 页面布局组件
@@ -59,13 +60,13 @@ class ParkLayout extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (sidebar != null && sidebarLeft) _buildSidebar(park),
+                if (sidebar != null && sidebarLeft) _buildSidebar(context, park),
                 if (sidebar != null && sidebarLeft && showSidebarDivider)
                   _buildDivider(park),
                 Expanded(child: body),
                 if (sidebar != null && !sidebarLeft && showSidebarDivider)
                   _buildDivider(park),
-                if (sidebar != null && !sidebarLeft) _buildSidebar(park),
+                if (sidebar != null && !sidebarLeft) _buildSidebar(context, park),
               ],
             ),
           ),
@@ -75,9 +76,9 @@ class ParkLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildSidebar(ParkThemeData park) {
+  Widget _buildSidebar(BuildContext context, ParkThemeData park) {
     return Semantics(
-      label: '侧边栏',
+      label: ParkLocalizations.of(context).layoutLabel,
       container: true,
       child: SizedBox(
         width: sidebarWidth,

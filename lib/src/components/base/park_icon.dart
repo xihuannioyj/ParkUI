@@ -322,6 +322,16 @@ class _ParkIconState extends State<ParkIcon>
       );
     }
 
+    // Non-interactive icons: provide semantic label for screen readers
+    if (widget.semanticLabel != null &&
+        widget.onClick == null &&
+        widget.onLongPress == null) {
+      iconWidget = Semantics(
+        label: widget.semanticLabel,
+        child: iconWidget,
+      );
+    }
+
     return iconWidget;
   }
 }

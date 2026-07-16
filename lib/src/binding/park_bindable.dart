@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'park_binding_service.dart';
 
 /// 响应式值包装器，继承 [ValueNotifier<T>] 实现细粒度通知。
 ///
@@ -32,7 +33,7 @@ class ParkBindable<T> extends ValueNotifier<T> {
   /// 所属的 [ParkBindingService]，用于 dispose 时自动解绑。
   ///
   /// 由 [ParkBindingService.bind] 在创建时设置，开发者无需手动管理。
-  /* late */ dynamic _owner;
+  ParkBindingService? _owner;
 
   /// 创建 [ParkBindable]。
   ///
@@ -43,7 +44,7 @@ class ParkBindable<T> extends ValueNotifier<T> {
   /// 设置所属服务（由 [ParkBindingService.bind] 调用）。
   ///
   /// 内部方法，开发者无需手动调用。
-  void setupOwner(dynamic owner) {
+  void setupOwner(ParkBindingService? owner) {
     _owner = owner;
   }
 
@@ -82,7 +83,6 @@ class ParkBindable<T> extends ValueNotifier<T> {
     _disposed = true;
     // 通知所属服务移除引用
     try {
-      // ignore: avoid_dynamic_calls
       _owner?.removeBindable(path);
     } catch (_) {}
     super.dispose();

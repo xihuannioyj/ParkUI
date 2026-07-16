@@ -115,6 +115,8 @@ class _ParkCellState extends State<ParkCell> {
     if (widget.title != null) return widget.title!;
     final titleText = Text(
       widget.titleText ?? '',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: park.typography.sizeBody,
         fontWeight: park.typography.weightMedium,
@@ -264,11 +266,11 @@ class _ParkCellState extends State<ParkCell> {
     final cell = AnimatedContainer(
       duration: park.motion.quick,
       curve: park.motion.defaultEasing,
-      color: _isPressed && !isDisabled
+      color: widget.backgroundColor ?? (_isPressed && !isDisabled
           ? park.colors.textPrimary.withValues(alpha: 0.06)
           : _isHovered && widget.hover && !isDisabled
               ? park.colors.textPrimary.withValues(alpha: 0.04)
-              : Colors.transparent,
+              : Colors.transparent),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -286,7 +288,8 @@ class _ParkCellState extends State<ParkCell> {
     );
 
     Widget result;
-    if (widget.onPressed != null && !isDisabled) {
+    final bool isClickable = widget.clickable ?? (widget.onPressed != null);
+    if (isClickable && !isDisabled) {
       result = InkWell(
         onTap: widget.onPressed,
         onTapDown: (_) => setState(() => _isPressed = true),

@@ -129,6 +129,11 @@ class ParkTablePagination {
 /// 支持排序、边框、斑马纹、空状态与加载态，
 /// 水平方向可滚动以适配窄屏。
 ///
+/// **性能说明（R3-20）：** 当启用 [sticky]（固定表头）或 [expandable]（可展开行）
+/// 模式时，虚拟滚动会退化为全量渲染，因为这两种模式需要完整布局所有行才能正确
+/// 计算 sticky 偏移量或展开区域。对于大数据量（>100 行）且不需要 sticky/expandable
+/// 的场景，建议使用纯 [ListView.builder] 方案以获得最佳性能。
+///
 /// ```dart
 /// ParkTable(
 ///   columns: [
@@ -158,7 +163,7 @@ class ParkTable extends StatefulWidget {
   final bool striped;
 
   /// 空数据提示文本
-  final String emptyText;
+  final String? emptyText;
 
   /// 是否处于加载状态（显示加载遮罩）
   final bool loading;
@@ -220,7 +225,7 @@ class ParkTable extends StatefulWidget {
     required this.data,
     this.bordered = false,
     this.striped = false,
-    this.emptyText = '暂无数据',
+    this.emptyText = null,
     this.loading = false,
     this.expandable = false,
     this.expandedRowBuilder,
@@ -318,6 +323,27 @@ class _ParkTableState extends State<ParkTable> {
       _cachedSortedData = null; // Invalidate cache on sort change
     });
     widget.onSort?.call(columnIndex, _sortAscending);
+    widget.onChange?.call({
+      'type': 'sort',
+      'columnKey': key,
+      'columnIndex': columnIndex,
+      'ascending': _sortAscending,
+    });
+  }
+
+  /// Whether any expanded row builder is available.
+  bool get _hasExpandedRow {
+    return widget.expandable &&
+        (widget.expandedRowBuilder != null || widget.expandedRowRender != null);
+  }
+
+  /// Build expanded row content using expandedRowBuilder (preferred) or
+  /// expandedRowRender (fallback).
+  Widget _buildExpandedRowContent(Map<String, dynamic> row, int index) {
+    if (widget.expandedRowBuilder != null) {
+      return widget.expandedRowBuilder!(context, row, index);
+    }
+    return widget.expandedRowRender!(row, index);
   }
 
   /// 将单元格值解析为 [num]，支持 num 与可解析的数字字符串。
@@ -401,6 +427,11 @@ class _ParkTableState extends State<ParkTable> {
         .toList();
 
     sel.onChanged?.call(newKeys, selectedRows);
+    widget.onChange?.call({
+      'type': 'selection',
+      'selectedRowKeys': newKeys,
+      'selectedRows': selectedRows,
+    });
   }
 
   EdgeInsets _cellPadding() {
@@ -433,6 +464,8 @@ class _ParkTableState extends State<ParkTable> {
         widget.columns != oldWidget.columns) {
       _cachedSortedData = null;
       _rowKeyCache = null;
+      _columnWidths.clear();
+      _expandedRows.clear();
     }
   }
 
@@ -446,7 +479,7 @@ class _ParkTableState extends State<ParkTable> {
 
     // Empty state
     if (widget.data.isEmpty && !widget.loading) {
-      return widget.empty ?? ParkEmpty(description: ParkLocalizations.of(context).noData);
+      return widget.empty ?? ParkEmpty(description: widget.emptyText ?? ParkLocalizations.of(context).noData);
     }
 
     final data = _cachedSortedData!;
@@ -514,7 +547,7 @@ class _ParkTableState extends State<ParkTable> {
                     : const SizedBox.shrink(),
               ),
             ),
-          if (widget.expandable && widget.expandedRowBuilder != null)
+          if (_hasExpandedRow)
             const SizedBox(width: 40),
           ...widget.columns.asMap().entries.map((entry) {
             final colIndex = entry.key;
@@ -581,6 +614,11 @@ class _ParkTableState extends State<ParkTable> {
         onChanged: (_) {
           if (allSelected) {
             sel.onChanged?.call([], []);
+            widget.onChange?.call({
+              'type': 'selection',
+              'selectedRowKeys': <String>[],
+              'selectedRows': <dynamic>[],
+            });
           } else {
             final selectedRows = data
                 .asMap()
@@ -589,6 +627,11 @@ class _ParkTableState extends State<ParkTable> {
                 .map((e) => e.value)
                 .toList();
             sel.onChanged?.call(enabledKeys, selectedRows);
+            widget.onChange?.call({
+              'type': 'selection',
+              'selectedRowKeys': enabledKeys,
+              'selectedRows': selectedRows,
+            });
           }
         },
         activeColor: park.colors.brand,
@@ -624,7 +667,7 @@ class _ParkTableState extends State<ParkTable> {
   double _totalRowWidth() {
     double w = 0;
     if (widget.rowSelection != null) w += 48;
-    if (widget.expandable && widget.expandedRowBuilder != null) w += 40;
+    if (_hasExpandedRow) w += 40;
     for (final col in widget.columns) {
       w += _getColumnWidth(col);
     }
@@ -633,7 +676,7 @@ class _ParkTableState extends State<ParkTable> {
 
   Widget _buildDataRows(List<Map<String, dynamic>> data, ParkThemeData park) {
     final useExpandable =
-        widget.expandable && widget.expandedRowBuilder != null;
+        _hasExpandedRow;
 
     if (widget.sticky || useExpandable) {
       // Column-based rendering for sticky and expandable modes
@@ -717,7 +760,7 @@ class _ParkTableState extends State<ParkTable> {
                 ),
               ),
             ),
-            child: widget.expandedRowBuilder!(context, row, i),
+            child: _buildExpandedRowContent(row, i),
           ));
         }
 
@@ -867,7 +910,7 @@ class _ParkTableState extends State<ParkTable> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
-            '共 ${pg.total} 条',
+            ParkLocalizations.of(context).totalInfo(pg.total),
             style: TextStyle(
               fontSize: park.typography.sizeBodySmall,
               color: park.colors.textSecondary,
@@ -878,16 +921,28 @@ class _ParkTableState extends State<ParkTable> {
           _pageButton(
             icon: Icons.chevron_left,
             enabled: currentPage > 1,
-            onPressed: () =>
-                pg.onPageChanged?.call(currentPage - 1, pg.pageSize),
+            onPressed: () {
+              pg.onPageChanged?.call(currentPage - 1, pg.pageSize);
+              widget.onChange?.call({
+                'type': 'pagination',
+                'page': currentPage - 1,
+                'pageSize': pg.pageSize,
+              });
+            },
             park: park,
           ),
           ..._buildPageNumbers(currentPage, totalPages, pg, park),
           _pageButton(
             icon: Icons.chevron_right,
             enabled: currentPage < totalPages,
-            onPressed: () =>
-                pg.onPageChanged?.call(currentPage + 1, pg.pageSize),
+            onPressed: () {
+              pg.onPageChanged?.call(currentPage + 1, pg.pageSize);
+              widget.onChange?.call({
+                'type': 'pagination',
+                'page': currentPage + 1,
+                'pageSize': pg.pageSize,
+              });
+            },
             park: park,
           ),
         ],
@@ -948,7 +1003,14 @@ class _ParkTableState extends State<ParkTable> {
       selected: isCurrent,
       label: '$page',
       child: GestureDetector(
-      onTap: isCurrent ? null : () => pg.onPageChanged?.call(page, pg.pageSize),
+      onTap: isCurrent ? null : () {
+        pg.onPageChanged?.call(page, pg.pageSize);
+        widget.onChange?.call({
+          'type': 'pagination',
+          'page': page,
+          'pageSize': pg.pageSize,
+        });
+      },
       child: Container(
         width: 32,
         height: 32,
@@ -1044,15 +1106,28 @@ class _ParkTableState extends State<ParkTable> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text(
-                col.title,
-                style: TextStyle(
-                  color: park.colors.textPrimary,
-                  fontSize: park.typography.sizeBodySmall,
-                  fontWeight: park.typography.weightBold,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: widget.showSorterTooltip && col.sortable
+                  ? Tooltip(
+                      message: ParkLocalizations.of(context).clickToSort,
+                      child: Text(
+                        col.title,
+                        style: TextStyle(
+                          color: park.colors.textPrimary,
+                          fontSize: park.typography.sizeBodySmall,
+                          fontWeight: park.typography.weightBold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
+                  : Text(
+                      col.title,
+                      style: TextStyle(
+                        color: park.colors.textPrimary,
+                        fontSize: park.typography.sizeBodySmall,
+                        fontWeight: park.typography.weightBold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ),
             if (col.sortable) ...[
               SizedBox(width: park.spacing.xs),
@@ -1206,7 +1281,7 @@ class _ParkTableState extends State<ParkTable> {
     // 虚拟化路径：显式设置了 scroll 视口时，行使用 ListView.builder 惰性构建，
     // 避免万行全量 build；表头固定、横向滚动与 Scrollbar 均保留（B26）。
     if (!widget.sticky &&
-        !(widget.expandable && widget.expandedRowBuilder != null) &&
+        !(_hasExpandedRow) &&
         widget.scroll != null) {
       return _buildVirtualTable(data, headerBg, park);
     }
@@ -1215,7 +1290,7 @@ class _ParkTableState extends State<ParkTable> {
     // 确保 columnWidths 对表头和数据行一致，避免 header 用 SizedBox(fixed)
     // 而 body 用 FlexColumnWidth 导致的列宽不匹配。
     if (!widget.sticky &&
-        !(widget.expandable && widget.expandedRowBuilder != null)) {
+        !(_hasExpandedRow)) {
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Table(
@@ -1482,7 +1557,7 @@ class _ParkTableState extends State<ParkTable> {
       );
     }
 
-    if (widget.expandable && widget.expandedRowBuilder != null) {
+    if (_hasExpandedRow) {
       headerChildren.add(const SizedBox(width: 40));
     }
 
@@ -1538,7 +1613,7 @@ class _ParkTableState extends State<ParkTable> {
         );
       }
 
-      if (widget.expandable && widget.expandedRowBuilder != null) {
+      if (_hasExpandedRow) {
         cells.add(const SizedBox(width: 40));
       }
 

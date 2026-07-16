@@ -85,7 +85,7 @@ class ParkCascader extends FormField<List<String>> {
   final bool enabled;
 
   /// 空态文案。
-  final String emptyText;
+  final String? emptyText;
 
   /// 是否启用搜索（跨层级模糊搜索）。
   final bool searchable;
@@ -134,7 +134,7 @@ class ParkCascader extends FormField<List<String>> {
     this.hintText,
     this.label,
     this.enabled = true,
-    this.emptyText = '暂无数据',
+    this.emptyText,
     this.searchable = false,
     this.changeOnSelect = false,
     this.displayRender,
@@ -293,6 +293,7 @@ class ParkCascader extends FormField<List<String>> {
     final context = state.context;
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     final result = await showModalBottomSheet<List<String>>(
       context: context,
@@ -303,7 +304,7 @@ class ParkCascader extends FormField<List<String>> {
           options: widget.options,
           selectedPath: List<String>.from(widget.value ?? []),
           park: park,
-          emptyText: widget.emptyText,
+          emptyText: widget.emptyText ?? l10n.noData,
           searchable: widget.searchable,
           changeOnSelect: widget.changeOnSelect,
           expandTrigger: widget.expandTrigger,

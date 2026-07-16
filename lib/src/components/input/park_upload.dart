@@ -340,6 +340,93 @@ class ParkUpload extends StatefulWidget {
         lower.endsWith('.bmp');
   }
 
+  /// 校验文件头部的 magic bytes 是否为已知图片签名。
+  ///
+  /// 通过平台条件导入的 [readMagicBytes] 读取文件前 12 字节，
+  /// 与 JPEG / PNG / GIF / WebP / BMP 的魔数比对。
+  /// 用于防止扩展名伪造（如将 .exe 改名为 .jpg）。
+  static Future<bool> _hasImageMagicBytes(String filePath) async {
+    final List<int>? bytes = await readMagicBytes(filePath);
+    if (bytes == null || bytes.length < 4) return false;
+    // JPEG: FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return true;
+    }
+    // PNG: 89 50 4E 47
+    if (bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return true;
+    }
+    // GIF: 47 49 46 38
+    if (bytes[0] == 0x47 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46) {
+      return true;
+    }
+    // WebP: RIFF....WEBP (bytes 0-3 = RIFF, 8-11 = WEBP)
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return true;
+    }
+    // BMP: 42 4D
+    if (bytes[0] == 0x42 && bytes[1] == 0x4D) return true;
+    return false;
+  }
+
+  /// 异步校验文件：先做扩展名 / 大小等基础校验，再对 imageOnly 模式验证 magic bytes。
+  ///
+  /// 返回 null 表示通过，否则返回错误文案。
+  static Future<String?> validateFileWithMagicBytes(
+    ParkUploadFile file, {
+    required bool imageOnly,
+    List<String>? accept,
+    double? maxSizeMB,
+    String? Function(ParkUploadFile)? beforeAddValidator,
+  }) async {
+    if (imageOnly && !_isImagePath(file.path)) {
+      return '仅支持上传图片文件';
+    }
+
+    if (imageOnly) {
+      final bool validMagic = await _hasImageMagicBytes(file.path);
+      if (!validMagic) {
+        return '文件内容不是有效的图片格式';
+      }
+    }
+
+    if (accept != null && accept!.isNotEmpty) {
+      final String ext = _fileExtension(file.path);
+      final bool supported = accept!
+          .map((String item) => item.toLowerCase().replaceAll('.', ''))
+          .contains(ext);
+      if (!supported) {
+        return '文件类型不支持';
+      }
+    }
+
+    if (maxSizeMB != null && file.sizeBytes != null) {
+      final double size = file.sizeBytes! / (1024 * 1024);
+      if (size > maxSizeMB!) {
+        return '文件大小不能超过 ${maxSizeMB!.toStringAsFixed(maxSizeMB! % 1 == 0 ? 0 : 1)}MB';
+      }
+    }
+
+    if (beforeAddValidator != null) {
+      return beforeAddValidator!(file);
+    }
+
+    return null;
+  }
+
   /// 提取文件后缀。
   static String _fileExtension(String path) {
     final String lower = path.toLowerCase();
@@ -882,7 +969,7 @@ class _ParkUploadState extends State<ParkUpload> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(radius.md),
-                  child: _buildThumbnail(file, park),
+                  child: _buildThumbnail(file, park, l10n),
                 ),
               ),
             ),
@@ -975,7 +1062,7 @@ class _ParkUploadState extends State<ParkUpload> {
     );
   }
 
-  Widget _buildThumbnail(ParkUploadFile file, ParkThemeData park) {
+  Widget _buildThumbnail(ParkUploadFile file, ParkThemeData park, ParkLocalizations l10n) {
     if (file.thumbnailPath != null) {
       return buildFileImageWidget(
         file.thumbnailPath!,
@@ -994,15 +1081,18 @@ class _ParkUploadState extends State<ParkUpload> {
       );
     }
 
-    return _buildFileIcon(file, park);
+    return _buildFileIcon(file, park, l10n);
   }
 
-  Widget _buildFileIcon(ParkUploadFile file, ParkThemeData park) {
+  Widget _buildFileIcon(ParkUploadFile file, ParkThemeData park, ParkLocalizations l10n) {
     return Center(
-      child: Icon(
-        ParkUpload._fileIconForPath(file.path),
-        size: 28,
-        color: park.colors.textPlaceholder,
+      child: Semantics(
+        label: l10n.fileTypeLabel,
+        child: Icon(
+          ParkUpload._fileIconForPath(file.path),
+          size: 28,
+          color: park.colors.textPlaceholder,
+        ),
       ),
     );
   }
@@ -1071,7 +1161,7 @@ class _ParkUploadState extends State<ParkUpload> {
                     child: SizedBox(
                       width: 40,
                       height: 40,
-                      child: _buildListThumbnail(file, park),
+                      child: _buildListThumbnail(file, park, l10n),
                     ),
                   ),
                   SizedBox(width: spacing.sm),
@@ -1144,12 +1234,15 @@ class _ParkUploadState extends State<ParkUpload> {
                   if (widget.previewable)
                     Padding(
                       padding: EdgeInsets.only(right: spacing.sm),
-                      child: GestureDetector(
-                        onTap: () => widget.onPreview?.call(file),
-                        child: Icon(
-                          Icons.visibility_outlined,
-                          size: 18,
-                          color: colors.textSecondary,
+                      child: Semantics(
+                        label: l10n.previewLabel,
+                        child: GestureDetector(
+                          onTap: () => widget.onPreview?.call(file),
+                          child: Icon(
+                            Icons.visibility_outlined,
+                            size: 18,
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -1204,7 +1297,7 @@ class _ParkUploadState extends State<ParkUpload> {
     );
   }
 
-  Widget _buildListThumbnail(ParkUploadFile file, ParkThemeData park) {
+  Widget _buildListThumbnail(ParkUploadFile file, ParkThemeData park, ParkLocalizations l10n) {
     if (file.thumbnailPath != null) {
       return buildFileImageWidget(
         file.thumbnailPath!,
@@ -1221,7 +1314,7 @@ class _ParkUploadState extends State<ParkUpload> {
         fit: BoxFit.cover,
       );
     }
-    return _buildFileIcon(file, park);
+    return _buildFileIcon(file, park, l10n);
   }
 
   /// 文本模式列表：文件图标 + 文件名 + 进度条 + 文件大小。
@@ -1332,12 +1425,15 @@ class _ParkUploadState extends State<ParkUpload> {
                   if (widget.previewable)
                     Padding(
                       padding: EdgeInsets.only(right: spacing.sm),
-                      child: GestureDetector(
-                        onTap: () => widget.onPreview?.call(file),
-                        child: Icon(
-                          Icons.visibility_outlined,
-                          size: 16,
-                          color: colors.textSecondary,
+                      child: Semantics(
+                        label: l10n.previewLabel,
+                        child: GestureDetector(
+                          onTap: () => widget.onPreview?.call(file),
+                          child: Icon(
+                            Icons.visibility_outlined,
+                            size: 16,
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -1761,7 +1857,7 @@ class _CropImageDialogState extends State<_CropImageDialog> {
   Widget build(BuildContext context) {
     final l10n = ParkLocalizations.of(context);
     return AlertDialog(
-      title: Text(l10n.retry.isNotEmpty ? '裁剪图片' : 'Crop Image'),
+      title: Text(l10n.cropImageTitle),
       content: SizedBox(
         width: 300,
         height: 300,
@@ -1830,13 +1926,13 @@ class _CropImageDialogState extends State<_CropImageDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: Text(l10n.retry.isNotEmpty ? '取消' : 'Cancel'),
+          child: Text(l10n.cancelText),
         ),
         TextButton(
           onPressed: _imageLoaded
               ? () => Navigator.of(context).pop(_cropRect)
               : null,
-          child: Text(l10n.retry.isNotEmpty ? '确认' : 'Confirm'),
+          child: Text(l10n.confirmText),
         ),
       ],
     );

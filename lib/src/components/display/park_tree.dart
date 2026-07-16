@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 树形控件组件
@@ -60,6 +61,12 @@ class ParkTree extends StatefulWidget {
   /// 搜索关键词，不为 null 时高亮匹配文字并展开包含匹配的父节点。
   final String? searchQuery;
 
+  /// 是否严格勾选（父子节点勾选独立）。
+  ///
+  /// 为 `true` 时，勾选父节点不会级联勾选子节点，取消子节点也不会影响父节点。
+  /// 为 `false`（默认）时，勾选父节点会级联勾选所有子孙节点。
+  final bool checkStrictly;
+
   /// 创建 [ParkTree]。
   const ParkTree({
     super.key,
@@ -77,6 +84,7 @@ class ParkTree extends StatefulWidget {
     this.draggable = false,
     this.onDragReorder,
     this.searchQuery,
+    this.checkStrictly = false,
   });
 
   @override
@@ -168,6 +176,9 @@ class _ParkTreeState extends State<ParkTree> {
   @override
   void didUpdateWidget(ParkTree oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.data != oldWidget.data) {
+      _loadedChildren.clear();
+    }
     if (widget.selectedKeys != null &&
         !_listEquals(widget.selectedKeys!, _selectedKeys.toList())) {
       setState(() {
@@ -279,10 +290,35 @@ class _ParkTreeState extends State<ParkTree> {
     }
     setState(() {
       if (widget.multiSelect) {
-        if (_selectedKeys.contains(key)) {
-          _selectedKeys.remove(key);
+        final bool isChecking = !_selectedKeys.contains(key);
+        if (widget.checkStrictly) {
+          // Strict mode: only toggle the clicked node, no propagation.
+          if (isChecking) {
+            _selectedKeys.add(key);
+          } else {
+            _selectedKeys.remove(key);
+          }
         } else {
-          _selectedKeys.add(key);
+          // Non-strict mode: propagate to all descendants.
+          final node = _findNodeByKey(widget.data, key);
+          if (node != null) {
+            final descendantKeys = _collectAllDescendantKeys(node);
+            if (isChecking) {
+              _selectedKeys.add(key);
+              _selectedKeys.addAll(descendantKeys);
+            } else {
+              _selectedKeys.remove(key);
+              _selectedKeys.removeAll(descendantKeys);
+              // Also uncheck ancestors if any descendant is unchecked.
+              _uncheckAncestors(key);
+            }
+          } else {
+            if (isChecking) {
+              _selectedKeys.add(key);
+            } else {
+              _selectedKeys.remove(key);
+            }
+          }
         }
         widget.onMultiSelect?.call(_selectedKeys.toList());
       } else {
@@ -290,6 +326,46 @@ class _ParkTreeState extends State<ParkTree> {
         widget.onSelect?.call(key);
       }
     });
+  }
+
+  /// 收集节点的所有子孙 key（递归）。
+  Set<String> _collectAllDescendantKeys(ParkTreeNode node) {
+    final keys = <String>{};
+    for (final child in node.children) {
+      keys.add(child.key);
+      keys.addAll(_collectAllDescendantKeys(child));
+    }
+    // Also include keys from asynchronously loaded children.
+    final loadedChildren = _loadedChildren[node.key];
+    if (loadedChildren != null) {
+      for (final child in loadedChildren) {
+        keys.add(child.key);
+        keys.addAll(_collectAllDescendantKeys(child));
+      }
+    }
+    return keys;
+  }
+
+  /// 取消勾选祖先节点（当子节点被取消时，父节点也应取消）。
+  void _uncheckAncestors(String key) {
+    final parentKey = _findParentKey(widget.data, key);
+    if (parentKey != null && _selectedKeys.contains(parentKey)) {
+      _selectedKeys.remove(parentKey);
+      _uncheckAncestors(parentKey);
+    }
+  }
+
+  /// 在树中查找指定 key 的父节点 key。
+  String? _findParentKey(List<ParkTreeNode> nodes, String targetKey) {
+    for (final n in nodes) {
+      final children = _loadedChildren[n.key] ?? n.children;
+      for (final child in children) {
+        if (child.key == targetKey) return n.key;
+      }
+      final found = _findParentKey(children, targetKey);
+      if (found != null) return found;
+    }
+    return null;
   }
 
   // ========================================================================
@@ -436,9 +512,10 @@ class _ParkTreeState extends State<ParkTree> {
       );
     }
 
+    final l10n = ParkLocalizations.of(context);
     return Semantics(
       label:
-          '${node.label}${isSelected ? ', 已选' : ''}${hasChildren ? ', ${isExpanded ? "已展开" : "已折叠"}' : ''}${widget.draggable ? ', 可拖拽排序' : ''}',
+          '${node.label}${isSelected ? ', ${l10n.treeSelectedLabel}' : ''}${hasChildren ? ', ${isExpanded ? l10n.treeExpandedLabel : l10n.treeCollapsedLabel}' : ''}${widget.draggable ? ', ${l10n.treeDraggableLabel}' : ''}',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

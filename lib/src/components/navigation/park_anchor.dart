@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 锚点导航组件
 ///
@@ -190,6 +191,7 @@ class _ParkAnchorState extends State<ParkAnchor> {
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +201,7 @@ class _ParkAnchorState extends State<ParkAnchor> {
         return Semantics(
           button: true,
           selected: isActive,
-          label: '锚点: ${item.label}',
+          label: l10n.anchorLabel(item.label),
           header: true,
           child: GestureDetector(
             onTap: () => _handleTap(item.key),

@@ -67,11 +67,11 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     with SingleTickerProviderStateMixin {
   bool _closed = false;
   bool _isClosing = false;
-  bool _marqueeActive = false;
   bool _userInteracting = false;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
   late final ScrollController _scrollController;
+  double _marqueeMaxExtent = 0;
 
   @override
   void initState() {
@@ -111,7 +111,6 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
   void _startMarquee() {
     if (!mounted ||
         _closed ||
-        _marqueeActive ||
         _userInteracting ||
         !widget.scrollable ||
         !_scrollController.hasClients) {
@@ -121,37 +120,41 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     final maxExtent = _scrollController.position.maxScrollExtent;
     if (maxExtent <= 0) return;
 
-    _marqueeActive = true;
+    _marqueeMaxExtent = maxExtent;
 
     final durationMs = widget.speed != null
         ? (maxExtent / widget.speed! * 1000).toInt()
         : (maxExtent * 30).toInt();
 
-    _scrollController.animateTo(
-      maxExtent,
-      duration: Duration(milliseconds: durationMs),
+    _animateMarquee(Duration(milliseconds: durationMs));
+  }
+
+  /// Animate the scroll to the end, then loop back to the start.
+  void _animateMarquee(Duration duration) {
+    if (!mounted || _closed || _userInteracting) return;
+    if (!_scrollController.hasClients) return;
+
+    _scrollController
+        .animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: duration,
       curve: Curves.linear,
-    ).then((_) {
-      _marqueeActive = false;
-      if (mounted && widget.scrollable && !_closed && !_userInteracting) {
+    )
+        .then((_) {
+      if (!mounted || _closed || _userInteracting) return;
+      // Pause briefly before restarting.
+      Future<void>.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted || _closed || _userInteracting) return;
+        if (!_scrollController.hasClients) return;
         _scrollController.jumpTo(0);
-        Future<void>.delayed(const Duration(milliseconds: 400), () {
-          if (mounted && !_closed && !_userInteracting) {
-            _startMarquee();
-          }
-        });
-      }
-    }).catchError((_) {
-      _marqueeActive = false;
+        _animateMarquee(duration);
+      });
     });
   }
 
   void _stopMarquee({bool resetPosition = false}) {
-    _marqueeActive = false;
-    if (_scrollController.hasClients) {
-      if (resetPosition) {
-        _scrollController.jumpTo(0);
-      }
+    if (resetPosition && _scrollController.hasClients) {
+      _scrollController.jumpTo(0);
     }
   }
 
@@ -292,9 +295,13 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
             ),
             if (widget.closable || widget.closeable) ...[
               SizedBox(width: park.spacing.sm),
-              GestureDetector(
-                onTap: _close,
-                child: Icon(Icons.close, size: 16, color: fg),
+              Semantics(
+                button: true,
+                label: 'Close',
+                child: GestureDetector(
+                  onTap: _close,
+                  child: Icon(Icons.close, size: 16, color: fg),
+                ),
               ),
             ],
             if (widget.extra != null) ...[

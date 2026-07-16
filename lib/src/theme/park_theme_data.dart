@@ -6,6 +6,8 @@ import 'tokens/park_radius.dart';
 import 'tokens/park_shadows.dart';
 import 'tokens/park_motion.dart';
 import 'tokens/park_sizing.dart';
+import 'tokens/park_elevation.dart';
+import 'tokens/park_blur.dart';
 import 'park_icon_theme_data.dart';
 
 /// 表面风格：决定卡片/容器等表面材质如何渲染（阴影、边框、玻璃、霓虹等）。
@@ -77,6 +79,12 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
   /// 尺寸令牌。
   final ParkSizing sizing;
 
+  /// 海拔令牌。
+  final ParkElevation elevation;
+
+  /// 模糊令牌。
+  final ParkBlur blur;
+
   const ParkThemeData({
     required this.colors,
     required this.typography,
@@ -87,6 +95,8 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     this.iconTheme = const ParkIconThemeData(),
     this.motion = const ParkMotion(),
     this.sizing = const ParkSizing(),
+    this.elevation = const ParkElevation(),
+    this.blur = const ParkBlur(),
   });
 
   /// 亮色主题
@@ -100,6 +110,8 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       iconTheme: const ParkIconThemeData(),
       motion: const ParkMotion(),
       sizing: ParkSizing.defaults(),
+      elevation: ParkElevation.defaults(),
+      blur: ParkBlur.defaults(),
     );
   }
 
@@ -114,6 +126,8 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       iconTheme: const ParkIconThemeData(),
       motion: const ParkMotion(),
       sizing: ParkSizing.defaults(),
+      elevation: ParkElevation.defaults(),
+      blur: ParkBlur.defaults(),
     );
   }
 
@@ -128,6 +142,8 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     ParkIconThemeData? iconTheme,
     ParkMotion? motion,
     ParkSizing? sizing,
+    ParkElevation? elevation,
+    ParkBlur? blur,
   }) {
     return ParkThemeData(
       colors: colors ?? this.colors,
@@ -139,6 +155,8 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       iconTheme: iconTheme ?? this.iconTheme,
       motion: motion ?? this.motion,
       sizing: sizing ?? this.sizing,
+      elevation: elevation ?? this.elevation,
+      blur: blur ?? this.blur,
     );
   }
 
@@ -152,10 +170,17 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       spacing: ParkSpacing.lerp(spacing, other.spacing, t),
       radius: _lerpRadius(radius, other.radius, t),
       shadows: ParkShadows.lerp(shadows, other.shadows, t),
+      // surfaceStyle is a discrete enum (ParkSurfaceStyle) and cannot be
+      // smoothly interpolated. It switches at the midpoint (t < 0.5 → a, else b).
+      // Avoid animating surfaceStyle transitions — the hard jump is intentional
+      // because rendering strategies (stripe/flat/glass/neo/neon) are mutually
+      // exclusive and have no meaningful intermediate state.
       surfaceStyle: t < 0.5 ? surfaceStyle : other.surfaceStyle,
       iconTheme: ParkIconThemeData.lerp(iconTheme, other.iconTheme, t),
       motion: ParkMotion.lerp(motion, other.motion, t),
       sizing: ParkSizing.lerp(sizing, other.sizing, t),
+      elevation: ParkElevation.lerp(elevation, other.elevation, t),
+      blur: ParkBlur.lerp(blur, other.blur, t),
     );
   }
 
@@ -170,12 +195,16 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       ),
       success: Color.lerp(a.success, b.success, t)!,
       successLight: Color.lerp(a.successLight, b.successLight, t)!,
+      successDark: Color.lerp(a.successDark, b.successDark, t)!,
       warning: Color.lerp(a.warning, b.warning, t)!,
       warningLight: Color.lerp(a.warningLight, b.warningLight, t)!,
+      warningDark: Color.lerp(a.warningDark, b.warningDark, t)!,
       error: Color.lerp(a.error, b.error, t)!,
       errorLight: Color.lerp(a.errorLight, b.errorLight, t)!,
+      errorDark: Color.lerp(a.errorDark, b.errorDark, t)!,
       info: Color.lerp(a.info, b.info, t)!,
       infoLight: Color.lerp(a.infoLight, b.infoLight, t)!,
+      infoDark: Color.lerp(a.infoDark, b.infoDark, t)!,
       textPrimary: Color.lerp(a.textPrimary, b.textPrimary, t)!,
       textSecondary: Color.lerp(a.textSecondary, b.textSecondary, t)!,
       textPlaceholder: Color.lerp(a.textPlaceholder, b.textPlaceholder, t)!,
@@ -198,7 +227,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       md: a.md + (b.md - a.md) * t,
       lg: a.lg + (b.lg - a.lg) * t,
       xl: a.xl + (b.xl - a.xl) * t,
-      full: 9999.0,
+      full: a.full + (b.full - a.full) * t,
     );
   }
 
@@ -214,7 +243,9 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
         other.surfaceStyle == surfaceStyle &&
         other.iconTheme == iconTheme &&
         other.motion == motion &&
-        other.sizing == sizing;
+        other.sizing == sizing &&
+        other.elevation == elevation &&
+        other.blur == blur;
   }
 
   @override
@@ -228,5 +259,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
         iconTheme,
         motion,
         sizing,
+        elevation,
+        blur,
       );
 }

@@ -123,6 +123,12 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
   /// 阶段：是否正在测量（首次布局或 items 变化后）
   bool _isMeasuring = true;
 
+  /// 是否正在等待延迟测量（首帧渲染后再开始测量）
+  bool _deferredMeasurement = false;
+
+  /// 每帧最多测量的 item 数量（避免单帧阻塞）
+  static const int _kMeasureBatchSize = 20;
+
   /// 列数
   int _columnCount = 2;
 
@@ -140,9 +146,11 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
   void didUpdateWidget(ParkMasonry<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.items != widget.items) {
-      // 数据源变化时清除高度缓存并重新测量
-      _measuredHeights.clear();
-      _isMeasuring = true;
+      // 数据源变化时：保留已测量且仍然有效的 item 高度缓存，
+      // 仅移除超出新列表长度的条目，避免不必要的重新测量。
+      _measuredHeights.removeWhere((key, _) => key >= widget.items.length);
+      _isMeasuring = _measuredHeights.length < widget.items.length;
+      _deferredMeasurement = false;
       if (mounted) setState(() {});
     } else if (oldWidget.columns != widget.columns ||
         oldWidget.minColumnWidth != widget.minColumnWidth) {
@@ -285,7 +293,16 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
         _columnCount = columnCount;
 
         if (_isMeasuring) {
-          // 测量阶段：将每个 item 在 Offstage 中构建以获取高度
+          // 延迟测量：首帧渲染后再开始测量，避免阻塞首屏渲染
+          if (!_deferredMeasurement) {
+            _deferredMeasurement = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {}); // 触发测量阶段
+              }
+            });
+          }
+          // 测量阶段：分批在 Offstage 中构建 item 获取高度
           return _buildMeasuringLayout(context, columnCount, parentWidth, park);
         }
 
@@ -295,7 +312,10 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     );
   }
 
-  /// 测量布局：在 Offstage 中构建所有 item 获取自然高度
+  /// 测量布局：分批在 Offstage 中构建 item 获取自然高度
+  ///
+  /// 每帧最多构建 [_kMeasureBatchSize] 个 item，避免一次性构建所有 item
+  /// 导致首帧卡顿。测量完一批后通过 post-frame 回调触发下一批。
   Widget _buildMeasuringLayout(
     BuildContext context,
     int columnCount,
@@ -303,20 +323,32 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     ParkThemeData park,
   ) {
     final columnWidth = _columnWidth(parentWidth, columnCount);
+    final totalItems = widget.items.length;
+
+    // 计算本批次要测量的 item 索引范围
+    final measuredCount = _measuredHeights.length;
+    final batchEnd = (measuredCount + _kMeasureBatchSize).clamp(0, totalItems);
+
+    // 所有 item 已测量完毕 → 进入最终布局
+    if (measuredCount >= totalItems) {
+      final heights = _getCachedHeights();
+      _doLayout(_columnCount, heights);
+      _isMeasuring = false;
+      return _buildFinalLayout(context, columnCount, parentWidth, park);
+    }
 
     return SingleChildScrollView(
       controller: _scrollController,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          for (var i = 0; i < widget.items.length; i++)
+          for (var i = measuredCount; i < batchEnd; i++)
             Offstage(
               child: SizedBox(
                 width: columnWidth,
                 child: Builder(
                   key: ValueKey<String>('__measure_$i'),
                   builder: (BuildContext ctx) {
-                    // 调度 post-frame 回调来测量
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _measureItem(ctx, i);
                     });
@@ -340,14 +372,18 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     final height = renderBox.size.height;
     if (_measuredHeights[index] != height) {
       _measuredHeights[index] = height;
+    }
 
-      // 当所有 item 都测量完毕，进入最终布局阶段
-      if (_measuredHeights.length >= widget.items.length) {
-        final heights = _getCachedHeights();
-        _doLayout(_columnCount, heights);
-        _isMeasuring = false;
-        if (mounted) setState(() {});
-      }
+    // 触发下一批测量或进入最终布局
+    if (_measuredHeights.length >= widget.items.length) {
+      // 所有 item 测量完毕，进入最终布局
+      final heights = _getCachedHeights();
+      _doLayout(_columnCount, heights);
+      _isMeasuring = false;
+      if (mounted) setState(() {});
+    } else {
+      // 调度下一批测量
+      if (mounted) setState(() {});
     }
   }
 

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 水印组件
 ///
@@ -50,7 +51,7 @@ class ParkWatermark extends StatefulWidget {
     this.gapX = 120,
     this.gapY = 100,
     required this.child,
-  }) : assert(text != null || image != null, 'text 或 image 至少提供一个');
+  }) : assert(text != null || image != null, 'Either text or image must be provided');
 
   @override
   State<ParkWatermark> createState() => _ParkWatermarkState();
@@ -63,6 +64,9 @@ class _ParkWatermarkState extends State<ParkWatermark> {
   /// Captured ui.Image for tiling on canvas.
   ui.Image? _capturedImage;
 
+  /// Whether the image has already been captured (avoids redundant toImage calls).
+  bool _imageCaptured = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,20 +78,27 @@ class _ParkWatermarkState extends State<ParkWatermark> {
   @override
   void didUpdateWidget(ParkWatermark oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Only recapture when the image widget reference actually changes
+    // and we haven't already cached the result (R3-22).
     if (widget.image != null && widget.image != oldWidget.image) {
+      _imageCaptured = false;
       WidgetsBinding.instance.addPostFrameCallback(_captureImage);
     }
   }
 
   /// Capture the image widget as a ui.Image via RenderRepaintBoundary.
+  /// Skips if already captured and the image widget hasn't changed.
   void _captureImage(_) {
-    if (!mounted) return;
+    if (!mounted || _imageCaptured) return;
     final renderObject = _imageKey.currentContext?.findRenderObject();
     if (renderObject is RenderRepaintBoundary) {
       final dpr = MediaQuery.of(context).devicePixelRatio;
       renderObject.toImage(pixelRatio: dpr).then((img) {
         if (mounted) {
-          setState(() => _capturedImage = img);
+          setState(() {
+            _capturedImage = img;
+            _imageCaptured = true;
+          });
         }
       });
     }
@@ -97,9 +108,10 @@ class _ParkWatermarkState extends State<ParkWatermark> {
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final fgColor = widget.color ?? park.colors.textPrimary.withAlpha(26);
+    final l10n = ParkLocalizations.of(context);
 
     return Semantics(
-      label: widget.text ?? '水印',
+      label: widget.text ?? l10n.watermarkLabel,
       container: true,
       child: Stack(
         children: [
@@ -167,6 +179,12 @@ class _WatermarkPainter extends CustomPainter {
   final double gapX;
   final double gapY;
 
+  /// Cached TextPainter to avoid recreating every frame.
+  TextPainter? _cachedTextPainter;
+  String? _cachedText;
+  Color? _cachedColor;
+  double? _cachedFontSize;
+
   _WatermarkPainter({
     required this.text,
     required this.color,
@@ -176,16 +194,30 @@ class _WatermarkPainter extends CustomPainter {
     required this.gapY,
   });
 
+  /// Returns the cached TextPainter, recreating only when parameters change.
+  TextPainter _getTextPainter() {
+    if (_cachedTextPainter == null ||
+        _cachedText != text ||
+        _cachedColor != color ||
+        _cachedFontSize != fontSize) {
+      _cachedTextPainter = TextPainter(
+        text: TextSpan(text: text, style: TextStyle(color: color, fontSize: fontSize)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      _cachedText = text;
+      _cachedColor = color;
+      _cachedFontSize = fontSize;
+    }
+    return _cachedTextPainter!;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (text == null || text!.isEmpty) return;
     final radians = rotate * math.pi / 180;
 
     canvas.save();
-    final textPainter = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: fontSize)),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    final textPainter = _getTextPainter();
 
     final halfW = textPainter.width / 2;
     final halfH = textPainter.height / 2;

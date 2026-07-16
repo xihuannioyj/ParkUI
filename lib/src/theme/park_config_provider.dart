@@ -48,7 +48,7 @@ class ParkConfigProvider extends InheritedWidget {
       'ParkConfigProvider not found in widget tree. '
       'Wrap your app with ParkConfigProvider and provide a theme.',
     );
-    return provider!.theme!;
+    return provider?.theme ?? ParkThemeData.light();
   }
 
   /// 获取最近的 [ParkThemeData]，若不存在则返回 null。

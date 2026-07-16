@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 // ============================================================================
 // ParkTitle — 标题组件
@@ -190,6 +191,7 @@ class _ParkParagraphState extends State<ParkParagraph> {
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final colors = park.colors;
     final typo = park.typography;
+    final l10n = ParkLocalizations.of(context);
 
     final bodyStyle = typo.body.copyWith(color: colors.textPrimary);
 
@@ -225,8 +227,8 @@ class _ParkParagraphState extends State<ParkParagraph> {
             padding: EdgeInsets.only(left: park.spacing.xs),
             child: Text(
               _expanded
-                  ? (widget.collapseText ?? '收起')
-                  : (widget.expandText ?? '展开'),
+                  ? (widget.collapseText ?? l10n.collapseText)
+                  : (widget.expandText ?? l10n.expandText),
               style: TextStyle(
                 color: colors.brand,
                 fontSize: bodyStyle.fontSize ?? 16,
@@ -325,6 +327,7 @@ class _ParkCopyIconState extends State<_ParkCopyIcon> {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final colors = park.colors;
+    final l10n = ParkLocalizations.of(context);
 
     return GestureDetector(
       onTap: _copy,
@@ -341,7 +344,7 @@ class _ParkCopyIconState extends State<_ParkCopyIcon> {
             if (_showCopiedFeedback) ...[
               SizedBox(width: park.spacing.xxs),
               Text(
-                '已复制',
+                l10n.copiedText,
                 style: TextStyle(
                   color: colors.success,
                   fontSize: widget.iconSize * 0.85,

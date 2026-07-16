@@ -194,6 +194,22 @@ class _ParkCountdownState extends State<ParkCountdown>
         _shimmerController = null;
       }
     }
+    if (oldWidget.remaining != widget.remaining) {
+      if (oldWidget.controller != widget.controller) {
+        _controller.removeListener(_onControllerUpdate);
+        if (_ownsController) {
+          _controller.pause();
+          _controller.dispose();
+          _controller = ParkCountdownController(remaining: widget.remaining);
+          _controller.addListener(_onControllerUpdate);
+          _controller.start(widget.onFinish);
+        } else {
+          _controller = widget.controller!;
+          _controller.addListener(_onControllerUpdate);
+        }
+      }
+      _displayRemaining = _controller.remaining;
+    }
   }
 
   void _onControllerUpdate() {

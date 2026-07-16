@@ -163,13 +163,17 @@ class ParkAvatar extends StatelessWidget {
 
     Widget content;
     if (resolvedImage != null) {
-      content = Image(
-        image: resolvedImage,
-        width: dim,
-        height: dim,
-        fit: BoxFit.cover,
-        isAntiAlias: draggable,
-        errorBuilder: (_, _, _) => _buildFallback(park, dim),
+      content = Semantics(
+        label: 'avatar',
+        image: true,
+        child: Image(
+          image: resolvedImage,
+          width: dim,
+          height: dim,
+          fit: BoxFit.cover,
+          isAntiAlias: draggable,
+          errorBuilder: (_, _, _) => _buildFallback(park, dim),
+        ),
       );
     } else {
       content = _buildFallback(park, dim);
@@ -226,7 +230,7 @@ class ParkAvatar extends StatelessWidget {
     if (badge != null) {
       stackChildren.add(
         Semantics(
-          liveRegion: badge is Widget,
+          liveRegion: status != null,
           child: Positioned(
             right: -2,
             bottom: -2,

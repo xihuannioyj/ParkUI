@@ -12,15 +12,15 @@ class ParkSwipeAction {
 
   final VoidCallback? onTap;
 
-  /// 确认模式下的按钮文字（默认 '确认'）
-  final String confirmText;
+  /// 确认模式下的按钮文字（默认使用 l10n.confirmText）
+  final String? confirmText;
 
   const ParkSwipeAction({
     required this.label,
     this.icon,
     this.color,
     this.onTap,
-    this.confirmText = '确认',
+    this.confirmText,
   });
 }
 
@@ -255,7 +255,9 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
   ) {
     final isConfirming = widget.confirmMode && _pendingConfirmIndex == index;
     final l10n = ParkLocalizations.of(context);
-    final displayText = isConfirming ? l10n.confirmText : action.label;
+    final displayText = isConfirming
+        ? (action.confirmText ?? l10n.confirmText)
+        : action.label;
 
     return Semantics(
       button: true,

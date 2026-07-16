@@ -172,6 +172,10 @@ abstract class ParkLocalizations {
   String singleFileLimitText(double maxSizeMB);
   String get deleteFileLabel;
   String get dragUploadAreaLabel;
+  String get cropImageTitle;
+
+  // ── B109 ParkRefresh ──
+  String get pullingStatus;
 
   // ── B62 ParkText ──
   String get copiedText;
@@ -203,12 +207,109 @@ abstract class ParkLocalizations {
   String lengthCannotBeLessThan(num min);
   String lengthCannotBeGreaterThan(num max);
 
+  // ── B62 表单引擎 ──
+  String selectField(String fieldName);
+  String get noImages;
+  String get selectFromAlbum;
+  String get takePhoto;
+  String selectedFilesCount(int count);
+  String get chooseFile;
+  String get unnamedGroup;
+  String get validationTimeout;
+  String get usernameAlreadyExists;
+  String get emailAlreadyRegistered;
+  String idCardFormatError(String detail);
+  String get selectProvince;
+  String get selectCity;
+  String get selectDistrict;
+
+  // ── 日期范围快捷扩展 ──
+  String get shortcutLast90Days;
+  String get shortcutMonthToDate;
+
+  // ── Tour 引导 ──
+  String get skipText;
+  String get tourSemanticsLabel;
+  String stepIndicatorFormat(int current, int total);
+  String get closeTourLabel;
+  String get skipTourLabel;
+
+  // ── Result 状态码语义 ──
+  String statusCodeSemantic(String title, String? description, String? code);
+
+  // ── Steps 步骤状态 ──
+  String get stepStatusFinish;
+  String get stepStatusProcess;
+  String get stepStatusError;
+  String get stepStatusWaiting;
+  String stepSemanticFormat(int step, String title, String status, String? description);
+
+  // ── Select 加载/空态 ──
+  String get loadingOptionsText;
+  String get selectEmptyText;
+
+  // ── Remaining component l10n keys ──
+  String get fileTypeLabel;
+  String get previewLabel;
+  String get imageInvalidFormat;
+  String get clickToSort;
+  String anchorLabel(String label);
+  String get rotateLabel;
+  String get flipHorizontal;
+  String get flipVertical;
+  String hueSliderSemantic(int degrees);
+  String get saturationValuePickerLabel;
+  String currentColorSemantic(String value);
+  String colorValueSemantic(String value);
+  String get colorFormatSwitch;
+  String switchToFormat(String format);
+  String get emptyValueLabel;
+
+  // ── Navigation / Display ──
+  String get navigationDrawerLabel;
+  String get layoutLabel;
+  String get backLabel;
+  String get treeSelectedLabel;
+  String get treeExpandedLabel;
+  String get treeCollapsedLabel;
+  String get treeDraggableLabel;
+
+  // ── Input 组件国际化 ──
+  String get shortcutYesterday;
+  String get shortcutThisQuarter;
+  String get moveRightLabel;
+  String get moveLeftLabel;
+  String totalItemsCount(int count);
+  String get selectedLabel;
+  String get searchNodesHint;
+  String get searchAllNodesSemantic;
+  String get checkedStateLabel;
+  String get indeterminateStateLabel;
+  String get uncheckedStateLabel;
+  String get selectedStateLabel;
+  String get expandedStateLabel;
+  String get collapsedStateLabel;
+  String get disabledStateLabel;
+  String checkboxDisabledLabel(String label);
+  String checkboxLabel(String label);
+
+  // ── Watermark ──
+  String get watermarkLabel;
+
+  // ── Dropdown menu ──
+  String get expandSubmenuLabel;
+
   /// 从 [BuildContext] 获取当前 [ParkLocalizations]。
   /// 未注入时返回 [ParkLocalizationsZh] 默认值。
   static ParkLocalizations of(BuildContext context) {
     final inherited = context
         .dependOnInheritedWidgetOfExactType<_ParkLocalizationsInherited>();
     if (inherited != null) return inherited.localizations;
+    assert(() {
+      debugPrint('ParkLocalizations: ParkLocalizationsWidget not found in tree. '
+                 'Falling back to Chinese. Add ParkLocalizationsWidget to your widget tree.');
+      return true;
+    }());
     return const ParkLocalizationsZh();
   }
 }
@@ -502,6 +603,10 @@ class ParkLocalizationsZh implements ParkLocalizations {
   String get deleteFileLabel => '删除文件';
   @override
   String get dragUploadAreaLabel => '拖拽上传区域';
+  @override
+  String get cropImageTitle => '裁剪图片';
+  @override
+  String get pullingStatus => '拉拽中';
 
   // ── B62 ParkText ──
   @override
@@ -553,6 +658,175 @@ class ParkLocalizationsZh implements ParkLocalizations {
   String lengthCannotBeLessThan(num min) => '长度不能小于 $min';
   @override
   String lengthCannotBeGreaterThan(num max) => '长度不能大于 $max';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => '请选择$fieldName';
+  @override
+  String get noImages => '暂无图片';
+  @override
+  String get selectFromAlbum => '相册选择';
+  @override
+  String get takePhoto => '拍照上传';
+  @override
+  String selectedFilesCount(int count) => '已选择 $count 个文件';
+  @override
+  String get chooseFile => '选择文件';
+  @override
+  String get unnamedGroup => '未命名分组';
+  @override
+  String get validationTimeout => '校验超时，请稍后重试';
+  @override
+  String get usernameAlreadyExists => '用户名已存在';
+  @override
+  String get emailAlreadyRegistered => '邮箱已注册';
+  @override
+  String idCardFormatError(String detail) => '身份证号格式错误（$detail）';
+  @override
+  String get selectProvince => '请选择省份';
+  @override
+  String get selectCity => '请选择城市';
+  @override
+  String get selectDistrict => '请选择区县';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => '近 90 天';
+  @override
+  String get shortcutMonthToDate => '本月至今';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => '跳过';
+  @override
+  String get tourSemanticsLabel => '功能引导';
+  @override
+  String stepIndicatorFormat(int current, int total) => '第 \u{24}{current + 1} / \u{24}total 步';
+  @override
+  String get closeTourLabel => '关闭引导';
+  @override
+  String get skipTourLabel => '跳过引导';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write('，\u{24}description');
+    if (code != null) buffer.write('，状态码 \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => '已完成';
+  @override
+  String get stepStatusProcess => '进行中';
+  @override
+  String get stepStatusError => '出错';
+  @override
+  String get stepStatusWaiting => '待处理';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('步骤 \u{24}{step + 1}: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => '加载中…';
+  @override
+  String get selectEmptyText => '暂无选项';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => '文件类型';
+  @override
+  String get previewLabel => '预览';
+  @override
+  String get imageInvalidFormat => '文件内容不是有效的图片格式';
+  @override
+  String get clickToSort => '点击排序';
+  @override
+  String anchorLabel(String label) => '锚点: $label';
+  @override
+  String get rotateLabel => '旋转';
+  @override
+  String get flipHorizontal => '水平翻转';
+  @override
+  String get flipVertical => '垂直翻转';
+  @override
+  String hueSliderSemantic(int degrees) => '色相滑块，$degrees 度';
+  @override
+  String get saturationValuePickerLabel => '饱和度与明度选择器';
+  @override
+  String currentColorSemantic(String value) => '当前选中颜色 $value';
+  @override
+  String colorValueSemantic(String value) => '颜色值 $value';
+  @override
+  String get colorFormatSwitch => '颜色格式切换';
+  @override
+  String switchToFormat(String format) => '切换到 $format';
+  @override
+  String get emptyValueLabel => '空';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => '导航抽屉';
+  @override
+  String get layoutLabel => '布局';
+  @override
+  String get backLabel => '返回';
+  @override
+  String get treeSelectedLabel => '已选';
+  @override
+  String get treeExpandedLabel => '已展开';
+  @override
+  String get treeCollapsedLabel => '已折叠';
+  @override
+  String get treeDraggableLabel => '可拖拽排序';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => '昨天';
+  @override
+  String get shortcutThisQuarter => '本季';
+  @override
+  String get moveRightLabel => '右移';
+  @override
+  String get moveLeftLabel => '左移';
+  @override
+  String totalItemsCount(int count) => '共 $count 项';
+  @override
+  String get selectedLabel => '已选';
+  @override
+  String get searchNodesHint => '搜索节点';
+  @override
+  String get searchAllNodesSemantic => '搜索所有节点';
+  @override
+  String get checkedStateLabel => '已选中';
+  @override
+  String get indeterminateStateLabel => '部分选中';
+  @override
+  String get uncheckedStateLabel => '未选中';
+  @override
+  String get selectedStateLabel => '已选';
+  @override
+  String get expandedStateLabel => '已展开';
+  @override
+  String get collapsedStateLabel => '已折叠';
+  @override
+  String get disabledStateLabel => '已禁用';
+  @override
+  String checkboxDisabledLabel(String label) => '$label，已禁用';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => '水印';
+  @override
+  String get expandSubmenuLabel => '展开子菜单';
 }
 
 // =============================================================================
@@ -787,6 +1061,10 @@ class ParkLocalizationsEn implements ParkLocalizations {
   String get deleteFileLabel => 'Delete file';
   @override
   String get dragUploadAreaLabel => 'Drag and drop upload area';
+  @override
+  String get cropImageTitle => 'Crop Image';
+  @override
+  String get pullingStatus => 'Pulling';
 
   // ── B62 ParkText ──
   @override
@@ -838,6 +1116,175 @@ class ParkLocalizationsEn implements ParkLocalizations {
   String lengthCannotBeLessThan(num min) => 'Length cannot be less than $min';
   @override
   String lengthCannotBeGreaterThan(num max) => 'Length cannot be greater than $max';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => 'Please select $fieldName';
+  @override
+  String get noImages => 'No images';
+  @override
+  String get selectFromAlbum => 'Select from Album';
+  @override
+  String get takePhoto => 'Take Photo';
+  @override
+  String selectedFilesCount(int count) => '$count files selected';
+  @override
+  String get chooseFile => 'Choose File';
+  @override
+  String get unnamedGroup => 'Unnamed Group';
+  @override
+  String get validationTimeout => 'Validation timed out, please try again later';
+  @override
+  String get usernameAlreadyExists => 'Username already exists';
+  @override
+  String get emailAlreadyRegistered => 'Email already registered';
+  @override
+  String idCardFormatError(String detail) => 'Invalid ID card format ($detail)';
+  @override
+  String get selectProvince => 'Select province';
+  @override
+  String get selectCity => 'Select city';
+  @override
+  String get selectDistrict => 'Select district';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => 'Last 90 days';
+  @override
+  String get shortcutMonthToDate => 'Month to date';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => 'Skip';
+  @override
+  String get tourSemanticsLabel => 'Feature tour';
+  @override
+  String stepIndicatorFormat(int current, int total) => 'Step \u{24}{current + 1} / \u{24}total';
+  @override
+  String get closeTourLabel => 'Close tour';
+  @override
+  String get skipTourLabel => 'Skip tour';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write(', \u{24}description');
+    if (code != null) buffer.write(', status code \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => 'Completed';
+  @override
+  String get stepStatusProcess => 'In progress';
+  @override
+  String get stepStatusError => 'Error';
+  @override
+  String get stepStatusWaiting => 'Pending';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('Step \u{24}{step + 1}: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => 'Loading…';
+  @override
+  String get selectEmptyText => 'No options';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => 'File type';
+  @override
+  String get previewLabel => 'Preview';
+  @override
+  String get imageInvalidFormat => 'File content is not a valid image format';
+  @override
+  String get clickToSort => 'Click to sort';
+  @override
+  String anchorLabel(String label) => 'Anchor: $label';
+  @override
+  String get rotateLabel => 'Rotate';
+  @override
+  String get flipHorizontal => 'Flip Horizontal';
+  @override
+  String get flipVertical => 'Flip Vertical';
+  @override
+  String hueSliderSemantic(int degrees) => 'Hue slider, $degrees degrees';
+  @override
+  String get saturationValuePickerLabel => 'Saturation & Value picker';
+  @override
+  String currentColorSemantic(String value) => 'Current color $value';
+  @override
+  String colorValueSemantic(String value) => 'Color value $value';
+  @override
+  String get colorFormatSwitch => 'Switch color format';
+  @override
+  String switchToFormat(String format) => 'Switch to $format';
+  @override
+  String get emptyValueLabel => 'Empty';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => 'Navigation drawer';
+  @override
+  String get layoutLabel => 'Layout';
+  @override
+  String get backLabel => 'Back';
+  @override
+  String get treeSelectedLabel => 'selected';
+  @override
+  String get treeExpandedLabel => 'expanded';
+  @override
+  String get treeCollapsedLabel => 'collapsed';
+  @override
+  String get treeDraggableLabel => 'draggable to reorder';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => 'Yesterday';
+  @override
+  String get shortcutThisQuarter => 'This quarter';
+  @override
+  String get moveRightLabel => 'Move right';
+  @override
+  String get moveLeftLabel => 'Move left';
+  @override
+  String totalItemsCount(int count) => '$count items total';
+  @override
+  String get selectedLabel => 'Selected';
+  @override
+  String get searchNodesHint => 'Search nodes';
+  @override
+  String get searchAllNodesSemantic => 'Search all nodes';
+  @override
+  String get checkedStateLabel => 'Checked';
+  @override
+  String get indeterminateStateLabel => 'Partially checked';
+  @override
+  String get uncheckedStateLabel => 'Unchecked';
+  @override
+  String get selectedStateLabel => 'Selected';
+  @override
+  String get expandedStateLabel => 'Expanded';
+  @override
+  String get collapsedStateLabel => 'Collapsed';
+  @override
+  String get disabledStateLabel => 'Disabled';
+  @override
+  String checkboxDisabledLabel(String label) => '$label, disabled';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => 'Watermark';
+  @override
+  String get expandSubmenuLabel => 'Expand submenu';
 }
 
 // =============================================================================
@@ -1072,6 +1519,10 @@ class ParkLocalizationsJa implements ParkLocalizations {
   String get deleteFileLabel => 'ファイルを削除';
   @override
   String get dragUploadAreaLabel => 'ドラッグ＆ドロップアップロードエリア';
+  @override
+  String get cropImageTitle => '画像をクロップ';
+  @override
+  String get pullingStatus => '引っ張り中';
 
   // ── B62 ParkText ──
   @override
@@ -1123,4 +1574,173 @@ class ParkLocalizationsJa implements ParkLocalizations {
   String lengthCannotBeLessThan(num min) => '長さは $min 未満にすることはできません';
   @override
   String lengthCannotBeGreaterThan(num max) => '長さは $max を超えることはできません';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => '$fieldNameを選択してください';
+  @override
+  String get noImages => '画像がありません';
+  @override
+  String get selectFromAlbum => 'アルバムから選択';
+  @override
+  String get takePhoto => '写真を撮る';
+  @override
+  String selectedFilesCount(int count) => '$count ファイル選択済み';
+  @override
+  String get chooseFile => 'ファイルを選択';
+  @override
+  String get unnamedGroup => '名前なしグループ';
+  @override
+  String get validationTimeout => 'バリデーションがタイムアウトしました。後でもう一度お試しください';
+  @override
+  String get usernameAlreadyExists => 'ユーザー名は既に存在します';
+  @override
+  String get emailAlreadyRegistered => 'メールアドレスは既に登録されています';
+  @override
+  String idCardFormatError(String detail) => 'IDカードの形式が無効です（$detail）';
+  @override
+  String get selectProvince => '省を選択';
+  @override
+  String get selectCity => '市を選択';
+  @override
+  String get selectDistrict => '区を選択';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => '過去90日間';
+  @override
+  String get shortcutMonthToDate => '今月頭から';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => 'スキップ';
+  @override
+  String get tourSemanticsLabel => '機能ツアー';
+  @override
+  String stepIndicatorFormat(int current, int total) => 'ステップ \u{24}{current + 1} / \u{24}total';
+  @override
+  String get closeTourLabel => 'ツアーを閉じる';
+  @override
+  String get skipTourLabel => 'ツアーをスキップ';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write('、\u{24}description');
+    if (code != null) buffer.write('、ステータスコード \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => '完了';
+  @override
+  String get stepStatusProcess => '進行中';
+  @override
+  String get stepStatusError => 'エラー';
+  @override
+  String get stepStatusWaiting => '保留中';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('ステップ \u{24}{step + 1}: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => '読み込み中…';
+  @override
+  String get selectEmptyText => 'オプションがありません';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => 'ファイルタイプ';
+  @override
+  String get previewLabel => 'プレビュー';
+  @override
+  String get imageInvalidFormat => 'ファイルの内容は有効な画像形式ではありません';
+  @override
+  String get clickToSort => 'クリックで並べ替え';
+  @override
+  String anchorLabel(String label) => 'アンカー: $label';
+  @override
+  String get rotateLabel => '回転';
+  @override
+  String get flipHorizontal => '水平反転';
+  @override
+  String get flipVertical => '垂直反転';
+  @override
+  String hueSliderSemantic(int degrees) => '色相スライダー、$degrees 度';
+  @override
+  String get saturationValuePickerLabel => '彩度と明度の選択';
+  @override
+  String currentColorSemantic(String value) => '現在の色 $value';
+  @override
+  String colorValueSemantic(String value) => '色値 $value';
+  @override
+  String get colorFormatSwitch => '色形式の切り替え';
+  @override
+  String switchToFormat(String format) => '$format に切り替え';
+  @override
+  String get emptyValueLabel => '空';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => 'ナビゲーションドロワー';
+  @override
+  String get layoutLabel => 'レイアウト';
+  @override
+  String get backLabel => '戻る';
+  @override
+  String get treeSelectedLabel => '選択済み';
+  @override
+  String get treeExpandedLabel => '展開済み';
+  @override
+  String get treeCollapsedLabel => '折りたたまれた';
+  @override
+  String get treeDraggableLabel => 'ドラッグで並べ替え';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => '昨日';
+  @override
+  String get shortcutThisQuarter => '今四半期';
+  @override
+  String get moveRightLabel => '右に移動';
+  @override
+  String get moveLeftLabel => '左に移動';
+  @override
+  String totalItemsCount(int count) => '合計 $count 件';
+  @override
+  String get selectedLabel => '選択済み';
+  @override
+  String get searchNodesHint => 'ノードを検索';
+  @override
+  String get searchAllNodesSemantic => 'すべてのノードを検索';
+  @override
+  String get checkedStateLabel => '選択済み';
+  @override
+  String get indeterminateStateLabel => '一部選択';
+  @override
+  String get uncheckedStateLabel => '未選択';
+  @override
+  String get selectedStateLabel => '選択済み';
+  @override
+  String get expandedStateLabel => '展開済み';
+  @override
+  String get collapsedStateLabel => '折りたたまれた';
+  @override
+  String get disabledStateLabel => '無効';
+  @override
+  String checkboxDisabledLabel(String label) => '$label、無効';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => 'ウォーターマーク';
+  @override
+  String get expandSubmenuLabel => 'サブメニューを展開';
 }

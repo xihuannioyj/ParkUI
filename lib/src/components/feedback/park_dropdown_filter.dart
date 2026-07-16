@@ -516,8 +516,8 @@ class _OptionsSheetContent extends StatefulWidget {
   final Set<String> selectedValues;
   final double? height;
   final bool isCheck;
-  final String confirmText;
-  final String cancelText;
+  final String? confirmText;
+  final String? cancelText;
   final ValueChanged<Set<String>>? onChange;
   final ValueChanged<Set<String>>? onConfirm;
   final VoidCallback? onReset;
@@ -530,8 +530,8 @@ class _OptionsSheetContent extends StatefulWidget {
     required this.selectedValues,
     this.height,
     this.isCheck = false,
-    this.confirmText = '确定',
-    this.cancelText = '取消',
+    this.confirmText,
+    this.cancelText,
     this.onChange,
     this.onConfirm,
     this.onReset,
@@ -645,7 +645,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
           // 取消按钮（仅多选模式显示）
           if (widget.multiple)
             _sheetButton(
-              text: widget.cancelText,
+              text: widget.cancelText ?? ParkLocalizations.of(context).cancelText,
               filled: false,
               park: park,
               onTap: _handleCancel,
@@ -670,7 +670,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent> {
           // 确定按钮（仅多选模式显示）
           if (widget.multiple)
             _sheetButton(
-              text: widget.confirmText,
+              text: widget.confirmText ?? ParkLocalizations.of(context).confirmText,
               filled: true,
               park: park,
               onTap: _handleConfirm,

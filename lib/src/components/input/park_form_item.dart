@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/park_theme_data.dart';
 import '../../l10n/park_localizations.dart';
+import '../../form/group/form_group_exports.dart';
 import 'park_form.dart';
 
 /// 表单校验规则的严重级别。
@@ -356,6 +357,13 @@ class ParkFormItem extends StatefulWidget {
   /// 绑定服务的 [ParkForm] / [ParkDynamicForm] 内）。不设时组件行为不变。
   final String? bindKey;
 
+  /// 响应式表单控件（可选）。
+  ///
+  /// 传入 [ParkAbstractControl] 后，表单项自动监听控件的校验状态变化，
+  /// 在控件被触碰过（touched）且校验失败时显示错误信息。
+  /// 错误文本取自 [ParkAbstractControl.errors] 中第一条 [ParkFormError.message]。
+  final ParkAbstractControl? control;
+
   /// 创建表单项容器。
   const ParkFormItem({
     super.key,
@@ -379,6 +387,7 @@ class ParkFormItem extends StatefulWidget {
     this.layout,
     this.validator,
     this.bindKey,
+    this.control,
   });
 
   @override
@@ -388,6 +397,19 @@ class ParkFormItem extends StatefulWidget {
 class ParkFormItemState extends State<ParkFormItem> {
   final GlobalKey _fieldKey = GlobalKey();
   ParkFormScope? _scope;
+
+  /// 响应式控件的流订阅。
+  StreamSubscription<dynamic>? _valueSub;
+  StreamSubscription<String>? _statusSub;
+
+  /// 来自响应式控件的当前错误文本。
+  String? _reactiveError;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeControl();
+  }
 
   @override
   void didChangeDependencies() {
@@ -400,11 +422,64 @@ class ParkFormItemState extends State<ParkFormItem> {
   }
 
   @override
+  void didUpdateWidget(covariant ParkFormItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.control != widget.control) {
+      _unsubscribeControl();
+      _reactiveError = null;
+      _subscribeControl();
+    }
+  }
+
+  @override
   void dispose() {
     if (widget.name != null) {
       _scope?.unregisterFieldKey?.call(widget.name!);
     }
+    _unsubscribeControl();
     super.dispose();
+  }
+
+  /// 订阅响应式控件的值变化和状态变化流。
+  void _subscribeControl() {
+    final ParkAbstractControl? ctrl = widget.control;
+    if (ctrl == null) return;
+    _valueSub = ctrl.valueChanges.listen((dynamic _) {
+      if (!mounted) return;
+      _updateReactiveError();
+    }, onError: (dynamic e) => debugPrint('Stream error: $e'));
+    _statusSub = ctrl.statusChanges.listen((String _) {
+      if (!mounted) return;
+      _updateReactiveError();
+    }, onError: (dynamic e) => debugPrint('Stream error: $e'));
+  }
+
+  /// 取消订阅响应式控件流。
+  void _unsubscribeControl() {
+    _valueSub?.cancel();
+    _valueSub = null;
+    _statusSub?.cancel();
+    _statusSub = null;
+  }
+
+  /// 根据控件当前状态更新响应式错误文本。
+  ///
+  /// 仅在控件已触碰（touched）且校验失败时显示错误。
+  void _updateReactiveError() {
+    final ParkAbstractControl? ctrl = widget.control;
+    if (ctrl == null) {
+      if (_reactiveError != null) {
+        setState(() => _reactiveError = null);
+      }
+      return;
+    }
+    String? newError;
+    if (ctrl.touched && ctrl.invalid && ctrl.errors.isNotEmpty) {
+      newError = ctrl.errors.first.message;
+    }
+    if (newError != _reactiveError) {
+      setState(() => _reactiveError = newError);
+    }
   }
 
   /// 根据 rules 执行校验，返回第一个错误信息或 null
@@ -497,13 +572,20 @@ class ParkFormItemState extends State<ParkFormItem> {
           if (result != null) return result;
         }
         // 再执行 rules（规则列表）
-        return validateByRules(value);
+        final rulesResult = validateByRules(value);
+        if (rulesResult != null) return rulesResult;
+        // Note: async validation via control.validate() is handled at
+        // form submission time by formGroup.validate() in _handleSubmit.
+        // Do NOT call it here — FormField.validator is synchronous and
+        // the async result would be discarded.
+        return null;
       },
       builder: (FormFieldState<String> fieldState) {
-        // 外部 errorText（如 API 返回的错误）优先级高于 FormField 校验错误
+        // 外部 errorText（如 API 返回的错误）优先级最高
+        // 其次响应式控件错误（_reactiveError），再次 FormField 校验错误
         final String? displayError = hasExternalError
             ? widget.errorText
-            : fieldState.errorText;
+            : (_reactiveError ?? fieldState.errorText);
         final bool hasFormError =
             displayError != null && displayError.trim().isNotEmpty;
 
@@ -544,13 +626,16 @@ class ParkFormItemState extends State<ParkFormItem> {
                                     padding: EdgeInsets.only(
                                       right: spacing.xs / 2,
                                     ),
-                                    child: Text(
-                                      '*',
-                                      style: TextStyle(
-                                        color: colors.error,
-                                        fontSize: typo.sizeBody,
-                                        fontWeight: typo.weightMedium,
-                                        height: 1,
+                                    child: Semantics(
+                                      label: 'required',
+                                      child: Text(
+                                        '*',
+                                        style: TextStyle(
+                                          color: colors.error,
+                                          fontSize: typo.sizeBody,
+                                          fontWeight: typo.weightMedium,
+                                          height: 1,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -577,13 +662,16 @@ class ParkFormItemState extends State<ParkFormItem> {
                                     padding: EdgeInsets.only(
                                       right: spacing.xs / 2,
                                     ),
-                                    child: Text(
-                                      '*',
-                                      style: TextStyle(
-                                        color: colors.error,
-                                        fontSize: typo.sizeBody,
-                                        fontWeight: typo.weightMedium,
-                                        height: 1,
+                                    child: Semantics(
+                                      label: 'required',
+                                      child: Text(
+                                        '*',
+                                        style: TextStyle(
+                                          color: colors.error,
+                                          fontSize: typo.sizeBody,
+                                          fontWeight: typo.weightMedium,
+                                          height: 1,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -656,13 +744,16 @@ class ParkFormItemState extends State<ParkFormItem> {
                           if (showAsterisk)
                             Padding(
                               padding: EdgeInsets.only(right: spacing.xs / 2),
-                              child: Text(
-                                '*',
-                                style: TextStyle(
-                                  color: colors.error,
-                                  fontSize: typo.sizeBody,
-                                  fontWeight: typo.weightMedium,
-                                  height: 1,
+                              child: Semantics(
+                                label: 'required',
+                                child: Text(
+                                  '*',
+                                  style: TextStyle(
+                                    color: colors.error,
+                                    fontSize: typo.sizeBody,
+                                    fontWeight: typo.weightMedium,
+                                    height: 1,
+                                  ),
                                 ),
                               ),
                             ),

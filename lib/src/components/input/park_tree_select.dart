@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 import '../display/park_tree.dart';
 
 /// 自定义展开/折叠图标构建器
@@ -60,8 +63,8 @@ class ParkTreeSelect extends StatefulWidget {
   /// 是否启用搜索（向后兼容）。
   final bool searchable;
 
-  /// 搜索框占位文案。
-  final String searchHintText;
+  /// 搜索框占位文案。为 null 时使用 l10n.searchNodesHint。
+  final String? searchHintText;
 
   /// 父子节点选中状态是否严格独立（向后兼容）。
   final bool treeCheckStrictly;
@@ -130,7 +133,7 @@ class ParkTreeSelect extends StatefulWidget {
     this.multiple = false,
     this.checkable = true,
     this.searchable = false,
-    this.searchHintText = '搜索节点',
+    this.searchHintText,
     this.treeCheckStrictly = false,
     this.treeDefaultExpandAll = false,
     this.treeLine = false,
@@ -168,6 +171,8 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
   late Set<String> _selectedKeys;
   late Set<String> _expandedKeys;
   String _keyword = '';
+  Timer? _debounceTimer;
+  String _pendingKeyword = '';
 
   @override
   void initState() {
@@ -246,6 +251,12 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
         _selectedKeys = Set<String>.from(widget.selectedKeys);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   /// 获取节点选中状态（考虑父子联动，或严格独立模式）。
@@ -407,6 +418,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     final List<ParkTreeNode> visibleNodes = _keyword.trim().isEmpty
         ? widget.nodes
@@ -421,16 +433,22 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
           Padding(
             padding: EdgeInsets.only(bottom: park.spacing.sm),
             child: Semantics(
-              label: '搜索树节点',
+              label: l10n.searchAllNodesSemantic,
               child: TextField(
                 onChanged: (String value) {
-                  setState(() {
-                    _keyword = value;
+                  _pendingKeyword = value;
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                    if (mounted) {
+                      setState(() {
+                        _keyword = _pendingKeyword;
+                      });
+                    }
                   });
                 },
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: widget.searchHintText,
+                  hintText: widget.searchHintText ?? l10n.searchNodesHint,
                   prefixIcon: Icon(Icons.search, size: park.spacing.base),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(park.radius.md),
@@ -534,6 +552,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
     final colors = park.colors;
     final typo = park.typography;
     final spacing = park.spacing;
+    final l10n = ParkLocalizations.of(context);
 
     final isExpanded = _expandedKeys.contains(node.key);
     final checkState = _getCheckState(node);
@@ -542,17 +561,17 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
 
     final checkLabel = widget._effectiveCheckable
         ? switch (checkState) {
-            _CheckState.checked => ', 已选中',
-            _CheckState.indeterminate => ', 部分选中',
-            _CheckState.unchecked => ', 未选中',
+            _CheckState.checked => ', ${l10n.checkedStateLabel}',
+            _CheckState.indeterminate => ', ${l10n.indeterminateStateLabel}',
+            _CheckState.unchecked => ', ${l10n.uncheckedStateLabel}',
           }
         : isSelected
-            ? ', 已选'
+            ? ', ${l10n.selectedStateLabel}'
             : '';
     final expandLabel = !node.isLeaf
-        ? ', ${isExpanded ? "已展开" : "已折叠"}'
+        ? ', ${isExpanded ? l10n.expandedStateLabel : l10n.collapsedStateLabel}'
         : '';
-    final disabledLabel = node.disabled ? ', 已禁用' : '';
+    final disabledLabel = node.disabled ? ', ${l10n.disabledStateLabel}' : '';
     final nodeLabel =
         '${node.label}$checkLabel$expandLabel$disabledLabel';
 
@@ -604,7 +623,7 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
 
                   // 复选框（使用有效复选框模式）
                   if (widget._effectiveCheckable) ...[
-                    _buildCheckbox(checkState, node.disabled, park),
+                    _buildCheckbox(checkState, node.disabled, park, nodeLabel: node.label),
                     SizedBox(width: spacing.sm),
                   ],
 
@@ -731,9 +750,10 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
     );
   }
 
-  Widget _buildCheckbox(_CheckState state, bool disabled, ParkThemeData park) {
+  Widget _buildCheckbox(_CheckState state, bool disabled, ParkThemeData park, {String? nodeLabel}) {
     final colors = park.colors;
     final spacing = park.spacing;
+    final l10n = ParkLocalizations.of(context);
 
     final borderColor = disabled
         ? colors.textDisabled
@@ -747,8 +767,9 @@ class _ParkTreeSelectState extends State<ParkTreeSelect>
             ? colors.brand
             : Colors.transparent;
 
+    final semanticLabel = nodeLabel ?? l10n.searchText;
     return Semantics(
-      label: disabled ? '复选框，已禁用' : '复选框',
+      label: disabled ? l10n.checkboxDisabledLabel(semanticLabel) : l10n.checkboxLabel(semanticLabel),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Park 顶部导航栏
@@ -261,7 +262,7 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   ) {
     return Semantics(
       button: true,
-      label: '返回',
+      label: ParkLocalizations.of(context).backLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _handleBack(context),

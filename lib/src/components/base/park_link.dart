@@ -299,6 +299,7 @@ class _ParkLinkState extends State<ParkLink> {
     if (widget.disabled || widget.loading) {
       return Semantics(
         link: true,
+        enabled: false,
         child: Opacity(opacity: widget.disabled ? 0.6 : 1.0, child: content),
       );
     }

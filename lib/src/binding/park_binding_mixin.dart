@@ -106,7 +106,7 @@ mixin BindableWidgetMixin<T, S extends StatefulWidget> on State<S> {
 
   /// 设置绑定的值。
   set boundValue(T? value) {
-    if (value != null && _bindable != null) {
+    if (_bindable != null && value != null) {
       _bindable!.value = value;
     }
   }

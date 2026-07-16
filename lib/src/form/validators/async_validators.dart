@@ -1,5 +1,6 @@
 import 'async_validator_config.dart';
 import '../models/form_field_schema.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 用户名唯一性异步校验器。
 ///
@@ -26,9 +27,11 @@ class UsernameUniqueValidator {
   /// [field] 字段定义。
   /// [value] 当前值。
   /// 根据 [config.useMockMode] 路由到 mock 或 real 校验。
-  Future<String?> validate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> validate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     if (config.useMockMode) {
-      return mockValidate(field, value);
+      return mockValidate(field, value, l10n);
     }
     return realValidate(field, value);
   }
@@ -36,7 +39,9 @@ class UsernameUniqueValidator {
   /// Mock 校验逻辑。
   ///
   /// 模拟已存在的用户名列表，返回校验结果。
-  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     // 模拟网络延迟
     await Future<void>.delayed(
       Duration(milliseconds: config.debounceMs),
@@ -55,7 +60,7 @@ class UsernameUniqueValidator {
     ];
 
     if (existingUsernames.contains(username.toLowerCase())) {
-      return '用户名已存在';
+      return l10n?.usernameAlreadyExists ?? '用户名已存在';
     }
     return null;
   }
@@ -95,15 +100,19 @@ class EmailUniqueValidator {
       : config = config ?? AsyncValidatorConfig.defaultConfig;
 
   /// 执行校验。
-  Future<String?> validate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> validate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     if (config.useMockMode) {
-      return mockValidate(field, value);
+      return mockValidate(field, value, l10n);
     }
     return realValidate(field, value);
   }
 
   /// Mock 校验逻辑。
-  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     await Future<void>.delayed(
       Duration(milliseconds: config.debounceMs),
     );
@@ -120,7 +129,7 @@ class EmailUniqueValidator {
     ];
 
     if (existingEmails.contains(email.toLowerCase())) {
-      return '邮箱已注册';
+      return l10n?.emailAlreadyRegistered ?? '邮箱已注册';
     }
     return null;
   }
@@ -160,9 +169,11 @@ class IdCardFormatValidator {
       : config = config ?? AsyncValidatorConfig.defaultConfig;
 
   /// 执行校验。
-  Future<String?> validate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> validate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     if (config.useMockMode) {
-      return mockValidate(field, value);
+      return mockValidate(field, value, l10n);
     }
     return realValidate(field, value);
   }
@@ -170,7 +181,9 @@ class IdCardFormatValidator {
   /// Mock 校验逻辑。
   ///
   /// 校验身份证号格式：18 位，前 17 位为数字，第 18 位为数字或 X。
-  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value) async {
+  Future<String?> mockValidate(ParkFormFieldSchema field, dynamic value, [
+    ParkLocalizations? l10n,
+  ]) async {
     await Future<void>.delayed(
       Duration(milliseconds: config.debounceMs),
     );
@@ -183,19 +196,19 @@ class IdCardFormatValidator {
 
     // 18 位身份证号格式校验
     if (idCard.length != 18) {
-      return '身份证号格式错误（应为18位）';
+      return l10n?.idCardFormatError('应为18位') ?? '身份证号格式错误（应为18位）';
     }
 
     // 前 17 位应为数字
     final String first17 = idCard.substring(0, 17);
     if (!RegExp(r'^\d{17}$').hasMatch(first17)) {
-      return '身份证号格式错误（前17位应为数字）';
+      return l10n?.idCardFormatError('前17位应为数字') ?? '身份证号格式错误（前17位应为数字）';
     }
 
     // 第 18 位应为数字或 X/x
     final String lastChar = idCard.substring(17);
     if (!RegExp(r'^[\dXx]$').hasMatch(lastChar)) {
-      return '身份证号格式错误（第18位应为数字或X）';
+      return l10n?.idCardFormatError('第18位应为数字或X') ?? '身份证号格式错误（第18位应为数字或X）';
     }
 
     return null;

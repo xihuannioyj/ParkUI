@@ -157,22 +157,27 @@ class ParkBadge extends StatelessWidget {
     if (countWidget != null) {
       indicator = countWidget!;
     } else if (showDot) {
-      indicator = Container(
-        width: _dotSize,
-        height: _dotSize,
-        decoration: BoxDecoration(
-          color: color ?? park.colors.error,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: park.colors.surface,
-            width: 1.5,
+      indicator = Semantics(
+        label: 'new notification',
+        child: Container(
+          width: _dotSize,
+          height: _dotSize,
+          decoration: BoxDecoration(
+            color: color ?? park.colors.error,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: park.colors.surface,
+              width: 1.5,
+            ),
           ),
         ),
       );
     } else {
       final int effectiveLimit = overflowCount ?? maxCount;
       final label = count! > effectiveLimit ? '$effectiveLimit+' : '$count';
-      indicator = Container(
+      indicator = Semantics(
+        label: '$count notifications',
+        child: Container(
         constraints: BoxConstraints(minWidth: _minWidth),
         height: _height,
         padding: EdgeInsets.symmetric(horizontal: _padding),
@@ -194,6 +199,7 @@ class ParkBadge extends StatelessWidget {
             height: 1,
           ),
           textAlign: TextAlign.center,
+        ),
         ),
       );
     }

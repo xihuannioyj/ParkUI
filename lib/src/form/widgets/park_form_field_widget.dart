@@ -61,6 +61,7 @@ class ParkFormFieldWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ParkLocalizations.of(context);
     switch (field.type) {
       case ParkFieldType.text:
       case ParkFieldType.number:
@@ -68,7 +69,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.richText:
         return _buildTextField();
       case ParkFieldType.select:
-        return _buildSelect(context);
+        return _buildSelect(context, l10n);
       case ParkFieldType.radio:
         return _buildRadio();
       case ParkFieldType.checkbox:
@@ -76,13 +77,13 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.toggle:
         return _buildToggle();
       case ParkFieldType.date:
-        return _buildDatePicker(context);
+        return _buildDatePicker(context, l10n);
       case ParkFieldType.image:
-        return _buildImagePicker(context);
+        return _buildImagePicker(context, l10n);
       case ParkFieldType.scanner:
         return _buildScanner(context);
       case ParkFieldType.region:
-        return _buildRegionSelector(context);
+        return _buildRegionSelector(context, l10n);
       case ParkFieldType.slider:
         return _buildSlider();
       case ParkFieldType.stepper:
@@ -90,15 +91,15 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.rate:
         return _buildRate();
       case ParkFieldType.search:
-        return _buildSearch();
+        return _buildSearch(l10n);
       case ParkFieldType.cascader:
-        return _buildCascader();
+        return _buildCascader(l10n);
       case ParkFieldType.treeSelect:
         return _buildTreeSelect();
       case ParkFieldType.picker:
-        return _buildPicker(context);
+        return _buildPicker(context, l10n);
       case ParkFieldType.upload:
-        return _buildUpload();
+        return _buildUpload(l10n);
     }
   }
 
@@ -299,7 +300,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - searchable → 可搜索下拉（searchable=true）。
   /// - grouped → 分组下拉（grouped=true）。
   /// - single（默认）→ 标准单选下拉。
-  Widget _buildSelect(BuildContext context) {
+  Widget _buildSelect(BuildContext context, ParkLocalizations l10n) {
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final String? fc = field.fieldControl;
@@ -342,8 +343,8 @@ class ParkFormFieldWidget extends StatelessWidget {
                     selectedLabels.isEmpty
                         ? (field.fieldPrompt.isNotEmpty
                             ? field.fieldPrompt
-                            : '请选择${field.labelName}')
-                        : selectedLabels.join('、'),
+                            : l10n.selectField(field.labelName))
+                        : selectedLabels.join('\u3001'),
                     style: TextStyle(
                       color: selectedLabels.isEmpty
                           ? Colors.grey.shade500
@@ -375,7 +376,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       value: value?.toString(),
       hintText: field.fieldPrompt.isNotEmpty
           ? field.fieldPrompt
-          : '请选择${field.labelName}',
+          : l10n.selectField(field.labelName),
       label: labelLayout == ParkLabelLayout.stacked ? field.labelName : null,
       enabled: !disabled,
       readOnly: field.isReadonly || disabled,
@@ -568,7 +569,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - date（默认）→ 日期选择。
   /// - time → 时间选择。
   /// - datetime → 日期+时间选择。
-  Widget _buildDatePicker(BuildContext context) {
+  Widget _buildDatePicker(BuildContext context, ParkLocalizations l10n) {
     final DateTime? dateValue = value is DateTime ? value as DateTime : null;
     final String? fc = field.fieldControl;
 
@@ -621,7 +622,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       label: labelLayout == ParkLabelLayout.stacked ? field.labelName : null,
       hintText: field.fieldPrompt.isNotEmpty
           ? field.fieldPrompt
-          : '请选择${field.labelName}',
+          : l10n.selectField(field.labelName),
       mode: fc == 'datetime'
           ? ParkDatePickerMode.dateTime
           : ParkDatePickerMode.date,
@@ -704,11 +705,11 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkSearch 搜索框。
-  Widget _buildSearch() {
+  Widget _buildSearch(ParkLocalizations l10n) {
     return _wrapWithFieldContainer(
       _SearchAdapter(
         value: value?.toString() ?? '',
-        hintText: field.fieldPrompt.isNotEmpty ? field.fieldPrompt : '搜索',
+        hintText: field.fieldPrompt.isNotEmpty ? field.fieldPrompt : l10n.searchText,
         onChanged: (String v) => onChanged(v),
       ),
     );
@@ -722,7 +723,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   ///
   /// 使用 [ParkFormFieldSchema.optionLabelKey]、[ParkFormFieldSchema.optionValueKey]
   /// 和 [ParkFormFieldSchema.optionChildrenKey] 映射选项数据。
-  Widget _buildCascader() {
+  Widget _buildCascader(ParkLocalizations l10n) {
     final List<ParkCascaderOption> options = _buildCascaderOptions(
       _effectiveOptions,
     );
@@ -736,7 +737,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       label: field.labelName,
       hintText: field.fieldPrompt.isNotEmpty
           ? field.fieldPrompt
-          : '请选择${field.labelName}',
+          : l10n.selectField(field.labelName),
       onChanged: (List<String>? path) => onChanged(path),
     );
   }
@@ -821,7 +822,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   ///
   /// 使用 [ParkFormFieldSchema.optionLabelKey] 和 [ParkFormFieldSchema.optionValueKey]
   /// 映射选项数据。
-  Widget _buildPicker(BuildContext context) {
+  Widget _buildPicker(BuildContext context, ParkLocalizations l10n) {
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final List<Map<String, dynamic>> opts = _effectiveOptions;
@@ -839,7 +840,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       selectedValue: value,
       fallback: field.fieldPrompt.isNotEmpty
           ? field.fieldPrompt
-          : '请选择${field.labelName}',
+          : l10n.selectField(field.labelName),
       optionLabelKey: field.optionLabelKey,
       optionValueKey: field.optionValueKey,
     );
@@ -851,7 +852,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             : () async {
                 final String? selected = await ParkPicker.show(
                   context,
-                  title: '请选择${field.labelName}',
+                  title: l10n.selectField(field.labelName),
                   items: items,
                   value: value?.toString(),
                 );
@@ -888,7 +889,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - image（默认）→ 图片上传（含裁剪）。
   /// - file → 通用文件上传。
   /// - avatar → 头像上传（圆形预览）。
-  Widget _buildUpload() {
+  Widget _buildUpload(ParkLocalizations l10n) {
     final String? fc = field.fieldControl;
     final List<ParkUploadFile> files = <ParkUploadFile>[];
     if (value is String && (value as String).isNotEmpty) {
@@ -912,7 +913,7 @@ class ParkFormFieldWidget extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  '已选择 ${files.length} 个文件',
+                  l10n.selectedFilesCount(files.length),
                   style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                 ),
               ),
@@ -926,7 +927,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                         onChanged(result!.path);
                       }
                     },
-              child: const Text('选择文件'),
+              child: Text(l10n.chooseFile),
             ),
           ],
         ),
@@ -970,7 +971,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 通过 [ParkFormImageService] 抽象平台差异，
   /// 原生平台使用 image_picker / image_cropper，
   /// Web 端展示"暂不支持"占位。
-  Widget _buildImagePicker(BuildContext context) {
+  Widget _buildImagePicker(BuildContext context, ParkLocalizations l10n) {
     final List<String> allowSources =
         (field.config['allowSources'] as List<dynamic>? ??
                 const <dynamic>['gallery', 'camera'])
@@ -990,7 +991,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      child: const Center(child: Text('暂无图片')),
+      child: Center(child: Text(l10n.noImages)),
     );
 
     if (hasImage) {
@@ -1051,7 +1052,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                             onChanged(result!.path);
                           }
                         },
-                  child: const Text('相册选择'),
+                  child: Text(l10n.selectFromAlbum),
                 ),
               if (allowSources.contains('camera'))
                 ParkButton(
@@ -1064,7 +1065,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                             onChanged(result!.path);
                           }
                         },
-                  child: const Text('拍照上传'),
+                  child: Text(l10n.takePhoto),
                 ),
               if (allowCrop)
                 ParkButton(
@@ -1078,7 +1079,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                           }
                         }
                       : null,
-                  child: const Text('裁剪图片'),
+                  child: Text(l10n.cropImageTitle),
                 ),
             ],
           ),
@@ -1129,7 +1130,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建地区选择器。
-  Widget _buildRegionSelector(BuildContext context) {
+  Widget _buildRegionSelector(BuildContext context, ParkLocalizations l10n) {
     final List<Map<String, dynamic>> regionOpts = _effectiveOptions;
     final bool hasNestedChildren = regionOpts.any(
       (Map<String, dynamic> item) => item['children'] is List,
@@ -1141,7 +1142,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         selectedValue: value,
         fallback: field.fieldPrompt.isNotEmpty
             ? field.fieldPrompt
-            : '请选择${field.labelName}',
+            : l10n.selectField(field.labelName),
         optionLabelKey: field.optionLabelKey,
         optionValueKey: field.optionValueKey,
       );
@@ -1151,7 +1152,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             : () async {
                 final dynamic selected = await showOptionBottomSheet(
                   context,
-                  title: '请选择${field.labelName}',
+                  title: l10n.selectField(field.labelName),
                   options: regionOpts,
                   selectedValue: value,
                   optionLabelKey: field.optionLabelKey,
@@ -1223,21 +1224,21 @@ class ParkFormFieldWidget extends StatelessWidget {
     final String provinceLabel = resolveOptionLabel(
       options: provinceOptions,
       selectedValue: displayValue[provinceKey],
-      fallback: '省',
+      fallback: l10n.selectProvince,
       optionLabelKey: field.optionLabelKey,
       optionValueKey: field.optionValueKey,
     );
     final String cityLabel = resolveOptionLabel(
       options: cityOptions,
       selectedValue: displayValue[cityKey],
-      fallback: '市',
+      fallback: l10n.selectCity,
       optionLabelKey: field.optionLabelKey,
       optionValueKey: field.optionValueKey,
     );
     final String districtLabel = resolveOptionLabel(
       options: districtOptions,
       selectedValue: displayValue[districtKey],
-      fallback: '区县',
+      fallback: l10n.selectDistrict,
       optionLabelKey: field.optionLabelKey,
       optionValueKey: field.optionValueKey,
     );

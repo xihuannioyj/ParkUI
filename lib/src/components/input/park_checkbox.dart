@@ -109,10 +109,8 @@ class _ParkCheckboxState extends FormFieldState<bool>
     _scaleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
     );
-    _scaleAnim.addListener(() {
-      // Trigger rebuild so the builder picks up the latest animation value
-      if (mounted) setState(() {});
-    });
+    // Animation rebuild scope is handled by AnimatedBuilder in the widget tree,
+    // avoiding full setState rebuilds every frame.
   }
 
   @override
@@ -198,13 +196,19 @@ class _ParkCheckboxBuilder extends StatelessWidget {
               ),
             ),
             child: isChecked
-                ? Transform.scale(
-                    scale: state._scaleAnim.value,
+                ? AnimatedBuilder(
+                    animation: state._scaleAnim,
                     child: Icon(
                       Icons.check_rounded,
                       size: widget.size * 0.65,
                       color: park.colors.textOnBrand,
                     ),
+                    builder: (BuildContext context, Widget? child) {
+                      return Transform.scale(
+                        scale: state._scaleAnim.value,
+                        child: child,
+                      );
+                    },
                   )
                 : isIndeterminate
                     ? Center(
@@ -299,11 +303,11 @@ class ParkCheckboxGroup extends StatefulWidget {
   const ParkCheckboxGroup({
     super.key,
     this.options = const <ParkCheckboxOption>[],
-    @Deprecated('使用 options（List<ParkCheckboxOption>）代替')
+    @Deprecated('Use options (List<ParkCheckboxOption>) instead')
     this.options2,
     this.value = const [],
     this.onChanged,
-    @Deprecated('使用 onChanged 代替')
+    @Deprecated('Use onChanged instead')
     this.onChange2,
     this.layout = ParkCheckboxGroupLayout.vertical,
     this.disabled = false,
@@ -314,7 +318,7 @@ class ParkCheckboxGroup extends StatefulWidget {
   final List<ParkCheckboxOption> options;
 
   /// 选项列表（富模型）。[options] 的兼容别名，已废弃，请使用 [options]。
-  @Deprecated('使用 options（List<ParkCheckboxOption>）代替')
+  @Deprecated('Use options (List<ParkCheckboxOption>) instead')
   final List<ParkCheckboxOption>? options2;
 
   /// 已选中的值
@@ -326,7 +330,7 @@ class ParkCheckboxGroup extends StatefulWidget {
   final void Function(List<String> values, List<ParkCheckboxOption> selectedOptions)? onChanged;
 
   /// 选中值变化回调（富模型）。[onChanged] 的兼容别名，已废弃，请使用 [onChanged]。
-  @Deprecated('使用 onChanged 代替')
+  @Deprecated('Use onChanged instead')
   final void Function(List<String> values, List<ParkCheckboxOption> changedOptions)? onChange2;
 
   /// 布局方式

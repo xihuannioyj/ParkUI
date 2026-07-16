@@ -139,7 +139,8 @@ class _ParkMenuState extends State<ParkMenu> {
         (widget.mode == ParkMenuMode.vertical || widget.mode == ParkMenuMode.inline);
 
     return Semantics(
-      label: isDarkMode ? '暗色模式' : null,
+      label: 'Navigation menu',
+      container: true,
       child: MouseRegion(
         onEnter: (_) => setState(() => _primaryHovered = true),
         onExit: (_) {
@@ -176,7 +177,7 @@ class _ParkMenuState extends State<ParkMenu> {
     final hasChildren = item.children != null && item.children!.isNotEmpty;
     final isExpanded = _expandedKeys.contains(item.key);
     final isHovered = _hoveredKeys.contains(item.key);
-    final showFull = !collapsed || isHovered || _primaryHovered || isSelected || isExpanded;
+    final showFull = !collapsed || isHovered || isSelected || isExpanded;
 
     // 暗色模式下颜色
     final Color textColor;
@@ -204,7 +205,7 @@ class _ParkMenuState extends State<ParkMenu> {
       children: [
         Semantics(
           button: true,
-          label: dark ? '暗色模式' : item.label,
+          label: item.label,
           selected: isSelected,
           enabled: !item.disabled,
           child: InkWell(

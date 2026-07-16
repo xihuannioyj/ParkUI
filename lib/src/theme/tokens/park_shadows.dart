@@ -72,6 +72,11 @@ class ParkShadows {
           blurRadius: 4,
           offset: Offset(0, 1),
         ),
+        BoxShadow(
+          color: Color(0x1A000000), // 10% black
+          blurRadius: 8,
+          offset: Offset(0, 2),
+        ),
       ],
       md: [
         BoxShadow(

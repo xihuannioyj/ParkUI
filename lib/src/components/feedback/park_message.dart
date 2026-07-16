@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 消息弹出位置
@@ -296,64 +297,66 @@ class ParkMessage extends StatefulWidget {
       _currentController?.dismiss();
     }
 
-    final overlay = Overlay.of(context, rootOverlay: true);
-    late OverlayEntry entry;
-    bool removed = false;
-    final GlobalKey<_ParkMessageOverlayState> overlayStateKey =
-        GlobalKey<_ParkMessageOverlayState>();
-    late final _ParkMessageOverlayController controller;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final overlay = Overlay.of(context, rootOverlay: true);
+      late OverlayEntry entry;
+      bool removed = false;
+      final GlobalKey<_ParkMessageOverlayState> overlayStateKey =
+          GlobalKey<_ParkMessageOverlayState>();
+      late final _ParkMessageOverlayController controller;
 
-    final effectiveKey = messageKey ?? '_auto_${_autoId++}';
+      final effectiveKey = messageKey ?? '_auto_${_autoId++}';
 
-    void remove() {
-      if (removed) return;
-      removed = true;
-      _activeMessages.remove(effectiveKey);
-      if (identical(_currentController, controller)) {
-        _currentController = null;
-      }
-      onClose?.call();
-      entry.remove();
-    }
-
-    controller = _ParkMessageOverlayController(
-      dismiss: () {
-        final _ParkMessageOverlayState? state = overlayStateKey.currentState;
-        if (state == null) {
-          remove();
-          return;
+      void remove() {
+        if (removed) return;
+        removed = true;
+        _activeMessages.remove(effectiveKey);
+        if (identical(_currentController, controller)) {
+          _currentController = null;
         }
-        state.close();
-      },
-    );
-    _activeMessages[effectiveKey] = controller;
+        onClose?.call();
+        entry.remove();
+      }
 
-    // Legacy reference.
-    if (_config.maxCount <= 1 && messageKey == null) {
-      _currentController = controller;
-    }
+      controller = _ParkMessageOverlayController(
+        dismiss: () {
+          final _ParkMessageOverlayState? state = overlayStateKey.currentState;
+          if (state == null) {
+            remove();
+            return;
+          }
+          state.close();
+        },
+      );
+      _activeMessages[effectiveKey] = controller;
 
-    entry = OverlayEntry(
-      builder: (_) {
-        return _ParkMessageOverlay(
-          key: overlayStateKey,
-          title: title,
-          content: content,
-          duration: duration,
-          closable: closable,
-          position: position,
-          onTap: onTap,
-          icon: icon,
-          accentColor: accentColor,
-          backgroundColor: backgroundColor,
-          onDismiss: remove,
-          onClick: onClick,
-          pauseOnHover: pauseOnHover,
-        );
-      },
-    );
+      // Legacy reference.
+      if (_config.maxCount <= 1 && messageKey == null) {
+        _currentController = controller;
+      }
 
-    overlay.insert(entry);
+      entry = OverlayEntry(
+        builder: (_) {
+          return _ParkMessageOverlay(
+            key: overlayStateKey,
+            title: title,
+            content: content,
+            duration: duration,
+            closable: closable,
+            position: position,
+            onTap: onTap,
+            icon: icon,
+            accentColor: accentColor,
+            backgroundColor: backgroundColor,
+            onDismiss: remove,
+            onClick: onClick,
+            pauseOnHover: pauseOnHover,
+          );
+        },
+      );
+
+      overlay.insert(entry);
+    });
   }
 
   @override
@@ -375,6 +378,7 @@ class _ParkMessageState extends State<ParkMessage> {
   }
 
   Widget _buildBar(ParkThemeData park) {
+    final l10n = ParkLocalizations.of(context);
     final bg = widget.backgroundColor ?? park.colors.infoLight;
     return Semantics(
       liveRegion: true,
@@ -428,7 +432,11 @@ class _ParkMessageState extends State<ParkMessage> {
                 ),
               ),
               if (widget.closable)
-                Icon(Icons.close, size: 18, color: park.colors.textSecondary),
+                Semantics(
+                  button: true,
+                  label: l10n.closeText,
+                  child: Icon(Icons.close, size: 18, color: park.colors.textSecondary),
+                ),
             ],
           ),
         ),
@@ -652,12 +660,16 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                               ),
                             ),
                             if (widget.closable)
-                              GestureDetector(
-                                onTap: close,
-                                child: Icon(
-                                  Icons.close,
-                                  size: 18,
-                                  color: park.colors.textSecondary,
+                              Semantics(
+                                button: true,
+                                label: ParkLocalizations.of(context).closeText,
+                                child: GestureDetector(
+                                  onTap: close,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: park.colors.textSecondary,
+                                  ),
                                 ),
                               ),
                           ],

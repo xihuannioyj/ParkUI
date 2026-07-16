@@ -371,7 +371,7 @@ class ParkRadio extends FormField<String> {
         color: colors.disabledBg,
         borderRadius: radius.brSm,
       ),
-      child: isJoin ? Row(mainAxisSize: MainAxisSize.min, children: children) : Row(mainAxisSize: MainAxisSize.min, children: children),
+      child: isJoin ? Row(mainAxisSize: MainAxisSize.max, children: children) : Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 

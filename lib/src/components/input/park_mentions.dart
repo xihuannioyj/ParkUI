@@ -218,12 +218,14 @@ class _ParkMentionsState extends State<ParkMentions> {
   // --------------------------------------------------------------------------
 
   void _showPanel() {
+    if (!mounted) return;
     _overlayEntry?.remove();
     _overlayEntry = OverlayEntry(builder: (_) => _buildPanel());
     Overlay.of(context).insert(_overlayEntry!);
   }
 
   void _hidePanel() {
+    if (!mounted) return;
     _overlayEntry?.remove();
     _overlayEntry = null;
   }

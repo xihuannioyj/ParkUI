@@ -202,14 +202,15 @@ class _ParkImageState extends State<ParkImage> {
 
   /// 检查 URL 的 scheme 是否在允许列表中。
   ///
-  /// 若 [allowedSchemes] 为空列表，则允许任意 scheme。
+  /// 若 [allowedSchemes] 为空列表，则默认仅允许 http / https。
   static bool _isSchemeAllowed(String url, List<String> allowedSchemes) {
-    if (allowedSchemes.isEmpty) return true;
+    final List<String> allowed =
+        allowedSchemes.isEmpty ? <String>['http', 'https'] : allowedSchemes;
     final Uri? uri = Uri.tryParse(url);
     if (uri == null) return false;
     final String scheme = uri.scheme.toLowerCase();
     if (scheme.isEmpty) return false;
-    return allowedSchemes
+    return allowed
         .map((String s) => s.toLowerCase())
         .contains(scheme);
   }

@@ -3,6 +3,7 @@ import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_service.dart';
 import '../../binding/park_binding_form_scope.dart';
 import '../../l10n/park_localizations.dart';
+import '../../form/group/form_group_exports.dart';
 
 /// 表单布局方式
 enum ParkFormLayout {
@@ -114,7 +115,12 @@ class ParkFormScope extends InheritedWidget {
         requiredMark != oldWidget.requiredMark ||
         size != oldWidget.size ||
         labelCol != oldWidget.labelCol ||
-        wrapperCol != oldWidget.wrapperCol;
+        wrapperCol != oldWidget.wrapperCol ||
+        registerFieldKey != oldWidget.registerFieldKey ||
+        unregisterFieldKey != oldWidget.unregisterFieldKey ||
+        notifyFieldChanged != oldWidget.notifyFieldChanged ||
+        watch != oldWidget.watch ||
+        unwatch != oldWidget.unwatch;
   }
 }
 
@@ -239,6 +245,13 @@ class ParkForm extends StatefulWidget {
   /// Effective when [labelCol] is also set. See [labelCol].
   final int? wrapperCol;
 
+  /// 响应式表单组（可选）。
+  ///
+  /// 传入 [ParkFormGroup] 后，ParkForm 以该 formGroup 为数据源，
+  /// 通过 [ParkFormState.formGroup] 暴露值访问、校验、批量赋值等 API。
+  /// 与 [model] / [bindingService] 可共存，formGroup 优先级最高。
+  final ParkFormGroup? formGroup;
+
   /// 子组件列表（表单字段）
   final List<Widget> children;
 
@@ -268,6 +281,7 @@ class ParkForm extends StatefulWidget {
     this.formKey,
     this.labelCol,
     this.wrapperCol,
+    this.formGroup,
     required this.children,
   });
 
@@ -320,6 +334,11 @@ class ParkFormState extends State<ParkForm> {
   /// 获取双向绑定服务（如果已创建）。
   ParkBindingService? get bindingService => _bindingService;
 
+  /// 获取响应式表单组（如果已提供）。
+  ///
+  /// FG5: 外部传入的 [ParkFormGroup]，可通过此属性访问值、校验、批量赋值等 API。
+  ParkFormGroup? get formGroup => widget.formGroup;
+
   @override
   void initState() {
     super.initState();
@@ -342,8 +361,33 @@ class ParkFormState extends State<ParkForm> {
     }
   }
 
-  /// 获取表单值（同 [values]，统一 API 入口）
-  Map<String, dynamic> getValues() => Map<String, dynamic>.from(_values);
+  /// 获取表单值（同 [values]，统一 API 入口）。
+  ///
+  /// FG5: 当 formGroup 存在时，优先返回 formGroup.value。
+  Map<String, dynamic> getValues() {
+    if (widget.formGroup != null) {
+      return widget.formGroup!.value;
+    }
+    return Map<String, dynamic>.from(_values);
+  }
+
+  /// FG5: 批量设置 formGroup 控件值。
+  ///
+  /// 当 formGroup 存在时，委托给 [ParkFormGroup.patchValue]。
+  void patchFormGroupValues(Map<String, dynamic> values) {
+    widget.formGroup?.patchValue(values);
+  }
+
+  /// FG5: 异步校验 formGroup 所有控件。
+  ///
+  /// 当 formGroup 存在时，委托给 [ParkFormGroup.validate]。
+  /// 返回 true 表示全部通过。
+  Future<bool> validateFormGroup() async {
+    if (widget.formGroup != null) {
+      return widget.formGroup!.validate();
+    }
+    return validate();
+  }
 
   /// 监听指定字段的值变化。
   ///
@@ -407,10 +451,15 @@ class ParkFormState extends State<ParkForm> {
 
     if (form.validate()) {
       form.save();
-      // 合并非绑定字段值 + 绑定服务模型，绑定字段优先
+      // Merge bindingService values, but only for keys that correspond to
+      // actual form fields (i.e. keys already present in _values).
       final values = Map<String, dynamic>.from(_values);
       if (_bindingService != null) {
-        values.addAll(_bindingService!.model);
+        for (final String key in _values.keys) {
+          if (_bindingService!.model.containsKey(key)) {
+            values[key] = _bindingService!.model[key];
+          }
+        }
       }
       widget.onSubmit?.call(values);
       return true;
@@ -455,6 +504,7 @@ class ParkFormState extends State<ParkForm> {
   void _scrollToFirstError() {
     // 延迟一帧，确保错误文本已渲染
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       for (final entry in _fieldKeys.entries) {
         final ctx = entry.value.currentContext;
         if (ctx != null && ctx.mounted) {
@@ -531,6 +581,9 @@ class ParkFormState extends State<ParkForm> {
 
   @override
   void dispose() {
+    _watchers.clear();
+    _values.clear();
+    _fieldKeys.clear();
     if (_ownsBindingService) {
       _bindingService?.dispose();
     }

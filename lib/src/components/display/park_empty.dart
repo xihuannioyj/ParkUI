@@ -186,13 +186,21 @@ class ParkEmpty extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (image != null) ...[
-                image!,
+                Semantics(
+                  image: true,
+                  label: 'Empty illustration',
+                  child: image!,
+                ),
                 SizedBox(height: _spacing),
               ] else ...[
-                Icon(
-                  effectiveIcon,
-                  size: _iconSize,
-                  color: effectiveIconColor,
+                Semantics(
+                  image: true,
+                  excludeSemantics: true,
+                  child: Icon(
+                    effectiveIcon,
+                    size: _iconSize,
+                    color: effectiveIconColor,
+                  ),
                 ),
                 SizedBox(height: _spacing),
               ],

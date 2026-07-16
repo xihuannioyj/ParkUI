@@ -108,6 +108,8 @@ class FormFormatterEngine {
   static String _formatPercentage(String rawValue, String pattern) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
+    // B125: NaN/Infinity 保护，double.tryParse("NaN") 会成功但后续操作会抛异常。
+    if (!numValue.isFinite) return rawValue;
     final int precision = int.tryParse(pattern) ?? 0;
     final String formatted = numValue.toStringAsFixed(precision);
     return '$formatted%';
@@ -122,6 +124,11 @@ class FormFormatterEngine {
   static String _formatThousands(String rawValue) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
+    // B125: NaN/Infinity 保护。
+    if (!numValue.isFinite) return rawValue;
+    // 科学计数法保护：极大/极小值的 toString() 会产生 "1.0e-7" 等形式，
+    // 后续 split('.') 会将其拆乱，直接返回原始字符串。
+    if (rawValue.contains('e') || rawValue.contains('E')) return rawValue;
 
     // 分离符号和绝对值（B65-Fix3）。
     final bool isNegative = numValue < 0;
@@ -165,6 +172,8 @@ class FormFormatterEngine {
   static String _formatChineseAmount(String rawValue) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
+    // B125: NaN/Infinity 保护，Infinity.truncate() 会抛 UnsupportedError。
+    if (!numValue.isFinite) return rawValue;
 
     // 负数处理：记录符号，取绝对值格式化（B18b）。
     final bool isNegative = numValue < 0;
@@ -260,6 +269,8 @@ class FormFormatterEngine {
   static String _formatCurrency(String rawValue) {
     final double? numValue = double.tryParse(rawValue);
     if (numValue == null) return rawValue;
+    // B125: NaN/Infinity 保护。
+    if (!numValue.isFinite) return rawValue;
     final String thousands = _formatThousands(numValue.toStringAsFixed(2));
     return '¥$thousands';
   }

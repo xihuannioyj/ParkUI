@@ -40,11 +40,17 @@ class ParkColors {
   /// 成功色浅
   final Color successLight;
 
+  /// 成功色深（用于 pressed / active 状态）
+  final Color successDark;
+
   /// 警告色（注意、提示）
   final Color warning;
 
   /// 警告色浅
   final Color warningLight;
+
+  /// 警告色深（用于 pressed / active 状态）
+  final Color warningDark;
 
   /// 错误色（错误状态、危险操作）
   final Color error;
@@ -52,11 +58,17 @@ class ParkColors {
   /// 错误色浅
   final Color errorLight;
 
+  /// 错误色深（用于 pressed / active 状态）
+  final Color errorDark;
+
   /// 信息色（普通提示、辅助信息）
   final Color info;
 
   /// 信息色浅
   final Color infoLight;
+
+  /// 信息色深（用于 pressed / active 状态）
+  final Color infoDark;
 
   // ========================================================================
   // 中性色 - 文字
@@ -113,12 +125,16 @@ class ParkColors {
     required this.brandPalette,
     required this.success,
     required this.successLight,
+    required this.successDark,
     required this.warning,
     required this.warningLight,
+    required this.warningDark,
     required this.error,
     required this.errorLight,
+    required this.errorDark,
     required this.info,
     required this.infoLight,
+    required this.infoDark,
     required this.textPrimary,
     required this.textSecondary,
     required this.textPlaceholder,
@@ -156,18 +172,22 @@ class ParkColors {
       // 功能色
       success: Color(0xFF1BB978),
       successLight: Color(0xFFD9F7EA),
+      successDark: Color(0xFF179D66),
       warning: Color(0xFFFFB400),
       warningLight: Color(0xFFFFE9B8),
+      warningDark: Color(0xFFD99900),
       error: Color(0xFFDF1B41),
       errorLight: Color(0xFFFCE0E4),
+      errorDark: Color(0xFFBD1737),
       info: Color(0xFF635BFF),
       infoLight: Color(0xFFF5F3FF),
+      infoDark: Color(0xFF544DD9),
 
       // 文字
       textPrimary: Color(0xFF0A2540), // Stripe navy
       textSecondary: Color(0xFF425466), // Stripe slate
-      textPlaceholder: Color(0xFF8898AA), // Stripe 浅灰
-      textDisabled: Color(0xFF8792A2),
+      textPlaceholder: Color(0xFF6C7E90), // WCAG AA ≥4.5:1 on white
+      textDisabled: Color(0xFF607080), // WCAG AA ≥4.5:1 on white (~5.2:1)
       textOnBrand: Color(0xFFFFFFFF),
 
       // 边框 & 分割线
@@ -206,18 +226,22 @@ class ParkColors {
       // 功能色（暗色模式更明亮）
       success: Color(0xFF34D399),
       successLight: Color(0xFF0E2A22),
+      successDark: Color(0xFF2BB580),
       warning: Color(0xFFFFC453),
       warningLight: Color(0xFF2A2310),
+      warningDark: Color(0xFFD9A647),
       error: Color(0xFFF25767),
       errorLight: Color(0xFF2C0E13),
+      errorDark: Color(0xFFCD4A58),
       info: Color(0xFF635BFF),
       infoLight: Color(0xFF1A1733),
+      infoDark: Color(0xFF544DD9),
 
       // 文字（暗色模式）
       textPrimary: Color(0xFFFFFFFF),
       textSecondary: Color(0xFFADB8C9), // 浅 slate
       textPlaceholder: Color(0xFF7A8AA0),
-      textDisabled: Color(0xFF5E6B7E),
+      textDisabled: Color(0xFF7A8A9E), // WCAG AA ≥4.5:1 on #0F2438
       textOnBrand: Color(0xFFFFFFFF),
 
       // 边框 & 分割线（暗色模式）
@@ -246,12 +270,16 @@ class ParkColors {
     List<Color>? brandPalette,
     Color? success,
     Color? successLight,
+    Color? successDark,
     Color? warning,
     Color? warningLight,
+    Color? warningDark,
     Color? error,
     Color? errorLight,
+    Color? errorDark,
     Color? info,
     Color? infoLight,
+    Color? infoDark,
     Color? textPrimary,
     Color? textSecondary,
     Color? textPlaceholder,
@@ -272,12 +300,16 @@ class ParkColors {
       brandPalette: brandPalette ?? this.brandPalette,
       success: success ?? this.success,
       successLight: successLight ?? this.successLight,
+      successDark: successDark ?? this.successDark,
       warning: warning ?? this.warning,
       warningLight: warningLight ?? this.warningLight,
+      warningDark: warningDark ?? this.warningDark,
       error: error ?? this.error,
       errorLight: errorLight ?? this.errorLight,
+      errorDark: errorDark ?? this.errorDark,
       info: info ?? this.info,
       infoLight: infoLight ?? this.infoLight,
+      infoDark: infoDark ?? this.infoDark,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textPlaceholder: textPlaceholder ?? this.textPlaceholder,
@@ -312,11 +344,11 @@ class ParkColors {
   /// 根据背景色自动选择白色或深色文字（确保 WCAG AA 4.5:1）。
   ///
   /// 当白色文字在给定背景上的对比度 >= 4.5 时返回纯白，
-  /// 否则返回 [textPrimary]（#0A2540，Stripe navy）。
+  /// 否则返回 [textPrimary]（跟随当前主题，如浅色模式为 Stripe navy，暗色模式为白色）。
   Color textOnColor(Color background) {
     return contrastRatio(const Color(0xFFFFFFFF), background) >= 4.5
         ? const Color(0xFFFFFFFF)
-        : const Color(0xFF0A2540);
+        : textPrimary;
   }
 
   /// 计算颜色的相对亮度（WCAG 2.1 定义）。
@@ -344,12 +376,16 @@ class ParkColors {
           _listEquals(brandPalette, other.brandPalette) &&
           success == other.success &&
           successLight == other.successLight &&
+          successDark == other.successDark &&
           warning == other.warning &&
           warningLight == other.warningLight &&
+          warningDark == other.warningDark &&
           error == other.error &&
           errorLight == other.errorLight &&
+          errorDark == other.errorDark &&
           info == other.info &&
           infoLight == other.infoLight &&
+          infoDark == other.infoDark &&
           textPrimary == other.textPrimary &&
           textSecondary == other.textSecondary &&
           textPlaceholder == other.textPlaceholder &&
@@ -371,12 +407,16 @@ class ParkColors {
         ...brandPalette,
         success,
         successLight,
+        successDark,
         warning,
         warningLight,
+        warningDark,
         error,
         errorLight,
+        errorDark,
         info,
         infoLight,
+        infoDark,
         textPrimary,
         textSecondary,
         textPlaceholder,

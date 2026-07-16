@@ -227,6 +227,8 @@ class ParkTour extends StatefulWidget {
 class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
   OverlayEntry? _overlayEntry;
   int _internalCurrent = 0;
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
 
   /// 获取当前步骤索引（受控优先）。
   int get _currentIndex => widget.current ?? _internalCurrent;
@@ -236,6 +238,11 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
   }
 
   @override
@@ -257,7 +264,8 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _removeTour();
+    _cleanupTour();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -275,11 +283,21 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
   void _showTour() {
     if (_overlayEntry != null) return;
     _internalCurrent = 0;
+    _animController.value = 1.0;
     _overlayEntry = OverlayEntry(builder: _buildOverlay);
     Overlay.of(context, rootOverlay: true).insert(_overlayEntry!);
   }
 
   void _removeTour() {
+    final entry = _overlayEntry;
+    if (entry == null) return;
+    _animController.reverse().then((_) {
+      if (!mounted) { _cleanupTour(); return; }
+      _cleanupTour();
+    });
+  }
+
+  void _cleanupTour() {
     final entry = _overlayEntry;
     if (entry == null) return;
     if (entry.mounted) entry.remove();
@@ -321,24 +339,12 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
   void _close() {
     widget.onClose?.call();
     // 受控模式下父组件控制 open=false 触发移除
-    if (!_isControlled) {
-      setState(() {
-        _removeTour();
-      });
-    } else {
-      _removeTour();
-    }
+    _removeTour();
   }
 
   void _finish() {
     widget.onFinish?.call();
-    if (!_isControlled) {
-      setState(() {
-        _removeTour();
-      });
-    } else {
-      _removeTour();
-    }
+    _removeTour();
   }
 
   // ---------------------------------------------------------------------------
@@ -380,11 +386,13 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
     final prevText = widget.prevButtonText ?? l10n.previousStep;
     final nextText = widget.nextButtonText ?? l10n.nextStep;
     final doneText = widget.doneButtonText ?? l10n.doneText;
-    final skipText = widget.skipButtonText ?? '跳过';
+    final skipText = widget.skipButtonText ?? l10n.skipText;
 
-    return Semantics(
-      label: '功能引导',
-      child: Stack(
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: Semantics(
+        label: l10n.tourSemanticsLabel,
+        child: Stack(
         children: [
           // === 遮罩层 ===
           if (widget.mask && step.mask != false)
@@ -448,6 +456,7 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
               stepIndicatorBuilder: widget.stepIndicatorBuilder,
             ),
         ],
+      ),
       ),
     );
   }
@@ -629,6 +638,7 @@ class _ParkTourBubble extends StatelessWidget {
       index: index,
       total: total,
       park: park,
+      l10n: l10n,
       isFirst: isFirst,
       isLast: isLast,
       prevText: prevText,
@@ -884,6 +894,7 @@ class _TourBubbleContent extends StatelessWidget {
   final int index;
   final int total;
   final ParkThemeData park;
+  final ParkLocalizations l10n;
   final bool isFirst;
   final bool isLast;
   final String prevText;
@@ -901,6 +912,7 @@ class _TourBubbleContent extends StatelessWidget {
     required this.index,
     required this.total,
     required this.park,
+    required this.l10n,
     required this.isFirst,
     required this.isLast,
     required this.prevText,
@@ -917,7 +929,7 @@ class _TourBubbleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '引导步骤 ${index + 1} / $total',
+      label: l10n.stepIndicatorFormat(index, total),
       child: Container(
         width: 300,
         constraints: const BoxConstraints(maxWidth: 360),
@@ -959,7 +971,7 @@ class _TourBubbleContent extends StatelessWidget {
                     ),
                   ),
                   Semantics(
-                    label: '关闭引导',
+                    label: l10n.closeTourLabel,
                     child: InkWell(
                       borderRadius: park.radius.brFull,
                       onTap: onClose,
@@ -1013,7 +1025,7 @@ class _TourBubbleContent extends StatelessWidget {
                     stepIndicatorBuilder!(index, total)
                   else
                     Text(
-                      '第 ${index + 1} / $total 步',
+                      l10n.stepIndicatorFormat(index, total),
                       style: park.typography.caption.copyWith(
                         color: park.colors.textPlaceholder,
                       ),
@@ -1024,7 +1036,7 @@ class _TourBubbleContent extends StatelessWidget {
                   // 跳过按钮（非最后一步）
                   if (!isLast)
                     Semantics(
-                      label: '跳过引导',
+                      label: l10n.skipTourLabel,
                       child: TextButton(
                         onPressed: onClose,
                         style: TextButton.styleFrom(
@@ -1150,6 +1162,7 @@ class _ParkTourCenterBubble extends StatelessWidget {
         index: index,
         total: total,
         park: park,
+        l10n: l10n,
         isFirst: isFirst,
         isLast: isLast,
         prevText: prevText,

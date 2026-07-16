@@ -24,3 +24,10 @@ Widget buildFileImageWidget(String path,
 String fileNameFromPath(String path) {
   return path.split('/').last;
 }
+
+/// 读取文件前 [maxBytes] 字节用于魔数校验。
+///
+/// 空实现：Web 平台不支持 dart:io，返回 null（跳过魔数校验）。
+Future<List<int>?> readMagicBytes(String path, {int maxBytes = 12}) async {
+  return null;
+}

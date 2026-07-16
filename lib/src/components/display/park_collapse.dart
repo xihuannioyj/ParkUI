@@ -280,6 +280,8 @@ class _ParkCollapseState extends State<ParkCollapse>
               child: item.headerWidget ??
                   Text(
                     item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: park.typography.sizeBody,
                       fontWeight: park.typography.weightMedium,

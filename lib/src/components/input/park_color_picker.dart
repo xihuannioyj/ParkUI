@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 // ============================================================================
 // ParkColorFormat — 颜色展示/输入格式
@@ -147,8 +148,9 @@ class ParkColorPickerHueSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ParkLocalizations.of(context);
     return Semantics(
-      label: '色相滑块，${hue.round()} 度',
+      label: l10n.hueSliderSemantic(hue.round()),
       slider: true,
       value: '${hue.round()}°',
       child: LayoutBuilder(
@@ -280,7 +282,7 @@ class ParkColorPickerSaturationValuePicker extends StatelessWidget {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
     return Semantics(
-      label: '饱和度与明度选择器',
+      label: ParkLocalizations.of(context).saturationValuePickerLabel,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: park.radius.brSm,
@@ -479,7 +481,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
       children: [
         // ── 当前选中色预览 ──
         Semantics(
-          label: '当前选中颜色 ${_formatColor(_selected, _format)}',
+          label: ParkLocalizations.of(context).currentColorSemantic(_formatColor(_selected, _format)),
           child: Container(
             width: double.infinity,
             height: 40,
@@ -495,7 +497,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
         Padding(
           padding: EdgeInsets.only(top: park.spacing.xs),
           child: Semantics(
-            label: '颜色值 ${_formatColor(_selected, _format)}',
+            label: ParkLocalizations.of(context).colorValueSemantic(_formatColor(_selected, _format)),
             child: Text(
               _formatColor(_selected, _format),
               style: park.typography.bodySmall.copyWith(
@@ -564,16 +566,17 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
         if (widget.showFormatSwitch) ...[
           park.spacing.vSm,
           Semantics(
-            label: '颜色格式切换',
+            label: ParkLocalizations.of(context).colorFormatSwitch,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: ParkColorFormat.values.map((format) {
                 final isActive = _format == format;
+                final l10n = ParkLocalizations.of(context);
                 return GestureDetector(
                   onTap: () => _switchFormat(format),
                   child: Semantics(
                     button: true,
-                    label: '切换到 ${format.name.toUpperCase()}',
+                    label: l10n.switchToFormat(format.name.toUpperCase()),
                     selected: isActive,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

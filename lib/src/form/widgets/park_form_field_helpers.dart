@@ -64,6 +64,7 @@ Future<dynamic> showOptionBottomSheet(
     isScrollControlled: true,
     showDragHandle: true,
     builder: (BuildContext context) {
+      final l10n = ParkLocalizations.of(context);
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -95,7 +96,7 @@ Future<dynamic> showOptionBottomSheet(
               ParkButton(
                 variant: ParkButtonVariant.text,
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
+                child: Text(l10n.cancelText),
               ),
             ],
           ),
@@ -132,6 +133,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (BuildContext context, StateSetter setSheetState) {
+          final l10n = ParkLocalizations.of(context);
           final List<Map<String, dynamic>> cityOptions = childrenOf(
             provinceOptions,
             tempProvince,
@@ -152,7 +154,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    '请选择$labelName',
+                    l10n.selectField(labelName),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
@@ -166,7 +168,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                         )
                         .toList(),
                     value: tempProvince?.toString(),
-                    hintText: '请选择省份',
+                    hintText: l10n.selectProvince,
                     onChanged: (String? changed) {
                       setSheetState(() {
                         tempProvince = changed;
@@ -187,7 +189,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                           )
                           .toList(),
                       value: tempCity?.toString(),
-                      hintText: '请选择城市',
+                      hintText: l10n.selectCity,
                       enabled: tempProvince != null,
                       onChanged: tempProvince == null
                           ? null
@@ -211,7 +213,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                           )
                           .toList(),
                       value: tempDistrict?.toString(),
-                      hintText: '请选择区县',
+                      hintText: l10n.selectDistrict,
                       enabled: tempProvince != null && tempCity != null,
                       onChanged: (tempProvince == null || tempCity == null)
                           ? null
@@ -229,7 +231,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                         child: ParkButton(
                           variant: ParkButtonVariant.secondary,
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('取消'),
+                          child: Text(l10n.cancelText),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -243,7 +245,7 @@ Future<Map<String, dynamic>?> showRegionBottomSheet({
                               districtKey: tempDistrict,
                             });
                           },
-                          child: const Text('确定'),
+                          child: Text(l10n.confirmText),
                         ),
                       ),
                     ],

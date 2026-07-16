@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// 下拉菜单项数据模型 — 支持子菜单嵌套。
 ///
@@ -672,14 +673,28 @@ class _ParkDropdownSubmenuItem extends StatefulWidget {
       _ParkDropdownSubmenuItemState();
 }
 
-class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
+class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
+    with TickerProviderStateMixin {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _submenuEntry;
   bool _isSubmenuOpen = false;
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+  }
 
   @override
   void dispose() {
-    _closeSubmenu();
+    _closeSubmenuDirect();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -690,28 +705,44 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
     setState(() {});
 
     _submenuEntry = OverlayEntry(builder: (context) {
-      return _buildSubmenuOverlay(context);
+      return FadeTransition(
+        opacity: _fadeAnim,
+        child: _buildSubmenuOverlay(context),
+      );
     });
 
     Overlay.of(context).insert(_submenuEntry!);
+    _animController.forward();
 
     // Register with parent controller so it gets closed on main dismiss
-    widget.submenuController.registerClose(_closeSubmenu);
+    widget.submenuController.registerClose(_closeSubmenuAnimated);
   }
 
-  void _closeSubmenu() {
-    _submenuEntry?.remove();
+  void _closeSubmenuAnimated() {
+    if (!_isSubmenuOpen || !mounted) {
+      _closeSubmenuDirect();
+      return;
+    }
+    _animController.reverse().then((_) {
+      _closeSubmenuDirect();
+    });
+  }
+
+  void _closeSubmenuDirect() {
+    if (_submenuEntry != null && _submenuEntry!.mounted) {
+      _submenuEntry!.remove();
+    }
     _submenuEntry = null;
     if (_isSubmenuOpen) {
       _isSubmenuOpen = false;
       if (mounted) setState(() {});
     }
-    widget.submenuController.unregisterClose(_closeSubmenu);
+    widget.submenuController.unregisterClose(_closeSubmenuAnimated);
   }
 
   void _toggleSubmenu() {
     if (_isSubmenuOpen) {
-      _closeSubmenu();
+      _closeSubmenuAnimated();
     } else {
       _openSubmenu();
     }
@@ -728,7 +759,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
         // Dismiss barrier for this submenu level
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: _closeSubmenu,
+          onTap: _closeSubmenuAnimated,
           child: Container(color: Colors.transparent),
         ),
         // Submenu positioned at the right of the parent item
@@ -790,7 +821,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
         label: item.label,
         child: GestureDetector(
           onTap: item.disabled ? null : () {
-            _closeSubmenu();
+            _closeSubmenuAnimated();
             widget.onSelected(item);
           },
           child: widget.itemBuilder!(item, isSelected),
@@ -807,7 +838,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
       label: item.label,
       child: GestureDetector(
         onTap: item.disabled ? null : () {
-          _closeSubmenu();
+          _closeSubmenuAnimated();
           widget.onSelected(item);
         },
         child: Container(
@@ -900,7 +931,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem> {
                 ),
                 // Right arrow indicator for submenu
                 Semantics(
-                  label: '展开子菜单',
+                  label: ParkLocalizations.of(context).expandSubmenuLabel,
                   child: Padding(
                     padding: EdgeInsets.only(left: widget.park.spacing.sm),
                     child: Icon(

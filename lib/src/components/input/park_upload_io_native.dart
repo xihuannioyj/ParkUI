@@ -31,3 +31,25 @@ Widget buildFileImageWidget(String path,
 String fileNameFromPath(String path) {
   return path.split(Platform.pathSeparator).last;
 }
+
+/// 读取文件前 [maxBytes] 字节用于魔数校验。
+///
+/// 原生实现：使用 dart:io File + RandomAccessFile。
+/// 返回 null 表示读取失败。
+Future<List<int>?> readMagicBytes(String path, {int maxBytes = 12}) async {
+  try {
+    final File file = File(path);
+    if (!await file.exists()) return null;
+    final RandomAccessFile raf = await file.open();
+    try {
+      final int len = await raf.length();
+      if (len == 0) return null;
+      final int readLen = len < maxBytes ? len : maxBytes;
+      return await raf.read(readLen);
+    } finally {
+      await raf.close();
+    }
+  } catch (_) {
+    return null;
+  }
+}

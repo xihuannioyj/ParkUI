@@ -101,15 +101,8 @@ class ParkBottomNav extends StatelessWidget {
   }) : assert(items.length >= 2 && items.length <= 5,
             'ParkBottomNav requires 2 to 5 items');
 
-  /// 计算满足 WCAG AA（4.5:1）对比度要求的 Badge 背景色。
-  ///
-  /// 亮色主题 [error] (#DF1B41) 对白色文字对比度约 4.56:1，刚好达标。
-  /// 暗色主题 [error] (#F25767) 对白色文字对比度仅约 3.3:1，不达标，
-  /// 需加深至 #D41540（对比度约 4.6:1）。
+  /// 计算 Badge 背景色，使用主题 error 令牌。
   Color _badgeBackgroundColor(Color error, bool isDark) {
-    if (isDark) {
-      return const Color(0xFFD41540);
-    }
     return error;
   }
 

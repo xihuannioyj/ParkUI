@@ -61,7 +61,7 @@ class ParkQRCode extends StatelessWidget {
     // qr_flutter 要求 data 非空，空内容时回退为纯色占位。
     if (data.trim().isEmpty) {
       return Semantics(
-        label: 'QRCode: $data',
+        label: 'QR Code',
         child: SizedBox(
           width: size,
           height: size,
@@ -71,7 +71,7 @@ class ParkQRCode extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'QRCode: $data',
+      label: 'QR Code',
       child: SizedBox(
         width: size,
         height: size,

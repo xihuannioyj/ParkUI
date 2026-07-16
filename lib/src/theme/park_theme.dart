@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'park_config_provider.dart';
 import 'park_theme_data.dart';
 import 'tokens/park_colors.dart';
 import 'tokens/park_typography.dart';
 import 'tokens/park_spacing.dart';
 import 'tokens/park_radius.dart';
 import 'tokens/park_shadows.dart';
+import 'tokens/park_elevation.dart';
+import 'tokens/park_blur.dart';
 
 /// Park UI 主题快捷访问工具
 ///
@@ -29,10 +32,25 @@ import 'tokens/park_shadows.dart';
 class ParkTheme {
   ParkTheme._();
 
-  /// 从 context 获取 ParkThemeData，未注入时返回 light 默认值
+  /// 从 context 获取 ParkThemeData。
+  ///
+  /// 优先通过 [ParkConfigProvider] 获取（单一数据源）。
+  /// 若 [ParkConfigProvider] 不在 widget tree 中，回退到
+  /// [ThemeData.extensions] 路径；若仍未找到，在 debug 模式下触发 assert
+  /// 并返回 light 默认值。
   static ParkThemeData of(BuildContext context) {
-    return Theme.of(context).extension<ParkThemeData>() ??
-        ParkThemeData.light();
+    // 1. 优先从 ParkConfigProvider 获取（单一数据源）
+    final provider = ParkConfigProvider.maybeOf(context);
+    if (provider != null) return provider;
+
+    // 2. 回退：从 ThemeData.extensions 获取
+    final ext = Theme.of(context).extension<ParkThemeData>();
+    assert(
+      ext != null,
+      'ParkThemeData not found. Wrap your app with ParkConfigProvider '
+      'or add ParkThemeData to ThemeData.extensions.',
+    );
+    return ext ?? ParkThemeData.light();
   }
 
   /// 获取色彩令牌
@@ -59,13 +77,23 @@ class ParkTheme {
   static ParkShadows shadowsOf(BuildContext context) {
     return of(context).shadows;
   }
+
+  /// 获取海拔令牌
+  static ParkElevation elevationOf(BuildContext context) {
+    return of(context).elevation;
+  }
+
+  /// 获取模糊令牌
+  static ParkBlur blurOf(BuildContext context) {
+    return of(context).blur;
+  }
 }
 
-/// BuildContext 扩展：便捷访问 Park 主题
+/// BuildContext 扩展：便捷访问 Park 主题令牌
+///
+/// parkTheme 的便捷访问由 [ParkConfigProviderContextExtension] 提供
+/// （单一数据源），此扩展仅保留各令牌子类的快捷方法。
 extension ParkThemeContextExtension on BuildContext {
-  /// 获取 ParkThemeData
-  ParkThemeData get parkTheme => ParkTheme.of(this);
-
   /// 获取色彩令牌
   ParkColors get parkColors => ParkTheme.colorsOf(this);
 
@@ -80,6 +108,12 @@ extension ParkThemeContextExtension on BuildContext {
 
   /// 获取阴影令牌
   ParkShadows get parkShadows => ParkTheme.shadowsOf(this);
+
+  /// 获取海拔令牌
+  ParkElevation get parkElevation => ParkTheme.elevationOf(this);
+
+  /// 获取模糊令牌
+  ParkBlur get parkBlur => ParkTheme.blurOf(this);
 }
 
 /// 快捷主题常量：浅色。

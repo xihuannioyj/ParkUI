@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 通知提醒框组件
@@ -54,57 +55,59 @@ class ParkNotification {
       _activeNotifications.remove(oldestKey);
     }
 
-    final overlay = Overlay.of(context, rootOverlay: true);
-    final park =
-        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final overlay = Overlay.of(context, rootOverlay: true);
+      final park =
+          Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    late final OverlayEntry entry;
-    bool removed = false;
-    final String effectiveKey = '_auto_${_autoId++}';
-    final GlobalKey<_NotificationOverlayState> overlayStateKey =
-        GlobalKey<_NotificationOverlayState>();
-    late final _NotificationController controller;
+      late final OverlayEntry entry;
+      bool removed = false;
+      final String effectiveKey = '_auto_${_autoId++}';
+      final GlobalKey<_NotificationOverlayState> overlayStateKey =
+          GlobalKey<_NotificationOverlayState>();
+      late final _NotificationController controller;
 
-    final double topOffset =
-        _activeNotifications.length * _kNotificationSlot;
+      final double topOffset =
+          _activeNotifications.length * _kNotificationSlot;
 
-    void remove() {
-      if (removed) return;
-      removed = true;
-      _activeNotifications.remove(effectiveKey);
-      onClose?.call();
-      entry.remove();
-    }
+      void remove() {
+        if (removed) return;
+        removed = true;
+        _activeNotifications.remove(effectiveKey);
+        onClose?.call();
+        entry.remove();
+      }
 
-    controller = _NotificationController(
-      dismiss: () {
-        final _NotificationOverlayState? state =
-            overlayStateKey.currentState;
-        if (state == null) {
-          remove();
-          return;
-        }
-        state.close();
-      },
-    );
-    _activeNotifications[effectiveKey] = controller;
+      controller = _NotificationController(
+        dismiss: () {
+          final _NotificationOverlayState? state =
+              overlayStateKey.currentState;
+          if (state == null) {
+            remove();
+            return;
+          }
+          state.close();
+        },
+      );
+      _activeNotifications[effectiveKey] = controller;
 
-    entry = OverlayEntry(
-      builder: (_) => _NotificationOverlay(
-        key: overlayStateKey,
-        title: title,
-        description: description,
-        type: type,
-        duration: duration,
-        onClose: remove,
-        closable: closable,
-        icon: icon,
-        park: park,
-        topOffset: topOffset,
-      ),
-    );
+      entry = OverlayEntry(
+        builder: (_) => _NotificationOverlay(
+          key: overlayStateKey,
+          title: title,
+          description: description,
+          type: type,
+          duration: duration,
+          onClose: remove,
+          closable: closable,
+          icon: icon,
+          park: park,
+          topOffset: topOffset,
+        ),
+      );
 
-    overlay.insert(entry);
+      overlay.insert(entry);
+    });
   }
 
   /// 隐藏所有通知（通过退出动画）。
@@ -273,12 +276,16 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                     ),
                   ),
                   if (widget.closable)
-                    GestureDetector(
-                      onTap: close,
-                      child: Icon(
-                        Icons.close,
-                        size: park.spacing.base,
-                        color: park.colors.textSecondary,
+                    Semantics(
+                      button: true,
+                      label: ParkLocalizations.of(context).closeText,
+                      child: GestureDetector(
+                        onTap: close,
+                        child: Icon(
+                          Icons.close,
+                          size: park.spacing.base,
+                          color: park.colors.textSecondary,
+                        ),
                       ),
                     ),
                 ],

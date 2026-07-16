@@ -79,13 +79,27 @@ class ParkPopconfirm extends StatefulWidget {
   State<ParkPopconfirm> createState() => _ParkPopconfirmState();
 }
 
-class _ParkPopconfirmState extends State<ParkPopconfirm> {
+class _ParkPopconfirmState extends State<ParkPopconfirm>
+    with SingleTickerProviderStateMixin {
   final _triggerKey = GlobalKey();
   final _bubbleKey = GlobalKey();
   bool _isVisible = false;
   OverlayEntry? _overlayEntry;
   double _bubbleTop = 0;
   double _bubbleLeft = 0;
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
+  bool _isHiding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+  }
 
   void _showPopconfirm() {
     if (_isVisible) return;
@@ -105,10 +119,14 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
     _bubbleLeft = childPosition.dx;
 
     _overlayEntry = OverlayEntry(
-      builder: (_) => _buildPopover(childPosition, childSize),
+      builder: (_) => FadeTransition(
+        opacity: _fadeAnim,
+        child: _buildPopover(childPosition, childSize),
+      ),
     );
 
     overlay.insert(_overlayEntry!);
+    _animController.value = 1.0;
 
     // Adjust position after first layout to prevent viewport overflow
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -156,7 +174,22 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
   }
 
   void _hidePopconfirm() {
-    _overlayEntry?.remove();
+    if (!_isVisible || _isHiding) return;
+    _isHiding = true;
+    _animController.reverse().then((_) {
+      if (_overlayEntry != null && _overlayEntry!.mounted) {
+        _overlayEntry!.remove();
+      }
+      _overlayEntry = null;
+      _isVisible = false;
+      _isHiding = false;
+    });
+  }
+
+  void _cleanupPopconfirm() {
+    if (_overlayEntry != null && _overlayEntry!.mounted) {
+      _overlayEntry!.remove();
+    }
     _overlayEntry = null;
     _isVisible = false;
   }
@@ -300,10 +333,8 @@ class _ParkPopconfirmState extends State<ParkPopconfirm> {
 
   @override
   void dispose() {
-    if (_overlayEntry != null && _overlayEntry!.mounted) {
-      _overlayEntry!.remove();
-    }
-    _overlayEntry = null;
+    _cleanupPopconfirm();
+    _animController.dispose();
     super.dispose();
   }
 

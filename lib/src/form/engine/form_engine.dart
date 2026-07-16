@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'form_engine_io_stub.dart'
     if (dart.library.io) 'form_engine_io_native.dart'
-    if (dart.library.html) 'form_engine_io_web.dart';
+    if (dart.library.js_interop) 'form_engine_io_web.dart';
 
 import '../data_source/park_data_source_resolver.dart';
+import '../../l10n/park_localizations.dart';
 import 'form_reaction_engine.dart';
 import 'form_runtime_state.dart';
 import '../models/form_field_schema.dart';
@@ -138,34 +139,27 @@ class ParkFormEngine {
     Map<String, dynamic>? values,
     ParkFormRuntimeOverrides? overrides,
   }) {
-    // 构造临时字段（注入动态必填状态）。
+    // 计算有效必填状态和正则，避免 copyWith 创建临时对象。
     final bool effectiveRequired = isFieldRequired(
       field,
       values ?? <String, dynamic>{},
       overrides: overrides,
     );
-    final ParkFormFieldSchema effectiveField = effectiveRequired != field.isRequired
-        ? field.copyWith(isRequired: effectiveRequired)
-        : field;
-
-    // 解析有效正则。
-    final String? effectiveRegex = resolveRegex(effectiveField);
-    final ParkFormFieldSchema regexField = effectiveRegex != null &&
-            effectiveRegex != effectiveField.regexExpression
-        ? effectiveField.copyWith(regexExpression: effectiveRegex)
-        : effectiveField;
+    final String? effectiveRegex = resolveRegex(field);
 
     final List<String? Function()> validators = <String? Function()>[
       () {
-        final result = ParkFormValidators.required(value, regexField);
+        final result = ParkFormValidators.requiredWithOverrides(
+          value, field, effectiveRequired);
         return result.isValid ? null : result.message;
       },
       () {
-        final result = ParkFormValidators.length(value, regexField);
+        final result = ParkFormValidators.length(value, field);
         return result.isValid ? null : result.message;
       },
       () {
-        final result = ParkFormValidators.regex(value, regexField);
+        final result = ParkFormValidators.regexWithOverrides(
+          value, field, effectiveRegex);
         return result.isValid ? null : result.message;
       },
     ];
@@ -221,7 +215,7 @@ class ParkFormEngine {
   /// 标记为超时错误并继续校验其他字段。
   /// 防抖机制：校验前等待 [debounceMs] 毫秒，
   /// 避免频繁触发异步校验请求。
-  Future<Map<String, String>> validateFormAsync(
+  Future<Map<String, String>?> validateFormAsync(
     ParkFormSchema schema,
     Map<String, dynamic> values,
     AsyncFieldValidator? validator,
@@ -229,6 +223,7 @@ class ParkFormEngine {
     ParkFormRuntimeOverrides? overrides,
     int timeoutMs = 5000,
     int debounceMs = 300,
+    ParkLocalizations? l10n,
     }
   ) async {
     // 递增序列号并记录当前序号（B13）。
@@ -238,8 +233,8 @@ class ParkFormEngine {
     // 防抖延迟
     await Future<void>.delayed(Duration(milliseconds: debounceMs));
 
-    // 防抖期间如果新请求已启动，丢弃本次结果。
-    if (_validationSequence != seq) return <String, String>{};
+    // 防抖期间如果新请求已启动，返回 null 表示已取消。
+    if (_validationSequence != seq) return null;
 
     final Map<String, String> errors = <String, String>{};
     for (final ParkFormFieldSchema field in schema.fields) {
@@ -261,13 +256,16 @@ class ParkFormEngine {
         final String? error = await resolved(field, values[field.fieldName])
             .timeout(Duration(milliseconds: timeoutMs));
         // 校验完成后检查序列号，防止慢请求覆盖快请求（B13）。
-        if (_validationSequence != seq) return errors;
+        if (_validationSequence != seq) return null;
         if (error != null && error.isNotEmpty) {
           errors[field.fieldName] = error;
         }
       } on TimeoutException {
-        if (_validationSequence != seq) return errors;
-        errors[field.fieldName] = '校验超时，请稍后重试';
+        if (_validationSequence != seq) return null;
+        errors[field.fieldName] = l10n?.validationTimeout ?? '校验超时，请稍后重试';
+      } catch (e) {
+        if (_validationSequence != seq) return null;
+        errors[field.fieldName] = l10n?.validationFailed ?? '校验异常';
       }
     }
     return errors;

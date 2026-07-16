@@ -170,9 +170,8 @@ class _ParkBackTopState extends State<ParkBackTop>
           return const SizedBox.shrink();
         }
 
-        return Positioned(
-          right: 0,
-          bottom: 0,
+        return Align(
+          alignment: Alignment.bottomRight,
           child: Padding(
             padding: widget.margin,
             child: FadeTransition(
@@ -182,30 +181,33 @@ class _ParkBackTopState extends State<ParkBackTop>
                 child: Semantics(
                   button: true,
                   label: l10n.backTop,
-                  child: GestureDetector(
-                    onTap: _handlePress,
-                    child: Container(
-                    width: widget.size,
-                    height: widget.size,
-                    decoration: BoxDecoration(
-                      color: colors.brand,
-                      shape: BoxShape.circle,
-                      boxShadow: park.shadows.md,
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      widget.icon ?? Icons.keyboard_arrow_up,
-                      size: widget.size * 0.55,
-                      color: colors.textOnBrand,
+                  child: Tooltip(
+                    message: l10n.backTop,
+                    child: GestureDetector(
+                      onTap: _handlePress,
+                      child: Container(
+                        width: widget.size,
+                        height: widget.size,
+                        decoration: BoxDecoration(
+                          color: colors.brand,
+                          shape: BoxShape.circle,
+                          boxShadow: park.shadows.md,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          widget.icon ?? Icons.keyboard_arrow_up,
+                          size: widget.size * 0.55,
+                          color: colors.textOnBrand,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
   }
 }

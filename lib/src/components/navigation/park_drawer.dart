@@ -302,8 +302,12 @@ class _ParkDrawerState extends State<ParkDrawer> {
         }
       });
     }
-    // afterClose: 关闭动画完成后回调
-    widget.afterClose?.call();
+    // afterClose: 关闭动画完成后回调（延迟到动画结束）
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        widget.afterClose?.call();
+      }
+    });
   }
 
   void _handleKeyEvent(KeyEvent event) {
@@ -403,11 +407,13 @@ class _ParkDrawerState extends State<ParkDrawer> {
   Widget _buildDrawerContent(ParkThemeData park, dynamic colors) {
     final placement = _effectivePlacement;
 
+    final l10n = ParkLocalizations.of(context);
+
     // 顶/底方向使用自定义容器
     if (!_isHorizontal) {
       return Semantics(
         container: true,
-        label: '导航抽屉',
+        label: l10n.navigationDrawerLabel,
         child: _buildVerticalDrawer(park, colors),
       );
     }
@@ -415,7 +421,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     // 左/右方向使用 Flutter Drawer
     return Semantics(
       container: true,
-      label: '导航抽屉',
+      label: l10n.navigationDrawerLabel,
       child: Drawer(
         shape: RoundedRectangleBorder(
           borderRadius: placement == ParkDrawerPlacement.left

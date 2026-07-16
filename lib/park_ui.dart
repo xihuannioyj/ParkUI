@@ -43,6 +43,8 @@ export 'src/theme/tokens/park_radius.dart';
 export 'src/theme/tokens/park_shadows.dart';
 export 'src/theme/tokens/park_motion.dart';
 export 'src/theme/tokens/park_sizing.dart';
+export 'src/theme/tokens/park_elevation.dart';
+export 'src/theme/tokens/park_blur.dart';
 
 // ============================================================================
 // 基础组件
@@ -61,6 +63,8 @@ export 'src/components/base/park_ink_well.dart';
 export 'src/components/base/park_grid_row.dart';
 export 'src/components/base/park_typography.dart';
 export 'src/components/base/park_flex.dart';
+export 'src/components/base/park_app.dart';
+export 'src/components/base/park_float_button.dart';
 
 // ============================================================================
 // 输入组件
@@ -131,10 +135,10 @@ export 'src/components/display/park_progress.dart';
 export 'src/components/display/park_result.dart';
 export 'src/components/display/park_skeleton.dart';
 export 'src/components/display/park_swiper.dart';
-  export 'src/components/display/park_table.dart';
-  export 'src/components/display/park_tag.dart';
-  export 'src/components/display/park_footer.dart';
-  export 'src/components/display/park_grid.dart';
+export 'src/components/display/park_table.dart';
+export 'src/components/display/park_tag.dart';
+export 'src/components/display/park_footer.dart';
+export 'src/components/display/park_grid.dart';
 export 'src/components/display/park_sticky.dart';
 export 'src/components/display/park_card.dart';
 export 'src/components/display/park_countdown.dart';
@@ -182,7 +186,6 @@ export 'src/form/engine/form_engine.dart';
 export 'src/form/engine/form_reaction_engine.dart';
 export 'src/form/engine/form_formatter_engine.dart';
 export 'src/form/engine/form_runtime_state.dart';
-export 'src/form/engine/form_engine_io_stub.dart';
 export 'src/form/validators/form_validator.dart';
 export 'src/form/validators/form_validator_result.dart';
 export 'src/form/validators/async_validators.dart';
@@ -194,6 +197,7 @@ export 'src/form/widgets/park_form_field_widget.dart';
 export 'src/form/widgets/park_form_field_helpers.dart';
 export 'src/form/widgets/park_schema_builder.dart';
 export 'src/form/platform/park_form_image_service.dart';
+export 'src/form/group/form_group_exports.dart';
 
 // ============================================================================
 // 双向绑定
@@ -205,3 +209,22 @@ export 'src/binding/park_binding_scheduler.dart';
 export 'src/binding/park_binding_form_field_mixin.dart';
 export 'src/binding/park_binding_form_scope.dart';
 export 'src/binding/park_binding_mixin.dart';
+
+// ============================================================================
+// 组件规格（Spec）
+// ============================================================================
+export 'src/specs/park_component_spec.dart';
+export 'src/specs/park_base_specs.dart';
+export 'src/specs/park_input_specs.dart';
+export 'src/specs/park_input_specs_p2.dart';
+export 'src/specs/park_input_specs_extra.dart';
+export 'src/specs/park_input_specs_group.dart';
+export 'src/specs/park_nav_specs.dart';
+export 'src/specs/park_nav_specs_extra.dart';
+export 'src/specs/park_display_specs.dart';
+export 'src/specs/park_display_specs_extra.dart';
+export 'src/specs/park_feedback_specs.dart';
+export 'src/specs/park_feedback_specs_extra.dart';
+export 'src/specs/park_form_specs.dart';
+export 'src/specs/park_binding_specs.dart';
+export 'src/specs/park_new_component_specs.dart';

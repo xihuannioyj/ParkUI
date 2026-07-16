@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../l10n/park_localizations.dart';
 
 /// Park 步骤状态
 enum ParkStepStatus {
@@ -160,22 +161,23 @@ class ParkSteps extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
 
     if (steps.isEmpty) {
       return const SizedBox.shrink();
     }
 
     if (direction == ParkStepsDirection.horizontal) {
-      return _buildHorizontal(park);
+      return _buildHorizontal(park, l10n);
     }
-    return _buildVertical(park);
+    return _buildVertical(park, l10n);
   }
 
   // ==========================================================================
   // 水平布局
   // ==========================================================================
 
-  Widget _buildHorizontal(ParkThemeData park) {
+  Widget _buildHorizontal(ParkThemeData park, ParkLocalizations l10n) {
     final children = <Widget>[];
 
     for (int stepIdx = 0; stepIdx < steps.length; stepIdx++) {
@@ -187,11 +189,13 @@ class ParkSteps extends StatelessWidget {
                   step: steps[stepIdx],
                   index: stepIdx,
                   park: park,
+                  l10n: l10n,
                 )
               : _buildStepCircleHorizontal(
                   step: steps[stepIdx],
                   index: stepIdx,
                   park: park,
+                  l10n: l10n,
                 ),
         ),
       );
@@ -219,7 +223,7 @@ class ParkSteps extends StatelessWidget {
   // 垂直布局
   // ==========================================================================
 
-  Widget _buildVertical(ParkThemeData park) {
+  Widget _buildVertical(ParkThemeData park, ParkLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(steps.length * 2 - 1, (rawIndex) {
@@ -232,7 +236,7 @@ class ParkSteps extends StatelessWidget {
           );
         }
         final stepIdx = rawIndex ~/ 2;
-        return _buildStepRow(step: steps[stepIdx], index: stepIdx, park: park);
+        return _buildStepRow(step: steps[stepIdx], index: stepIdx, park: park, l10n: l10n);
       }),
     );
   }
@@ -241,6 +245,7 @@ class ParkSteps extends StatelessWidget {
     required ParkStep step,
     required int index,
     required ParkThemeData park,
+    required ParkLocalizations l10n,
   }) {
     Widget content = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +258,7 @@ class ParkSteps extends StatelessWidget {
       ],
     );
 
-    return _wrapInteractive(content, index);
+    return _wrapInteractive(content, index, l10n);
   }
 
   // ==========================================================================
@@ -264,6 +269,7 @@ class ParkSteps extends StatelessWidget {
     required ParkStep step,
     required int index,
     required ParkThemeData park,
+    required ParkLocalizations l10n,
   }) {
     // 水平布局 + 水平标签：圆圈在左，文字在右
     Widget content = Row(
@@ -276,7 +282,7 @@ class ParkSteps extends StatelessWidget {
       ],
     );
 
-    return _wrapInteractive(content, index);
+    return _wrapInteractive(content, index, l10n);
   }
 
   // ==========================================================================
@@ -287,6 +293,7 @@ class ParkSteps extends StatelessWidget {
     required ParkStep step,
     required int index,
     required ParkThemeData park,
+    required ParkLocalizations l10n,
   }) {
     Widget content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -298,7 +305,7 @@ class ParkSteps extends StatelessWidget {
       ],
     );
 
-    return _wrapInteractive(content, index);
+    return _wrapInteractive(content, index, l10n);
   }
 
   // ==========================================================================
@@ -372,14 +379,14 @@ class ParkSteps extends StatelessWidget {
   // 交互包裹（clickable + hover）
   // ==========================================================================
 
-  Widget _wrapInteractive(Widget child, int index) {
+  Widget _wrapInteractive(Widget child, int index, ParkLocalizations l10n) {
     final step = steps[index];
     final status = _effectiveStatus(step, index);
     final statusStr = switch (status) {
-      ParkStepStatus.finish => '已完成',
-      ParkStepStatus.process => '进行中',
-      ParkStepStatus.error => '出错',
-      ParkStepStatus.waiting => '待处理',
+      ParkStepStatus.finish => l10n.stepStatusFinish,
+      ParkStepStatus.process => l10n.stepStatusProcess,
+      ParkStepStatus.error => l10n.stepStatusError,
+      ParkStepStatus.waiting => l10n.stepStatusWaiting,
     };
 
     Widget result;
@@ -401,7 +408,7 @@ class ParkSteps extends StatelessWidget {
     }
 
     return Semantics(
-      label: '步骤 ${index + 1}: ${step.title}, $statusStr${step.description != null ? ', ${step.description}' : ''}',
+      label: l10n.stepSemanticFormat(index, step.title, statusStr, step.description),
       excludeSemantics: true,
       child: result,
     );

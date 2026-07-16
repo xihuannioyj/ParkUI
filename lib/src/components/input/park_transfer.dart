@@ -154,7 +154,7 @@ class _ParkTransferState extends State<ParkTransfer> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Semantics(
-                label: '右移',
+                label: l10n.moveRightLabel,
                 child: ParkButton(
                   variant: ParkButtonVariant.secondary,
                   size: ParkButtonSize.small,
@@ -165,7 +165,7 @@ class _ParkTransferState extends State<ParkTransfer> {
               SizedBox(height: park.spacing.sm),
               if (!widget.oneWay)
                 Semantics(
-                  label: '左移',
+                  label: l10n.moveLeftLabel,
                   child: ParkButton(
                     variant: ParkButtonVariant.secondary,
                     size: ParkButtonSize.small,
@@ -201,13 +201,13 @@ class _ParkTransferState extends State<ParkTransfer> {
             child: Row(
               children: [
                 DefaultTextStyle(
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: park.colors.textPrimary),
+                  style: TextStyle(fontSize: park.typography.sizeBody, fontWeight: FontWeight.w600, color: park.colors.textPrimary),
                   child: title,
                 ),
                 const Spacer(),
                 Semantics(
-                  label: '共 ${items.length} 项',
-                  child: Text('${items.length}', style: TextStyle(fontSize: 12, color: park.colors.textSecondary)),
+                  label: l10n.totalItemsCount(items.length),
+                  child: Text('${items.length}', style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textSecondary)),
                 ),
               ],
             ),
@@ -216,7 +216,7 @@ class _ParkTransferState extends State<ParkTransfer> {
         if (widget.showSearch)
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: park.spacing.xs),
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(color: park.colors.border),
@@ -231,13 +231,13 @@ class _ParkTransferState extends State<ParkTransfer> {
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: l10n.searchPlaceholder,
-                  hintStyle: TextStyle(fontSize: 13, color: park.colors.textPlaceholder),
+                  hintStyle: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder),
                   border: InputBorder.none,
                   isDense: true,
                   prefixIconConstraints: const BoxConstraints(maxWidth: 24),
                   prefixIcon: Icon(Icons.search, size: 16, color: park.colors.textSecondary),
                 ),
-                style: TextStyle(fontSize: 13, color: park.colors.textPrimary),
+                style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPrimary),
               ),
             ),
           ),
@@ -254,7 +254,7 @@ class _ParkTransferState extends State<ParkTransfer> {
                 ? Center(
                     child: Semantics(
                       label: l10n.noData,
-                      child: Text(l10n.noData, style: TextStyle(fontSize: 13, color: park.colors.textPlaceholder)),
+                      child: Text(l10n.noData, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder)),
                     ),
                   )
                 : Column(
@@ -277,13 +277,13 @@ class _ParkTransferState extends State<ParkTransfer> {
                           },
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm),
                             decoration: BoxDecoration(border: Border(bottom: BorderSide(color: park.colors.borderLight))),
                             child: Row(
                               children: [
                                 Icon(allSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: park.colors.brand),
-                                const SizedBox(width: 6),
-                                Text(l10n.selectAllText, style: TextStyle(fontSize: 13, color: park.colors.textSecondary)),
+                                SizedBox(width: park.spacing.sm),
+                                Text(l10n.selectAllText, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textSecondary)),
                               ],
                             ),
                           ),
@@ -293,7 +293,7 @@ class _ParkTransferState extends State<ParkTransfer> {
                       Expanded(
                         child: ListView.builder(
                           itemCount: items.length,
-                          itemBuilder: (_, i) => _buildItem(items[i], selected, park),
+                          itemBuilder: (_, i) => _buildItem(items[i], selected, park, l10n),
                         ),
                       ),
                     ],
@@ -304,7 +304,7 @@ class _ParkTransferState extends State<ParkTransfer> {
     );
   }
 
-  Widget _buildItem(ParkTransferItem item, Set<String> selected, ParkThemeData park) {
+  Widget _buildItem(ParkTransferItem item, Set<String> selected, ParkThemeData park, ParkLocalizations l10n) {
     final isSel = selected.contains(item.key);
     if (widget.renderItem != null) {
       final custom = widget.renderItem!(item, isSel);
@@ -313,12 +313,12 @@ class _ParkTransferState extends State<ParkTransfer> {
     }
 
     return Semantics(
-      label: '${item.title}${item.subtitle != null ? ', ${item.subtitle}' : ''}${isSel ? ', 已选' : ''}',
+      label: '${item.title}${item.subtitle != null ? ', ${item.subtitle}' : ''}${isSel ? ', ${l10n.selectedLabel}' : ''}',
       child: InkWell(
         onTap: widget.disabled ? null : () => setState(() { isSel ? selected.remove(item.key) : selected.add(item.key); }),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm),
           decoration: BoxDecoration(
             color: isSel ? park.colors.brand.withAlpha(13) : null,
             border: Border(bottom: BorderSide(color: park.colors.borderLight)),
@@ -326,10 +326,10 @@ class _ParkTransferState extends State<ParkTransfer> {
           child: Row(
             children: [
               Icon(isSel ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: isSel ? park.colors.brand : park.colors.textSecondary),
-              const SizedBox(width: 8),
-              Expanded(child: Text(item.title, style: TextStyle(fontSize: 13, color: park.colors.textPrimary))),
+              SizedBox(width: park.spacing.sm),
+              Expanded(child: Text(item.title, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPrimary))),
               if (item.subtitle != null)
-                Text(item.subtitle!, style: TextStyle(fontSize: 11, color: park.colors.textPlaceholder)),
+                Text(item.subtitle!, style: TextStyle(fontSize: park.typography.sizeOverline, color: park.colors.textPlaceholder)),
             ],
           ),
         ),

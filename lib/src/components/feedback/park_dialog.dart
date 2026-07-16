@@ -10,7 +10,7 @@ import '../../l10n/park_localizations.dart';
 class ParkDialog extends StatefulWidget {
   final String title;
   final String? content;
-  final String confirmText;
+  final String? confirmText;
   final String? cancelText;
   final bool barrierDismissible;
   final VoidCallback? onConfirm;
@@ -75,7 +75,7 @@ class ParkDialog extends StatefulWidget {
     super.key,
     required this.title,
     this.content,
-    this.confirmText = '确定',
+    this.confirmText,
     this.cancelText,
     this.barrierDismissible = true,
     this.onConfirm,
@@ -383,7 +383,7 @@ class ParkDialog extends StatefulWidget {
     BuildContext context, {
     required String title,
     String? content,
-    String confirmText = '确定',
+    String? confirmText,
     String? cancelText,
     bool barrierDismissible = true,
     VoidCallback? onConfirm,
@@ -408,6 +408,8 @@ class ParkDialog extends StatefulWidget {
     final completer = Completer<void>();
     final GlobalKey<_ParkDialogOverlayState> dialogStateKey =
         GlobalKey<_ParkDialogOverlayState>();
+    final l10n = ParkLocalizations.of(context);
+    final resolvedConfirmText = confirmText ?? l10n.confirmText;
 
     void remove() {
       if (dismissed) return;
@@ -430,7 +432,7 @@ class ParkDialog extends StatefulWidget {
         key: dialogStateKey,
         title: title,
         content: content,
-        confirmText: confirmText,
+        confirmText: resolvedConfirmText,
         cancelText: cancelText,
         barrierDismissible: barrierDismissible,
         onConfirm: () {
@@ -466,10 +468,11 @@ class ParkDialog extends StatefulWidget {
 class _ParkDialogState extends State<ParkDialog> {
   @override
   Widget build(BuildContext context) {
+    final l10n = ParkLocalizations.of(context);
     return _ParkDialogOverlay(
       title: widget.title,
       content: widget.content,
-      confirmText: widget.confirmText,
+      confirmText: widget.confirmText ?? l10n.confirmText,
       cancelText: widget.cancelText,
       barrierDismissible: widget.barrierDismissible,
       onConfirm: widget.onConfirm,
@@ -619,6 +622,8 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
 
     Widget dialogContent = Semantics(
       container: true,
+      namesRoute: true,
+      label: widget.title,
       child: Material(
       color: Colors.transparent,
       child: Container(

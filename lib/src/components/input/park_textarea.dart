@@ -185,6 +185,16 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant FormField<String> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldTextarea = oldWidget as ParkTextarea;
+    final newTextarea = widget as ParkTextarea;
+    if (oldTextarea.initialValue != newTextarea.initialValue) {
+      _controller.text = newTextarea.initialValue ?? '';
+    }
+  }
+
   void _onFocusChanged() {
     setState(() {});
     final w = widget as ParkTextarea;
@@ -395,6 +405,7 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
     if (textareaWidget.clearable) {
       textareaArea = Semantics(
         textField: true,
+        value: state._controller.text,
         child: Stack(
         children: [
           borderedContainer,
@@ -405,6 +416,7 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
     } else {
       textareaArea = Semantics(
         textField: true,
+        value: state._controller.text,
         child: borderedContainer,
       );
     }

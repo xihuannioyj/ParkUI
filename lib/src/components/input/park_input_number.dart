@@ -147,9 +147,9 @@ class _ParkInputNumberState extends State<ParkInputNumber>
     final spacing = ParkSpacing.defaults();
 
     final btnStyle = ButtonStyle(
-      minimumSize: WidgetStateProperty.all(const Size(36, 36)),
+      minimumSize: WidgetStateProperty.all(Size(park.sizing.buttonHeightMd, park.sizing.buttonHeightMd)),
       padding: WidgetStateProperty.all(EdgeInsets.zero),
-      shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+      shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: park.radius.brSm)),
       backgroundColor: WidgetStateProperty.all(park.colors.surface),
       side: WidgetStateProperty.all(BorderSide(color: park.colors.border)),
     );
@@ -166,7 +166,7 @@ class _ParkInputNumberState extends State<ParkInputNumber>
         Semantics(
           textField: true,
           child: SizedBox(
-            width: 72,
+            width: park.sizing.buttonHeightMd * 2,
             child: TextField(
               controller: _controller,
               enabled: !widget.disabled,
@@ -177,8 +177,8 @@ class _ParkInputNumberState extends State<ParkInputNumber>
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: park.spacing.sm),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: park.colors.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: park.colors.border)),
+                border: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: park.radius.brSm, borderSide: BorderSide(color: park.colors.border)),
               ),
               onSubmitted: (t) {
                 final v = double.tryParse(t);
@@ -216,14 +216,14 @@ class _ParkInputNumberState extends State<ParkInputNumber>
 
   Widget _buildButton(IconData icon, VoidCallback onTap, bool disabled, ButtonStyle style, ParkThemeData park) {
     return SizedBox(
-      width: 36,
-      height: 36,
+      width: park.sizing.buttonHeightMd,
+      height: park.sizing.buttonHeightMd,
       child: Material(
         color: park.colors.surface,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: park.radius.brSm,
         child: InkWell(
           onTap: disabled ? null : onTap,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: park.radius.brSm,
           child: Center(
             child: Icon(icon, size: 16, color: disabled ? park.colors.textDisabled : park.colors.textPrimary),
           ),

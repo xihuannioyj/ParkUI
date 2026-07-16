@@ -108,7 +108,7 @@ class ParkInput extends FormField<String> {
     this.prefixText,
     this.suffixText,
     this.borderless = false,
-    @Deprecated('使用 readOnly 代替')
+    @Deprecated('Use readOnly instead')
     this.readonly = false,
     this.contentPadding,
     this.style,
@@ -230,7 +230,7 @@ class ParkInput extends FormField<String> {
   /// 是否只读（readOnly 的别名，兼容 AntD 命名）。
   ///
   /// 已废弃：请使用 [readOnly]。
-  @Deprecated('使用 readOnly 代替')
+  @Deprecated('Use readOnly instead')
   final bool readonly;
 
   /// 输入内容内边距。不设时根据 [size] 自动计算。
@@ -255,8 +255,8 @@ class ParkInput extends FormField<String> {
 /// - 传入 `true`：渲染默认「搜索」按钮（[ParkButtonVariant.primary] + 搜索图标）。
 /// - 传入 [ParkInputSearchButtonConfig]：自定义文案 / 图标 / 变体 / loading / 回调。
 class ParkInputSearchButtonConfig {
-  /// 按钮文案，默认 '搜索'。
-  final String text;
+  /// 按钮文案，默认 null（运行时回退到 l10n.searchText）。
+  final String? text;
 
   /// 按钮图标，默认 [Icons.search]。
   final IconData? icon;
@@ -271,7 +271,7 @@ class ParkInputSearchButtonConfig {
   final ValueChanged<String>? onSearch;
 
   const ParkInputSearchButtonConfig({
-    this.text = '搜索',
+    this.text = null,
     this.icon = Icons.search,
     this.loading = false,
     this.variant = ParkButtonVariant.primary,
@@ -506,6 +506,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
 
   @override
   Widget build(BuildContext context) {
+    if (!mounted) return const SizedBox.shrink();
     final state = widget.state;
     final park = widget.park;
     final inputWidget = state.widget as ParkInput;
@@ -902,7 +903,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     final dynamic cfg = inputWidget.searchButton;
     final bool isCfg = cfg is ParkInputSearchButtonConfig;
     final l10n = ParkLocalizations.of(widget.state.context);
-    final String text = isCfg ? cfg.text : l10n.searchText;
+    final String text = (isCfg && cfg.text != null) ? cfg.text! : l10n.searchText;
     final IconData? icon = isCfg ? (cfg).icon : Icons.search;
     final bool loading = isCfg ? (cfg).loading : false;
     final ParkButtonVariant variant =

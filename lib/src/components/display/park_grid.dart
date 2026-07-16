@@ -297,10 +297,13 @@ class ParkGrid extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              item.icon,
-              size: 24,
-              color: parkTheme?.colors.textPrimary ?? Theme.of(context).iconTheme.color,
+            Semantics(
+              label: item.label,
+              child: Icon(
+                item.icon,
+                size: 24,
+                color: parkTheme?.colors.textPrimary ?? Theme.of(context).iconTheme.color,
+              ),
             ),
             if (item.label != null) ...[
               const SizedBox(height: 4),

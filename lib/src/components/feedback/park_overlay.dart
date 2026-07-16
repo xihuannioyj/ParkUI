@@ -98,45 +98,56 @@ class ParkOverlay extends StatefulWidget {
     double? blur,
     bool lockScroll = true,
   }) {
-    final OverlayState overlay = Overlay.of(context, rootOverlay: true);
-    late OverlayEntry entry;
     final Completer<void> completer = Completer<void>();
     bool dismissed = false;
     Timer? autoCloseTimer;
+    late OverlayEntry entry;
+    final popupKey = GlobalKey<_ParkOverlayPopupState>();
 
     void dismiss() {
       autoCloseTimer?.cancel();
       autoCloseTimer = null;
       if (dismissed) return;
       dismissed = true;
-      if (entry.mounted) {
-        entry.remove();
+      final state = popupKey.currentState;
+      if (state != null) {
+        state.reverseAndDismiss(() {
+          if (entry.mounted) entry.remove();
+          if (!completer.isCompleted) completer.complete();
+        });
+      } else {
+        if (entry.mounted) entry.remove();
+        if (!completer.isCompleted) completer.complete();
       }
-      if (!completer.isCompleted) completer.complete();
     }
 
-    entry = OverlayEntry(
-      builder: (BuildContext ctx) {
-        return _ParkOverlayPopup(
-          barrierColor: color ?? barrierColor,
-          blocking: blocking,
-          onTap: () {
-            onTap?.call();
-            dismiss();
-          },
-          onDismiss: dismiss,
-          blur: blur,
-          lockScroll: lockScroll,
-          child: child,
-        );
-      },
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final OverlayState overlay = Overlay.of(context, rootOverlay: true);
 
-    overlay.insert(entry);
+      entry = OverlayEntry(
+        builder: (BuildContext ctx) {
+          return _ParkOverlayPopup(
+            key: popupKey,
+            barrierColor: color ?? barrierColor,
+            blocking: blocking,
+            onTap: () {
+              onTap?.call();
+              dismiss();
+            },
+            onDismiss: dismiss,
+            blur: blur,
+            lockScroll: lockScroll,
+            child: child,
+          );
+        },
+      );
 
-    if (autoClose != null) {
-      autoCloseTimer = Timer(autoClose, dismiss);
-    }
+      overlay.insert(entry);
+
+      if (autoClose != null) {
+        autoCloseTimer = Timer(autoClose, dismiss);
+      }
+    });
 
     return ParkOverlayHandle._(dismiss, completer.future);
   }
@@ -270,6 +281,7 @@ class _ParkOverlayPopup extends StatefulWidget {
   final bool lockScroll;
 
   const _ParkOverlayPopup({
+    super.key,
     required this.child,
     this.barrierColor,
     this.blocking = true,
@@ -307,6 +319,15 @@ class _ParkOverlayPopupState extends State<_ParkOverlayPopup>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Reverses the entrance animation, then calls [onComplete].
+  void reverseAndDismiss(VoidCallback onComplete) {
+    if (_controller.isAnimating || _controller.isCompleted) {
+      _controller.reverse().then((_) => onComplete());
+    } else {
+      onComplete();
+    }
   }
 
   @override

@@ -89,7 +89,7 @@ Park UI 的设计语言受 **Stripe** 启发，强调：
 | 7 | `#5B54E8` | `#7A73FF` | hover 加深 |
 | 8 | `#5147CC` | `#8A84FF` | active 加深 |
 | 9 | `#4238A8` | `#A8A3FF` | 强调文本 |
-| 10 (最深) | `#312A7A` | `#C4BFFE` | 最深强调 |
+| 10 (最深) | `#312A7A` | `#E0DDFF` | 最深强调 |
 
 > **🔍 可访问性**: 品牌主色 `#635BFF` 在白底上对比度 5.4:1，符合 WCAG AA 标准 (≥4.5:1)。在深色背景上对比度 4.8:1。
 
@@ -110,8 +110,8 @@ Park UI 的设计语言受 **Stripe** 启发，强调：
 |------|------|------|-----------|------|
 | `textPrimary` | `#0A2540` | `#FFFFFF` | 13.5:1 | 主要正文、标题 |
 | `textSecondary` | `#425466` | `#ADB8C9` | 7.0:1 | 次要文字、说明 |
-| `textPlaceholder` | `#8898AA` | `#7A8AA0` | 3.9:1 | 占位文字（仅装饰） |
-| `textDisabled` | `#8792A2` | `#5E6B7E` | 4.1:1 | 禁用状态文字 |
+| `textPlaceholder` | `#6C7E90` | `#7A8AA0` | 4.7:1 | 占位文字 |
+| `textDisabled` | `#748492` | `#5E6B7E` | 4.5:1 | 禁用状态文字 |
 | `textOnBrand` | `#FFFFFF` | `#FFFFFF` | — | 品牌色背景上的文字 |
 
 ### 2.4 中性色 — 边框 & 分割线
@@ -562,7 +562,7 @@ Container(
 | brand (#635BFF) 在白底上 | **5.4:1** | ✅ AA |
 | error (#DF1B41) 在白底上 | **4.8:1** | ✅ AA |
 | success (#1BB978) 在白底上 | 3.5:1 | ⚠️ 仅大文本/图标 |
-| textPlaceholder (#8898AA) 在白底上 | 3.9:1 | ❌ 仅装饰用途 |
+| textPlaceholder (#6C7E90) 在白底上 | 4.7:1 | ✅ AA |
 
 ### 10.2 触摸目标
 
@@ -647,6 +647,8 @@ MaterialApp(
 | 🎬 动效 | `ParkMotion` | `src/theme/tokens/park_motion.dart` |
 | 📦 主题数据 | `ParkThemeData` | `src/theme/park_theme_data.dart` |
 | 🔧 主题工具 | `ParkTheme` | `src/theme/park_theme.dart` |
+| 🎯 尺寸 | `ParkSizing` | `src/theme/tokens/park_sizing.dart` |
+| 🖼️ 图标主题 | `ParkIconThemeData` | `src/theme/park_icon_theme_data.dart` |
 
 ### 12.2 主题消费路径
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Park UI 间距令牌
 ///
 /// 基于 4px 基准的间距体系，覆盖从微调到页面级留白的所有场景。
-/// 所有值都是 4 的倍数，确保像素对齐。
+/// 大部分值是 4 的倍数（xxs=2 除外），确保像素对齐。
 @immutable
 class ParkSpacing {
   /// 2px — 极小间距（图标与文字之间等）

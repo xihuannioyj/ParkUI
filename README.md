@@ -67,7 +67,7 @@ Park UI 的所有视觉风格由 Design Token 驱动。`ParkThemeData` 是 Flutt
 | `spacing` | `ParkSpacing` | 间距令牌（xxs/xs/sm/md/base/lg/xl/xxl/page） |
 | `radius` | `ParkRadius` | 圆角令牌（xs/sm/md/lg/xl/full） |
 | `typography` | `ParkTypography` | 排版令牌（字体族/字号/字重） |
-| `shadows` | `ParkShadows` | 阴影令牌（xs/sm/md/lg/xl） |
+| `shadows` | `ParkShadows` | 阴影令牌（sm/md/lg） |
 | `iconTheme` | `ParkIconThemeData` | 图标主题（默认色、尺寸覆盖） |
 | `motion` | `ParkMotion` | 动画令牌（standard/quick/enterEasing/defaultEasing） |
 
@@ -80,8 +80,8 @@ ParkThemeData(
     brand: Color(0xFF635BFF),        // 品牌色（按钮/链接/选中态）
     textPrimary: Color(0xFF0A2540),   // 主文字
     textSecondary: Color(0xFF425466), // 次要文字
-    textPlaceholder: Color(0xFF8898AA), // 占位文字
-    textDisabled: Color(0xFF8792A2),  // 禁用文字
+    textPlaceholder: Color(0xFF6C7E90), // 占位文字
+    textDisabled: Color(0xFF748492),  // 禁用文字
     textOnBrand: Color(0xFFFFFFFF),   // 品牌色上的文字
     surface: Color(0xFFFFFFFF),       // 表面色（卡片/面板）
     background: Color(0xFFF6F9FC),    // 底色
@@ -98,7 +98,7 @@ ParkThemeData(
     xs: 4, sm: 8, md: 12, lg: 16, xl: 20, full: 9999,
   ),
   spacing: ParkSpacing(
-    xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, xxl: 32, page: 48,
+    xxs: 2, xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, xxl: 32, page: 48,
   ),
   typography: ParkTypography(
     fontFamily: 'Inter',
@@ -156,7 +156,7 @@ MaterialApp(
 MaterialApp(
   theme: ThemeData(
     extensions: [ParkThemeData.light().copyWith(
-      brand: Color(0xFF00B96B),           // 只改品牌色
+      colors: ParkColors.light().copyWith(brand: Color(0xFF00B96B)),  // 只改品牌色
       radius: ParkRadius(sm: 6, md: 10),  // 只改圆角
     )],
   ),
@@ -183,10 +183,10 @@ Container(
 
 | 令牌 | 浅色 | 深色 |
 |------|------|------|
-| `colors.surface` | `#FFFFFF` | `#1A202C` |
-| `colors.background` | `#F6F9FC` | `#0D1117` |
-| `colors.textPrimary` | `#0A2540` | `#E2E8F0` |
-| `colors.border` | `#E3E8EE` | `#2D3748` |
+| `colors.surface` | `#FFFFFF` | `#0F2438` |
+| `colors.background` | `#F6F9FC` | `#0A1B2E` |
+| `colors.textPrimary` | `#0A2540` | `#FFFFFF` |
+| `colors.border` | `#E3E8EE` | `#1FFFFFFF` (白12%) |
 
 ---
 
@@ -210,37 +210,66 @@ ParkLocalizations.of(context)  ← 全局注入（通过 ParkLocalizationsWidget
 
 ## API 参考
 
-### 抽象接口方法
+### 抽象接口
+
+`ParkLocalizations` 抽象接口当前包含 **~165 个 getter** + **~34 个带参方法**，覆盖按钮文字、占位符、状态提示、分页、搜索、星期、日历、上传、校验等场景。
+
+<details>
+<summary>完整 getter 列表（~165 个）</summary>
+
+| 分类 | Getter |
+|------|--------|
+| 按钮 (10) | `confirmText`, `cancelText`, `clearText`, `searchText`, `submitText`, `saveText`, `deleteText`, `closeText`, `doneText`, `resetText` |
+| 占位 (3) | `selectPlaceholder`, `inputPlaceholder`, `searchPlaceholder` |
+| 状态 (10) | `noData`, `noSearchResults`, `noPermission`, `loading`, `loadFailed`, `retry`, `success`, `warning`, `error`, `confirmDelete` |
+| 步骤 (2) | `previousStep`, `nextStep` |
+| 搜索 (3) | `searchHistory`, `matchedHistory`, `noSearchHistory` |
+| 其他 (4) | `noMore`, `pullToRefresh`, `releaseToRefresh`, `refreshing` |
+| 分页 (4) | `previousPage`, `nextPage`, `jumpTo`, `page` |
+| 通用 (5) | `searchOptionsHint`, `searchingText`, `defaultGroupLabel`, `gotItText` |
+| 分组3 (16) | `noOptions`, `noMatchingOptions`, `expandText`, `collapseText`, `selectStartDate`, `selectEndDate`, `timeFilter`, `resetFilter`, `startTime`, `endTime`, `pleaseSelectFirst`, `imageLoadFailed`, `loadedAllData`, `obscureTextDisplayed`, `obscureTextHidden`, `requiredHint` |
+| 辅助 (2) | `decreaseValue`, `increaseValue` |
+| 星期 (7) | `weekdaySun` ~ `weekdaySat` |
+| 日历/范围 (3) | `rangeStartSemantic`, `rangeEndSemantic`, `rangeMiddleSemantic` |
+| 复选/表单/搜索/导航 (5) | `selectAllText`, `formLoadingText`, `searchHintText`, `backTop`, `breadcrumbLabel`, `breadcrumbExpand` |
+| 错误页/组件 (8) | `forbiddenTitle`, `forbiddenDesc`, `notFoundTitle`, `notFoundDesc`, `serverErrorTitle`, `serverErrorDesc`, `sliderValueLabel`, `splitterLabel` |
+| 折叠 (4) | `collapseFirstHorizontal`, `collapseSecondHorizontal`, `collapseFirstVertical`, `collapseSecondVertical` |
+| 上传 (9) | `addFileText`, `uploadFailed`, `fileTypeNotSupported`, `imageOnlyUpload`, `imageOnlyConstraint`, `deleteFileLabel`, `dragUploadAreaLabel` |
+| B62 文本/时间 (4) | `copiedText`, `selectTimeText`, `chooseTimeText`, `currentSelectionText` |
+| B62 日期快捷 (4) | `shortcutToday`, `shortcutLast7Days`, `shortcutLast30Days`, `shortcutThisMonth` |
+| B62 校验 (6) | `validationFailed`, `invalidNumber`, `invalidInteger`, `invalidEmail`, `invalidUrl`, `invalidPhone` |
+
+</details>
+
+<details>
+<summary>完整方法列表（~34 个）</summary>
+
+| 分类 | 方法签名 |
+|------|----------|
+| 分页 (5) | `totalInfo(int)`, `pageSizeOption(int)`, `paginationSemantics(int, int)`, `pageButtonSemantics(int)`, `pageSizeSemantics(int)` |
+| 通用 (1) | `disabledLabel(String)` |
+| 搜索/选项 (1) | `createOption(String)` |
+| 日历 (1) | `formatYearMonth(int, int)` |
+| 级联 (1) | `selectedCount(int)` |
+| 倒计时 (1) | `countdownLabel(String)` |
+| 面包屑 (1) | `breadcrumbHasSubmenu(String)` |
+| 上传 (3) | `fileSizeExceedsText(double)`, `supportedFormatsText(List<String>)`, `singleFileLimitText(double)` |
+| B62 日历 (1) | `dateSemanticFormat(int, int, int)` |
+| B62 校验 (8) | `lengthMustBe(int)`, `cannotBeLessThan(num)`, `cannotBeGreaterThan(num)`, `lengthCannotBeLessThan(num)`, `lengthCannotBeGreaterThan(num)` |
+
+</details>
 
 ```dart
 abstract class ParkLocalizations {
-  String get confirmText;      // 确定
-  String get cancelText;       // 取消
-  String get clearText;        // 清空
-  String get searchText;       // 搜索
-  String get submitText;       // 提交
-  String get saveText;         // 保存
-  String get deleteText;       // 删除
-  String get closeText;        // 关闭
-  String get doneText;         // 完成
-  String get resetText;        // 重置
-  String get selectPlaceholder; // 请选择
-  String get inputPlaceholder;  // 请输入
-  String get searchPlaceholder; // 搜索
-  String get noData;           // 暂无数据
-  String get loading;          // 加载中...
-  String get loadFailed;       // 加载失败
-  String get retry;            // 重试
-  String get success;          // 成功
-  String get warning;          // 警告
-  String get error;            // 错误
-  String get previousStep;     // 上一步
-  String get nextStep;         // 下一步
-  String get noMore;           // 没有更多
-  String get pullToRefresh;    // 下拉刷新
-  String get releaseToRefresh; // 释放刷新
-  String get refreshing;       // 刷新中...
-  String get confirmDelete;    // 确认删除？
+  // ── 按钮 ──
+  String get confirmText;
+  String get cancelText;
+  String get clearText;
+  // ... 共 ~165 个 getter（详见上方完整列表）
+  
+  // ── 带参方法 ──
+  String totalInfo(int total);
+  // ... 共 ~34 个方法（详见上方完整列表）
 }
 ```
 
@@ -305,7 +334,7 @@ ParkDialog(
 class ParkLocalizationsJa implements ParkLocalizations {
   @override String get confirmText => '確認';
   @override String get cancelText => 'キャンセル';
-  // ... 实现全部 31 个 getter
+  // ... 实现全部 ~165 个 getter + ~34 个方法
 }
 
 MaterialApp(
@@ -508,7 +537,7 @@ class HomePage extends StatelessWidget {
 
 | 组件 | 说明 | 关键属性 |
 |------|------|---------|
-| `ParkButton` | 按钮 — 6 种变体、3 种尺寸、loading/disabled、异步 loading、防抖、角标 | `variant`, `size`, `loading`, `asyncOnPressed`, `badge` |
+| `ParkButton` | 按钮 — 8 种变体、3 种尺寸、loading/disabled、异步 loading、防抖、角标 | `variant`, `size`, `loading`, `asyncOnPressed`, `badge` |
 | `ParkButtonGroup` | 按钮组 — 贴合/均分两种模式 | `direction`, `mode` |
 | `ParkText` | 排版 — 预设 `bodySmall` / `body` / `h3` / `h2` / `h1` | `preset`, `maxLines` |
 | `ParkIcon` | 图标容器 — 统一尺寸/颜色 | `size`, `color` |

@@ -41,6 +41,10 @@ class ParkFormReactionEngine {
 
     // 快照原始值，供 _resolveActionValue 读取 $form.xxx 引用（B65-Fix1）。
     // 避免级联过程中 nextValues 的中间态污染引用解析。
+    //
+    // NOTE: $form.xxx references resolve against the PRE-CASCADE snapshot,
+    // not intermediate cascade values. This prevents oscillation but means
+    // later reactions in a cascade see stale values from earlier reactions.
     final Map<String, dynamic> snapshotValues =
         Map<String, dynamic>.from(values);
 

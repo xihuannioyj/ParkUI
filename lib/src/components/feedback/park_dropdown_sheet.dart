@@ -103,16 +103,16 @@ class ParkDropdownSheet extends StatefulWidget {
   final int gridColumns;
 
   /// 确认按钮文字
-  final String confirmText;
+  final String? confirmText;
 
   /// 取消按钮文字
-  final String cancelText;
+  final String? cancelText;
 
   /// 是否显示搜索框（仅 [items] 模式）
   final bool searchable;
 
   /// 搜索占位文字
-  final String searchHintText;
+  final String? searchHintText;
 
   /// 自定义选项构建器（仅 [items] 模式）
   final Widget Function(ParkDropdownSheetItem item, bool isSelected)?
@@ -144,10 +144,10 @@ class ParkDropdownSheet extends StatefulWidget {
     this.height,
     this.layout = ParkDropdownSheetLayout.list,
     this.gridColumns = 3,
-    this.confirmText = '确定',
-    this.cancelText = '取消',
+    this.confirmText,
+    this.cancelText,
     this.searchable = false,
-    this.searchHintText = '搜索选项',
+    this.searchHintText,
     this.itemBuilder,
     this.bindKey,
     this.bindingService,
@@ -167,10 +167,10 @@ class ParkDropdownSheet extends StatefulWidget {
     ParkDropdownSheetLayout layout = ParkDropdownSheetLayout.list,
     int gridColumns = 3,
     double? height,
-    String confirmText = '确定',
-    String cancelText = '取消',
+    String? confirmText,
+    String? cancelText,
     bool searchable = false,
-    String searchHintText = '搜索选项',
+    String? searchHintText,
     Widget Function(ParkDropdownSheetItem item, bool isSelected)? itemBuilder,
     ValueChanged<Set<String>>? onConfirm,
     String? bindKey,
@@ -209,8 +209,8 @@ class ParkDropdownSheet extends StatefulWidget {
     String? title,
     required Widget child,
     double? height,
-    String confirmText = '确定',
-    String cancelText = '取消',
+    String? confirmText,
+    String? cancelText,
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
   }) {
@@ -318,10 +318,10 @@ class _ParkDropdownSheetContent extends StatefulWidget {
   final ParkDropdownSheetLayout layout;
   final int gridColumns;
   final double? height;
-  final String confirmText;
-  final String cancelText;
+  final String? confirmText;
+  final String? cancelText;
   final bool searchable;
-  final String searchHintText;
+  final String? searchHintText;
   final Widget Function(ParkDropdownSheetItem item, bool isSelected)?
       itemBuilder;
   final ValueChanged<Set<String>>? onConfirm;
@@ -340,10 +340,10 @@ class _ParkDropdownSheetContent extends StatefulWidget {
     this.layout = ParkDropdownSheetLayout.list,
     this.gridColumns = 3,
     this.height,
-    this.confirmText = '确定',
-    this.cancelText = '取消',
+    this.confirmText,
+    this.cancelText,
     this.searchable = false,
-    this.searchHintText = '搜索选项',
+    this.searchHintText,
     this.itemBuilder,
     this.onConfirm,
     this.onCustomConfirm,
@@ -471,7 +471,7 @@ class _ParkDropdownSheetContentState
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              widget.cancelText,
+              widget.cancelText ?? ParkLocalizations.of(context).cancelText,
               style: park.typography.body.copyWith(
                 fontSize: park.typography.sizeBody,
                 color: park.colors.textSecondary,
@@ -508,7 +508,7 @@ class _ParkDropdownSheetContentState
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              widget.confirmText,
+              widget.confirmText ?? ParkLocalizations.of(context).confirmText,
               style: park.typography.body.copyWith(
                 fontSize: park.typography.sizeBody,
                 fontWeight: park.typography.weightBold,
@@ -532,7 +532,7 @@ class _ParkDropdownSheetContentState
         child: TextField(
           onChanged: (v) => setState(() => _searchQuery = v),
           decoration: InputDecoration(
-            hintText: widget.searchHintText,
+            hintText: widget.searchHintText ?? ParkLocalizations.of(context).searchOptionsHint,
             hintStyle: park.typography.body.copyWith(
               color: park.colors.textPlaceholder,
             ),

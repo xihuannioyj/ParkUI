@@ -226,25 +226,30 @@ class _ParkRateBuilder extends StatelessWidget {
       return item;
     });
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < stars.length; i++) ...[
-          if (i > 0) SizedBox(width: effectiveGap),
-          stars[i],
-        ],
-        if (widget.showText) ...[
-          SizedBox(width: park.spacing.sm),
-          Text(
-            widget.textBuilder?.call(currentValue, widget.count) ??
-                '${currentValue % 1 == 0 ? currentValue.toInt() : currentValue} / ${widget.count}',
-            style: park.typography.bodySmall.copyWith(
-              color: park.colors.textPrimary,
-              fontWeight: park.typography.weightMedium,
+    return Semantics(
+      slider: true,
+      value: currentValue.toStringAsFixed(widget.allowHalf ? 1 : 0),
+      enabled: isInteractive,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < stars.length; i++) ...[
+            if (i > 0) SizedBox(width: effectiveGap),
+            stars[i],
+          ],
+          if (widget.showText) ...[
+            SizedBox(width: park.spacing.sm),
+            Text(
+              widget.textBuilder?.call(currentValue, widget.count) ??
+                  '${currentValue % 1 == 0 ? currentValue.toInt() : currentValue} / ${widget.count}',
+              style: park.typography.bodySmall.copyWith(
+                color: park.colors.textPrimary,
+                fontWeight: park.typography.weightMedium,
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

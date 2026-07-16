@@ -292,7 +292,7 @@ class _ParkRefreshState extends State<ParkRefresh>
       case ParkRefreshState.idle:
         return l10n.pullToRefresh;
       case ParkRefreshState.pulling:
-        return 'Pulling';
+        return l10n.pullingStatus;
       case ParkRefreshState.armed:
         return l10n.releaseToRefresh;
       case ParkRefreshState.refreshing:
