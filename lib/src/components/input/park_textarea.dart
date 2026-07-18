@@ -19,7 +19,7 @@ import 'park_input.dart';
 ///   onChanged: (v) => print(v),
 /// )
 /// ```
-class ParkTextarea extends FormField<String> {
+class ParkTextarea extends FormField<String> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 

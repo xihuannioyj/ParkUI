@@ -1,18 +1,45 @@
 # Park UI
 
-**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 100+ 开箱即用的高质量组件。
+**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 105 个开箱即用的高质量组件。
 
 ## 特性
 
 - 📐 **完整 Design System** — 详见 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)，包含完整色彩体系、字体层级、间距规则、阴影/圆角体系和 10+ 基础组件设计规范
-- 🧩 **100+ 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
+- 🧩 **105 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
 - 🎨 **Stripe 设计语言** — 品牌紫 blurple `#635BFF`、文字 navy `#0A2540`、浅灰底色 `#F6F9FC`
 - 🌓 **浅色/深色主题** — 全局 `ParkThemeData` 驱动，一键切换明暗
-- 🌐 **国际化友好** — 全局 `ParkLocalizations` 系统 + 组件级参数覆盖
+- 🌐 **国际化友好** — 全局 `ParkLocalizations` 系统 + 组件级参数覆盖，支持 6 种语言（zh/en/ja/ko/es/fr）
 - 🎯 **最小三方依赖** — 仅依赖 `equatable`、`qr_flutter`、`url_launcher`、`file_picker`，不引入重状态管理库
 - 🔗 **双向绑定引擎** — `ParkBindingService` + `ParkBindable<T>` 实现响应式数据绑定
 - 📱 **响应式布局** — 支持移动端、桌面端、Web 端
 - 🔧 **高度可定制** — Design Token 全覆盖（颜色、间距、圆角、排版、阴影、动画），所有组件使用统一令牌系统
+- 📋 **FormGroup 完整 API** — `enable` / `disable` / `markDirty` / `getEnabledValues`，支持表单组控制
+- 🌳 **Tree checkStrictly** — 父子节点选中独立控制
+- 🔗 **Form 声明式字段联动** — `dependencies` + `visibleWhen` / `disableWhen` 表达式引擎，零代码声明式条件控制
+- 🔍 **Select 远程搜索** — `onSearchAsync` + debounce + 竞态保护，异步搜索开箱即用
+- 📊 **Table 三件套** — 虚拟滚动 + 列筛选 + 树形数据，大数据量场景全覆盖
+- 🧪 **1395 测试** — 全量测试通过，覆盖表单引擎、组件、联动、格式化等核心模块
+- 🎬 **Golden Test 基础设施** — 组件截图对比测试支持
+- 📦 **Spec 文件已迁移** — 14 个 spec 文件统一迁移到 park_ui 包
+- 🎭 **105+ 个 Demo** — 组件示例覆盖率 100%+（105/105 组件）
+
+## 架构概览
+
+Park UI 采用双层表单架构：
+
+1. **Schema 层** (`ParkFormBuilder.fromSchema`) — JSON Schema 驱动，零代码声明式表单
+2. **FormGroup 层** (`ParkFormGroup` / `ParkAbstractControl`) — Angular 风格响应式表单，支持 enable/disable/markDirty/getEnabledValues
+
+核心引擎：
+
+| 引擎 | 职责 |
+|------|------|
+| `FormEngine` | 表单渲染与校验 |
+| `FormReactionEngine` | 字段联动与条件控制 |
+| `FormFormatterEngine` | 数值/日期/货币格式化 |
+| `FormFieldExpressionEvaluator` | 表达式求值（visibleWhen / disableWhen） |
+
+独立发布：park_ui 包可独立于应用层使用，spec 文件已内聚。
 
 ## 安装
 
@@ -201,6 +228,10 @@ ParkLocalizations.of(context)  ← 全局注入（通过 ParkLocalizationsWidget
          │
          ├── ParkLocalizationsZh（中文默认）
          ├── ParkLocalizationsEn（英文）
+         ├── ParkLocalizationsJa（日文）
+         ├── ParkLocalizationsKo（韩文）
+         ├── ParkLocalizationsEs（西班牙文）
+         ├── ParkLocalizationsFr（法文）
          └── 自定义实现
          
 组件构造函数参数  ← 局部覆盖（优先级高于全局注入）
@@ -279,6 +310,10 @@ abstract class ParkLocalizations {
 |------|------|
 | `ParkLocalizationsZh` | 中文（默认） |
 | `ParkLocalizationsEn` | 英文 |
+| `ParkLocalizationsJa` | 日文 |
+| `ParkLocalizationsKo` | 韩文 |
+| `ParkLocalizationsEs` | 西班牙文 |
+| `ParkLocalizationsFr` | 法文 |
 
 ### 注入 Widget
 
@@ -553,7 +588,7 @@ class HomePage extends StatelessWidget {
 |------|------|---------|
 | `ParkCard` | 卡片容器 — 标题/描述/图标指示条/loading/可折叠 | `title`, `description`, `icon`, `loading`, `collapsible` |
 | `ParkTag` | 标签 — 5 色主题、icon、checkable、closable、4 种变体 | `theme`, `icon`, `checkable`, `closable`, `shape` |
-| `ParkBadge` | 徽标 — 数字/红点/状态点/自定义（status+color 优先级：`color` > `status` > 默认红） | `count`, `dot`, `status`, `color`, `maxCount`, `standaloneText`, `overflowCount` |
+| `ParkBadge` | 徽标 — 数字/红点/状态点/自定义（status+color 优先级：`color` > `status` > 默认红） | `count`, `dot`, `status`, `color`, `maxCount`, `standaloneText` |
 | `ParkAvatar` | 头像 — 图片/文字/图标，支持在线状态点和角标 | `src`, `name`, `size`, `status`, `statusDotSize`, `badge` |
 | `ParkAvatarGroup` | 头像组 — 堆叠展示多人/在线用户，超出显示 +N | `children`, `maxCount`, `size` |
 | `ParkCell` | 列表项 — 左图标+标题+说明+右箭头 | `title`, `leftIcon`, `note`, `onPressed` |
@@ -616,7 +651,7 @@ class HomePage extends StatelessWidget {
 | `ParkDynamicForm` | 动态表单 — JSON Schema 驱动/引擎层校验/联动/自动生成 | `schema`, `bindingService`, `onSubmit` |
 | `ParkBinding` | 双向绑定系统 — 响应式数据绑定/表单关联/路径解析 | `bindKey`, `bindingService` |
 | `ParkInputNumber` | 数字输入框 | `value`, `min`, `max`, `step`, `bindKey`, `bindingService` |
-| `ParkUpload` | 上传 — 支持自动文件选择、拖拽上传、文件类型/大小校验、自定义上传请求、多选 | `files`, `maxCount`, `onAdd`, `onChanged`, `accept`, `multiple`, `validateFile`, `customRequest`, `dragEnabled`, `onFileDrop`, `mode`(imageGrid/fileList/mixed), `listType`(text/picture/pictureCard), `maxSizeMB`, `imageOnly`, `beforeAddValidator`, `removable`, `previewable` |
+| `ParkUpload` | 上传 — 支持自动文件选择、拖拽上传、文件类型/大小校验、自定义上传请求、多选 | `files`, `maxCount`, `onAdd`, `onChanged`, `accept`, `multiple`, `validateFile`, `customRequest`, `dragEnabled`, `onFileDrop`, `mode`(imageGrid/fileList/mixed), `listType`(text/picture/pictureCard), `maxSizeMB`, `imageOnly`, `beforeAddValidator`, `removable`, `previewable`, `chunked`, `chunkSize`, `onChunkUpload`, `croppable`, `cropAspectRatio` |
 
 ## 反馈（Feedback）
 

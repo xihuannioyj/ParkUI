@@ -144,7 +144,7 @@ final ParkComponentSpec _parkPicker = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。 /'
           ' Binding service; auto-resolved from ParkBindingFormScope inside a form.',
     ),
@@ -357,14 +357,14 @@ ParkPicker(
 )''',
       builder: (context) => _PickerBindingDemo(),
     ),
-    // ── ParkPicker: ParkDynamicForm 示例 ──
+    // ── ParkPicker: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用。'
-          ' / ParkDynamicForm schema usage.',
+          '在 ParkForm 中以 schema 配置使用。'
+          ' / ParkForm schema usage.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schemas: [
     ParkFormFieldSchema(
       fieldId: 'f_city',
@@ -383,7 +383,7 @@ ParkDynamicForm(
   onSubmit: (values) => print(values),
 )
 ''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: const ParkFormSchema(
           formKey: 'park_picker_dynamic_form_demo',
           fields: [
@@ -691,9 +691,21 @@ final ParkComponentSpec _parkCascader = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。 /'
           ' Binding service; auto-resolved from ParkBindingFormScope inside a form.',
+    ),
+    ParkPropertyDef(
+      name: 'showSearch',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否在弹出面板顶部显示搜索输入框，实时过滤级联选项（按 label 匹配）。 / Show search input in panel',
+    ),
+    ParkPropertyDef(
+      name: 'multiple',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否启用多选模式。为 true 时每个选项前显示复选框，父节点选中联动子节点。 / Enable multi-select mode',
     ),
   ],
   events: const <ParkEventDef>[
@@ -881,14 +893,14 @@ Form(
 ''',
       builder: (context) => _CascaderSavedDemo(),
     ),
-    // ── ParkCascader: ParkDynamicForm 示例 ──
+    // ── ParkCascader: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用 cascader 字段类型。'
-          ' / ParkDynamicForm fieldType=cascader demo.',
+          '在 ParkForm 中以 schema 配置使用 cascader 字段类型。'
+          ' / ParkForm fieldType=cascader demo.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'cascader_demo',
     fields: [
@@ -915,7 +927,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'cascader_demo',
             fields: <ParkFormFieldSchema>[
@@ -1254,8 +1266,38 @@ final ParkComponentSpec _parkTreeSelect = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
+    ),
+    ParkPropertyDef(
+      name: 'treeCheckable',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '启用树复选框模式。为 true 时每个树节点前显示复选框，支持多选、父子联动半选。',
+    ),
+    ParkPropertyDef(
+      name: 'showSearch',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否在弹出面板顶部显示搜索输入框，输入实时过滤树节点。',
+    ),
+    ParkPropertyDef(
+      name: 'checkedKeys',
+      type: 'List<String>?',
+      defaultVal: 'null',
+      description: '受控选中节点 key 列表（配合 treeCheckable 使用）。非 null 时组件使用此值作为受控选中项。',
+    ),
+    ParkPropertyDef(
+      name: 'defaultCheckedKeys',
+      type: 'List<String>?',
+      defaultVal: 'null',
+      description: '非受控初始选中 keys（配合 treeCheckable 使用）。仅在初始化时生效。',
+    ),
+    ParkPropertyDef(
+      name: 'checkStrictly',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '父子节点选中是否严格独立。为 true 时子节点选中不影响父节点状态。',
     ),
   ],
   events: const <ParkEventDef>[
@@ -1263,6 +1305,11 @@ final ParkComponentSpec _parkTreeSelect = ParkComponentSpec(
       name: 'onChanged',
       signature: 'ValueChanged<Set<String>>',
       description: '选中状态变更时触发，参数为更新后的 key 集合。',
+    ),
+    ParkEventDef(
+      name: 'onCheck',
+      signature: 'void Function(List<String>, String?)?',
+      description: '选中项变化回调（配合 treeCheckable 使用）。checkedKeys 为当前所有选中叶子节点的 key 列表，halfCheckedKey 为当前处于半选状态的父节点 key。',
     ),
   ],
   methods: const <ParkMethodDef>[],
@@ -1433,14 +1480,14 @@ ParkTreeSelect(
 )''',
       builder: (BuildContext context) => _TreeSelectBindingDemo(),
     ),
-    // ── ParkTreeSelect: ParkDynamicForm 示例 ──
+    // ── ParkTreeSelect: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用 treeSelect 字段类型。'
-          ' / ParkDynamicForm fieldType=treeSelect demo.',
+          '在 ParkForm 中以 schema 配置使用 treeSelect 字段类型。'
+          ' / ParkForm fieldType=treeSelect demo.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'tree_demo',
     fields: [
@@ -1466,7 +1513,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'tree_demo',
             fields: <ParkFormFieldSchema>[
@@ -1779,9 +1826,9 @@ final ParkComponentSpec _parkSlider = ParkComponentSpec(
     ),
     ParkPropertyDef(
       name: 'marks',
-      type: 'Map<double, String>?',
+      type: 'List<double>?',
       defaultVal: 'null',
-      description: '刻度标记，键为数值、值为该刻度处显示的文字。',
+      description: '刻度标记位置列表（与 min/max 同量纲的绝对值），滑块自动吸附到最近刻度。',
     ),
     ParkPropertyDef(
       name: 'showTooltip',
@@ -1832,6 +1879,12 @@ final ParkComponentSpec _parkSlider = ParkComponentSpec(
       description: '是否显示间断点（需配合 divisions 使用）。',
     ),
     ParkPropertyDef(
+      name: 'onChangeStart',
+      type: 'ValueChanged<double>?',
+      defaultVal: 'null',
+      description: '拖动开始回调（用户开始滑动时触发）。',
+    ),
+    ParkPropertyDef(
       name: 'inactiveColor',
       type: 'Color?',
       defaultVal: 'null',
@@ -1865,7 +1918,7 @@ final ParkComponentSpec _parkSlider = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -2049,14 +2102,14 @@ ParkSlider(
 )''',
       builder: (context) => _SliderBindingDemo(),
     ),
-    // ── ParkSlider: ParkDynamicForm 示例 ──
+    // ── ParkSlider: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用。'
-          ' / ParkDynamicForm schema usage.',
+          '在 ParkForm 中以 schema 配置使用。'
+          ' / ParkForm schema usage.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schemas: [
     ParkFormFieldSchema(
       fieldId: 'f_volume',
@@ -2070,7 +2123,7 @@ ParkDynamicForm(
   onSubmit: (values) => print(values),
 )
 ''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: const ParkFormSchema(
           formKey: 'park_slider_dynamic_form_demo',
           fields: [
@@ -2366,7 +2419,7 @@ final ParkComponentSpec _parkStepper = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -2554,14 +2607,14 @@ ParkStepper(
 )''',
       builder: (context) => _StepperBindingDemo(),
     ),
-    // ── ParkStepper: ParkDynamicForm 示例 ──
+    // ── ParkStepper: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用。'
-          ' / ParkDynamicForm schema usage.',
+          '在 ParkForm 中以 schema 配置使用。'
+          ' / ParkForm schema usage.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schemas: [
     ParkFormFieldSchema(
       fieldId: 'f_count',
@@ -2576,7 +2629,7 @@ ParkDynamicForm(
   onSubmit: (values) => print(values),
 )
 ''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: const ParkFormSchema(
           formKey: 'park_stepper_dynamic_form_demo',
           fields: [
@@ -2887,6 +2940,12 @@ final ParkComponentSpec _parkRate = ParkComponentSpec(
       description: '完全自定义的评分项 widget（覆盖 icon）。',
     ),
     ParkPropertyDef(
+      name: 'characters',
+      type: 'List<Widget>?',
+      defaultVal: 'null',
+      description: '每个评分项的独立自定义字符列表（数量需与 count 匹配，优先级高于 character）。',
+    ),
+    ParkPropertyDef(
       name: 'tooltips',
       type: 'List<String>?',
       defaultVal: 'null',
@@ -2938,7 +2997,7 @@ final ParkComponentSpec _parkRate = ParkComponentSpec(
       defaultVal: 'null',
       description:
           '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -3087,14 +3146,14 @@ ParkRate(
 )''',
       builder: (context) => _RateBindingDemo(),
     ),
-    // ── ParkRate: ParkDynamicForm 示例 ──
+    // ── ParkRate: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用。'
-          ' / ParkDynamicForm schema usage.',
+          '在 ParkForm 中以 schema 配置使用。'
+          ' / ParkForm schema usage.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schemas: [
     ParkFormFieldSchema(
       fieldId: 'f_rating',
@@ -3109,7 +3168,7 @@ ParkDynamicForm(
   onSubmit: (values) => print(values),
 )
 ''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: const ParkFormSchema(
           formKey: 'park_rate_dynamic_form_demo',
           fields: [
@@ -3432,14 +3491,14 @@ final ParkComponentSpec _parkUpload = ParkComponentSpec(
     ),
     ParkPropertyDef(
       name: 'accept',
-      type: 'String?',
+      type: 'List<String>?',
       defaultVal: 'null',
-      description: '接受的文件类型（如 "image/*"），仅用于约束提示文案。',
+      description: '接受的文件类型列表（如 ["image/*", ".pdf"]），仅用于约束提示文案。',
     ),
     ParkPropertyDef(
       name: 'maxSizeMB',
       type: 'double?',
-      defaultVal: 'null',
+      defaultVal: '50',
       description: '单个文件大小上限（MB），超出时显示约束提示。',
     ),
     ParkPropertyDef(
@@ -3474,15 +3533,87 @@ final ParkComponentSpec _parkUpload = ParkComponentSpec(
     ),
     ParkPropertyDef(
       name: 'beforeAddValidator',
-      type: 'bool Function(ParkUploadFile)?',
+      type: 'String? Function(ParkUploadFile)?',
       defaultVal: 'null',
-      description: '添加前的校验回调，返回 false 则阻止添加。',
+      description: '添加前的校验回调，返回 null 表示通过，返回字符串表示错误信息。',
     ),
     ParkPropertyDef(
       name: 'customRequest',
-      type: 'Future<void> Function(ParkUploadFile)?',
+      type: 'Future<bool> Function(ParkUploadFile)?',
       defaultVal: 'null',
-      description: '自定义上传请求（替代默认上传逻辑）。',
+      description: '自定义上传请求（替代默认上传逻辑），返回 true 表示上传成功。',
+    ),
+    ParkPropertyDef(
+      name: 'dragEnabled',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否启用拖拽上传。为 true 时整个上传区域接受拖放文件。与 draggable 作用相同，新代码优先使用此参数。',
+    ),
+    ParkPropertyDef(
+      name: 'onRetry',
+      type: 'ValueChanged<ParkUploadFile>?',
+      defaultVal: 'null',
+      description: '上传失败重试回调。',
+    ),
+    ParkPropertyDef(
+      name: 'onChanged',
+      type: 'ValueChanged<List<ParkUploadFile>>?',
+      defaultVal: 'null',
+      description: '文件列表变化回调（内部文件选择 / 上传完成时触发）。',
+    ),
+    ParkPropertyDef(
+      name: 'onDropFiles',
+      type: 'void Function(List<Object?>)?',
+      defaultVal: 'null',
+      description: '拖拽文件放下时的回调。仅在 draggable 为 true 时有效。',
+    ),
+    ParkPropertyDef(
+      name: 'onFileDrop',
+      type: 'void Function(List<ParkDropFile>)?',
+      defaultVal: 'null',
+      description: '拖拽文件放下时的回调。仅在 dragEnabled 为 true 时有效。接收 ParkDropFile 列表，跨平台兼容。',
+    ),
+    ParkPropertyDef(
+      name: 'chunked',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否启用分片上传。为 true 且文件大小超过 chunkSize 时自动分片。 / Enable chunked upload',
+    ),
+    ParkPropertyDef(
+      name: 'chunkSize',
+      type: 'int',
+      defaultVal: '1048576',
+      description: '分片大小（字节）。默认 1MB (1048576 字节)。 / Chunk size in bytes',
+    ),
+    ParkPropertyDef(
+      name: 'onChunkUpload',
+      type: 'Future<void> Function(String, List<int>, int, int, void Function(double))?',
+      defaultVal: 'null',
+      description: '分片上传回调。每个分片调用一次，由调用方实现实际上传逻辑。 / Chunked upload callback',
+    ),
+    ParkPropertyDef(
+      name: 'croppable',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否启用上传前图片裁剪。为 true 且文件为图片时，上传前弹出裁剪界面。 / Enable image cropping before upload',
+    ),
+    ParkPropertyDef(
+      name: 'cropAspectRatio',
+      type: 'double?',
+      defaultVal: 'null',
+      description: '裁剪比例（宽/高）。为 null 时自由裁剪。 / Crop aspect ratio (width/height)',
+    ),
+    ParkPropertyDef(
+      name: 'cropMaxWidth',
+      type: 'int?',
+      defaultVal: 'null',
+      description: '裁剪输出最大宽度（像素）。为 null 时不限制。 / Max output width after cropping',
+    ),
+    ParkPropertyDef(
+      name: 'cropMaxHeight',
+      type: 'int?',
+      defaultVal: 'null',
+      description: '裁剪输出最大高度（像素）。为 null 时不限制。 / Max output height after cropping',
     ),
   ],
   events: const <ParkEventDef>[
@@ -3847,14 +3978,14 @@ ParkUpload(
 )''',
       builder: (context) => _UploadBindKeyDemo(),
     ),
-    // ── ParkUpload: ParkDynamicForm 示例 ──
+    // ── ParkUpload: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm Schema 模式）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用 upload 字段类型。'
-          ' / ParkDynamicForm fieldType=upload demo.',
+          '在 ParkForm 中以 schema 配置使用 upload 字段类型。'
+          ' / ParkForm fieldType=upload demo.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'upload_demo',
     fields: [
@@ -3872,7 +4003,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'upload_demo',
             fields: <ParkFormFieldSchema>[
@@ -4266,12 +4397,14 @@ class _UploadBindKeyDemoState extends State<_UploadBindKeyDemo> {
 // =====================================================================
 final ParkComponentSpec _parkForm = ParkComponentSpec(
   name: 'ParkForm',
-  title: '表单容器',
+  title: '表单容器（统一入口）',
   category: 'input',
   description:
-      '包裹 Flutter 原生 Form，提供 GlobalKey<FormState> 管理，'
-      '内置提交 / 重置按钮，收集子表单字段值。通过 ParkForm.of(context) 可在子组件中访问表单状态。'
-      '支持 layout（vertical/horizontal/inline）、requiredMark 等高级配置。',
+      '统一表单入口，支持两种模式：'
+      '1) 手动模式（children）：包裹 Flutter 原生 Form，提供 GlobalKey<FormState> 管理，'
+      '内置提交 / 重置按钮，收集子表单字段值。'
+      '2) Schema 驱动模式（schema）：传入 ParkFormSchema 自动渲染字段、处理联动、校验和数据源加载。'
+      '通过 ParkForm.of(context) 可在子组件中访问表单状态。',
   icon: Icons.dynamic_form_outlined,
   properties: const <ParkPropertyDef>[
     ParkPropertyDef(
@@ -4406,6 +4539,37 @@ final ParkComponentSpec _parkForm = ParkComponentSpec(
       defaultVal: 'null',
       description: '外部绑定服务；优先级高于 model，注入子组件树供双向绑定。',
     ),
+    // ── Schema 驱动模式参数 ──
+    ParkPropertyDef(
+      name: 'schema',
+      type: 'ParkFormSchema?',
+      defaultVal: 'null',
+      description: 'Schema 驱动模式：表单结构定义。传入后自动渲染字段、处理联动与校验。与 children 二选一。',
+    ),
+    ParkPropertyDef(
+      name: 'onSchemaSubmit',
+      type: 'ValueChanged<Map<String, dynamic>>?',
+      defaultVal: 'null',
+      description: 'Schema 模式：提交回调（校验通过后触发）。',
+    ),
+    ParkPropertyDef(
+      name: 'asyncValidator',
+      type: 'AsyncFieldValidator?',
+      defaultVal: 'null',
+      description: 'Schema 模式：异步校验回调。',
+    ),
+    ParkPropertyDef(
+      name: 'asyncValidatorRegistry',
+      type: 'Map<String, AsyncFieldValidator>',
+      defaultVal: '{}',
+      description: 'Schema 模式：异步校验注册表（按 asyncValidatorKey 映射）。',
+    ),
+    ParkPropertyDef(
+      name: 'configureEngine',
+      type: 'void Function(ParkFormEngine)?',
+      defaultVal: 'null',
+      description: 'Schema 模式：引擎配置回调，用于注入数据源解析器等。',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -4487,7 +4651,7 @@ ParkForm(
 - 搭配 ParkInput 做文本输入
 - 搭配 ParkSelect 做下拉选择
 - 搭配 ParkButton 做提交操作
-- 搭配 ParkDynamicForm 做动态渲染表单
+- 传入 schema 参数即可切换为 Schema 驱动模式（原 ParkForm 能力）
 ''',
   demos: <ParkDemoScenario>[
     ParkDemoScenario(
@@ -4756,14 +4920,15 @@ ParkForm(
 )''',
       builder: (BuildContext context) => _FormBindingDemo(),
     ),
-    // ── ParkForm: ParkDynamicForm 示例 ──
+    // ── ParkForm: Schema 驱动模式示例 ──
     ParkDemoScenario(
-      title: '动态表单对比（ParkDynamicForm）',
+      title: 'Schema 驱动模式（统一入口）',
       description:
-          '相同表单字段使用 ParkDynamicForm 以 schema 配置渲染，效果等效于 ParkForm 静态写法。'
-          ' / ParkDynamicForm demo: same form rendered via schema.',
+          '使用 ParkForm 的 schema 参数，以配置方式渲染表单字段。'
+          '效果等同于原 ParkForm，现在统一使用 ParkForm。'
+          ' / ParkForm schema-driven mode: same as former ParkForm.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'form_demo',
     fields: [
@@ -4784,11 +4949,11 @@ ParkDynamicForm(
       ),
     ],
   ),
-  onSubmit: (values) => print(values),
+  onSchemaSubmit: (values) => print(values),
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'form_demo',
             fields: <ParkFormFieldSchema>[
@@ -4809,7 +4974,7 @@ ParkDynamicForm(
               ),
             ],
           ),
-          onSubmit: (_) {},
+          onSchemaSubmit: (_) {},
         ),
       ),
     ),
@@ -4902,7 +5067,7 @@ class _FormBindingV2DemoState extends State<_FormBindingV2Demo> {
 ### 适用场景
 - 结构固定、需精细控制布局（vertical / horizontal / inline）与交互的页面表单。
 - 需要手写 `validator` 校验、`onSubmit` 提交与 `showReset` 重置的表单。
-- 当字段由后端 schema 驱动、需要自动渲染与联动时，改用 `ParkDynamicForm` + `ParkFormSchema`。
+- 当字段由后端 schema 驱动、需要自动渲染与联动时，改用 `ParkForm` + `ParkFormSchema`。
 
 ### 关键 schema 属性
 下面这些 `ParkFormFieldSchema` 属性与 `ParkForm` 子控件的概念等价参数一一对应，便于从手动表单迁移到 schema 表单：
@@ -4937,7 +5102,7 @@ ParkForm(
 - 用 `ParkForm.of(context)` 在子组件中访问 / 写入表单值。
 - `layout` 切换 `vertical` / `horizontal` / `inline`；`requiredMark` 控制必填星标样式。
 - 与 `ParkBinding` / `ParkBindingEngine` 集成，实现表单值 ↔ 业务模型双向绑定。
-- 需要显隐联动 / 异步校验 / 分组布局时，迁移到 `ParkDynamicForm`。''',
+- 需要显隐联动 / 异步校验 / 分组布局时，迁移到 `ParkForm`。''',
 );
 
 // =====================================================================

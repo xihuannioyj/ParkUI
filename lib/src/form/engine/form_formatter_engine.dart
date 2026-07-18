@@ -179,6 +179,10 @@ class FormFormatterEngine {
     final bool isNegative = numValue < 0;
     final double absValue = numValue.abs();
 
+    // CR-25：防止 absValue.truncate() 在超大值时抛 RangeError。
+    // double 精度下 9223372036854774784 是可安全 truncate 的上限。
+    if (absValue > 9223372036854774784) return rawValue;
+
     const List<String> digits = <String>[
       '零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖',
     ];

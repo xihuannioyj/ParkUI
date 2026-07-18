@@ -6,7 +6,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/form/group/form_group_exports.dart';
 
 void main() {
   group('ParkFormArray - creation', () {
@@ -199,7 +199,7 @@ void main() {
   group('ParkFormArray - reset', () {
     test('reset clears dynamically added items beyond initial count', () {
       final array = ParkFormArray([
-        ParkFormGroupControl({'name': ParkFormControl('Alice')}),
+        ParkFormGroupControl({'name': ParkFormControl('Alice', defaultValue: 'Alice')}),
       ]);
       expect(array.length, 1);
 
@@ -217,7 +217,7 @@ void main() {
 
     test('reset restores initial items to pristine state', () {
       final array = ParkFormArray([
-        ParkFormGroupControl({'name': ParkFormControl('Alice')}),
+        ParkFormGroupControl({'name': ParkFormControl('Alice', defaultValue: 'Alice')}),
       ]);
 
       // Modify the initial item

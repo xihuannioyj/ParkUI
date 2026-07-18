@@ -59,7 +59,7 @@ enum ParkCascaderExpandTrigger {
 ///   onChanged: (path) => print(path),
 /// )
 /// ```
-class ParkCascader extends FormField<List<String>> {
+class ParkCascader extends FormField<List<String>> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 
@@ -204,7 +204,7 @@ class ParkCascader extends FormField<List<String>> {
       if (widget.multiple) {
         // 多选模式：解析所有已选路径的 label
         final allLabels = <String>[];
-        for (final encoded in currentValue!) {
+        for (final encoded in currentValue) {
           final path = decodePath(encoded);
           final labels = _resolveLabels(widget.options, path);
           if (labels.isNotEmpty) {
@@ -215,7 +215,7 @@ class ParkCascader extends FormField<List<String>> {
             ? widget.displayRender!(allLabels)
             : '${ParkLocalizations.of(state.context).selectedCount(currentValue.length)}';
       } else {
-        final labels = _resolveLabels(widget.options, currentValue!);
+        final labels = _resolveLabels(widget.options, currentValue);
         displayText = widget.displayRender != null
             ? widget.displayRender!(labels)
             : labels.join(' / ');
@@ -497,6 +497,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
     final leafPaths = <String>{};
     _collectLeafPaths(option, _tempPath.sublist(0, level), leafPaths);
     final allSelected = leafPaths.every((p) => _selectedPaths.contains(p));
+    if (!mounted) return;
     setState(() {
       if (allSelected) {
         _selectedPaths.removeAll(leafPaths);
@@ -528,6 +529,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
     }
     if (widget.showSearch && _showSearchKeyword.trim().isNotEmpty) {
       // showSearch 搜索模式下点击即确认
+      if (!mounted) return;
       setState(() {
         if (_tempPath.length > level) {
           _tempPath = _tempPath.sublist(0, level);
@@ -543,6 +545,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
       }
       return;
     }
+    if (!mounted) return;
     setState(() {
       // 截断路径到当前层级
       if (_tempPath.length > level) {
@@ -565,6 +568,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
 
   void _onHoverOption(int level, ParkCascaderOption option) {
     if (option.isLeaf) return;
+    if (!mounted) return;
     setState(() {
       if (_tempPath.length > level) {
         _tempPath = _tempPath.sublist(0, level);
@@ -633,7 +637,10 @@ class _CascaderSheetState extends State<_CascaderSheet> {
 
         tabs.add(
           GestureDetector(
-            onTap: () => setState(() => _currentLevel = i),
+            onTap: () {
+              if (!mounted) return;
+              setState(() => _currentLevel = i);
+            },
             child: Container(
               padding: EdgeInsets.symmetric(
                 horizontal: spacing.md,
@@ -737,6 +744,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                 ),
                 child: TextField(
                   onChanged: (value) {
+                    if (!mounted) return;
                     setState(() {
                       _searchKeyword = value;
                     });
@@ -790,6 +798,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
       ),
       child: TextField(
         onChanged: (value) {
+          if (!mounted) return;
           setState(() {
             _showSearchKeyword = value;
           });
@@ -1083,6 +1092,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
+            if (!mounted) return;
             setState(() {
               _tempPath = values;
             });

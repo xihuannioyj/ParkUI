@@ -552,10 +552,16 @@ class _ParkTabsState extends State<ParkTabs>
       );
     }
 
+    // 自动检测是否需要滚动：tab 数量过多时自动启用 scrollable 防止溢出
+    final int tabCount = tabWidgets.length;
+    final bool autoScrollable = tabCount > 5;
+    final bool effectiveScrollable =
+        widget.scrollable || widget.tabBarGutter != null || autoScrollable;
+
     Widget tabBar = TabBar(
       controller: controller,
-      isScrollable: widget.scrollable || widget.tabBarGutter != null,
-      tabAlignment: widget.scrollable || widget.tabBarGutter != null
+      isScrollable: effectiveScrollable,
+      tabAlignment: effectiveScrollable
           ? TabAlignment.start
           : (widget.centered ? TabAlignment.center : null),
       labelColor: colors.brand,

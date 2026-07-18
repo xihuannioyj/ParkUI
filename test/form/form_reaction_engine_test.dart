@@ -416,4 +416,166 @@ void main() {
       expect(result.overrides.requiredOverrides['reason'], isTrue);
     });
   });
+
+  group('ParkFormReactionEngine - 多字段联动', () {
+    test('单个 trigger 同时影响多个目标字段', () {
+      final schema = ParkFormSchema(
+        formKey: 'multi',
+        fields: [
+          ParkFormFieldSchema(
+            fieldId: 'type', fieldType: ParkFieldType.select,
+            labelName: '类型', fieldName: 'type',
+          ),
+          ParkFormFieldSchema(
+            fieldId: 'a', fieldType: ParkFieldType.text,
+            labelName: 'A', fieldName: 'a',
+          ),
+          ParkFormFieldSchema(
+            fieldId: 'b', fieldType: ParkFieldType.text,
+            labelName: 'B', fieldName: 'b',
+          ),
+        ],
+        reactions: [
+          _reaction(
+            triggerField: 'type',
+            actions: [
+              _action(ParkFormReactionActionType.setVisible, 'a', value: true),
+              _action(ParkFormReactionActionType.setDisabled, 'b', value: true),
+            ],
+          ),
+        ],
+      );
+
+      final result = engine.applyChange(
+        schema: schema,
+        triggerField: 'type',
+        values: {'type': 'special', 'a': null, 'b': 'data'},
+        overrides: const ParkFormRuntimeOverrides(),
+      );
+
+      expect(result.overrides.visibleOf('a'), isTrue);
+      expect(result.overrides.disabledOf('b'), isTrue);
+      expect(result.affectedFields.contains('a'), isTrue);
+      expect(result.affectedFields.contains('b'), isTrue);
+    });
+  });
+
+  group('ParkFormConditionMatcher - 复合条件', () {
+    test('and 条件全部满足时返回 true', () {
+      final conditions = <String, dynamic>{
+        'and': <dynamic>[
+          <String, dynamic>{'field': 'a', 'equals': 1},
+          <String, dynamic>{'field': 'b', 'equals': 2},
+        ],
+      };
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'a': 1, 'b': 2}),
+        isTrue,
+      );
+    });
+
+    test('and 条件部分不满足时返回 false', () {
+      final conditions = <String, dynamic>{
+        'and': <dynamic>[
+          <String, dynamic>{'field': 'a', 'equals': 1},
+          <String, dynamic>{'field': 'b', 'equals': 2},
+        ],
+      };
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'a': 1, 'b': 99}),
+        isFalse,
+      );
+    });
+
+    test('or 条件任一满足时返回 true', () {
+      final conditions = <String, dynamic>{
+        'or': <dynamic>[
+          <String, dynamic>{'field': 'a', 'equals': 1},
+          <String, dynamic>{'field': 'b', 'equals': 2},
+        ],
+      };
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'a': 99, 'b': 2}),
+        isTrue,
+      );
+    });
+
+    test('not 条件取反', () {
+      final conditions = <String, dynamic>{
+        'not': <String, dynamic>{'field': 'a', 'equals': 1},
+      };
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'a': 2}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'a': 1}),
+        isFalse,
+      );
+    });
+
+    test('gt 比较', () {
+      final conditions = <String, dynamic>{'field': 'age', 'gt': 18};
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'age': 20}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'age': 15}),
+        isFalse,
+      );
+    });
+
+    test('lt 比较', () {
+      final conditions = <String, dynamic>{'field': 'score', 'lt': 60};
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'score': 50}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'score': 70}),
+        isFalse,
+      );
+    });
+
+    test('not_empty 条件', () {
+      final conditions = <String, dynamic>{'field': 'name', 'not_empty': true};
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'name': 'hello'}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'name': ''}),
+        isFalse,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'name': null}),
+        isFalse,
+      );
+    });
+
+    test('contains 条件 - 列表', () {
+      final conditions = <String, dynamic>{'field': 'tags', 'contains': 'dart'};
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'tags': ['dart', 'flutter']}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'tags': ['java']}),
+        isFalse,
+      );
+    });
+
+    test('in 条件', () {
+      final conditions = <String, dynamic>{'field': 'status', 'in': ['active', 'pending']};
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'status': 'active'}),
+        isTrue,
+      );
+      expect(
+        ParkFormConditionMatcher.match(conditions, {'status': 'deleted'}),
+        isFalse,
+      );
+    });
+  });
 }

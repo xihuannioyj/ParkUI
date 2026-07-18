@@ -7,7 +7,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/form/group/form_group_exports.dart';
 
 void main() {
   group('ParkFormControl - creation', () {

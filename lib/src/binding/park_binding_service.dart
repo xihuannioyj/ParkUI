@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'park_binding_path.dart';
 import 'park_bindable.dart';
 import 'park_binding_scheduler.dart';
@@ -290,8 +291,12 @@ class ParkBindingService {
 
   /// 内部：移除 bindable 引用（由 ParkBindable.dispose 调用）。
   void removeBindable(String path) {
-    _bindables.remove(path);
+    final ParkBindable<dynamic>? bindable = _bindables.remove(path);
     _bindListeners.remove(path);
+    // CR-08: 同步清理 _disposedGuard，避免依赖周期性清理。
+    if (bindable != null) {
+      _disposedGuard.remove(bindable);
+    }
   }
 
   /// 等待所有待处理的批量更新完成。
@@ -367,6 +372,9 @@ class _WatchEffect {
   /// 重入期间如果有新的触发，标记为 dirty，执行完后调度一次重跑。
   bool _dirty = false;
 
+  /// CR-07：微任务重跑计数器，防止无限重入绕过深度限制。
+  int _rerunCount = 0;
+
   _WatchEffect(this._fn, this._service);
 
   /// 执行副作用并收集依赖。
@@ -394,7 +402,19 @@ class _WatchEffect {
       // 如果执行期间有新的触发，调度一次微任务重跑。
       if (_dirty) {
         _dirty = false;
-        scheduleMicrotask(() => _run());
+        _rerunCount++;
+        if (_rerunCount > 10) {
+          debugPrint(
+            '[ParkBindingService] watchEffect 微任务重跑超过 10 次，'
+            '可能存在循环依赖，已停止重跑。',
+          );
+          _rerunCount = 0;
+        } else {
+          scheduleMicrotask(() => _run(_rerunCount));
+        }
+      } else {
+        // 正常执行完毕，重置重跑计数器。
+        _rerunCount = 0;
       }
     }
   }

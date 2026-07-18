@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/components/input/park_stepper.dart';
+import 'package:park_ui/src/theme/park_theme_data.dart';
 
 Widget _wrap(Widget child) => MaterialApp(theme: ThemeData(extensions: [ParkThemeData.light()]), home: Scaffold(body: Center(child: child)));
 
@@ -31,11 +32,77 @@ void main() {
       await tester.tap(find.byIcon(CupertinoIcons.minus));
       expect(val, 4);
     });
-    testWidgets('min/max限制', (tester) async {
+    testWidgets('min/max limit', (tester) async {
       int val = 0;
       await tester.pumpWidget(_wrap(ParkStepper(value: val, min: 0, max: 10, onChanged: (v) => val = v)));
       await tester.tap(find.byIcon(CupertinoIcons.minus));
-      expect(val, 0); // 不能小于0
+      expect(val, 0); // Cannot go below 0
+    });
+
+    testWidgets('disabled prevents interaction', (tester) async {
+      int val = 5;
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: val,
+        disabled: true,
+        onChanged: (v) => val = v,
+      )));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
+      expect(val, 5);
+    });
+
+    testWidgets('custom step value', (tester) async {
+      int val = 0;
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: val,
+        step: 5,
+        onChanged: (v) => val = v,
+      )));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
+      expect(val, 5);
+    });
+
+    testWidgets('max limit prevents increment', (tester) async {
+      int val = 10;
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: val,
+        max: 10,
+        onChanged: (v) => val = v,
+      )));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
+      expect(val, 10);
+    });
+
+    testWidgets('custom formatter', (tester) async {
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: 5,
+        formatter: (v) => '\$$v',
+      )));
+      expect(find.text('\$5'), findsOneWidget);
+    });
+
+    testWidgets('readOnly prevents interaction', (tester) async {
+      int val = 5;
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: val,
+        readOnly: true,
+        onChanged: (v) => val = v,
+      )));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
+      expect(val, 5);
+    });
+
+    testWidgets('different sizes render', (tester) async {
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: 1,
+        size: ParkStepperSize.small,
+      )));
+      expect(find.byType(ParkStepper), findsOneWidget);
+
+      await tester.pumpWidget(_wrap(ParkStepper(
+        value: 1,
+        size: ParkStepperSize.large,
+      )));
+      expect(find.byType(ParkStepper), findsOneWidget);
     });
   });
 }

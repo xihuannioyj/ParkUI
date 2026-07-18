@@ -9,7 +9,7 @@ import '../../l10n/park_localizations.dart';
 ///
 /// 基于 Flutter TextField 扩展，支持 +/- 按钮、步进、范围限制。
 ///
-/// 支持 [bindKey] 双向绑定：置于 [ParkForm] / [ParkDynamicForm] 内且表单已注入
+/// 支持 [bindKey] 双向绑定：置于 [ParkForm] 内且表单已注入
 /// 绑定服务时，仅凭 [bindKey] 即可与模型字段联动（B22 / 开发文档.md §5.x）。
 ///
 /// ```dart

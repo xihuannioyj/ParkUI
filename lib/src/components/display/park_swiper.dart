@@ -41,6 +41,9 @@ enum ParkSwiperIndicatorPosition {
 /// 支持自动播放、循环滑动、圆点/数字指示器，
 /// 卡片堆叠效果、淡入淡出、自定义动画曲线、手势拖动比例控制。
 ///
+/// 通过 [bindKey] + [bindingService] 支持与 [ParkBindingService] 双向绑定，
+/// 使轮播当前索引可同步到外部模型（Park UI 独有特性，R3-28 保留原因）。
+///
 /// ```dart
 /// ParkSwiper(
 ///   children: [
@@ -153,6 +156,9 @@ class ParkSwiper extends StatefulWidget {
   State<ParkSwiper> createState() => _ParkSwiperState();
 }
 
+// R3-28: BindableWidgetMixin retained to support bindKey two-way binding —
+// the swiper's currentIndex is synchronized with ParkBindingService model.
+// Removing this mixin would break the bindKey/bindingService API contract.
 class _ParkSwiperState extends State<ParkSwiper>
     with BindableWidgetMixin<int, ParkSwiper> {
   late final PageController _pageController;

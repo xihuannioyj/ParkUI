@@ -93,6 +93,7 @@ class DynamicFormDemo extends StatelessWidget {
   const DynamicFormDemo({super.key});
 
   static final ParkFormSchema _basicSchema = ParkFormSchema(
+    formKey: 'demo_basic',
     fields: [
       ParkFormFieldSchema(
         fieldId: 'f1',
@@ -147,9 +148,9 @@ class DynamicFormDemo extends StatelessWidget {
 
         ParkText('基础动态表单', preset: ParkTextPreset.h3),
         const SizedBox(height: 12),
-        ParkDynamicForm(
+        ParkForm(
           schema: _basicSchema,
-          onSubmit: (values) {
+          onSchemaSubmit: (values) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Submitted: $values')),
             );
@@ -159,8 +160,9 @@ class DynamicFormDemo extends StatelessWidget {
 
         ParkText('分组 + 可折叠', preset: ParkTextPreset.h3),
         const SizedBox(height: 12),
-        ParkDynamicForm(
+        ParkForm(
           schema: ParkFormSchema(
+            formKey: 'demo_grouped',
             fields: [
               ParkFormFieldSchema(
                 fieldId: 'g1',
@@ -192,7 +194,7 @@ class DynamicFormDemo extends StatelessWidget {
             ],
           ),
           showReset: false,
-          onSubmit: (values) {
+          onSchemaSubmit: (values) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Submitted: $values')),
             );
@@ -245,6 +247,7 @@ class _FormBuilderExampleState extends State<_FormBuilderExample> {
   void initState() {
     super.initState();
     final schema = ParkFormSchema(
+      formKey: 'demo_builder',
       fields: [
         ParkFormFieldSchema(
           fieldId: 'fb1',
@@ -279,8 +282,9 @@ class _FormBuilderExampleState extends State<_FormBuilderExample> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ParkDynamicForm(
+        ParkForm(
           schema: ParkFormSchema(
+            formKey: 'demo_builder_ui',
             fields: [
               ParkFormFieldSchema(
                 fieldId: 'fb1',
@@ -300,7 +304,7 @@ class _FormBuilderExampleState extends State<_FormBuilderExample> {
           ),
           formGroup: _group,
           showReset: false,
-          onSubmit: (_) {},
+          onSchemaSubmit: (_) {},
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -397,50 +401,83 @@ class _FormArrayExampleState extends State<_FormArrayExample> {
 
   @override
   Widget build(BuildContext context) {
+    final items = _array.items;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ParkFormArrayWidget(
-          array: _array,
-          itemBuilder: (context, item, index) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ParkInput(
-                        label: '姓名',
-                        initialValue: item.get('name')?.value as String? ?? '',
-                        hintText: '请输入姓名',
-                      ),
+        ...items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Text('#${index + 1}  ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: ParkInput(
+                      label: '姓名',
+                      initialValue:
+                          item.control('name')?.value as String? ?? '',
+                      hintText: '请输入姓名',
+                      onChanged: (String? v) {
+                        item.control('name')?.setValue(v ?? '');
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 100,
-                      child: ParkInput(
-                        label: '分数',
-                        initialValue:
-                            (item.get('score')?.value ?? '').toString(),
-                        hintText: '分数',
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 100,
+                    child: ParkInput(
+                      label: '分数',
+                      initialValue:
+                          (item.control('score')?.value ?? '').toString(),
+                      hintText: '分数',
+                      onChanged: (String? v) {
+                        item.control('score')?.setValue(int.tryParse(v ?? '') ?? 0);
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () {
+                      _array.removeAt(index);
+                      setState(() {});
+                    },
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
         const SizedBox(height: 12),
-        ParkButton(
-          variant: ParkButtonVariant.primary,
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Array values: ${_array.value}')),
-            );
-          },
-          child: const Text('获取所有值'),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            ParkButton(
+              variant: ParkButtonVariant.secondary,
+              onPressed: () {
+                _array.add(ParkFormGroupControl({
+                  'name': ParkFormControl(''),
+                  'score': ParkFormControl(0),
+                }));
+                setState(() {});
+              },
+              child: const Text('+ 添加'),
+            ),
+            ParkButton(
+              variant: ParkButtonVariant.primary,
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Array values: ${_array.value}')),
+                );
+              },
+              child: const Text('获取所有值'),
+            ),
+          ],
         ),
       ],
     );

@@ -88,7 +88,7 @@ enum ParkDatePickerSize {
 ///   onChanged: (dt) => print(dt),
 /// )
 /// ```
-class ParkDatePicker extends FormField<DateTime> {
+class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 

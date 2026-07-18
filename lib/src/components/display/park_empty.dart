@@ -176,59 +176,91 @@ class ParkEmpty extends StatelessWidget {
     return Semantics(
       label: label,
       container: true,
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: park.spacing.lg,
-            vertical: park.spacing.base,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (image != null) ...[
-                Semantics(
-                  image: true,
-                  label: 'Empty illustration',
-                  child: image!,
-                ),
-                SizedBox(height: _spacing),
-              ] else ...[
-                Semantics(
-                  image: true,
-                  excludeSemantics: true,
-                  child: Icon(
-                    effectiveIcon,
-                    size: _iconSize,
-                    color: effectiveIconColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double maxH = constraints.maxHeight == double.infinity
+              ? double.infinity
+              : constraints.maxHeight;
+          final bounded = maxH != double.infinity;
+          return Center(
+            child: ConstrainedBox(
+              constraints: bounded
+                  ? BoxConstraints(maxHeight: maxH)
+                  : const BoxConstraints(),
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: park.spacing.lg,
+                    vertical: park.spacing.base,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (image != null) ...[
+                        Semantics(
+                          image: true,
+                          label: 'Empty illustration',
+                          child: image!,
+                        ),
+                        SizedBox(height: _spacing),
+                      ] else ...[
+                        Semantics(
+                          image: true,
+                          excludeSemantics: true,
+                          child: Icon(
+                            effectiveIcon,
+                            size: _iconSize,
+                            color: effectiveIconColor,
+                          ),
+                        ),
+                        SizedBox(height: _spacing),
+                      ],
+                      if (bounded)
+                        Expanded(
+                          child: Center(
+                            child: descriptionWidget ??
+                                Text(
+                                  effectiveDescription,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 10,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: _fontSize,
+                                    color: park.colors.textSecondary,
+                                  ),
+                                ),
+                          ),
+                        )
+                      else
+                        descriptionWidget ??
+                            Text(
+                              effectiveDescription,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: _fontSize,
+                                color: park.colors.textSecondary,
+                              ),
+                            ),
+                      if (actions != null && actions!.isNotEmpty) ...[
+                        SizedBox(height: _spacing * 1.5),
+                        Wrap(
+                          spacing: park.spacing.sm,
+                          runSpacing: park.spacing.sm,
+                          alignment: WrapAlignment.center,
+                          children: actions!,
+                        ),
+                      ],
+                      if (footer != null) ...[
+                        SizedBox(height: _spacing),
+                        footer!,
+                      ],
+                    ],
                   ),
                 ),
-                SizedBox(height: _spacing),
-              ],
-              descriptionWidget ??
-                  Text(
-                    effectiveDescription,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: _fontSize,
-                      color: park.colors.textSecondary,
-                    ),
-                  ),
-              if (actions != null && actions!.isNotEmpty) ...[
-                SizedBox(height: _spacing * 1.5),
-                Wrap(
-                  spacing: park.spacing.sm,
-                  runSpacing: park.spacing.sm,
-                  alignment: WrapAlignment.center,
-                  children: actions!,
-                ),
-              ],
-              if (footer != null) ...[
-                SizedBox(height: _spacing),
-                footer!,
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

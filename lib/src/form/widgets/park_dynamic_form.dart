@@ -4,8 +4,21 @@ import 'package:flutter/material.dart';
 import '../../../park_ui.dart';
 
 import '../../form/models/form_layout_schema.dart' as layout_models;
+import '../engine/form_field_expression_evaluator.dart';
 
 /// 动态表单组件。
+///
+/// **已废弃**：请改用 [ParkForm] 的 schema 驱动模式：
+/// ```dart
+/// ParkForm(
+///   schema: mySchema,
+///   onSchemaSubmit: (values) => ...,
+/// )
+/// ```
+///
+/// 以下为原始文档，保留供参考。
+///
+/// ~~~
 ///
 /// 支持字段分组（ExpansionTile，按 [ParkFormFieldSchema.groupKey] 聚合）、
 /// 排序（按 [ParkFormFieldSchema.order] 升序）、
@@ -13,6 +26,39 @@ import '../../form/models/form_layout_schema.dart' as layout_models;
 /// 禁用联动（disabledRule）、动态必填（requiredRule）。
 ///
 /// 可选注入 [ParkDataSourceResolver] 实现异步数据源加载。
+///
+/// ## Dual Validation System
+///
+/// This form operates with two complementary validation layers:
+///
+/// 1. **Schema-driven validation** ([ParkFormEngine.validateForm]):
+///    - Declarative rules defined in [ParkFormSchema] (required, minLength,
+///      maxLength, regex, custom validators).
+///    - Evaluated by [ParkFormEngine] against a flat `Map<String, dynamic>`
+///      of values.
+///    - Runs during [_handleSubmit] before async validation.
+///    - Best for cross-field or form-level rules that depend on the schema
+///      definition (e.g. requiredRule, visibleRule interactions).
+///
+/// 2. **Control-level validation** ([ParkAbstractControl] / [ParkFormGroup]):
+///    - Imperative validators attached to individual [ParkAbstractControl]
+///      instances (sync via [ParkValidatorFunction], async via
+///      [ParkAsyncValidatorFunction]).
+///    - Each control tracks its own errors, status (VALID/INVALID/PENDING),
+///      and emits changes via `valueChanges` / `statusChanges` streams.
+///    - Triggered by [ParkFormGroup.validate] during [_handleSubmit].
+///    - Best for field-specific rules, reactive validation, and external
+///      form manipulation (e.g. `control.setValue(...)` from outside the widget).
+///
+/// **Interaction**: During submit, schema-driven errors are computed first,
+/// then merged with control-level errors. Hidden-field errors from the
+/// control layer are filtered out (a hidden field should not block submission).
+/// Both layers must pass for the form to be considered valid.
+///
+/// When using the optional [formGroup] parameter, the control-level layer is
+/// the primary source of truth for field state (hidden/disabled/required),
+/// while the schema layer still provides declarative validation rules.
+/// 内部实现类，外部请使用 ParkForm(schema: ...)。
 class ParkDynamicForm extends StatefulWidget {
   /// 表单结构。
   final ParkFormSchema schema;
@@ -431,7 +477,12 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
   /// 判断字段是否可见。
   ///
   /// FG5: 当 formGroup 提供时，优先使用运行时字段状态 hidden。
+  /// 声明式联动: 当字段 ext 中存在 visible_when_expr 时，使用表达式求值。
   bool _isFieldVisible(ParkFormFieldSchema field) {
+    // 声明式联动：字符串表达式优先。
+    final bool? exprVisible = _checkExprVisibility(field);
+    if (exprVisible != null) return exprVisible;
+
     final ParkFormField? runtimeField = _formGroup?.fields[field.fieldName];
     if (runtimeField != null) {
       return !runtimeField.hidden;
@@ -443,6 +494,53 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     );
   }
 
+  /// 检查字段 ext 中的 visible_when_expr 表达式。
+  ///
+  /// 返回 `null` 表示无表达式约束，应回退到其他可见性规则。
+  bool? _checkExprVisibility(ParkFormFieldSchema field) {
+    final String? expr = field.ext['visible_when_expr'] as String?;
+    if (expr == null) return null;
+    return ParkFormFieldExpressionEvaluator.evaluate(expr, _values);
+  }
+
+  /// 检查字段 ext 中的 disable_when_expr 表达式。
+  ///
+  /// 返回 `null` 表示无表达式约束，应回退到其他禁用规则。
+  bool? _checkExprDisabled(ParkFormFieldSchema field) {
+    final String? expr = field.ext['disable_when_expr'] as String?;
+    if (expr == null) return null;
+    return ParkFormFieldExpressionEvaluator.evaluate(expr, _values);
+  }
+
+  /// 声明式联动：当 [changedFieldName] 变化时，检查是否有字段通过
+  /// [ParkFormFieldSchema.dependencies] 声明了对它的依赖。
+  ///
+  /// 若存在依赖字段，触发 setState 以重新计算其可见性/禁用状态。
+  /// 同时同步字段状态到 formGroup。
+  void _triggerDependencyUpdates(String changedFieldName) {
+    bool needsRebuild = false;
+    for (final ParkFormFieldSchema field in widget.schema.fields) {
+      if (field.dependencies.contains(changedFieldName)) {
+        needsRebuild = true;
+        // 同步字段状态到 formGroup 运行时字段。
+        final ParkFormField? runtimeField = _formGroup?.fields[field.fieldName];
+        if (runtimeField != null) {
+          runtimeField.hidden = !_isFieldVisible(field);
+          final bool? exprDisabled = _checkExprDisabled(field);
+          if (exprDisabled != null) {
+            runtimeField.disabled = exprDisabled;
+          }
+        }
+      }
+    }
+    if (needsRebuild && mounted) {
+      // setState 在 _handleFieldChanged 的 setState 之后调用，
+      // 由于 _handleFieldChanged 已经调用了 setState，此处仅确保
+      // formGroup 状态同步。额外的 setState 由 _handleFieldChanged 覆盖。
+      _formGroup?.notifyFieldStateChanged(changedFieldName);
+    }
+  }
+
   /// 构建字段组件。
   ///
   /// [field] 字段结构。
@@ -452,14 +550,16 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     layout_models.ParkFormLayout? formLayout,
   ]) {
     // FG5: 优先从 formGroup 运行时字段状态读取 disabled/required。
+    // 声明式联动：字符串表达式优先于 formGroup 和引擎计算。
     final ParkFormField? runtimeField = _formGroup?.fields[field.fieldName];
-    final bool disabled = runtimeField != null
+    final bool? exprDisabled = _checkExprDisabled(field);
+    final bool disabled = exprDisabled ?? (runtimeField != null
         ? runtimeField.disabled
         : _engine.isFieldDisabled(
             field,
             _values,
             overrides: _runtimeOverrides,
-          );
+          ));
     final bool required = runtimeField != null
         ? runtimeField.required
         : _engine.isFieldRequired(
@@ -552,6 +652,10 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
         ...reactionResult.affectedFields,
         ...reactionResult.reloadFields,
       });
+
+      // 声明式联动：检查是否有字段通过 dependencies 声明了对变化字段的依赖，
+      // 若有则触发 setState 以重新计算可见性/禁用状态。
+      _triggerDependencyUpdates(fieldName);
     } finally {
       _isProcessingChange = false;
     }
@@ -788,7 +892,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
           widget.asyncValidator!,
           overrides: _runtimeOverrides,
           l10n: l10n,
-        );
+        ) ?? <String, String>{};
         // 序列号不匹配说明有新的提交启动，丢弃本次结果（B65-Fix2）。
         if (_submitSequence != currentSeq) {
           if (mounted) setState(() => _submitting = false);
@@ -803,7 +907,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
           null,
           overrides: _runtimeOverrides,
           l10n: l10n,
-        );
+        ) ?? <String, String>{};
         // 序列号不匹配说明有新的提交启动，丢弃本次结果（B65-Fix2）。
         if (_submitSequence != currentSeq) {
           if (mounted) setState(() => _submitting = false);

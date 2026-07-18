@@ -4,6 +4,9 @@ import '../../binding/park_binding_service.dart';
 import '../../binding/park_binding_form_scope.dart';
 import '../../l10n/park_localizations.dart';
 import '../../form/group/form_group_exports.dart';
+import '../../form/models/form_field_schema.dart';
+import '../../form/engine/form_engine.dart';
+import '../../form/widgets/park_dynamic_form.dart';
 
 /// 表单布局方式
 enum ParkFormLayout {
@@ -124,30 +127,41 @@ class ParkFormScope extends InheritedWidget {
   }
 }
 
-/// Park 表单容器
+/// Park 表单容器 — 统一入口
 ///
+/// 支持两种使用模式：
+///
+/// **手动模式**（使用 [children]）：
 /// 包裹 Flutter 原生 [Form]，提供 [GlobalKey<FormState>] 管理，
 /// 内置提交 / 重置按钮，收集子表单字段值。
-///
-/// 通过 [ParkForm.of(context)] 可在子组件中访问表单状态。
 ///
 /// ```dart
 /// ParkForm(
 ///   onSubmit: (values) => print('提交: $values'),
-///   submitLabel: '提交',
-///   showReset: true,
-///   resetLabel: '重置',
 ///   children: [
-///     ParkSelect(
-///       label: '城市',
-///       items: [...],
-///       onSaved: (v) => formValues['city'] = v,
-///     ),
-///     ParkDatePicker(
-///       label: '日期',
-///       onSaved: (v) => formValues['date'] = v,
-///     ),
+///     ParkFormItem(label: '姓名', child: ParkInput()),
 ///   ],
+/// )
+/// ```
+///
+/// **Schema 驱动模式**（使用 [schema]）：
+/// 传入 [ParkFormSchema] 即可自动渲染字段、处理联动、校验和数据源加载。
+///
+/// ```dart
+/// ParkForm(
+///   schema: ParkFormSchema(
+///     formKey: 'contact',
+///     fields: [
+///       ParkFormFieldSchema(
+///         fieldId: 'f_name',
+///         fieldType: ParkFieldType.text,
+///         labelName: '姓名',
+///         fieldName: 'name',
+///         isRequired: true,
+///       ),
+///     ],
+///   ),
+///   onSchemaSubmit: (values) => print(values),
 /// )
 /// ```
 class ParkForm extends StatefulWidget {
@@ -252,7 +266,30 @@ class ParkForm extends StatefulWidget {
   /// 与 [model] / [bindingService] 可共存，formGroup 优先级最高。
   final ParkFormGroup? formGroup;
 
-  /// 子组件列表（表单字段）
+  /// Schema 驱动模式：表单结构定义。
+  ///
+  /// 传入 [ParkFormSchema] 后，ParkForm 自动根据 schema 渲染字段、
+  /// 处理联动（reaction）、校验、数据源加载等，无需手动编写 children。
+  ///
+  /// 与 [children] 二选一：传入 schema 时为 schema 驱动模式，
+  /// 未传入时为手动模式（使用 children 手动编排字段）。
+  final ParkFormSchema? schema;
+
+  /// Schema 模式：提交回调。
+  final ValueChanged<Map<String, dynamic>>? onSchemaSubmit;
+
+  /// Schema 模式：异步校验回调。
+  final AsyncFieldValidator? asyncValidator;
+
+  /// Schema 模式：异步校验注册表（按 asyncValidatorKey 映射）。
+  final Map<String, AsyncFieldValidator> asyncValidatorRegistry;
+
+  /// Schema 模式：引擎配置回调（注入数据源解析器等）。
+  final void Function(ParkFormEngine engine)? configureEngine;
+
+  /// 子组件列表（手动模式：表单字段）。
+  ///
+  /// 当 [schema] 不为 null 时，此参数被忽略。
   final List<Widget> children;
 
   const ParkForm({
@@ -282,7 +319,12 @@ class ParkForm extends StatefulWidget {
     this.labelCol,
     this.wrapperCol,
     this.formGroup,
-    required this.children,
+    this.schema,
+    this.onSchemaSubmit,
+    this.asyncValidator,
+    this.asyncValidatorRegistry = const <String, AsyncFieldValidator>{},
+    this.configureEngine,
+    this.children = const <Widget>[],
   });
 
   /// 获取最近的 [ParkFormState]
@@ -358,6 +400,10 @@ class ParkFormState extends State<ParkForm> {
       _initialModelSnapshot = Map<String, dynamic>.from(widget.model!);
       _bindingService = ParkBindingService(widget.model);
       _ownsBindingService = true;
+    }
+    // Seed _values from binding model so submit() includes bindKey fields
+    if (_bindingService != null && _values.isEmpty) {
+      _values.addAll(_bindingService!.model);
     }
   }
 
@@ -522,6 +568,22 @@ class ParkFormState extends State<ParkForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Schema 驱动模式：委托给内部 schema 表单组件。
+    if (widget.schema != null) {
+      return ParkDynamicForm(
+        schema: widget.schema!,
+        onSubmit: widget.onSchemaSubmit ?? widget.onSubmit ?? (_) {},
+        asyncValidator: widget.asyncValidator,
+        asyncValidatorRegistry: widget.asyncValidatorRegistry,
+        configureEngine: widget.configureEngine,
+        bindingService: widget.bindingService,
+        formGroup: widget.formGroup,
+        submitText: widget.submitLabel,
+        resetText: widget.resetLabel,
+        showReset: widget.showReset,
+      );
+    }
+
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final spacing = park.spacing;

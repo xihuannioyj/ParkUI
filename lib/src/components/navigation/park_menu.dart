@@ -52,12 +52,6 @@ class ParkMenu extends StatefulWidget {
   /// 默认展开的父菜单 key 列表。
   final Set<String>? defaultExpandedKeys;
 
-  /// 是否为浅色模式（默认 false，使用暗色）。
-  ///
-  /// 已废弃，请使用 [themeMode] 代替。
-  @Deprecated('Use themeMode instead')
-  final bool light;
-
   /// 菜单主题模式。
   ///
   /// `light`：当前行为；`dark`：菜单背景深色、文字/图标白色，选中项高亮。
@@ -82,7 +76,6 @@ class ParkMenu extends StatefulWidget {
     this.onSelect,
     this.selectedKey,
     this.defaultExpandedKeys,
-    @Deprecated('Use themeMode instead') this.light = false,
     this.themeMode = ParkMenuThemeMode.light,
     this.inlineCollapsed = false,
     this.collapsedWidth = 56.0,
@@ -97,7 +90,6 @@ class _ParkMenuState extends State<ParkMenu> {
   late Set<String> _expandedKeys;
   String? _selectedKey;
   final Set<String> _hoveredKeys = {};
-  bool _primaryHovered = false;
 
   @override
   void initState() {
@@ -132,8 +124,7 @@ class _ParkMenuState extends State<ParkMenu> {
   @override
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    // light 已废弃，通过 themeMode 替代
-    final resolvedThemeMode = widget.light ? ParkMenuThemeMode.light : widget.themeMode;
+    final resolvedThemeMode = widget.themeMode;
     final isDarkMode = resolvedThemeMode == ParkMenuThemeMode.dark;
     final isCollapsible = widget.inlineCollapsed &&
         (widget.mode == ParkMenuMode.vertical || widget.mode == ParkMenuMode.inline);
@@ -142,11 +133,10 @@ class _ParkMenuState extends State<ParkMenu> {
       label: 'Navigation menu',
       container: true,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _primaryHovered = true),
+        onEnter: (_) {},
         onExit: (_) {
           if (isCollapsible) {
             setState(() {
-              _primaryHovered = false;
               _hoveredKeys.clear();
             });
           }

@@ -22,7 +22,7 @@ final ParkComponentSpec _parkBindingSpec = ParkComponentSpec(
   description:
       'ParkBindingEngine 基于 ValueNotifier + ValueListenableBuilder 实现了轻量级'
       '双向绑定引擎。支持点号分隔的嵌套路径、不可变模式设置、单例绑定实例管理，'
-      '可零侵入集成到 ParkForm 和 ParkDynamicForm 中，无需任何三方依赖。',
+      '可零侵入集成到 ParkForm 和 ParkForm 中，无需任何三方依赖。',
   icon: Icons.link,
   properties: const <ParkPropertyDef>[
     ParkPropertyDef(
@@ -183,12 +183,12 @@ ParkForm(
 )
 ```
 
-## ParkDynamicForm + bindingService 模式
+## ParkForm + bindingService 模式
 动态表单与服务集成：
 
 ```dart
 final service = ParkBindingService();
-ParkDynamicForm(
+ParkForm(
   schema: mySchema,
   bindingService: service,
   onSubmit: (values) => print(values),
@@ -329,11 +329,11 @@ ParkForm(
     ParkDemoScenario(
       title: '动态表单绑定',
       description:
-          'ParkDynamicForm + bindingService，schema 驱动渲染，'
+          'ParkForm + bindingService，schema 驱动渲染，'
           '值变化自动同步到 service。',
       code: '''
 final service = ParkBindingService();
-ParkDynamicForm(
+ParkForm(
   schema: mySchema,
   bindingService: service,
   onSubmit: (values) => print(values),
@@ -788,7 +788,7 @@ class _DynamicFormBindingDemoState extends State<_DynamicFormBindingDemo> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          ParkDynamicForm(
+          ParkForm(
             schema: _bindingFormSchema,
             bindingService: _service,
             onSubmit: (Map<String, dynamic> values) {
@@ -796,7 +796,7 @@ class _DynamicFormBindingDemoState extends State<_DynamicFormBindingDemo> {
                 _lastSyncValue = values.toString();
               });
             },
-            submitText: '提交',
+            submitLabel: '提交',
             showReset: true,
           ),
           const SizedBox(height: 12),

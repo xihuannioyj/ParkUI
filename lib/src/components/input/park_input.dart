@@ -49,7 +49,7 @@ enum ParkInputSize {
 ///   onChanged: (v) => print(v),
 /// )
 /// ```
-class ParkInput extends FormField<String> {
+class ParkInput extends FormField<String> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 
@@ -108,8 +108,6 @@ class ParkInput extends FormField<String> {
     this.prefixText,
     this.suffixText,
     this.borderless = false,
-    @Deprecated('Use readOnly instead')
-    this.readonly = false,
     this.contentPadding,
     this.style,
     this.onCompositionStart,
@@ -216,7 +214,7 @@ class ParkInput extends FormField<String> {
   /// - [ParkInputSearchButtonConfig]：自定义文案 / 图标 / 变体 / loading / 回调。
   ///
   /// 与 suffixIcon / clearable / obscureText 共存不冲突；点击或回车触发 [onSearch]。
-  final dynamic searchButton;
+  final Object? searchButton;
 
   /// 前置文本（显示在输入框内部最前方，灰色小字）
   final String? prefixText;
@@ -226,12 +224,6 @@ class ParkInput extends FormField<String> {
 
   /// 无边框变体（完全去除边框和背景，比 bordered: false 更彻底）
   final bool borderless;
-
-  /// 是否只读（readOnly 的别名，兼容 AntD 命名）。
-  ///
-  /// 已废弃：请使用 [readOnly]。
-  @Deprecated('Use readOnly instead')
-  final bool readonly;
 
   /// 输入内容内边距。不设时根据 [size] 自动计算。
   final EdgeInsetsGeometry? contentPadding;
@@ -540,9 +532,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
     if (inputWidget.clearable &&
         state._controller.text.isNotEmpty &&
         !isDisabled &&
-        !inputWidget.readOnly &&
-        // ignore: deprecated_member_use
-        !inputWidget.readonly) {
+        !inputWidget.readOnly) {
       suffixWidgets.add(
         Semantics(
           label: ParkLocalizations.of(context).clearText,
@@ -599,8 +589,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
       controller: state._controller,
       focusNode: state._focusNode,
       enabled: inputWidget.enabled,
-      // ignore: deprecated_member_use
-      readOnly: inputWidget.readOnly || inputWidget.readonly,
+      readOnly: inputWidget.readOnly,
       obscureText: state._obscured,
       maxLength: inputWidget.maxLength,
       maxLines: inputWidget.maxLines,
@@ -888,7 +877,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
   /// 否则回退到 [ParkInput.onSearch]。
   void _triggerSearch(String text) {
     final ParkInput inputWidget = widget.state.widget as ParkInput;
-    final dynamic cfg = inputWidget.searchButton;
+    final Object? cfg = inputWidget.searchButton;
     final ValueChanged<String>? cfgOnSearch =
         (cfg is ParkInputSearchButtonConfig) ? cfg.onSearch : null;
     (cfgOnSearch ?? inputWidget.onSearch)?.call(text);
@@ -900,7 +889,7 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
   /// 显示 spinner 并禁点。高度与输入框严格对齐（[ParkButton.height] = [_height]）。
   Widget _buildSearchButton(ParkColors colors) {
     final ParkInput inputWidget = widget.state.widget as ParkInput;
-    final dynamic cfg = inputWidget.searchButton;
+    final Object? cfg = inputWidget.searchButton;
     final bool isCfg = cfg is ParkInputSearchButtonConfig;
     final l10n = ParkLocalizations.of(widget.state.context);
     final String text = (isCfg && cfg.text != null) ? cfg.text! : l10n.searchText;

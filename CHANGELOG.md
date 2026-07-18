@@ -1,3 +1,57 @@
+## 0.8.0 (2026-07-17)
+
+### Fixes
+- FormGroup 生命周期修复：订阅管理（addControl 订阅存储/取消）、dispose 顺序修正
+- mounted 守卫补全：ParkAnchor / ParkBackTop / ParkCascader / ParkLoading 异步后检查 mounted
+
+### Improvements
+- Spec↔Code 对齐：ParkTable / ParkSelect / ParkUpload / ParkTree / ParkDynamicForm 属性与文档一致
+- 测试质量提升：修正无效断言、补零覆盖组件测试
+
+### Performance
+- Table 列宽缓存（column width cache）
+- Formatter format guard（科学计数法/NaN 防护）
+
+## 0.7.0 (2026-07-16)
+
+### Features
+- Form: 声明式字段联动 (dependencies + visibleWhen/disableWhen 表达式引擎)
+- Select: 远程搜索 (onSearchAsync + debounce + 竞态保护)
+- i18n: 新增韩语(ko)/西班牙语(es)/法语(fr) 支持，共 6 语言
+- Table: maxTagCount 支持
+
+### Improvements
+- Demo 覆盖率 81%+ (83/102 组件)
+- 1008 测试全部通过
+- 应用层扫码登录不再拦截首页
+- 所有 warning 清理
+
+### Fixes
+- 应用层编译错误全部修复
+- ThemeController Rx→普通字段迁移完成
+- bookkeeping 模块编译修复
+
+## 0.6.0 (2026-07-16)
+
+### Features
+- Table: 虚拟滚动支持 (virtualScroll)
+- Table: 列筛选功能 (filterDropdown)
+- FormGroup: enable/disable/markDirty/getEnabledValues API
+- Tree: checkStrictly 父子独立控制
+- Spec: 14 个 spec 文件迁移到 park_ui 包
+
+### Improvements
+- 性能优化: Timeline/NoticeBar/Watermark/List/Typography
+- 代码质量: Toast isLoading 命名修正/Drawer 类型安全
+- 测试: 128+ 测试 (FormGroup 89 + smoke 19 + golden 18 + group 22)
+- Demo: 47 个示例页面 (覆盖率 46%)
+
+### Fixes
+- 5 个编译错误修复
+- 23 个 warning 清理
+- 14 项 P2 组件/引擎优化
+- 14 项应用层修复
+
 ## 0.5.0 — Phase 37-38 (2026-07-16)
 - FormGroup architecture upgrade (ParkAbstractControl/ParkFormGroup/ParkFormBuilder/ParkFormArray)
 - Phase 37 urgent fixes: auth Completer pattern, QR login, retry Dio, SQLite PRAGMA, watchEffect recursion, NaN/Infinity, js_interop

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_colors.dart';
 import '../../l10n/park_localizations.dart';
 
 /// Park 抽屉位置（向后兼容）
@@ -226,6 +229,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
   late bool _internalVisible;
   bool _contentMounted = true;
   final FocusNode _focusNode = FocusNode();
+  Timer? _afterCloseTimer;
 
   /// 解析实际弹出方向
   ParkDrawerPlacement get _effectivePlacement {
@@ -287,6 +291,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
   @override
   void dispose() {
+    _afterCloseTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
   }
@@ -303,7 +308,9 @@ class _ParkDrawerState extends State<ParkDrawer> {
       });
     }
     // afterClose: 关闭动画完成后回调（延迟到动画结束）
-    Future.delayed(const Duration(milliseconds: 300), () {
+    _afterCloseTimer?.cancel();
+    _afterCloseTimer = Timer(const Duration(milliseconds: 300), () {
+      _afterCloseTimer = null;
       if (mounted) {
         widget.afterClose?.call();
       }
@@ -404,7 +411,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     return result;
   }
 
-  Widget _buildDrawerContent(ParkThemeData park, dynamic colors) {
+  Widget _buildDrawerContent(ParkThemeData park, ParkColors colors) {
     final placement = _effectivePlacement;
 
     final l10n = ParkLocalizations.of(context);
@@ -440,7 +447,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     );
   }
 
-  Widget _buildVerticalDrawer(ParkThemeData park, dynamic colors) {
+  Widget _buildVerticalDrawer(ParkThemeData park, ParkColors colors) {
     final placement = _effectivePlacement;
 
     return Container(
@@ -469,7 +476,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     );
   }
 
-  Widget _buildInnerContent(ParkThemeData park, dynamic colors) {
+  Widget _buildInnerContent(ParkThemeData park, ParkColors colors) {
     return Column(
       children: [
         // Header
@@ -515,7 +522,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     );
   }
 
-  Widget _buildHeader(ParkThemeData park, dynamic colors) {
+  Widget _buildHeader(ParkThemeData park, ParkColors colors) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: park.spacing.md,
@@ -557,7 +564,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
     );
   }
 
-  Widget _buildLoadingPlaceholder(ParkThemeData park, dynamic colors) {
+  Widget _buildLoadingPlaceholder(ParkThemeData park, ParkColors colors) {
     return Padding(
       padding: EdgeInsets.all(park.spacing.md),
       child: Column(

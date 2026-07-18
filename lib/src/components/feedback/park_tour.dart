@@ -102,7 +102,7 @@ class ParkTourStep {
 /// - **导航控件**：上一步/下一步/跳过/完成按钮 + 步数指示器
 /// - **箭头指示**：气泡朝目标方向绘制三角箭头
 /// - **滚动自动跟随**：切换步骤时若目标不可见自动 `Scrollable.ensureVisible`
-/// - **受控/非受控**：`current` + `onChange` 受控，或内部维护状态
+/// - **受控/非受控**：`current` + `onChanged` 受控，或内部维护状态
 /// - **关闭逻辑**：点击遮罩关闭 / 最后一步点「完成」关闭
 ///
 /// ## 基础用法
@@ -144,7 +144,17 @@ class ParkTour extends StatefulWidget {
   ///
   /// 当用户点击上一步/下一步时触发，携带切换后的步骤索引。
   /// 仅在受控模式下有意义。
+  @Deprecated('Use onChanged instead')
   final ValueChanged<int>? onChange;
+
+  /// 步骤切换回调（受控模式）。
+  ///
+  /// 当用户点击上一步/下一步时触发，携带切换后的步骤索引。
+  /// 仅在受控模式下有意义。
+  final ValueChanged<int>? onChanged;
+
+  /// 内部使用的有效回调：优先使用 onChanged，回退到 onChange。
+  ValueChanged<int>? get _effectiveOnChanged => onChanged ?? onChange;
 
   /// 关闭引导回调（点击遮罩、跳过或按 Esc 时触发）。
   final VoidCallback? onClose;
@@ -202,7 +212,9 @@ class ParkTour extends StatefulWidget {
     required this.steps,
     required this.open,
     this.current,
+    // ignore: deprecated_member_use_from_same_package
     this.onChange,
+    this.onChanged,
     this.onClose,
     this.onFinish,
     this.mask = true,
@@ -317,7 +329,7 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
     final clamped = index.clamp(0, widget.steps.length - 1);
 
     if (_isControlled) {
-      widget.onChange?.call(clamped);
+      widget._effectiveOnChanged?.call(clamped);
       // 受控模式下，父组件负责 setState 重建
     } else {
       setState(() {
@@ -719,7 +731,9 @@ class _PositionedBubble extends StatelessWidget {
       if (renderBox != null && renderBox.hasSize) {
         return renderBox.size;
       }
-    } catch (_) {}
+    } catch (_) {
+      // findRenderObject() 在 widget 未挂载时抛异常，使用 fallback 尺寸
+    }
     // 估算大小
     return const Size(280, 200);
   }

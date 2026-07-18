@@ -250,7 +250,7 @@ StatefulBuilder(
   },
 )''';
 
-/// 新增组件规格（本轮新增的 14 个组件）。
+/// 新增组件规格（本轮新增的 15 个组件）。
 Map<String, ParkComponentSpec> get parkNewComponentSpecs =>
     <String, ParkComponentSpec>{
       'ParkCountdown': _parkCountdownSpec,
@@ -269,6 +269,7 @@ Map<String, ParkComponentSpec> get parkNewComponentSpecs =>
       'ParkNotification': _parkNotificationSpec,
       'ParkTransfer': _parkTransferSpec,
       'ParkTree': _parkTreeSpec,
+      'ParkApp': _parkAppSpec,
     };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -818,6 +819,34 @@ final ParkComponentSpec _parkTreeSpec = ParkComponentSpec(
       description: '异步加载子节点 / Async load children',
       required: false,
     ),
+    ParkPropertyDef(
+      name: 'draggable',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否启用节点拖拽排序 / Enable drag-and-drop reordering',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'onDragReorder',
+      type: 'void Function(int, int)?',
+      defaultVal: 'null',
+      description: '拖拽排序回调（oldIndex, newIndex 为同级节点中的索引）/ Drag reorder callback',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'searchQuery',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '搜索关键词，不为 null 时高亮匹配文字并展开包含匹配的父节点 / Search query for highlight & expand',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'checkStrictly',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否严格勾选（父子节点勾选独立）/ Strict check mode (parent-child independent)',
+      required: false,
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -1333,7 +1362,7 @@ ParkFormFieldSchema(
 - 秒精度：`ext['showSeconds'] = true` 启用 `HH:mm:ss` 格式。
 - 校验：用 `regexExpression` 限制格式，如 `'^\\d{2}:\\d{2}(:\\d{2})?\u{24}'`。
 - 联动：`\u{24}form.startTime` 可被其它字段 reaction 引用，如"结束时间必须晚于开始时间"。
-- 双向绑定：在 `ParkForm` / `ParkDynamicForm` 内使用 `ParkTimePicker(bindKey: 'startTime')` 即可联动模型字段。''',
+- 双向绑定：在 `ParkForm` / `ParkForm` 内使用 `ParkTimePicker(bindKey: 'startTime')` 即可联动模型字段。''',
 );
 
 final ParkComponentSpec _parkColorPickerSpec = ParkComponentSpec(
@@ -1442,7 +1471,7 @@ ParkFormFieldSchema(
 - 自定义预设：`ext['presetColors'] = ['#1677FF', '#52C41A', '#FAAD14']` 限制可选色。
 - 校验：用 `regexExpression` 限制 HEX 格式，如 `'^#[0-9A-Fa-f]{6}\u{24}'`。
 - 联动：`\u{24}form.themeColor` 可被预览区域 reaction 引用，实时预览配色效果。
-- 双向绑定：在 `ParkForm` / `ParkDynamicForm` 内使用 `ParkColorPicker(bindKey: 'themeColor')` 即可联动模型字段。''',
+- 双向绑定：在 `ParkForm` / `ParkForm` 内使用 `ParkColorPicker(bindKey: 'themeColor')` 即可联动模型字段。''',
 );
 
 final ParkComponentSpec _parkAutoCompleteSpec = ParkComponentSpec(
@@ -1725,14 +1754,14 @@ ParkInputNumber(
 )''',
       builder: _buildINBinding,
     ),
-    // ── ParkInputNumber: ParkDynamicForm 示例 ──
+    // ── ParkInputNumber: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
+      title: '动态表单（ParkForm）',
       description:
-          '在 ParkDynamicForm 中以 schema 配置使用 number 字段类型。'
-          ' / ParkDynamicForm fieldType=number demo.',
+          '在 ParkForm 中以 schema 配置使用 number 字段类型。'
+          ' / ParkForm fieldType=number demo.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'in_demo',
     fields: [
@@ -1751,7 +1780,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'in_demo',
             fields: <ParkFormFieldSchema>[
@@ -1814,7 +1843,7 @@ ParkFormFieldSchema(
 
 ### 进阶技巧
 - 数值范围与步进：当前 `ParkFormFieldSchema` 无独立 `min`/`max`/`step` 字段，一般经 `ext` 承载（如 `ext['min']`、`ext['step']`）。
-- 双向绑定：在 `ParkForm` / `ParkDynamicForm` 内使用 `ParkInputNumber(bindKey: 'age')` 即可联动模型字段。
+- 双向绑定：在 `ParkForm` / `ParkForm` 内使用 `ParkInputNumber(bindKey: 'age')` 即可联动模型字段。
 - 校验：用 `validatorMessage` 自定义提示，结合 `isRequired` 控制必填。
 - 联动：`visibleRule` / `disabledRule` 控制显隐与禁用。''',
 );
@@ -2501,6 +2530,7 @@ Widget _buildCDController(BuildContext context) => StatefulBuilder(
             ParkButton(
               child: const Text('开始'),
               onPressed: _started
+                  // ignore: dead_code
                   ? null
                   : () {
                       controller.start(null);
@@ -2771,7 +2801,7 @@ Widget _buildMenuExpanded(BuildContext c) => ParkMenu(
   ],
 );
 Widget _buildMenuLight(BuildContext c) => ParkMenu(
-  light: true,
+  themeMode: ParkMenuThemeMode.light,
   items: const [
     ParkMenuItem(key: '1', label: '首页', icon: Icons.home),
     ParkMenuItem(
@@ -2932,7 +2962,7 @@ Widget _buildINBinding(BuildContext context) {
   final service = ParkBindingService(<String, dynamic>{'age': 18});
   final modelNotifier = ValueNotifier<int>(0);
   service.watchEffect(() {
-    service.getValue<double>('age');
+    service.getValue<num>('age');
     modelNotifier.value++;
   });
   return ValueListenableBuilder<int>(
@@ -3005,10 +3035,11 @@ Widget _buildAlertClosable(BuildContext context) => StatefulBuilder(
             closable: true,
             onClose: () => setState(() => visible = false),
           )
+        // ignore: dead_code
         : Text(
             '已关闭',
             style: TextStyle(fontSize: 14, color: _kColors.textSecondary),
-          ); // ignore: dead_code
+          );
   },
 );
 Widget _buildAlertBanner(BuildContext c) =>
@@ -3421,4 +3452,93 @@ Widget _buildPCDemo5(BuildContext c) => ParkPopconfirm(
   confirmText: '是的',
   cancelText: '不了',
   child: const ParkButton(child: Text('下一步')),
+);
+
+// ---------------------------------------------------------------------------
+// ParkApp
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkAppSpec = ParkComponentSpec(
+  name: 'ParkApp',
+  title: '全局配置 / App Shell',
+  category: 'base',
+  description:
+      '全局配置包装器，对标 Ant Design ConfigProvider。'
+      '封装 MaterialApp + ParkConfigProvider + ParkLocalizationsWidget，'
+      '统一注入主题、本地化和 Overlay context。'
+      ' / Global configuration wrapper, mirroring Ant Design ConfigProvider. '
+      'Wraps MaterialApp with Park theme, localizations, and Overlay context injection.',
+  icon: Icons.app_settings_alt_outlined,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(name: 'title', type: 'String', defaultVal: "'Park App'", description: '应用标题（透传 MaterialApp.title）/ App title'),
+    ParkPropertyDef(name: 'parkTheme', type: 'ParkThemeData?', defaultVal: 'null', description: 'Park 亮色主题（null 时使用 ParkThemeData.light()）/ Light theme'),
+    ParkPropertyDef(name: 'parkDarkTheme', type: 'ParkThemeData?', defaultVal: 'null', description: 'Park 暗色主题（null 时使用 ParkThemeData.dark()）/ Dark theme'),
+    ParkPropertyDef(name: 'themeMode', type: 'ThemeMode', defaultVal: 'ThemeMode.system', description: '主题模式（亮色/暗色/跟随系统）/ Theme mode'),
+    ParkPropertyDef(name: 'locale', type: 'ParkLocale', defaultVal: 'ParkLocale.zh', description: '当前语言环境 / Current locale'),
+    ParkPropertyDef(name: 'home', type: 'Widget?', defaultVal: 'null', description: '应用首页页面 / Home page'),
+    ParkPropertyDef(name: 'child', type: 'Widget?', defaultVal: 'null', description: '自定义子组件（优先级高于 home）/ Custom child (overrides home)'),
+    ParkPropertyDef(name: 'initialRoute', type: 'String?', defaultVal: 'null', description: '初始路由 / Initial route'),
+    ParkPropertyDef(name: 'onGenerateRoute', type: 'RouteFactory?', defaultVal: 'null', description: '路由生成器 / Route generator'),
+    ParkPropertyDef(name: 'routes', type: 'Map<String, WidgetBuilder>?', defaultVal: 'null', description: '路由表 / Route table'),
+    ParkPropertyDef(name: 'builder', type: 'TransitionBuilder?', defaultVal: 'null', description: '全局 builder / Global builder'),
+    ParkPropertyDef(name: 'darkTheme', type: 'ThemeData?', defaultVal: 'null', description: 'Flutter 暗色 ThemeData / Flutter dark ThemeData'),
+    ParkPropertyDef(name: 'theme', type: 'ThemeData?', defaultVal: 'null', description: 'Flutter 亮色 ThemeData / Flutter light ThemeData'),
+    ParkPropertyDef(name: 'debugShowCheckedModeBanner', type: 'bool', defaultVal: 'false', description: '是否显示调试标记 / Debug banner'),
+    ParkPropertyDef(name: 'navigatorObservers', type: 'List<NavigatorObserver>?', defaultVal: 'null', description: '导航观察者 / Navigator observers'),
+    ParkPropertyDef(name: 'additionalExtensions', type: 'List<ThemeExtension<dynamic>>?', defaultVal: 'null', description: '额外 ThemeExtension 列表 / Additional theme extensions'),
+  ],
+  events: const <ParkEventDef>[],
+  methods: const <ParkMethodDef>[],
+  basicUsageCode: '''
+ParkApp(
+  title: 'My App',
+  parkTheme: ParkThemeData.light(),
+  locale: ParkLocale.zh,
+  home: MyHomePage(),
+)
+''',
+  guide: '''
+## 何时使用 / When to use
+- 作为 Park UI 应用的根组件 / As the root widget of a Park UI application
+- 替代直接使用 MaterialApp，自动注入 Park 主题和本地化 / Replaces MaterialApp, auto-injects Park theme and localizations
+
+## 使用建议 / Usage tips
+- 使用 ParkApp 替代 MaterialApp 可自动完成 ParkThemeData 注入、ParkLocalizations 注入、ParkConfigProvider 注入
+- parkTheme / parkDarkTheme 为 null 时自动使用 light() / dark() 预设
+- locale 支持 zh / en / ja / ko / es / fr 六种语言
+- child 优先级高于 home；设置 routes 时 home 自动置 null
+- additionalExtensions 可追加自定义 ThemeExtension
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '基础用法 / Basic',
+      description: '使用 ParkApp 包裹首页 / Wrap home page with ParkApp',
+      code: '''
+ParkApp(
+  title: 'Demo App',
+  locale: ParkLocale.zh,
+  home: Scaffold(
+    body: Center(child: Text('Hello Park')),
+  ),
+)''',
+      builder: (BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _kColors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ParkApp', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('ParkApp 是应用根组件，通常不在组件展示页内渲染。', style: TextStyle(fontSize: 14)),
+            SizedBox(height: 4),
+            Text('用法：替代 MaterialApp 作为应用入口。', style: TextStyle(fontSize: 13, color: Colors.grey)),
+          ],
+        ),
+      ),
+    ),
+  ],
 );

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/binding/park_binding_service.dart';
+import 'package:park_ui/src/binding/park_binding_path.dart';
+import 'package:park_ui/src/binding/park_bindable.dart';
+import 'package:park_ui/src/components/input/park_form.dart';
+import 'package:park_ui/src/components/input/park_input.dart';
+import 'package:park_ui/src/components/input/park_select.dart';
+import 'package:park_ui/src/components/input/park_textarea.dart';
 
 // ---------------------------------------------------------------------------
 // ParkBindingPath Tests
@@ -461,6 +467,104 @@ void main() {
         final service = ParkBindingService({'name': 'Alice'});
         service.updateModel(<String, dynamic>{});
         expect(service.model, <String, dynamic>{});
+      });
+    });
+
+    group('batch()', () {
+      test('batch merges multiple setValue calls', () {
+        final service = ParkBindingService({'a': 1, 'b': 2});
+        final ba = service.bind<int>('a');
+        final bb = service.bind<int>('b');
+        int notifyCount = 0;
+        ba.addListener(() => notifyCount++);
+        bb.addListener(() => notifyCount++);
+
+        service.batch(() {
+          service.setValue('a', 10);
+          service.setValue('b', 20);
+        });
+
+        expect(ba.value, 10);
+        expect(bb.value, 20);
+      });
+
+      test('nested batch works correctly', () {
+        final service = ParkBindingService({'x': 1});
+        final bx = service.bind<int>('x');
+        int notifyCount = 0;
+        bx.addListener(() => notifyCount++);
+
+        service.batch(() {
+          service.setValue('x', 2);
+          service.batch(() {
+            service.setValue('x', 3);
+          });
+        });
+
+        expect(bx.value, 3);
+      });
+    });
+
+    group('watchEffect()', () {
+      test('watchEffect triggers on value change', () {
+        final service = ParkBindingService({'count': 0});
+        int effectRunCount = 0;
+
+        service.watchEffect(() {
+          service.getValue<int>('count');
+          effectRunCount++;
+        });
+
+        expect(effectRunCount, 1);
+        service.setValue('count', 1);
+        expect(effectRunCount, 2);
+      });
+
+      test('watchEffect can be stopped', () {
+        final service = ParkBindingService({'value': 0});
+        int effectRunCount = 0;
+
+        final stop = service.watchEffect(() {
+          service.getValue<int>('value');
+          effectRunCount++;
+        });
+
+        expect(effectRunCount, 1);
+        stop();
+        service.setValue('value', 1);
+        expect(effectRunCount, 1);
+      });
+
+      test('watchEffect tracks multiple dependencies', () {
+        final service = ParkBindingService({'a': 1, 'b': 2});
+        int effectRunCount = 0;
+
+        service.watchEffect(() {
+          service.getValue<int>('a');
+          service.getValue<int>('b');
+          effectRunCount++;
+        });
+
+        expect(effectRunCount, 1);
+        service.setValue('a', 10);
+        expect(effectRunCount, 2);
+        service.setValue('b', 20);
+        expect(effectRunCount, 3);
+      });
+    });
+
+    group('nextTick()', () {
+      test('nextTick waits for pending updates', () async {
+        final service = ParkBindingService({'value': 0});
+        service.bind<int>('value');
+
+        service.beginBatch();
+        service.setValue('value', 1);
+        expect(service.pendingCount, greaterThan(0));
+
+        service.endBatch();
+        await service.nextTick();
+        expect(service.pendingCount, 0);
       });
     });
   });

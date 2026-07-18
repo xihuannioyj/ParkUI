@@ -305,9 +305,10 @@ class ParkUpload extends StatefulWidget {
       return '仅支持上传图片文件';
     }
 
-    if (accept != null && accept!.isNotEmpty) {
+    final List<String>? localAccept = accept;
+    if (localAccept != null && localAccept.isNotEmpty) {
       final String ext = _fileExtension(file.path);
-      final bool supported = accept!
+      final bool supported = localAccept
           .map((String item) => item.toLowerCase().replaceAll('.', ''))
           .contains(ext);
       if (!supported) {
@@ -315,15 +316,18 @@ class ParkUpload extends StatefulWidget {
       }
     }
 
-    if (maxSizeMB != null && file.sizeBytes != null) {
-      final double size = file.sizeBytes! / (1024 * 1024);
-      if (size > maxSizeMB!) {
-        return '文件大小不能超过 ${maxSizeMB!.toStringAsFixed(maxSizeMB! % 1 == 0 ? 0 : 1)}MB';
+    final double? localMaxSizeMB = maxSizeMB;
+    final int? localSizeBytes = file.sizeBytes;
+    if (localMaxSizeMB != null && localSizeBytes != null) {
+      final double size = localSizeBytes / (1024 * 1024);
+      if (size > localMaxSizeMB) {
+        return '文件大小不能超过 ${localMaxSizeMB.toStringAsFixed(localMaxSizeMB % 1 == 0 ? 0 : 1)}MB';
       }
     }
 
-    if (beforeAddValidator != null) {
-      return beforeAddValidator!(file);
+    final validator = beforeAddValidator;
+    if (validator != null) {
+      return validator(file);
     }
 
     return null;
@@ -403,9 +407,9 @@ class ParkUpload extends StatefulWidget {
       }
     }
 
-    if (accept != null && accept!.isNotEmpty) {
+    if (accept != null && accept.isNotEmpty) {
       final String ext = _fileExtension(file.path);
-      final bool supported = accept!
+      final bool supported = accept
           .map((String item) => item.toLowerCase().replaceAll('.', ''))
           .contains(ext);
       if (!supported) {
@@ -415,13 +419,13 @@ class ParkUpload extends StatefulWidget {
 
     if (maxSizeMB != null && file.sizeBytes != null) {
       final double size = file.sizeBytes! / (1024 * 1024);
-      if (size > maxSizeMB!) {
-        return '文件大小不能超过 ${maxSizeMB!.toStringAsFixed(maxSizeMB! % 1 == 0 ? 0 : 1)}MB';
+      if (size > maxSizeMB) {
+        return '文件大小不能超过 ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
       }
     }
 
     if (beforeAddValidator != null) {
-      return beforeAddValidator!(file);
+      return beforeAddValidator(file);
     }
 
     return null;
@@ -463,10 +467,6 @@ class ParkUpload extends StatefulWidget {
     return Icons.insert_drive_file_outlined;
   }
 
-  String _fileNameFromPath(String path) {
-    return fileNameFromPath(path);
-  }
-
   @override
   State<ParkUpload> createState() => _ParkUploadState();
 }
@@ -500,6 +500,17 @@ class _ParkUploadState extends State<ParkUpload> {
     }
 
     return null;
+  }
+
+  /// 通过文件路径（稳定标识符）查找文件在列表中的索引。
+  ///
+  /// 避免使用 `widget.files.indexOf(file)`，因为 async 操作后
+  /// widget.files 可能已重建，对象引用不再一致。
+  int _findIndexByPath(List<ParkUploadFile> files, ParkUploadFile file) {
+    for (int i = 0; i < files.length; i++) {
+      if (files[i].path == file.path) return i;
+    }
+    return -1;
   }
 
   /// 处理添加文件操作。
@@ -669,7 +680,7 @@ class _ParkUploadState extends State<ParkUpload> {
     ParkLocalizations l10n,
   ) async {
     for (final ParkUploadFile file in newFiles) {
-      final int index = widget.files.length + newFiles.indexOf(file);
+      final int index = _findIndexByPath(widget.files, file);
 
       // 标记为上传中
       if (!context.mounted) return;
@@ -717,7 +728,7 @@ class _ParkUploadState extends State<ParkUpload> {
     // 文件小于分片大小，不需要分片 / File smaller than chunk size
     if (fileSize <= chunkSize || fileSize == 0) {
       if (widget.onChunkUpload != null) {
-        final int index = widget.files.indexOf(file);
+        final int index = _findIndexByPath(widget.files, file);
         if (index < 0) return;
         List<ParkUploadFile> updated = List<ParkUploadFile>.from(widget.files);
         updated[index] = updated[index].copyWith(
@@ -768,7 +779,7 @@ class _ParkUploadState extends State<ParkUpload> {
       totalChunks: totalChunks,
     );
 
-    final int index = widget.files.indexOf(file);
+    final int index = _findIndexByPath(widget.files, file);
     if (index < 0) return;
 
     // 标记为上传中，初始化分片信息 / Mark as uploading, init chunk info
@@ -1047,10 +1058,10 @@ class _ParkUploadState extends State<ParkUpload> {
                         color: colors.error,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
                         size: 12,
-                        color: Colors.white,
+                        color: colors.surface,
                       ),
                     ),
                   ),
@@ -1864,6 +1875,9 @@ class _CropImageDialogState extends State<_CropImageDialog> {
         child: _imageLoaded
             ? LayoutBuilder(
                 builder: (context, constraints) {
+                  final park =
+                      Theme.of(context).extension<ParkThemeData>() ??
+                          ParkThemeData.light();
                   return Stack(
                     children: <Widget>[
                       Positioned.fill(
@@ -1888,6 +1902,7 @@ class _CropImageDialogState extends State<_CropImageDialog> {
                                 constraints.maxWidth,
                                 constraints.maxHeight,
                               ),
+                              overlayColor: park.colors.surface,
                             ),
                           ),
                         ),
@@ -1910,8 +1925,9 @@ class _CropImageDialogState extends State<_CropImageDialog> {
                           ),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Colors.blue, width: 2),
+                              color: park.colors.surface,
+                              border: Border.all(
+                                  color: park.colors.brand, width: 2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -1947,18 +1963,20 @@ class _CropImagePainter extends CustomPainter {
   final ParkCropRectangle cropRect;
   final Size imageSize;
   final Size displaySize;
+  final Color overlayColor;
 
   _CropImagePainter({
     required this.cropRect,
     required this.imageSize,
     required this.displaySize,
+    required this.overlayColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final Paint dimPaint = Paint()..color = const Color(0x88000000);
     final Paint borderPaint = Paint()
-      ..color = Colors.white
+      ..color = overlayColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
@@ -1996,7 +2014,7 @@ class _CropImagePainter extends CustomPainter {
 
     // 绘制网格线（三分法）
     final Paint gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.4)
+      ..color = overlayColor.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
     for (int i = 1; i < 3; i++) {

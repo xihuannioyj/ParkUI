@@ -91,7 +91,12 @@ class ParkFormBuilder {
     // fieldLength validation (acts as maxLength shortcut).
     if (schema.fieldLength > 0) {
       validators.add((dynamic value) {
-        if (value is String && value.length > schema.fieldLength) {
+        final int len = value is String
+            ? value.length
+            : value is List
+                ? value.length
+                : 0;
+        if (len > schema.fieldLength) {
           return ParkFormError(
             'maxLength',
             '${schema.labelName}长度不能大于${schema.fieldLength}',
@@ -103,7 +108,12 @@ class ParkFormBuilder {
     // maxLength validation (only when fieldLength is not already covering it).
     else if (schema.maxLength != null && schema.maxLength! > 0) {
       validators.add((dynamic value) {
-        if (value is String && value.length > schema.maxLength!) {
+        final int len = value is String
+            ? value.length
+            : value is List
+                ? value.length
+                : 0;
+        if (len > schema.maxLength!) {
           return ParkFormError(
             'maxLength',
             '${schema.labelName}长度不能大于${schema.maxLength}',

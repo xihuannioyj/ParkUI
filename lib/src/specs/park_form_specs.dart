@@ -1,5 +1,5 @@
 // Park 表单组件规格 — 由 Agent 填充
-// （ParkDynamicForm）
+// （ParkForm Schema 模式）
 import 'package:flutter/material.dart';
 import 'package:park_ui/park_ui.dart';
 import 'park_component_spec.dart';
@@ -7,7 +7,7 @@ import 'park_component_spec.dart';
 /// 表单类组件规格字典（1 个组件）。
 Map<String, ParkComponentSpec> get parkFormSpecs =>
     <String, ParkComponentSpec>{
-      'ParkDynamicForm': _parkDynamicFormSpec,
+      'ParkForm': _parkDynamicFormSpec,
       'ParkFormSection': _parkFormSectionSpec,
     };
 
@@ -262,10 +262,10 @@ final ParkFormSchema _dataSourceDemoSchema = ParkFormSchema(
 );
 
 // ---------------------------------------------------------------------------
-// ParkDynamicForm
+// ParkForm
 // ---------------------------------------------------------------------------
 final ParkComponentSpec _parkDynamicFormSpec = ParkComponentSpec(
-  name: 'ParkDynamicForm',
+  name: 'ParkForm',
   title: '动态表单',
   category: 'form',
   description:
@@ -287,13 +287,13 @@ final ParkComponentSpec _parkDynamicFormSpec = ParkComponentSpec(
       description: '提交回调，参数为校验通过后的字段值集合。',
     ),
     ParkPropertyDef(
-      name: 'submitText',
+      name: 'submitLabel',
       type: 'String',
       defaultVal: "'提交'",
       description: '提交按钮文案。',
     ),
     ParkPropertyDef(
-      name: 'resetText',
+      name: 'resetLabel',
       type: 'String',
       defaultVal: "'重置'",
       description: '重置按钮文案。',
@@ -325,6 +325,12 @@ final ParkComponentSpec _parkDynamicFormSpec = ParkComponentSpec(
       type: 'ParkBindingService?',
       description: '外部绑定服务注入。',
     ),
+    ParkPropertyDef(
+      name: 'formGroup',
+      type: 'ParkFormGroup?',
+      defaultVal: 'null',
+      description: '表单分组对象（优先级高于 model / bindingService，支持值访问、校验、批量赋值）/ Form group object',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -335,7 +341,7 @@ final ParkComponentSpec _parkDynamicFormSpec = ParkComponentSpec(
   ],
   methods: const <ParkMethodDef>[],
   basicUsageCode: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'contact',
     fields: [
@@ -397,7 +403,7 @@ ParkDynamicForm(
 | `regexTag` | `String?` | 否 | `regex_tag` / `field_reg` | 正则标签，如 "mobile"、"email"，从 ParkRegexRegistry 取对应正则。 |
 | `regexExpression` | `String?` | 否 | `regex_expression` / `regex` | 直写正则表达式，优先级高于 regexTag。 |
 | `validatorMessage` | `String?` | 否 | `validator_message` | 校验失败时的自定义提示文本。 |
-| `asyncValidatorKey` | `String?` | 否 | `async_validator_key` | 异步校验策略键，引用 ParkDynamicForm.asyncValidatorRegistry 中注册的校验器。 |
+| `asyncValidatorKey` | `String?` | 否 | `async_validator_key` | 异步校验策略键，引用 ParkForm.asyncValidatorRegistry 中注册的校验器。 |
 
 ## 3. 数据源属性
 
@@ -498,7 +504,7 @@ ParkDynamicForm(
 
 ## 内联渲染字段类型（image / scanner / region / richText）
 
-> 以下四类无独立组件展示页，其配置统一在此说明：它们都作为 `ParkFormFieldSchema` 的一个字段，由 `ParkDynamicForm` 在运行时内联渲染。
+> 以下四类无独立组件展示页，其配置统一在此说明：它们都作为 `ParkFormFieldSchema` 的一个字段，由 `ParkForm` 在运行时内联渲染。
 
 ### image
 
@@ -607,11 +613,11 @@ ParkDynamicForm(
       title: '基础动态表单',
       description: '文本、下拉、开关、多行四类字段，提交后回传值集合。',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: schema,
   onSubmit: (values) => print(values),
 )''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: _sampleFormSchema,
         onSubmit: (_) {},
       ),
@@ -719,8 +725,8 @@ ParkFormSchema(
   ],
 )
 
-ParkDynamicForm(schema: schema, onSubmit: (values) => print(values))''',
-      builder: (BuildContext context) => ParkDynamicForm(
+ParkForm(schema: schema, onSubmit: (values) => print(values))''',
+      builder: (BuildContext context) => ParkForm(
         schema: _reactionDemoSchema,
         onSubmit: (_) {},
       ),
@@ -755,12 +761,12 @@ ParkFormSchema(
   ],
 )
 
-ParkDynamicForm(
+ParkForm(
   schema: schema,
   asyncValidatorRegistry: registry,
   onSubmit: (values) => print(values),
 )''',
-      builder: (BuildContext context) => ParkDynamicForm(
+      builder: (BuildContext context) => ParkForm(
         schema: _asyncDemoSchema,
         asyncValidatorRegistry: _asyncDemoRegistry,
         onSubmit: (_) {},
@@ -801,8 +807,8 @@ ParkFormSchema(
   ],
 )
 
-ParkDynamicForm(schema: schema, onSubmit: (values) => print(values))''',
-      builder: (BuildContext context) => ParkDynamicForm(
+ParkForm(schema: schema, onSubmit: (values) => print(values))''',
+      builder: (BuildContext context) => ParkForm(
         schema: _groupDemoSchema,
         onSubmit: (_) {},
       ),
@@ -843,8 +849,8 @@ ParkFormSchema(
   ],
 )
 
-ParkDynamicForm(schema: schema, onSubmit: (values) => print(values))''',
-      builder: (BuildContext context) => ParkDynamicForm(
+ParkForm(schema: schema, onSubmit: (values) => print(values))''',
+      builder: (BuildContext context) => ParkForm(
         schema: _extendDemoSchema,
         onSubmit: (_) {},
       ),
@@ -876,8 +882,8 @@ ParkFormFieldSchema(
 //     dataSourceParams: {'province': '\$form.province'},
 //   )
 
-ParkDynamicForm(schema: schema, onSubmit: (values) => print(values))''',
-      builder: (BuildContext context) => ParkDynamicForm(
+ParkForm(schema: schema, onSubmit: (values) => print(values))''',
+      builder: (BuildContext context) => ParkForm(
         schema: _dataSourceDemoSchema,
         onSubmit: (_) {},
       ),
@@ -887,7 +893,7 @@ ParkDynamicForm(schema: schema, onSubmit: (values) => print(values))''',
       description:
           '传入 ParkFormSchema 自动渲染字段，点击提交触发 onSubmit 并回显提交值集合。',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: schema,
   onSubmit: (values) => print(values),
 )
@@ -1093,7 +1099,7 @@ ParkFormSection(
 );
 
 // =====================================================================
-// 新增 demo 组件（ParkDynamicForm / ParkFormSection）
+// 新增 demo 组件（ParkForm / ParkFormSection）
 // =====================================================================
 
 class _DynamicFormSubmitDemo extends StatefulWidget {
@@ -1112,7 +1118,7 @@ class _DynamicFormSubmitDemoState extends State<_DynamicFormSubmitDemo> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        ParkDynamicForm(
+        ParkForm(
           schema: _sampleFormSchema,
           onSubmit: (values) => setState(() => _result = values),
         ),

@@ -65,6 +65,12 @@ class ParkMessage extends StatefulWidget {
   /// Legacy single-controller reference.
   static _ParkMessageOverlayController? _currentController;
 
+  /// Pending controller for same-frame replacement.
+  /// When two messages are shown in the same frame, the first is still
+  /// pending (postFrameCallback hasn't fired yet). Track it so the second
+  /// can dismiss it.
+  static _ParkMessageOverlayController? _pendingController;
+
   /// Update global message configuration.
   static void config({int? maxCount}) {
     _config = ParkMessageConfig(
@@ -295,45 +301,55 @@ class ParkMessage extends StatefulWidget {
     // Legacy: when maxCount == 1 and no key, dismiss previous single message.
     if (_config.maxCount <= 1 && messageKey == null) {
       _currentController?.dismiss();
+      // Also dismiss a pending message from the same frame (not yet inserted).
+      _pendingController?.dismiss();
     }
+
+    // Create controller synchronously so it can be tracked for same-frame replacement.
+    final effectiveKey = messageKey ?? '_auto_${_autoId++}';
+    bool removed = false;
+    OverlayEntry? entry;
+    final GlobalKey<_ParkMessageOverlayState> overlayStateKey =
+        GlobalKey<_ParkMessageOverlayState>();
+    late final _ParkMessageOverlayController controller;
+
+    void remove() {
+      if (removed) return;
+      removed = true;
+      _activeMessages.remove(effectiveKey);
+      if (identical(_currentController, controller)) {
+        _currentController = null;
+      }
+      if (identical(_pendingController, controller)) {
+        _pendingController = null;
+      }
+      onClose?.call();
+      entry?.remove();
+    }
+
+    controller = _ParkMessageOverlayController(
+      dismiss: () {
+        final _ParkMessageOverlayState? state = overlayStateKey.currentState;
+        if (state == null) {
+          remove();
+          return;
+        }
+        state.close();
+      },
+    );
+    _activeMessages[effectiveKey] = controller;
+
+    // Legacy reference.
+    if (_config.maxCount <= 1 && messageKey == null) {
+      _currentController = controller;
+    }
+    // Track as pending until overlay is actually inserted.
+    _pendingController = controller;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final overlay = Overlay.of(context, rootOverlay: true);
-      late OverlayEntry entry;
-      bool removed = false;
-      final GlobalKey<_ParkMessageOverlayState> overlayStateKey =
-          GlobalKey<_ParkMessageOverlayState>();
-      late final _ParkMessageOverlayController controller;
 
-      final effectiveKey = messageKey ?? '_auto_${_autoId++}';
-
-      void remove() {
-        if (removed) return;
-        removed = true;
-        _activeMessages.remove(effectiveKey);
-        if (identical(_currentController, controller)) {
-          _currentController = null;
-        }
-        onClose?.call();
-        entry.remove();
-      }
-
-      controller = _ParkMessageOverlayController(
-        dismiss: () {
-          final _ParkMessageOverlayState? state = overlayStateKey.currentState;
-          if (state == null) {
-            remove();
-            return;
-          }
-          state.close();
-        },
-      );
-      _activeMessages[effectiveKey] = controller;
-
-      // Legacy reference.
-      if (_config.maxCount <= 1 && messageKey == null) {
-        _currentController = controller;
-      }
+      if (removed) return; // Already dismissed before frame fired.
 
       entry = OverlayEntry(
         builder: (_) {
@@ -355,7 +371,11 @@ class ParkMessage extends StatefulWidget {
         },
       );
 
-      overlay.insert(entry);
+      overlay.insert(entry!);
+      // Overlay is now inserted; clear pending reference.
+      if (identical(_pendingController, controller)) {
+        _pendingController = null;
+      }
     });
   }
 

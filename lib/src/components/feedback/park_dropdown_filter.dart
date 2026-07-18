@@ -63,7 +63,15 @@ class DropdownFilterItem {
   final bool Function()? onTab;
 
   /// 选项变化回调
+  @Deprecated('Use onChanged instead')
   final void Function(Set<String> selected)? onChange;
+
+  /// 选项变化回调
+  final void Function(Set<String> selected)? onChanged;
+
+  /// 内部使用的有效回调：优先使用 onChanged，回退到 onChange。
+  void Function(Set<String> selected)? get _effectiveOnChanged =>
+      onChanged ?? onChange;
 
   /// 确认回调
   final void Function(Set<String> selected)? onConfirm;
@@ -86,7 +94,9 @@ class DropdownFilterItem {
     this.height,
     this.isCheck = false,
     this.onTab,
+    // ignore: deprecated_member_use_from_same_package
     this.onChange,
+    this.onChanged,
     this.onConfirm,
     this.onReset,
     this.selectedValues,
@@ -327,7 +337,7 @@ class _ParkDropdownFilterState extends State<ParkDropdownFilter> {
         confirmText: ParkLocalizations.of(context).confirmText,
         cancelText: ParkLocalizations.of(context).cancelText,
         onChange: (values) {
-          item.onChange?.call(values);
+          item._effectiveOnChanged?.call(values);
         },
         onConfirm: (values) {
           item.onConfirm?.call(values);

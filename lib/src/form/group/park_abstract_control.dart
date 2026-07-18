@@ -13,6 +13,17 @@ class ParkFormError {
 
   @override
   String toString() => 'ParkFormError($key: $message)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkFormError &&
+          runtimeType == other.runtimeType &&
+          key == other.key &&
+          message == other.message;
+
+  @override
+  int get hashCode => key.hashCode ^ message.hashCode;
 }
 
 /// Synchronous validator function type.
@@ -26,25 +37,6 @@ typedef ParkValidatorFunction = ParkFormError? Function(dynamic value);
 typedef ParkAsyncValidatorFunction = Future<ParkFormError?> Function(
   dynamic value,
 );
-
-/// Change event emitted by form controls.
-class ParkFormFieldChange {
-  /// The field key that changed.
-  final String fieldKey;
-
-  /// The new value.
-  final dynamic value;
-
-  /// Whether the field is dirty (user-modified).
-  final bool isDirty;
-
-  /// Create a field change event.
-  const ParkFormFieldChange({
-    required this.fieldKey,
-    this.value,
-    this.isDirty = false,
-  });
-}
 
 /// Abstract base class for all form controls.
 ///
@@ -105,12 +97,14 @@ abstract class ParkAbstractControl {
   /// Enable this control.
   void enable() {
     _enabled = true;
+    if (_statusController.isClosed) return;
     _statusController.add(status);
   }
 
   /// Disable this control.
   void disable() {
     _enabled = false;
+    if (_statusController.isClosed) return;
     _statusController.add(status);
   }
 
@@ -177,6 +171,7 @@ abstract class ParkAbstractControl {
     _pristine = true;
     _touched = false;
     _pending = false;
+    if (_valueController.isClosed || _statusController.isClosed) return;
     _valueController.add(_value);
     _statusController.add(status);
   }
@@ -277,6 +272,7 @@ class ParkFormControl extends ParkAbstractControl {
 /// Group control -- holds named child controls (like a nested form).
 class ParkFormGroupControl extends ParkAbstractControl {
   final Map<String, ParkAbstractControl> _controls;
+  final Map<String, StreamSubscription<dynamic>> _childSubscriptions = {};
 
   /// Create a group control from a map of named child controls.
   ParkFormGroupControl(this._controls) : super(null);
@@ -311,7 +307,8 @@ class ParkFormGroupControl extends ParkAbstractControl {
   /// emissions to this group's value stream.
   void addControl(String name, ParkAbstractControl control) {
     _controls[name] = control;
-    control.valueChanges.listen((dynamic _) {
+    _childSubscriptions[name]?.cancel();
+    _childSubscriptions[name] = control.valueChanges.listen((dynamic _) {
       if (!_valueController.isClosed) {
         _valueController.add(value);
       }
@@ -321,19 +318,24 @@ class ParkFormGroupControl extends ParkAbstractControl {
 
   /// Remove and dispose a child control.
   void removeControl(String name) {
+    _childSubscriptions.remove(name)?.cancel();
     final ParkAbstractControl? removed = _controls.remove(name);
     removed?.dispose();
     _valueController.add(value);
   }
 
   @override
-  Map<String, dynamic> get value => <String, dynamic>{
+  Map<String, dynamic> get value => getEnabledValues();
+
+  /// Raw value including disabled controls.
+  ///
+  /// Unlike [value], which only returns values of enabled controls,
+  /// [rawValue] returns values for ALL controls regardless of their
+  /// enabled/disabled state (matching Angular FormControl semantics).
+  Map<String, dynamic> get rawValue => <String, dynamic>{
         for (final MapEntry<String, ParkAbstractControl> e in _controls.entries)
           e.key: e.value.value,
       };
-
-  /// Raw value including disabled controls.
-  Map<String, dynamic> get rawValue => value;
 
   /// Get values of only enabled (non-disabled) controls.
   Map<String, dynamic> getEnabledValues() {
@@ -389,6 +391,10 @@ class ParkFormGroupControl extends ParkAbstractControl {
 
   @override
   void dispose() {
+    for (final StreamSubscription<dynamic> sub in _childSubscriptions.values) {
+      sub.cancel();
+    }
+    _childSubscriptions.clear();
     for (final ParkAbstractControl c in _controls.values) {
       c.dispose();
     }

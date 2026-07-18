@@ -2645,7 +2645,7 @@ StatefulBuilder(
                   child: Column(
                     children: <Widget>[
                       ParkSticky(
-                        onChange: (bool v) {
+                        onStickyChanged: (bool v) {
                           stuck = v;
                           setState(() {});
                         },

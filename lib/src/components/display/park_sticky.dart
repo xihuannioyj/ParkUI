@@ -47,17 +47,7 @@ class ParkSticky extends StatefulWidget {
     this.showShadow = true,
     this.backgroundColor,
     this.onStickyChanged,
-    this.offset = 0,
-    this.onChange,
   });
-
-  /// 粘顶时距顶部的偏移（等同于 [stickyOffset]）。
-  @Deprecated('Use stickyOffset instead')
-  final double offset;
-
-  /// 粘性状态变化回调（等同于 [onStickyChanged]）。
-  @Deprecated('Use onStickyChanged instead')
-  final ValueChanged<bool>? onChange;
 
   @override
   State<ParkSticky> createState() => _ParkStickyState();
@@ -77,8 +67,7 @@ class _ParkStickyState extends State<ParkSticky> {
   double _scrollOffset = 0;
 
   /// 有效吸顶偏移：优先使用 stickyOffset，为 0 时回退到 offset。
-  double get _effectiveOffset =>
-      widget.stickyOffset != 0 ? widget.stickyOffset : widget.offset;
+  double get _effectiveOffset => widget.stickyOffset;
 
   @override
   void initState() {
@@ -114,8 +103,6 @@ class _ParkStickyState extends State<ParkSticky> {
           _isSticky = shouldBeSticky;
           // 统一通知：优先 onStickyChanged，同时兼容 onChange。
           widget.onStickyChanged?.call(_isSticky);
-          // ignore: deprecated_member_use_from_same_package
-          widget.onChange?.call(_isSticky);
         }
       });
     }

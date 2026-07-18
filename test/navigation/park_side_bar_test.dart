@@ -28,5 +28,77 @@ void main() {
       await tester.tap(find.text('B'));
       expect(selected, 1);
     });
+
+    testWidgets('collapsed mode shows icons only', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        collapsed: true,
+        collapsedWidth: 64,
+        items: [
+          ParkSideBarItem(icon: Icons.dashboard, label: 'Dashboard'),
+          ParkSideBarItem(icon: Icons.settings, label: 'Settings'),
+        ],
+      )));
+      expect(find.byIcon(Icons.dashboard), findsOneWidget);
+      expect(find.byIcon(Icons.settings), findsOneWidget);
+    });
+
+    testWidgets('children items expand on tap', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        items: [
+          ParkSideBarItem(icon: Icons.folder, label: 'Parent', children: [
+            ParkSideBarItem(icon: Icons.file_copy, label: 'Child1'),
+            ParkSideBarItem(icon: Icons.file_copy, label: 'Child2'),
+          ]),
+        ],
+        selectedIndex: 0,
+      )));
+      // selectedIndex=0 auto-expands the children
+      expect(find.text('Child1'), findsOneWidget);
+      expect(find.text('Child2'), findsOneWidget);
+    });
+
+    testWidgets('badge displays text', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        items: [
+          ParkSideBarItem(icon: Icons.mail, label: 'Messages', badge: '12'),
+        ],
+      )));
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('disabled item does not trigger onChanged', (tester) async {
+      int selected = -1;
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        items: [
+          ParkSideBarItem(icon: Icons.circle, label: 'Active'),
+          ParkSideBarItem(icon: Icons.block, label: 'Disabled', disabled: true),
+        ],
+        onChanged: (index) => selected = index,
+      )));
+      await tester.tap(find.text('Disabled'));
+      expect(selected, -1);
+    });
+
+    testWidgets('dark theme renders', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        theme: ParkSideBarTheme.dark,
+        items: [
+          ParkSideBarItem(icon: Icons.circle, label: 'DarkItem'),
+        ],
+      )));
+      expect(find.text('DarkItem'), findsOneWidget);
+    });
+
+    testWidgets('header and footer render', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSideBar(
+        items: [
+          ParkSideBarItem(icon: Icons.circle, label: 'Item'),
+        ],
+        header: const Text('Header'),
+        footer: const Text('Footer'),
+      )));
+      expect(find.text('Header'), findsOneWidget);
+      expect(find.text('Footer'), findsOneWidget);
+    });
   });
 }

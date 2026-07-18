@@ -69,7 +69,7 @@ class ParkRadioOption {
 ///   onChanged: (v) => print('选中: $v'),
 /// )
 /// ```
-class ParkRadio extends FormField<String> {
+class ParkRadio extends FormField<String> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 

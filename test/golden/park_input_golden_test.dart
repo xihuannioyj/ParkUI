@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/components/input/park_input.dart';
 
 import 'golden_test_helper.dart';
 
@@ -11,9 +11,9 @@ void main() {
     testWidgets('default and with label', (tester) async {
       await tester.pumpWidget(
         goldenWrapColumn([
-          const ParkInput(hintText: 'Default input'),
+          ParkInput(hintText: 'Default input'),
           const SizedBox(height: 16),
-          const ParkInput(label: 'Username', hintText: 'Enter username'),
+          ParkInput(label: 'Username', hintText: 'Enter username'),
         ]),
       );
       await expectLater(
@@ -25,9 +25,9 @@ void main() {
     testWidgets('disabled and readOnly states', (tester) async {
       await tester.pumpWidget(
         goldenWrapColumn([
-          const ParkInput(hintText: 'Disabled', enabled: false),
+          ParkInput(hintText: 'Disabled', enabled: false),
           const SizedBox(height: 16),
-          const ParkInput(hintText: 'Read-only', readOnly: true),
+          ParkInput(hintText: 'Read-only', readOnly: true),
         ]),
       );
       await expectLater(
@@ -39,12 +39,12 @@ void main() {
     testWidgets('with prefix icon and clearable', (tester) async {
       await tester.pumpWidget(
         goldenWrapColumn([
-          const ParkInput(
+          ParkInput(
             hintText: 'Search',
-            prefixIcon: Icon(Icons.search),
+            prefixIcon: const Icon(Icons.search),
           ),
           const SizedBox(height: 16),
-          const ParkInput(
+          ParkInput(
             hintText: 'Clearable',
             clearable: true,
           ),

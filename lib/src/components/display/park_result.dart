@@ -263,7 +263,7 @@ class ParkResult extends StatelessWidget {
               ] else if (resolvedDescription != null) ...[
                 SizedBox(height: park.spacing.sm),
                 Text(
-                  resolvedDescription!,
+                  resolvedDescription,
                   style: TextStyle(
                     color: park.colors.textSecondary,
                     fontSize: park.typography.sizeBody,

@@ -354,7 +354,7 @@ class ParkFormItem extends StatefulWidget {
   /// 绑定键（点号分隔的路径，如 `'user.name'`）。
   ///
   /// 设置后该表单项的值可双向绑定到 [ParkBindingService]（需置于已注入
-  /// 绑定服务的 [ParkForm] / [ParkDynamicForm] 内）。不设时组件行为不变。
+  /// 绑定服务的 [ParkForm] 内）。不设时组件行为不变。
   final String? bindKey;
 
   /// 响应式表单控件（可选）。
@@ -513,6 +513,7 @@ class ParkFormItemState extends State<ParkFormItem> {
         (widget.label != null && widget.label!.trim().isNotEmpty);
     final bool hasHelp =
         widget.helpText != null && widget.helpText!.trim().isNotEmpty;
+    final String? helpText = hasHelp ? widget.helpText : null;
 
     // 判断是否显示必填标记
     final bool showAsterisk =
@@ -702,7 +703,7 @@ class ParkFormItemState extends State<ParkFormItem> {
                 if (hasHelp) ...<Widget>[
                   SizedBox(height: spacing.xs),
                   Text(
-                    widget.helpText!,
+                    helpText!,
                     style: TextStyle(
                       fontSize: typo.sizeCaption,
                       color: colors.textPlaceholder,
@@ -712,7 +713,7 @@ class ParkFormItemState extends State<ParkFormItem> {
                 if (hasFormError) ...<Widget>[
                   SizedBox(height: spacing.xs),
                   Text(
-                    displayError!,
+                    displayError,
                     style: TextStyle(
                       fontSize: typo.sizeCaption,
                       color: colors.error,
@@ -776,7 +777,7 @@ class ParkFormItemState extends State<ParkFormItem> {
               if (hasHelp) ...<Widget>[
                 SizedBox(height: spacing.xs),
                 Text(
-                  widget.helpText!,
+                  helpText!,
                   style: TextStyle(
                     fontSize: typo.sizeCaption,
                     color: colors.textPlaceholder,
@@ -786,7 +787,7 @@ class ParkFormItemState extends State<ParkFormItem> {
               if (hasFormError) ...<Widget>[
                 SizedBox(height: spacing.xs),
                 Text(
-                  displayError!,
+                  displayError,
                   style: TextStyle(
                     fontSize: typo.sizeCaption,
                     color: colors.error,

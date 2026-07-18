@@ -2,11 +2,12 @@ include: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
-    - prefer_const_constructors
-    - prefer_const_declarations
-    - prefer_final_fields
-    - avoid_print
-    - prefer_single_quotes
-    - sort_child_properties_last
-    - use_key_in_widget_constructors
-    - prefer_relative_imports
+    prefer_const_constructors: info
+    prefer_const_literals_to_create_immutables: info
+    prefer_const_declarations: info
+    prefer_final_fields: warning
+    avoid_print: warning
+    prefer_single_quotes: info
+    sort_child_properties_last: info
+    use_key_in_widget_constructors: info
+    prefer_relative_imports: info

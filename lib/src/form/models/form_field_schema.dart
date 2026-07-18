@@ -321,6 +321,15 @@ class ParkFormFieldSchema extends Equatable {
   /// 动态必填规则（为空时退化为 isRequired 静态值）。
   final Map<String, dynamic> requiredRule;
 
+  /// 依赖的字段列表（当这些字段值变化时，触发本字段更新）。
+  ///
+  /// 声明式字段联动：当 [dependencies] 中任意字段的值发生变化时，
+  /// 本字段的可见性（ext.visible_when_expr）和禁用状态（ext.disable_when_expr）
+  /// 会被重新计算。
+  ///
+  /// 类似 Ant Design 的 dependencies + shouldUpdate 模式。
+  final List<String> dependencies;
+
   // ---- 布局与分组 ----
 
   /// 分组键（用于分组聚合）。
@@ -387,6 +396,7 @@ class ParkFormFieldSchema extends Equatable {
     this.visibleRule = const <String, dynamic>{},
     this.disabledRule = const <String, dynamic>{},
     this.requiredRule = const <String, dynamic>{},
+    this.dependencies = const <String>[],
     this.groupKey,
     this.groupName,
     this.order = 0,
@@ -511,6 +521,9 @@ class ParkFormFieldSchema extends Equatable {
       json['required_rule'],
     );
 
+    // 声明式依赖字段列表。
+    final List<String> deps = _parseStringList(json['dependencies']);
+
     // 分组。
     final String? gKey = (json['group_key'] as String?) ??
         (json['group'] as String?);
@@ -581,6 +594,7 @@ class ParkFormFieldSchema extends Equatable {
       visibleRule: visible,
       disabledRule: disabled,
       requiredRule: requiredR,
+      dependencies: deps,
       groupKey: gKey,
       groupName: gName,
       order: (json['order'] as int?) ?? (json['sort_order'] as int?) ?? 0,
@@ -626,6 +640,7 @@ class ParkFormFieldSchema extends Equatable {
       'visible_rule': visibleRule,
       'disabled_rule': disabledRule,
       'required_rule': requiredRule,
+      'dependencies': dependencies,
       'group_key': groupKey,
       'group_name': groupName,
       'order': order,
@@ -670,6 +685,7 @@ class ParkFormFieldSchema extends Equatable {
     Map<String, dynamic>? visibleRule,
     Map<String, dynamic>? disabledRule,
     Map<String, dynamic>? requiredRule,
+    List<String>? dependencies,
     String? groupKey,
     String? groupName,
     int? order,
@@ -709,6 +725,7 @@ class ParkFormFieldSchema extends Equatable {
       visibleRule: visibleRule ?? this.visibleRule,
       disabledRule: disabledRule ?? this.disabledRule,
       requiredRule: requiredRule ?? this.requiredRule,
+      dependencies: dependencies ?? this.dependencies,
       groupKey: groupKey ?? this.groupKey,
       groupName: groupName ?? this.groupName,
       order: order ?? this.order,
@@ -863,6 +880,17 @@ class ParkFormFieldSchema extends Equatable {
     return <Map<String, dynamic>>[];
   }
 
+  /// 安全解析字符串列表。
+  ///
+  /// [source] 原始数据（可能是 List 或 null）。
+  static List<String> _parseStringList(dynamic source) {
+    if (source == null) return <String>[];
+    if (source is List) {
+      return source.whereType<String>().toList();
+    }
+    return <String>[];
+  }
+
   @override
   List<Object?> get props => <Object?>[
     fieldId,
@@ -893,6 +921,7 @@ class ParkFormFieldSchema extends Equatable {
     visibleRule,
     disabledRule,
     requiredRule,
+    dependencies,
     groupKey,
     groupName,
     order,

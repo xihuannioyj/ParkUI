@@ -189,10 +189,10 @@ class ParkTypography {
           a.lineHeightTitle + (b.lineHeightTitle - a.lineHeightTitle) * t,
       lineHeightBody:
           a.lineHeightBody + (b.lineHeightBody - a.lineHeightBody) * t,
-      weightBold: FontWeight.lerp(a.weightBold, b.weightBold, t),
-      weightRegular: FontWeight.lerp(a.weightRegular, b.weightRegular, t),
-      weightMedium: FontWeight.lerp(a.weightMedium, b.weightMedium, t),
-      weightLight: FontWeight.lerp(a.weightLight, b.weightLight, t),
+      weightBold: FontWeight.lerp(a.weightBold, b.weightBold, t) ?? a.weightBold,
+      weightRegular: FontWeight.lerp(a.weightRegular, b.weightRegular, t) ?? a.weightRegular,
+      weightMedium: FontWeight.lerp(a.weightMedium, b.weightMedium, t) ?? a.weightMedium,
+      weightLight: FontWeight.lerp(a.weightLight, b.weightLight, t) ?? a.weightLight,
       fontFamily: t < 0.5 ? a.fontFamily : b.fontFamily,
     );
   }

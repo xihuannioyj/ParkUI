@@ -422,9 +422,9 @@ class ParkFormGroup {
 
   /// Release all resources (streams, child controls).
   void dispose() {
-    _changesController.close();
     for (final ParkAbstractControl c in _controls.values) {
       c.dispose();
     }
+    _changesController.close();
   }
 }

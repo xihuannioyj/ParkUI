@@ -2,7 +2,7 @@
 //
 // 覆盖：ParkAvatar / ParkBadge / ParkCell / ParkTag / ParkCollapse / ParkEmpty /
 //       ParkImage / ParkImageViewer / ParkProgress / ParkResult / ParkSkeleton /
-//       ParkSwiper / ParkTable / ParkCountdown / ParkFooter（共 15 个）
+//       ParkSwiper / ParkTable / ParkFooter（共 14 个）
 //
 // 约定（对齐 park_base_specs.dart 的完善风格）：
 //  - 每个组件的 properties 枚举其全部公开构造参数（排除 Key / BuildContext /
@@ -25,7 +25,7 @@ final ParkColors _kColors = ParkColors.light();
 final ParkSpacing _kSpacing = ParkSpacing.defaults();
 final ParkRadius _kRadius = ParkRadius.defaults();
 
-/// 展示组件规格字典（15 个组件 / Display components (15)）。
+/// 展示组件规格字典（14 个组件 / Display components (14)）。
 Map<String, ParkComponentSpec>
 get parkDisplaySpecs => <String, ParkComponentSpec>{
   'ParkAvatar': ParkComponentSpec(
@@ -382,13 +382,6 @@ get parkDisplaySpecs => <String, ParkComponentSpec>{
         type: 'Widget?',
         defaultVal: 'null',
         description: '自定义角标内容 Widget，优先级高于 count/dot / Custom badge content',
-      ),
-      ParkPropertyDef(
-        name: 'overflowCount',
-        type: 'int?',
-        defaultVal: 'null',
-        description:
-            '溢出阈值别名，设置时优先于 maxCount / Overflow cap (alias of maxCount)',
       ),
     ],
     demos: <ParkDemoScenario>[
@@ -3278,12 +3271,6 @@ StatefulBuilder(
         description: '表格尺寸（控制单元格内边距）/ Size preset',
       ),
       ParkPropertyDef(
-        name: 'stripe',
-        type: 'bool',
-        defaultVal: 'false',
-        description: '斑马纹别名，与 striped 等效 / Zebra alias',
-      ),
-      ParkPropertyDef(
         name: 'rowKey',
         type: 'String?',
         defaultVal: 'null',
@@ -3314,6 +3301,30 @@ StatefulBuilder(
         type: 'void Function(Map<String, dynamic> changeInfo)?',
         defaultVal: 'null',
         description: '综合变更回调（分页、排序、筛选等变化时触发）/ Aggregate change',
+      ),
+      ParkPropertyDef(
+        name: 'expandedRowRender',
+        type: 'Widget Function(Map<String, dynamic>, int)?',
+        defaultVal: 'null',
+        description: '展开行内容构建器（替代签名，与 expandedRowBuilder 功能相同）/ Expanded row renderer (alt signature)',
+      ),
+      ParkPropertyDef(
+        name: 'onColumnWidthChanged',
+        type: 'void Function(Map<String, double>)?',
+        defaultVal: 'null',
+        description: '列宽变化回调（拖拽调整列宽时触发，key 为列 key，value 为当前宽度）/ Column width change callback',
+      ),
+      ParkPropertyDef(
+        name: 'virtualScroll',
+        type: 'ParkVirtualScrollConfig?',
+        defaultVal: 'null',
+        description: '虚拟滚动配置（null 或 enabled=false 时禁用虚拟滚动）/ Virtual scroll config',
+      ),
+      ParkPropertyDef(
+        name: 'treeConfig',
+        type: 'ParkTableTreeConfig?',
+        defaultVal: 'null',
+        description: '树形数据配置（null 时不启用树形数据模式）/ Tree data config',
       ),
     ],
     events: const <ParkEventDef>[

@@ -69,9 +69,6 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   /// 返回 true 继续执行返回操作，返回 false 取消。
   final Future<bool> Function()? onBackConfirm;
 
-  /// 右侧操作按钮列表（[rightActions] 的别名，优先使用）
-  final List<Widget>? actions;
-
   /// 导航栏底部附加内容（如搜索栏、二级标签等）
   final PreferredSizeWidget? bottom;
 
@@ -93,7 +90,6 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
     this.subTitle,
     this.onBackConfirm,
-    this.actions,
     this.bottom,
   });
 
@@ -177,7 +173,7 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
         boxShadow: showElevation
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: colors.overlay.withValues(alpha: 0.08),
                   blurRadius: elevation,
                   offset: Offset(0, elevation / 2),
                 ),
@@ -220,12 +216,7 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: rightActions!,
                       )
-                    : (actions != null && actions!.isNotEmpty
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: actions!,
-                          )
-                        : null),
+                    : null,
                 middleSpacing: park.spacing.sm,
                 centerMiddle: centerTitle,
               ),

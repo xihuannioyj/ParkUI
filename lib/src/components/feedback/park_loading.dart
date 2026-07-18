@@ -53,6 +53,7 @@ class ParkLoading extends StatefulWidget {
 
   static _ParkLoadingOverlayController? _currentController;
   static bool _entryReady = false;
+  static int _createToken = 0;
 
   /// 全屏显示 loading 遮罩
   static void show(
@@ -69,7 +70,11 @@ class ParkLoading extends StatefulWidget {
     }
 
     _entryReady = false;
+    final token = ++_createToken;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // If a newer show() was called in the same frame, skip this callback.
+      if (token != _createToken) return;
+
       _currentController?.dismiss();
 
       final overlay = Overlay.of(context, rootOverlay: true);

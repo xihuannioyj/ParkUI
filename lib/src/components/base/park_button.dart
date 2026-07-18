@@ -15,7 +15,7 @@ enum ParkIconPosition {
 
 /// Park 按钮
 ///
-/// 支持 6 种变体（primary / secondary / text / link / ghost / danger）、
+/// 支持 8 种变体（primary / secondary / text / link / ghost / danger / filled / light）、
 /// 3 种尺寸（small / medium / large）、loading 和 disabled 状态。
 ///
 /// ```dart

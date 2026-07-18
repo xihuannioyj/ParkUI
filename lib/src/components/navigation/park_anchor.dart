@@ -100,6 +100,7 @@ class _ParkAnchorState extends State<ParkAnchor> {
       }
     }
     if (active != null && active != _activeKey) {
+      if (!mounted) return;
       setState(() => _activeKey = active);
     }
   }
@@ -139,6 +140,7 @@ class _ParkAnchorState extends State<ParkAnchor> {
   void _handleTap(String key) {
     final item = widget.items.firstWhere((i) => i.key == key);
 
+    if (!mounted) return;
     setState(() => _activeKey = key);
     widget.onChanged?.call(key);
 

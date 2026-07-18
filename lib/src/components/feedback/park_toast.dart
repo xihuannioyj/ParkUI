@@ -174,12 +174,12 @@ class ParkToast extends StatelessWidget {
       context,
       message: message,
       // B83a: Duration is irrelevant for loading toasts (no auto-dismiss timer
-      // is started when isloading=true), but a non-null value is required by
+      // is started when isLoading=true), but a non-null value is required by
       // the parameter contract.
       duration: Duration.zero,
       position: position,
       toastKey: effectiveKey,
-      isloading: true,
+      isLoading: true,
     );
     return () {
       _activeToasts[effectiveKey]?.dismiss();
@@ -199,8 +199,9 @@ class ParkToast extends StatelessWidget {
     bool pauseOnHover = false,
     Widget? contentWidget,
     VoidCallback? onClose,
-    bool isloading = false,
+    bool isLoading = false,
   }) {
+    final bool effectiveLoading = isLoading;
     // If a toast with the same key exists, dismiss it first (update pattern).
     if (toastKey != null && _activeToasts.containsKey(toastKey)) {
       _activeToasts[toastKey]?.dismiss();
@@ -256,7 +257,7 @@ class ParkToast extends StatelessWidget {
         onClick: onClick,
         pauseOnHover: pauseOnHover,
         contentWidget: contentWidget,
-        isloading: isloading,
+        isLoading: effectiveLoading,
       );
     });
 
@@ -327,7 +328,7 @@ class _ParkToastOverlay extends StatefulWidget {
   final VoidCallback? onClick;
   final bool pauseOnHover;
   final Widget? contentWidget;
-  final bool isloading;
+  final bool isLoading;
 
   const _ParkToastOverlay({
     required this.message,
@@ -339,7 +340,7 @@ class _ParkToastOverlay extends StatefulWidget {
     this.onClick,
     this.pauseOnHover = false,
     this.contentWidget,
-    this.isloading = false,
+    this.isLoading = false,
   });
 
   @override
@@ -371,7 +372,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
         : Duration.zero;
 
     // B83a: Loading toasts should persist until manually dismissed — skip timer.
-    if (!widget.isloading) {
+    if (!widget.isLoading) {
       _startDismissTimer();
     }
   }
@@ -485,7 +486,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (widget.isloading) ...[
+                        if (widget.isLoading) ...[
                           SizedBox(
                             width: 16,
                             height: 16,
@@ -520,7 +521,7 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
     );
 
     // When there's an onClick, we need pointer events; otherwise use IgnorePointer
-    if (widget.onClick == null && !widget.pauseOnHover && !widget.isloading) {
+    if (widget.onClick == null && !widget.pauseOnHover && !widget.isLoading) {
       return IgnorePointer(child: toastWidget);
     }
     return toastWidget;

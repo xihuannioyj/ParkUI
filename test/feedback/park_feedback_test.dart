@@ -318,7 +318,7 @@ void main() {
                     context,
                     '第二条消息',
                     duration: const Duration(seconds: 5),
-                    position: ParkMessagePosition.bottom,
+                    closable: true,
                     onTap: () {},
                   );
                 },
@@ -330,15 +330,15 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
 
+      // 第一条消息应被替换（消失）
       expect(find.text('第一条消息'), findsNothing);
       expect(find.text('第二条消息'), findsOneWidget);
 
-      await tester.tap(find.text('第二条消息'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      // 点击关闭按钮关闭第二条消息
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
       expect(find.text('第二条消息'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());

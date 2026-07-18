@@ -325,7 +325,7 @@ final ParkComponentSpec _parkPaginationSpec = ParkComponentSpec(
       type: 'ParkBindingService?',
       defaultVal: 'null',
       description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],

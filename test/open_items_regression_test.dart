@@ -159,9 +159,9 @@ void main() {
     });
   });
 
-  // ───────────────────────── B45 · ParkTimePicker showSeconds 死参 ─────────────────────────
+  // ───────────────────────── B45 · ParkTimePicker showSeconds ─────────────────────────
   group('B45 ParkTimePicker showSeconds', () {
-    testWidgets('showSeconds:true 可构建且不崩溃（死参：秒选择未实现）', (tester) async {
+    testWidgets('showSeconds:true 可构建且不崩溃（秒选择已实现，验证 showSeconds 参数生效）', (tester) async {
       await tester.pumpWidget(_wrap(ParkTimePicker(
         showSeconds: true,
         onChanged: (_) {},
@@ -194,15 +194,27 @@ void main() {
 
   // ───────────────────────── B48 · ParkPopconfirm Overlay dispose 泄漏 ─────────────────────────
   group('B48 ParkPopconfirm Overlay 泄漏', () {
-    testWidgets('可构建并在卸载时不抛异常（当前无 dispose 移除 overlay）', (tester) async {
+    testWidgets('卸载时应清理 OverlayEntry，不残留 overlay', (tester) async {
       await tester.pumpWidget(_wrap(const ParkPopconfirm(
         child: Text('触发'),
       )));
       await tester.pumpAndSettle();
-      // 卸载组件：若存在 OverlayEntry 泄漏，可能残留或抛异常
+
+      // 点击触发 popconfirm 显示 overlay bubble
+      await tester.tap(find.text('触发'));
+      await tester.pumpAndSettle();
+
+      // 记录卸载前的 overlay 数量
+      final overlayBefore = tester.widgetList(find.byType(Overlay)).length;
+
+      // 卸载组件：dispose 中 _cleanupPopconfirm 应移除 OverlayEntry
       await tester.pumpWidget(_wrap(const SizedBox.shrink()));
       await tester.pumpAndSettle();
-      expect(true, isTrue);
+
+      // 验证：卸载后 overlay 数量不应增加（无残留 OverlayEntry）
+      final overlayAfter = tester.widgetList(find.byType(Overlay)).length;
+      expect(overlayAfter, lessThanOrEqualTo(overlayBefore),
+          reason: 'ParkPopconfirm dispose 应清理 OverlayEntry，不应残留');
     });
   });
 

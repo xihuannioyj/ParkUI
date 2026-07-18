@@ -176,9 +176,9 @@ void main() {
       final result2 = await future2;
 
       // 第二次调用的结果应包含错误
-      expect(result2.containsKey('field1'), isTrue);
-      // 第一次调用在防抖期间被序列号淘汰，返回空
-      expect(result1, isEmpty);
+      expect(result2!.containsKey('field1'), isTrue);
+      // 第一次调用在防抖期间被序列号淘汰，返回 null
+      expect(result1, isNull);
     });
 
     test('注册和移除异步校验策略', () {

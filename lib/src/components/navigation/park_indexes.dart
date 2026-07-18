@@ -45,8 +45,19 @@ class ParkIndexes extends StatefulWidget {
   ///
   /// 与 [onIndexSelected] 的区别在于：
   /// [onIndexSelected] 仅在用户主动点击 / 拖拽字母条时触发，
-  /// 而 [onChange] 在激活索引发生任何变化时都会触发（包括程序性变化）。
+  /// 而 [onChange] / [onChanged] 在激活索引发生任何变化时都会触发（包括程序性变化）。
+  @Deprecated('Use onChanged instead')
   final ValueChanged<String>? onChange;
+
+  /// 当前激活索引变更时的回调。
+  ///
+  /// 与 [onIndexSelected] 的区别在于：
+  /// [onIndexSelected] 仅在用户主动点击 / 拖拽字母条时触发，
+  /// 而 [onChanged] 在激活索引发生任何变化时都会触发（包括程序性变化）。
+  final ValueChanged<String>? onChanged;
+
+  /// 内部使用的有效回调：优先使用 onChanged，回退到 onChange。
+  ValueChanged<String>? get _effectiveOnChanged => onChanged ?? onChange;
 
   /// 外部控制的当前高亮索引
   final String? currentIndex;
@@ -65,7 +76,9 @@ class ParkIndexes extends StatefulWidget {
     this.itemHeight = 18,
     this.showOverlay = true,
     this.sticky = true,
+    // ignore: deprecated_member_use_from_same_package
     this.onChange,
+    this.onChanged,
     this.currentIndex,
     this.anchorScrollController,
   });
@@ -116,7 +129,7 @@ class _ParkIndexesState extends State<ParkIndexes> {
     if (_activeIndex == index) return;
     setState(() => _activeIndex = index);
     widget.onIndexSelected?.call(index);
-    widget.onChange?.call(index);
+    widget._effectiveOnChanged?.call(index);
 
     if (widget.showOverlay) {
       _showOverlay(index);

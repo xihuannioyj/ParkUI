@@ -112,4 +112,68 @@ class ParkFormValidators {
     }
     return FormValidatorResult.success();
   }
+
+  /// 必填校验（使用预计算的必填状态）。
+  ///
+  /// [value] 当前值。
+  /// [field] 字段定义。
+  /// [isRequired] 预计算的必填状态（已考虑联动/覆盖）。
+  static FormValidatorResult requiredWithOverrides(
+    dynamic value,
+    ParkFormFieldSchema field,
+    bool isRequired,
+  ) {
+    if (!isRequired) {
+      return FormValidatorResult.success();
+    }
+
+    if (value == null) {
+      return FormValidatorResult.error(
+        field.validatorMessage ?? '${field.labelName}不能为空',
+      );
+    }
+
+    if (value is String && value.trim().isEmpty) {
+      return FormValidatorResult.error(
+        field.validatorMessage ?? '${field.labelName}不能为空',
+      );
+    }
+
+    if (value is List<dynamic> && value.isEmpty) {
+      return FormValidatorResult.error(
+        field.validatorMessage ?? '${field.labelName}不能为空',
+      );
+    }
+
+    return FormValidatorResult.success();
+  }
+
+  /// 正则校验（使用预计算的正则表达式）。
+  ///
+  /// [value] 当前值。
+  /// [field] 字段定义。
+  /// [pattern] 预计算的正则表达式（已考虑联动/覆盖）。
+  static FormValidatorResult regexWithOverrides(
+    dynamic value,
+    ParkFormFieldSchema field,
+    String? pattern,
+  ) {
+    if (pattern == null || pattern.isEmpty) {
+      return FormValidatorResult.success();
+    }
+    if (value == null || value is! String || value.isEmpty) {
+      return FormValidatorResult.success();
+    }
+
+    final RegExp? regExp = _safeRegExp(pattern);
+    if (regExp == null) {
+      return FormValidatorResult.error('格式校验规则无效');
+    }
+    if (!regExp.hasMatch(value)) {
+      return FormValidatorResult.error(
+        field.validatorMessage ?? '${field.labelName}格式不正确',
+      );
+    }
+    return FormValidatorResult.success();
+  }
 }

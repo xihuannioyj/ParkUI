@@ -34,10 +34,10 @@ class CheckboxDemo extends StatelessWidget {
 
         ParkText('半选态', preset: ParkTextPreset.h3),
         const SizedBox(height: 12),
-        const ParkCheckbox(
+        ParkCheckbox(
           value: false,
           indeterminate: true,
-          label: Text('半选状态'),
+          label: const Text('半选状态'),
         ),
         const SizedBox(height: 24),
 

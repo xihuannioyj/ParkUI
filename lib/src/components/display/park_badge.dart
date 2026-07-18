@@ -36,7 +36,6 @@ class ParkBadge extends StatelessWidget {
     this.showZero = false,
     this.standaloneText,
     this.countWidget,
-    this.overflowCount,
   });
 
   /// The number to display. Null hides the number (use with [dot]).
@@ -89,10 +88,6 @@ class ParkBadge extends StatelessWidget {
 
   /// Custom widget to display instead of the count number.
   final Widget? countWidget;
-
-  /// Overflow count threshold (alias for [maxCount]).
-  /// When set, takes priority over [maxCount].
-  final int? overflowCount;
 
   double get _dotSize => size == ParkBadgeSize.small ? 6 : 8;
 
@@ -173,7 +168,7 @@ class ParkBadge extends StatelessWidget {
         ),
       );
     } else {
-      final int effectiveLimit = overflowCount ?? maxCount;
+      final int effectiveLimit = maxCount;
       final label = count! > effectiveLimit ? '$effectiveLimit+' : '$count';
       indicator = Semantics(
         label: '$count notifications',
@@ -281,7 +276,7 @@ class ParkBadge extends StatelessWidget {
         ),
       );
     } else {
-      final int effectiveLimit = overflowCount ?? maxCount;
+      final int effectiveLimit = maxCount;
       final label = count != null
           ? (count! > effectiveLimit ? '$effectiveLimit+' : '$count')
           : '';

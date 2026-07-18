@@ -30,7 +30,7 @@ import '../../l10n/park_localizations.dart';
 ///   onRangeChanged: (start, end) => print('$start - $end'),
 /// )
 /// ```
-class ParkSlider extends FormField<double> {
+class ParkSlider extends FormField<double> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 

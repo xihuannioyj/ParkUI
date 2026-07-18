@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
@@ -85,7 +87,7 @@ enum ParkSelectSize { small, medium, large }
 ///   onChanged: (v) => print(v),
 /// )
 /// ```
-class ParkSelect extends FormField<String> {
+class ParkSelect extends FormField<String> implements ParkBindableWidget {
   /// 选项列表
   final List<ParkSelectOption> items;
 
@@ -168,7 +170,7 @@ class ParkSelect extends FormField<String> {
   final IconData? prefixIcon;
 
   /// 是否启用选项过滤。为 true 时使用内置过滤，为 Function 时自定义过滤逻辑。
-  final dynamic filterOption;
+  final Object? filterOption;
 
   /// 自定义选项渲染回调（每个选项的自定义 widget）
   final Widget Function(ParkSelectOption option, bool isSelected)? optionRender;
@@ -204,6 +206,21 @@ class ParkSelect extends FormField<String> {
 
   /// 下拉面板自定义渲染（包裹在选项列表外部）
   final Widget Function(Widget menu)? dropdownRender;
+
+  /// 远程搜索回调：输入关键字 -> 异步返回选项列表。
+  ///
+  /// 类似 Ant Design 的 Select + search + remote data 模式。
+  /// 当用户提供此回调时，搜索框输入关键字后将：
+  /// 1. 等待 [searchDebounce] 防抖时间
+  /// 2. 调用此回调获取远程选项
+  /// 3. 用返回的选项替换当前列表
+  final Future<List<ParkSelectOption>> Function(String keyword)? onSearchAsync;
+
+  /// 远程搜索防抖时间（默认 300ms）。
+  final Duration searchDebounce;
+
+  /// 远程搜索中的加载文案（为 null 时使用本地化默认文案）。
+  final String? searchLoadingText;
 
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
@@ -251,6 +268,9 @@ class ParkSelect extends FormField<String> {
     this.popupMatchSelectWidth = true,
     this.onSearch,
     this.dropdownRender,
+    this.onSearchAsync,
+    this.searchDebounce = const Duration(milliseconds: 300),
+    this.searchLoadingText,
     super.onSaved,
     super.validator,
     super.autovalidateMode = AutovalidateMode.disabled,
@@ -635,6 +655,9 @@ class ParkSelect extends FormField<String> {
           virtual: effectiveVirtual,
           groupedOptions: widget.groupedOptions,
           filterOption: widget.filterOption,
+          onSearchAsync: widget.onSearchAsync,
+          searchDebounce: widget.searchDebounce,
+          searchLoadingText: widget.searchLoadingText,
         );
       },
     );
@@ -675,7 +698,16 @@ class _SelectSheet extends StatefulWidget {
   final List<ParkSelectGroupOption>? groupedOptions;
 
   /// 自定义过滤函数 / Custom filter function
-  final dynamic filterOption;
+  final Object? filterOption;
+
+  /// 远程搜索回调。
+  final Future<List<ParkSelectOption>> Function(String keyword)? onSearchAsync;
+
+  /// 远程搜索防抖时间。
+  final Duration searchDebounce;
+
+  /// 远程搜索加载文案。
+  final String? searchLoadingText;
 
   const _SelectSheet({
     required this.items,
@@ -694,6 +726,9 @@ class _SelectSheet extends StatefulWidget {
     this.virtual = false,
     this.groupedOptions,
     this.filterOption,
+    this.onSearchAsync,
+    this.searchDebounce = const Duration(milliseconds: 300),
+    this.searchLoadingText,
   });
 
   @override
@@ -704,6 +739,18 @@ class _SelectSheetState extends State<_SelectSheet> {
   late List<String> _tempSelected;
   String _keyword = '';
   late List<ParkSelectOption> _mutableItems;
+
+  /// 远程搜索状态。
+  Timer? _debounceTimer;
+  bool _internalSearching = false;
+  String? _internalSearchError;
+  int _searchRequestId = 0;
+
+  /// 原始选项快照（用于远程搜索清空时恢复）。
+  late List<ParkSelectOption> _originalItems;
+
+  /// 是否处于远程搜索模式（onSearchAsync 已提供）。
+  bool get _remoteSearchActive => widget.onSearchAsync != null;
 
   @override
   void initState() {
@@ -723,6 +770,13 @@ class _SelectSheetState extends State<_SelectSheet> {
     } else {
       _mutableItems = List<ParkSelectOption>.from(widget.items);
     }
+    _originalItems = List<ParkSelectOption>.from(_mutableItems);
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   void _toggleItem(String value) {
@@ -763,10 +817,62 @@ class _SelectSheetState extends State<_SelectSheet> {
     }
   }
 
+  /// 远程搜索：防抖触发。
+  void _onSearchTextChanged(String value) {
+    setState(() => _keyword = value);
+    widget.onSearchChanged?.call(value);
+
+    if (!_remoteSearchActive) return;
+
+    _debounceTimer?.cancel();
+    if (value.trim().isEmpty) {
+      // 清空搜索时恢复原始选项。
+      setState(() {
+        _mutableItems = List<ParkSelectOption>.from(_originalItems);
+        _internalSearching = false;
+        _internalSearchError = null;
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(widget.searchDebounce, () {
+      _handleRemoteSearch(value.trim());
+    });
+  }
+
+  /// 远程搜索：执行异步查询。
+  Future<void> _handleRemoteSearch(String keyword) async {
+    final int requestId = ++_searchRequestId;
+    setState(() {
+      _internalSearching = true;
+      _internalSearchError = null;
+    });
+
+    try {
+      final List<ParkSelectOption> results =
+          await widget.onSearchAsync!(keyword);
+      if (!mounted || requestId != _searchRequestId) return;
+      setState(() {
+        _mutableItems = List<ParkSelectOption>.from(results);
+        _internalSearching = false;
+      });
+    } catch (e) {
+      if (!mounted || requestId != _searchRequestId) return;
+      setState(() {
+        _internalSearching = false;
+        _internalSearchError = e.toString();
+      });
+    }
+  }
+
   List<ParkSelectOption> _filteredItems() {
+    // 远程搜索模式下，选项由 onSearchAsync 返回结果决定，跳过本地过滤。
+    if (_remoteSearchActive && _keyword.trim().isNotEmpty) {
+      return _mutableItems;
+    }
     if (_keyword.trim().isEmpty) return _mutableItems;
     final String lower = _keyword.trim().toLowerCase();
-    final dynamic filterOpt = widget.filterOption;
+    final Object? filterOpt = widget.filterOption;
     // filterOption is a Function: call it with (searchText, option) to determine visibility
     if (filterOpt is Function) {
       return _mutableItems.where((ParkSelectOption item) {
@@ -787,8 +893,18 @@ class _SelectSheetState extends State<_SelectSheet> {
           )
           .toList();
     }
-    // filterOption is false/null: show all items (no filtering)
-    return _mutableItems;
+    // filterOption is false: explicitly disabled, show all items (no filtering)
+    if (filterOpt == false) {
+      return _mutableItems;
+    }
+    // filterOption is null/true: use default case-insensitive contains filtering
+    return _mutableItems
+        .where(
+          (ParkSelectOption item) =>
+              item.label.toLowerCase().contains(lower) ||
+              item.value.toLowerCase().contains(lower),
+        )
+        .toList();
   }
 
   bool get _canCreateNew {
@@ -987,7 +1103,13 @@ class _SelectSheetState extends State<_SelectSheet> {
     final maxHeight = MediaQuery.of(context).size.height * 0.5;
     final List<ParkSelectOption> visibleItems = _filteredItems();
     final List<_SelectRenderItem> renderItems = _buildRenderItems(visibleItems);
-    final bool showCreateEntry = _canCreateNew;
+    final bool showCreateEntry = _remoteSearchActive ? false : _canCreateNew;
+
+    // 远程搜索模式下使用内部状态，否则使用外部传入状态。
+    final bool effectiveSearching =
+        _remoteSearchActive ? _internalSearching : widget.searching;
+    final String? effectiveSearchError =
+        _remoteSearchActive ? _internalSearchError : widget.searchErrorText;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -1055,12 +1177,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                   spacing.xs,
                 ),
                 child: TextField(
-                  onChanged: (String value) {
-                    setState(() {
-                      _keyword = value;
-                    });
-                    widget.onSearchChanged?.call(value);
-                  },
+                  onChanged: _onSearchTextChanged,
                   onSubmitted: (String value) {
                     if (showCreateEntry) {
                       _createAndSelect(value);
@@ -1077,7 +1194,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                 ),
               ),
 
-            if (widget.searching)
+            if (effectiveSearching)
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   spacing.base,
@@ -1097,7 +1214,8 @@ class _SelectSheetState extends State<_SelectSheet> {
                     ),
                     SizedBox(width: spacing.xs),
                     Text(
-                      ParkLocalizations.of(context).searchingText,
+                      widget.searchLoadingText ??
+                          ParkLocalizations.of(context).searchingText,
                       style: TextStyle(
                         fontSize: typo.sizeCaption,
                         color: colors.textSecondary,
@@ -1107,8 +1225,8 @@ class _SelectSheetState extends State<_SelectSheet> {
                 ),
               ),
 
-            if (widget.searchErrorText != null &&
-                widget.searchErrorText!.trim().isNotEmpty)
+            if (effectiveSearchError != null &&
+                effectiveSearchError.trim().isNotEmpty)
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   spacing.base,
@@ -1117,7 +1235,7 @@ class _SelectSheetState extends State<_SelectSheet> {
                   spacing.sm,
                 ),
                 child: Text(
-                  widget.searchErrorText!,
+                  effectiveSearchError,
                   style: TextStyle(
                     fontSize: typo.sizeCaption,
                     color: colors.error,

@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 /// 通过 [ParkLocalizationsWidget] 注入 Widget 树，
 /// 组件内通过 `ParkLocalizations.of(context)` 获取。
 ///
-/// 内置 [ParkLocalizationsZh]（中文默认）和 [ParkLocalizationsEn]（英文）两种实现。
+/// 内置 [ParkLocalizationsZh]（中文默认）、[ParkLocalizationsEn]（英文）、
+/// [ParkLocalizationsJa]（日文）、[ParkLocalizationsKo]（韩文）、
+/// [ParkLocalizationsEs]（西班牙文）和 [ParkLocalizationsFr]（法文）六种实现。
 /// 调用方可实现此接口并注入自定义本地化。
 ///
 /// ```dart
@@ -329,7 +331,7 @@ abstract class ParkLocalizations {
 ///   ),
 /// )
 /// ```
-class ParkLocalizationsWidget extends StatefulWidget {
+class ParkLocalizationsWidget extends StatelessWidget {
   /// 本地化实现。
   final ParkLocalizations localizations;
 
@@ -343,16 +345,10 @@ class ParkLocalizationsWidget extends StatefulWidget {
   });
 
   @override
-  State<ParkLocalizationsWidget> createState() =>
-      _ParkLocalizationsWidgetState();
-}
-
-class _ParkLocalizationsWidgetState extends State<ParkLocalizationsWidget> {
-  @override
   Widget build(BuildContext context) {
     return _ParkLocalizationsInherited(
-      localizations: widget.localizations,
-      child: widget.child,
+      localizations: localizations,
+      child: child,
     );
   }
 }
@@ -1743,4 +1739,1378 @@ class ParkLocalizationsJa implements ParkLocalizations {
   String get watermarkLabel => 'ウォーターマーク';
   @override
   String get expandSubmenuLabel => 'サブメニューを展開';
+}
+
+// =============================================================================
+// 한국어 (Korean)
+// =============================================================================
+
+/// park_ui 한국어 로컬라이제이션.
+class ParkLocalizationsKo implements ParkLocalizations {
+  const ParkLocalizationsKo();
+
+  @override
+  String get confirmText => '확인';
+  @override
+  String get cancelText => '취소';
+  @override
+  String get clearText => '지우기';
+  @override
+  String get searchText => '검색';
+  @override
+  String get submitText => '제출';
+  @override
+  String get saveText => '저장';
+  @override
+  String get deleteText => '삭제';
+  @override
+  String get closeText => '닫기';
+  @override
+  String get doneText => '완료';
+  @override
+  String get resetText => '초기화';
+  @override
+  String get selectPlaceholder => '선택하세요';
+  @override
+  String get inputPlaceholder => '입력하세요';
+  @override
+  String get searchPlaceholder => '검색';
+  @override
+  String get noData => '데이터 없음';
+  @override
+  String get noSearchResults => '검색 결과가 없습니다';
+  @override
+  String get noPermission => '접근 권한이 없습니다';
+  @override
+  String get loading => '로딩 중...';
+  @override
+  String get loadFailed => '로드 실패';
+  @override
+  String get retry => '재시도';
+  @override
+  String get success => '성공';
+  @override
+  String get warning => '경고';
+  @override
+  String get error => '오류';
+  @override
+  String get previousStep => '이전';
+  @override
+  String get nextStep => '다음';
+  @override
+  String get searchHistory => '검색 기록';
+  @override
+  String get matchedHistory => '일치 기록';
+  @override
+  String get noSearchHistory => '검색 기록이 없습니다';
+  @override
+  String get noMore => '더 이상 없음';
+  @override
+  String get pullToRefresh => '당겨서 새로고침';
+  @override
+  String get releaseToRefresh => '놓아서 새로고침';
+  @override
+  String get refreshing => '새로고침 중...';
+  @override
+  String get confirmDelete => '삭제하시겠습니까?';
+
+  @override
+  String get searchOptionsHint => '옵션 검색';
+  @override
+  String get previousPage => '이전';
+  @override
+  String get nextPage => '다음';
+  @override
+  String get jumpTo => '이동';
+  @override
+  String get page => '페이지';
+  @override
+  String totalInfo(int total) => '총 $total 건';
+  @override
+  String pageSizeOption(int size) => '$size 건/페이지';
+  @override
+  String paginationSemantics(int totalPages, int currentPage) => '페이지네이션, 총 $totalPages 페이지, 현재 $currentPage 페이지';
+  @override
+  String pageButtonSemantics(int page) => '$page 페이지';
+  @override
+  String pageSizeSemantics(int pageSize) => '페이지당 $pageSize 건 표시';
+  @override
+  String disabledLabel(String label) => '$label (비활성)';
+
+  @override
+  String get searchingText => '검색 중…';
+  @override
+  String get defaultGroupLabel => '기본 그룹';
+  @override
+  String createOption(String keyword) => '"$keyword" 생성';
+  @override
+  String get gotItText => '확인했습니다';
+
+  @override
+  String get imageLoadFailed => '이미지 로드 실패';
+  @override
+  String get loadedAllData => '모든 데이터가 로드되었습니다';
+  @override
+  String get obscureTextDisplayed => '비밀번호 표시 중';
+  @override
+  String get obscureTextHidden => '비밀번호 숨김';
+  @override
+  String get requiredHint => '필수 항목';
+  @override
+  String get decreaseValue => '감소';
+  @override
+  String get increaseValue => '증가';
+
+  @override
+  String get weekdaySun => '일';
+  @override
+  String get weekdayMon => '월';
+  @override
+  String get weekdayTue => '화';
+  @override
+  String get weekdayWed => '수';
+  @override
+  String get weekdayThu => '목';
+  @override
+  String get weekdayFri => '금';
+  @override
+  String get weekdaySat => '토';
+  @override
+  String formatYearMonth(int year, int month) =>
+      '$year년${month.toString().padLeft(2, '0')}월';
+  @override
+  String get rangeStartSemantic => '선택 범위 시작';
+  @override
+  String get rangeEndSemantic => '선택 범위 종료';
+  @override
+  String get rangeMiddleSemantic => '선택 범위 중간';
+  @override
+  String selectedCount(int count) => '$count 개 선택됨';
+  @override
+  String get selectAllText => '전체 선택';
+  @override
+  String countdownLabel(String formatted) => '카운트다운: $formatted';
+  @override
+  String get formLoadingText => '폼 로딩 중, 잠시만 기다려주세요…';
+  @override
+  String get searchHintText => '검색어를 입력하세요';
+  @override
+  String get backTop => '맨 위로';
+  @override
+  String get breadcrumbLabel => '탐색 경로';
+  @override
+  String get breadcrumbExpand => '탐색 경로 펼치기';
+  @override
+  String breadcrumbHasSubmenu(String label) => '$label, 하위 메뉴 있음';
+  @override
+  String get noOptions => '옵션 없음';
+  @override
+  String get noMatchingOptions => '일치하는 옵션 없음';
+  @override
+  String get expandText => '펼치기';
+  @override
+  String get collapseText => '접기';
+  @override
+  String get selectStartDate => '시작 날짜 선택';
+  @override
+  String get selectEndDate => '종료 날짜 선택';
+  @override
+  String get timeFilter => '시간 필터';
+  @override
+  String get resetFilter => '필터 초기화';
+  @override
+  String get startTime => '시작 시간';
+  @override
+  String get endTime => '종료 시간';
+  @override
+  String get pleaseSelectFirst => '먼저 항목을 선택하세요';
+  @override
+  String get forbiddenTitle => '접근 거부';
+  @override
+  String get forbiddenDesc => '이 페이지에 접근할 권한이 없습니다. 관리자에게 문의하세요.';
+  @override
+  String get notFoundTitle => '페이지를 찾을 수 없습니다';
+  @override
+  String get notFoundDesc => '방문하신 페이지가 존재하지 않거나 제거되었습니다.';
+  @override
+  String get serverErrorTitle => '서버 오류';
+  @override
+  String get serverErrorDesc => '서버에서 내부 오류가 발생했습니다. 나중에 다시 시도하세요.';
+  @override
+  String get sliderValueLabel => '값';
+  @override
+  String get splitterLabel => '구분선을 드래그하여 패널 비율 조정';
+  @override
+  String get collapseFirstHorizontal => '왼쪽 패널 접기';
+  @override
+  String get collapseSecondHorizontal => '오른쪽 패널 접기';
+  @override
+  String get collapseFirstVertical => '위쪽 패널 접기';
+  @override
+  String get collapseSecondVertical => '아래쪽 패널 접기';
+
+  // ── ParkUpload ──
+  @override
+  String get addFileText => '파일 추가';
+  @override
+  String get uploadFailed => '업로드 실패';
+  @override
+  String get fileTypeNotSupported => '지원되지 않는 파일 형식';
+  @override
+  String get imageOnlyUpload => '이미지 파일만 업로드 가능';
+  @override
+  String get imageOnlyConstraint => '이미지만 가능';
+  @override
+  String fileSizeExceedsText(double maxSizeMB) =>
+      '파일 크기는 ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB를 초과할 수 없습니다';
+  @override
+  String supportedFormatsText(List<String> formats) =>
+      '지원: ${formats.join(' / ')}';
+  @override
+  String singleFileLimitText(double maxSizeMB) =>
+      '단일 파일 ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB 이하';
+  @override
+  String get deleteFileLabel => '파일 삭제';
+  @override
+  String get dragUploadAreaLabel => '드래그 앤 드롭 업로드 영역';
+  @override
+  String get cropImageTitle => '이미지 자르기';
+  @override
+  String get pullingStatus => '당기는 중';
+
+  // ── B62 ParkText ──
+  @override
+  String get copiedText => '복사됨';
+
+  // ── B62 ParkTimePicker ──
+  @override
+  String get selectTimeText => '시간을 선택하세요';
+  @override
+  String get chooseTimeText => '시간 선택';
+  @override
+  String get currentSelectionText => '현재 선택';
+
+  // ── B62 ParkDatePicker shortcuts ──
+  @override
+  String get shortcutToday => '오늘';
+  @override
+  String get shortcutLast7Days => '최근 7일';
+  @override
+  String get shortcutLast30Days => '최근 30일';
+  @override
+  String get shortcutThisMonth => '이번 달';
+
+  // ── B62 ParkCalendar ──
+  @override
+  String dateSemanticFormat(int year, int month, int day) =>
+      '$year년${month}월${day}일';
+
+  // ── B62 ParkFormRule validation ──
+  @override
+  String get validationFailed => '유효성 검사 실패';
+  @override
+  String lengthMustBe(int len) => '길이는 $len 자여야 합니다';
+  @override
+  String get invalidNumber => '유효한 숫자를 입력하세요';
+  @override
+  String get invalidInteger => '유효한 정수를 입력하세요';
+  @override
+  String get invalidEmail => '유효한 이메일 주소를 입력하세요';
+  @override
+  String get invalidUrl => '유효한 URL을 입력하세요';
+  @override
+  String get invalidPhone => '유효한 전화번호를 입력하세요';
+  @override
+  String cannotBeLessThan(num min) => '$min 미만일 수 없습니다';
+  @override
+  String cannotBeGreaterThan(num max) => '$max 초과일 수 없습니다';
+  @override
+  String lengthCannotBeLessThan(num min) => '길이는 $min 미만일 수 없습니다';
+  @override
+  String lengthCannotBeGreaterThan(num max) => '길이는 $max 초과일 수 없습니다';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => '$fieldName을(를) 선택하세요';
+  @override
+  String get noImages => '이미지 없음';
+  @override
+  String get selectFromAlbum => '앨범에서 선택';
+  @override
+  String get takePhoto => '사진 촬영';
+  @override
+  String selectedFilesCount(int count) => '$count 개 파일 선택됨';
+  @override
+  String get chooseFile => '파일 선택';
+  @override
+  String get unnamedGroup => '이름 없는 그룹';
+  @override
+  String get validationTimeout => '유효성 검사 시간 초과, 나중에 다시 시도하세요';
+  @override
+  String get usernameAlreadyExists => '사용자 이름이 이미 존재합니다';
+  @override
+  String get emailAlreadyRegistered => '이메일이 이미 등록되어 있습니다';
+  @override
+  String idCardFormatError(String detail) => '주민등록번호 형식 오류 ($detail)';
+  @override
+  String get selectProvince => '성을 선택하세요';
+  @override
+  String get selectCity => '시/도를 선택하세요';
+  @override
+  String get selectDistrict => '구/군을 선택하세요';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => '최근 90일';
+  @override
+  String get shortcutMonthToDate => '이번 달 오늘까지';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => '건너뛰기';
+  @override
+  String get tourSemanticsLabel => '기능 안내';
+  @override
+  String stepIndicatorFormat(int current, int total) => '\u{24}{current + 1} / \u{24}total 단계';
+  @override
+  String get closeTourLabel => '안내 닫기';
+  @override
+  String get skipTourLabel => '안내 건너뛰기';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write(', \u{24}description');
+    if (code != null) buffer.write(', 상태 코드 \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => '완료';
+  @override
+  String get stepStatusProcess => '진행 중';
+  @override
+  String get stepStatusError => '오류';
+  @override
+  String get stepStatusWaiting => '대기 중';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('\u{24}{step + 1}단계: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => '로딩 중…';
+  @override
+  String get selectEmptyText => '옵션 없음';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => '파일 형식';
+  @override
+  String get previewLabel => '미리보기';
+  @override
+  String get imageInvalidFormat => '파일 내용이 유효한 이미지 형식이 아닙니다';
+  @override
+  String get clickToSort => '클릭하여 정렬';
+  @override
+  String anchorLabel(String label) => '앵커: $label';
+  @override
+  String get rotateLabel => '회전';
+  @override
+  String get flipHorizontal => '수평 뒤집기';
+  @override
+  String get flipVertical => '수직 뒤집기';
+  @override
+  String hueSliderSemantic(int degrees) => '색상 슬라이더, $degrees 도';
+  @override
+  String get saturationValuePickerLabel => '채도 및 명도 선택기';
+  @override
+  String currentColorSemantic(String value) => '현재 선택된 색상 $value';
+  @override
+  String colorValueSemantic(String value) => '색상 값 $value';
+  @override
+  String get colorFormatSwitch => '색상 형식 전환';
+  @override
+  String switchToFormat(String format) => '$format(으)로 전환';
+  @override
+  String get emptyValueLabel => '비어 있음';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => '내비게이션 서랍';
+  @override
+  String get layoutLabel => '레이아웃';
+  @override
+  String get backLabel => '뒤로';
+  @override
+  String get treeSelectedLabel => '선택됨';
+  @override
+  String get treeExpandedLabel => '펼쳐짐';
+  @override
+  String get treeCollapsedLabel => '접힘';
+  @override
+  String get treeDraggableLabel => '드래그하여 정렬';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => '어제';
+  @override
+  String get shortcutThisQuarter => '이번 분기';
+  @override
+  String get moveRightLabel => '오른쪽으로 이동';
+  @override
+  String get moveLeftLabel => '왼쪽으로 이동';
+  @override
+  String totalItemsCount(int count) => '총 $count 건';
+  @override
+  String get selectedLabel => '선택됨';
+  @override
+  String get searchNodesHint => '노드 검색';
+  @override
+  String get searchAllNodesSemantic => '모든 노드 검색';
+  @override
+  String get checkedStateLabel => '선택됨';
+  @override
+  String get indeterminateStateLabel => '일부 선택';
+  @override
+  String get uncheckedStateLabel => '선택 해제';
+  @override
+  String get selectedStateLabel => '선택됨';
+  @override
+  String get expandedStateLabel => '펼쳐짐';
+  @override
+  String get collapsedStateLabel => '접힘';
+  @override
+  String get disabledStateLabel => '비활성';
+  @override
+  String checkboxDisabledLabel(String label) => '$label, 비활성';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => '워터마크';
+  @override
+  String get expandSubmenuLabel => '하위 메뉴 펼치기';
+}
+
+// =============================================================================
+// Español (Spanish)
+// =============================================================================
+
+/// park_ui localización en español.
+class ParkLocalizationsEs implements ParkLocalizations {
+  const ParkLocalizationsEs();
+
+  @override
+  String get confirmText => 'Confirmar';
+  @override
+  String get cancelText => 'Cancelar';
+  @override
+  String get clearText => 'Limpiar';
+  @override
+  String get searchText => 'Buscar';
+  @override
+  String get submitText => 'Enviar';
+  @override
+  String get saveText => 'Guardar';
+  @override
+  String get deleteText => 'Eliminar';
+  @override
+  String get closeText => 'Cerrar';
+  @override
+  String get doneText => 'Hecho';
+  @override
+  String get resetText => 'Restablecer';
+  @override
+  String get selectPlaceholder => 'Seleccionar';
+  @override
+  String get inputPlaceholder => 'Introducir';
+  @override
+  String get searchPlaceholder => 'Buscar';
+  @override
+  String get noData => 'Sin datos';
+  @override
+  String get noSearchResults => 'No se encontraron resultados';
+  @override
+  String get noPermission => 'Sin permisos de acceso';
+  @override
+  String get loading => 'Cargando...';
+  @override
+  String get loadFailed => 'Error al cargar';
+  @override
+  String get retry => 'Reintentar';
+  @override
+  String get success => 'Éxito';
+  @override
+  String get warning => 'Advertencia';
+  @override
+  String get error => 'Error';
+  @override
+  String get previousStep => 'Anterior';
+  @override
+  String get nextStep => 'Siguiente';
+  @override
+  String get searchHistory => 'Historial de búsqueda';
+  @override
+  String get matchedHistory => 'Historial coincidente';
+  @override
+  String get noSearchHistory => 'Sin historial de búsqueda';
+  @override
+  String get noMore => 'No hay más';
+  @override
+  String get pullToRefresh => 'Deslizar para actualizar';
+  @override
+  String get releaseToRefresh => 'Soltar para actualizar';
+  @override
+  String get refreshing => 'Actualizando...';
+  @override
+  String get confirmDelete => '¿Confirmar eliminación?';
+
+  @override
+  String get searchOptionsHint => 'Buscar opciones';
+  @override
+  String get previousPage => 'Anterior';
+  @override
+  String get nextPage => 'Siguiente';
+  @override
+  String get jumpTo => 'Ir a';
+  @override
+  String get page => 'Página';
+  @override
+  String totalInfo(int total) => 'Total $total elementos';
+  @override
+  String pageSizeOption(int size) => '$size / página';
+  @override
+  String paginationSemantics(int totalPages, int currentPage) => 'Paginación, $totalPages páginas, página actual $currentPage';
+  @override
+  String pageButtonSemantics(int page) => 'Página $page';
+  @override
+  String pageSizeSemantics(int pageSize) => '$pageSize elementos por página';
+  @override
+  String disabledLabel(String label) => '$label (deshabilitado)';
+
+  @override
+  String get searchingText => 'Buscando…';
+  @override
+  String get defaultGroupLabel => 'Grupo predeterminado';
+  @override
+  String createOption(String keyword) => 'Crear "$keyword"';
+  @override
+  String get gotItText => 'Entendido';
+
+  @override
+  String get imageLoadFailed => 'Error al cargar la imagen';
+  @override
+  String get loadedAllData => 'Todos los datos cargados';
+  @override
+  String get obscureTextDisplayed => 'Contraseña visible';
+  @override
+  String get obscureTextHidden => 'Contraseña oculta';
+  @override
+  String get requiredHint => 'Obligatorio';
+  @override
+  String get decreaseValue => 'Disminuir';
+  @override
+  String get increaseValue => 'Aumentar';
+
+  @override
+  String get weekdaySun => 'Dom';
+  @override
+  String get weekdayMon => 'Lun';
+  @override
+  String get weekdayTue => 'Mar';
+  @override
+  String get weekdayWed => 'Mié';
+  @override
+  String get weekdayThu => 'Jue';
+  @override
+  String get weekdayFri => 'Vie';
+  @override
+  String get weekdaySat => 'Sáb';
+  @override
+  String formatYearMonth(int year, int month) =>
+      '${month.toString().padLeft(2, '0')}/$year';
+  @override
+  String get rangeStartSemantic => 'Inicio del rango seleccionado';
+  @override
+  String get rangeEndSemantic => 'Fin del rango seleccionado';
+  @override
+  String get rangeMiddleSemantic => 'Medio del rango seleccionado';
+  @override
+  String selectedCount(int count) => '$count seleccionados';
+  @override
+  String get selectAllText => 'Seleccionar todo';
+  @override
+  String countdownLabel(String formatted) => 'Cuenta regresiva: $formatted';
+  @override
+  String get formLoadingText => 'El formulario se está cargando, por favor espere…';
+  @override
+  String get searchHintText => 'Introduzca búsqueda';
+  @override
+  String get backTop => 'Volver arriba';
+  @override
+  String get breadcrumbLabel => 'Migas de pan';
+  @override
+  String get breadcrumbExpand => 'Expandir migas de pan';
+  @override
+  String breadcrumbHasSubmenu(String label) => '$label, tiene submenú';
+  @override
+  String get noOptions => 'Sin opciones';
+  @override
+  String get noMatchingOptions => 'No hay opciones coincidentes';
+  @override
+  String get expandText => 'Expandir';
+  @override
+  String get collapseText => 'Contraer';
+  @override
+  String get selectStartDate => 'Seleccionar fecha de inicio';
+  @override
+  String get selectEndDate => 'Seleccionar fecha de fin';
+  @override
+  String get timeFilter => 'Filtro de tiempo';
+  @override
+  String get resetFilter => 'Restablecer filtro';
+  @override
+  String get startTime => 'Hora de inicio';
+  @override
+  String get endTime => 'Hora de fin';
+  @override
+  String get pleaseSelectFirst => 'Por favor seleccione un elemento primero';
+  @override
+  String get forbiddenTitle => 'Acceso denegado';
+  @override
+  String get forbiddenDesc => 'No tiene permiso para acceder a esta página. Por favor, contacte al administrador.';
+  @override
+  String get notFoundTitle => 'Página no encontrada';
+  @override
+  String get notFoundDesc => 'La página que visitó no existe o ha sido eliminada.';
+  @override
+  String get serverErrorTitle => 'Error del servidor';
+  @override
+  String get serverErrorDesc => 'El servidor encontró un error interno. Por favor, inténtelo de nuevo más tarde.';
+  @override
+  String get sliderValueLabel => 'Valor';
+  @override
+  String get splitterLabel => 'Arrastre el divisor para ajustar la proporción del panel';
+  @override
+  String get collapseFirstHorizontal => 'Contraer panel izquierdo';
+  @override
+  String get collapseSecondHorizontal => 'Contraer panel derecho';
+  @override
+  String get collapseFirstVertical => 'Contraer panel superior';
+  @override
+  String get collapseSecondVertical => 'Contraer panel inferior';
+
+  // ── ParkUpload ──
+  @override
+  String get addFileText => 'Agregar archivo';
+  @override
+  String get uploadFailed => 'Error al subir';
+  @override
+  String get fileTypeNotSupported => 'Tipo de archivo no soportado';
+  @override
+  String get imageOnlyUpload => 'Solo se permiten archivos de imagen';
+  @override
+  String get imageOnlyConstraint => 'Solo imágenes';
+  @override
+  String fileSizeExceedsText(double maxSizeMB) =>
+      'El tamaño del archivo no puede exceder ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
+  @override
+  String supportedFormatsText(List<String> formats) =>
+      'Soportados: ${formats.join(' / ')}';
+  @override
+  String singleFileLimitText(double maxSizeMB) =>
+      'Archivo único no mayor a ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
+  @override
+  String get deleteFileLabel => 'Eliminar archivo';
+  @override
+  String get dragUploadAreaLabel => 'Área de arrastrar y soltar para subir';
+  @override
+  String get cropImageTitle => 'Recortar imagen';
+  @override
+  String get pullingStatus => 'Deslizando';
+
+  // ── B62 ParkText ──
+  @override
+  String get copiedText => 'Copiado';
+
+  // ── B62 ParkTimePicker ──
+  @override
+  String get selectTimeText => 'Por favor seleccione la hora';
+  @override
+  String get chooseTimeText => 'Seleccionar hora';
+  @override
+  String get currentSelectionText => 'Selección actual';
+
+  // ── B62 ParkDatePicker shortcuts ──
+  @override
+  String get shortcutToday => 'Hoy';
+  @override
+  String get shortcutLast7Days => 'Últimos 7 días';
+  @override
+  String get shortcutLast30Days => 'Últimos 30 días';
+  @override
+  String get shortcutThisMonth => 'Este mes';
+
+  // ── B62 ParkCalendar ──
+  @override
+  String dateSemanticFormat(int year, int month, int day) =>
+      '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/$year';
+
+  // ── B62 ParkFormRule validation ──
+  @override
+  String get validationFailed => 'Validación fallida';
+  @override
+  String lengthMustBe(int len) => 'La longitud debe ser de $len caracteres';
+  @override
+  String get invalidNumber => 'Por favor introduzca un número válido';
+  @override
+  String get invalidInteger => 'Por favor introduzca un entero válido';
+  @override
+  String get invalidEmail => 'Por favor introduzca una dirección de correo válida';
+  @override
+  String get invalidUrl => 'Por favor introduzca una URL válida';
+  @override
+  String get invalidPhone => 'Por favor introduzca un número de teléfono válido';
+  @override
+  String cannotBeLessThan(num min) => 'No puede ser menor que $min';
+  @override
+  String cannotBeGreaterThan(num max) => 'No puede ser mayor que $max';
+  @override
+  String lengthCannotBeLessThan(num min) => 'La longitud no puede ser menor que $min';
+  @override
+  String lengthCannotBeGreaterThan(num max) => 'La longitud no puede ser mayor que $max';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => 'Por favor seleccione $fieldName';
+  @override
+  String get noImages => 'Sin imágenes';
+  @override
+  String get selectFromAlbum => 'Seleccionar del álbum';
+  @override
+  String get takePhoto => 'Tomar foto';
+  @override
+  String selectedFilesCount(int count) => '$count archivos seleccionados';
+  @override
+  String get chooseFile => 'Elegir archivo';
+  @override
+  String get unnamedGroup => 'Grupo sin nombre';
+  @override
+  String get validationTimeout => 'La validación agotó el tiempo de espera, inténtelo de nuevo más tarde';
+  @override
+  String get usernameAlreadyExists => 'El nombre de usuario ya existe';
+  @override
+  String get emailAlreadyRegistered => 'El correo ya está registrado';
+  @override
+  String idCardFormatError(String detail) => 'Formato de tarjeta de identificación inválido ($detail)';
+  @override
+  String get selectProvince => 'Seleccionar provincia';
+  @override
+  String get selectCity => 'Seleccionar ciudad';
+  @override
+  String get selectDistrict => 'Seleccionar distrito';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => 'Últimos 90 días';
+  @override
+  String get shortcutMonthToDate => 'Mes hasta la fecha';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => 'Omitir';
+  @override
+  String get tourSemanticsLabel => 'Guía de funciones';
+  @override
+  String stepIndicatorFormat(int current, int total) => 'Paso \u{24}{current + 1} / \u{24}total';
+  @override
+  String get closeTourLabel => 'Cerrar guía';
+  @override
+  String get skipTourLabel => 'Omitir guía';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write(', \u{24}description');
+    if (code != null) buffer.write(', código de estado \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => 'Completado';
+  @override
+  String get stepStatusProcess => 'En progreso';
+  @override
+  String get stepStatusError => 'Error';
+  @override
+  String get stepStatusWaiting => 'Pendiente';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('Paso \u{24}{step + 1}: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => 'Cargando…';
+  @override
+  String get selectEmptyText => 'Sin opciones';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => 'Tipo de archivo';
+  @override
+  String get previewLabel => 'Vista previa';
+  @override
+  String get imageInvalidFormat => 'El contenido del archivo no es un formato de imagen válido';
+  @override
+  String get clickToSort => 'Clic para ordenar';
+  @override
+  String anchorLabel(String label) => 'Ancla: $label';
+  @override
+  String get rotateLabel => 'Rotar';
+  @override
+  String get flipHorizontal => 'Voltear horizontalmente';
+  @override
+  String get flipVertical => 'Voltear verticalmente';
+  @override
+  String hueSliderSemantic(int degrees) => 'Control deslizante de tono, $degrees grados';
+  @override
+  String get saturationValuePickerLabel => 'Selector de saturación y valor';
+  @override
+  String currentColorSemantic(String value) => 'Color actual $value';
+  @override
+  String colorValueSemantic(String value) => 'Valor de color $value';
+  @override
+  String get colorFormatSwitch => 'Cambiar formato de color';
+  @override
+  String switchToFormat(String format) => 'Cambiar a $format';
+  @override
+  String get emptyValueLabel => 'Vacío';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => 'Cajón de navegación';
+  @override
+  String get layoutLabel => 'Diseño';
+  @override
+  String get backLabel => 'Atrás';
+  @override
+  String get treeSelectedLabel => 'Seleccionado';
+  @override
+  String get treeExpandedLabel => 'Expandido';
+  @override
+  String get treeCollapsedLabel => 'Contraído';
+  @override
+  String get treeDraggableLabel => 'Arrastrable para reordenar';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => 'Ayer';
+  @override
+  String get shortcutThisQuarter => 'Este trimestre';
+  @override
+  String get moveRightLabel => 'Mover a la derecha';
+  @override
+  String get moveLeftLabel => 'Mover a la izquierda';
+  @override
+  String totalItemsCount(int count) => '$count elementos en total';
+  @override
+  String get selectedLabel => 'Seleccionado';
+  @override
+  String get searchNodesHint => 'Buscar nodos';
+  @override
+  String get searchAllNodesSemantic => 'Buscar todos los nodos';
+  @override
+  String get checkedStateLabel => 'Marcado';
+  @override
+  String get indeterminateStateLabel => 'Parcialmente marcado';
+  @override
+  String get uncheckedStateLabel => 'Desmarcado';
+  @override
+  String get selectedStateLabel => 'Seleccionado';
+  @override
+  String get expandedStateLabel => 'Expandido';
+  @override
+  String get collapsedStateLabel => 'Contraído';
+  @override
+  String get disabledStateLabel => 'Deshabilitado';
+  @override
+  String checkboxDisabledLabel(String label) => '$label, deshabilitado';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => 'Marca de agua';
+  @override
+  String get expandSubmenuLabel => 'Expandir submenú';
+}
+
+// =============================================================================
+// Français (French)
+// =============================================================================
+
+/// park_ui localisation en français.
+class ParkLocalizationsFr implements ParkLocalizations {
+  const ParkLocalizationsFr();
+
+  @override
+  String get confirmText => 'Confirmer';
+  @override
+  String get cancelText => 'Annuler';
+  @override
+  String get clearText => 'Effacer';
+  @override
+  String get searchText => 'Rechercher';
+  @override
+  String get submitText => 'Soumettre';
+  @override
+  String get saveText => 'Enregistrer';
+  @override
+  String get deleteText => 'Supprimer';
+  @override
+  String get closeText => 'Fermer';
+  @override
+  String get doneText => 'Terminé';
+  @override
+  String get resetText => 'Réinitialiser';
+  @override
+  String get selectPlaceholder => 'Sélectionner';
+  @override
+  String get inputPlaceholder => 'Saisir';
+  @override
+  String get searchPlaceholder => 'Rechercher';
+  @override
+  String get noData => 'Pas de données';
+  @override
+  String get noSearchResults => 'Aucun résultat trouvé';
+  @override
+  String get noPermission => "Pas d'autorisation d'accès";
+  @override
+  String get loading => 'Chargement...';
+  @override
+  String get loadFailed => 'Échec du chargement';
+  @override
+  String get retry => 'Réessayer';
+  @override
+  String get success => 'Succès';
+  @override
+  String get warning => 'Avertissement';
+  @override
+  String get error => 'Erreur';
+  @override
+  String get previousStep => 'Précédent';
+  @override
+  String get nextStep => 'Suivant';
+  @override
+  String get searchHistory => 'Historique de recherche';
+  @override
+  String get matchedHistory => 'Historique correspondant';
+  @override
+  String get noSearchHistory => "Aucun historique de recherche";
+  @override
+  String get noMore => 'Plus rien';
+  @override
+  String get pullToRefresh => 'Tirer pour actualiser';
+  @override
+  String get releaseToRefresh => 'Relâcher pour actualiser';
+  @override
+  String get refreshing => 'Actualisation...';
+  @override
+  String get confirmDelete => 'Confirmer la suppression ?';
+
+  @override
+  String get searchOptionsHint => 'Rechercher des options';
+  @override
+  String get previousPage => 'Précédent';
+  @override
+  String get nextPage => 'Suivant';
+  @override
+  String get jumpTo => 'Aller à';
+  @override
+  String get page => 'Page';
+  @override
+  String totalInfo(int total) => 'Total $total éléments';
+  @override
+  String pageSizeOption(int size) => '$size / page';
+  @override
+  String paginationSemantics(int totalPages, int currentPage) => 'Pagination, $totalPages pages, page actuelle $currentPage';
+  @override
+  String pageButtonSemantics(int page) => 'Page $page';
+  @override
+  String pageSizeSemantics(int pageSize) => '$pageSize éléments par page';
+  @override
+  String disabledLabel(String label) => '$label (désactivé)';
+
+  @override
+  String get searchingText => 'Recherche en cours…';
+  @override
+  String get defaultGroupLabel => 'Groupe par défaut';
+  @override
+  String createOption(String keyword) => 'Créer « $keyword »';
+  @override
+  String get gotItText => "J'ai compris";
+
+  @override
+  String get imageLoadFailed => "Échec du chargement de l'image";
+  @override
+  String get loadedAllData => 'Toutes les données chargées';
+  @override
+  String get obscureTextDisplayed => 'Mot de passe affiché';
+  @override
+  String get obscureTextHidden => 'Mot de passe masqué';
+  @override
+  String get requiredHint => 'Obligatoire';
+  @override
+  String get decreaseValue => 'Diminuer';
+  @override
+  String get increaseValue => 'Augmenter';
+
+  @override
+  String get weekdaySun => 'Dim';
+  @override
+  String get weekdayMon => 'Lun';
+  @override
+  String get weekdayTue => 'Mar';
+  @override
+  String get weekdayWed => 'Mer';
+  @override
+  String get weekdayThu => 'Jeu';
+  @override
+  String get weekdayFri => 'Ven';
+  @override
+  String get weekdaySat => 'Sam';
+  @override
+  String formatYearMonth(int year, int month) =>
+      '${month.toString().padLeft(2, '0')}/$year';
+  @override
+  String get rangeStartSemantic => 'Début de la plage sélectionnée';
+  @override
+  String get rangeEndSemantic => 'Fin de la plage sélectionnée';
+  @override
+  String get rangeMiddleSemantic => 'Milieu de la plage sélectionnée';
+  @override
+  String selectedCount(int count) => '$count sélectionnés';
+  @override
+  String get selectAllText => 'Tout sélectionner';
+  @override
+  String countdownLabel(String formatted) => 'Compte à rebours : $formatted';
+  @override
+  String get formLoadingText => 'Le formulaire se charge, veuillez patienter…';
+  @override
+  String get searchHintText => 'Veuillez saisir une recherche';
+  @override
+  String get backTop => 'Retour en haut';
+  @override
+  String get breadcrumbLabel => "Fil d'Ariane";
+  @override
+  String get breadcrumbExpand => "Développer le fil d'Ariane";
+  @override
+  String breadcrumbHasSubmenu(String label) => '$label, a un sous-menu';
+  @override
+  String get noOptions => 'Aucune option';
+  @override
+  String get noMatchingOptions => 'Aucune option correspondante';
+  @override
+  String get expandText => 'Développer';
+  @override
+  String get collapseText => 'Réduire';
+  @override
+  String get selectStartDate => 'Sélectionner la date de début';
+  @override
+  String get selectEndDate => 'Sélectionner la date de fin';
+  @override
+  String get timeFilter => 'Filtre temporel';
+  @override
+  String get resetFilter => 'Réinitialiser le filtre';
+  @override
+  String get startTime => 'Heure de début';
+  @override
+  String get endTime => 'Heure de fin';
+  @override
+  String get pleaseSelectFirst => "Veuillez d'abord sélectionner un élément";
+  @override
+  String get forbiddenTitle => 'Accès refusé';
+  @override
+  String get forbiddenDesc => "Vous n'avez pas la permission d'accéder à cette page. Veuillez contacter l'administrateur.";
+  @override
+  String get notFoundTitle => 'Page non trouvée';
+  @override
+  String get notFoundDesc => "La page que vous avez visitée n'existe pas ou a été supprimée.";
+  @override
+  String get serverErrorTitle => 'Erreur du serveur';
+  @override
+  String get serverErrorDesc => 'Le serveur a rencontré une erreur interne. Veuillez réessayer plus tard.';
+  @override
+  String get sliderValueLabel => 'Valeur';
+  @override
+  String get splitterLabel => 'Faites glisser le séparateur pour ajuster le ratio du panneau';
+  @override
+  String get collapseFirstHorizontal => 'Réduire le panneau gauche';
+  @override
+  String get collapseSecondHorizontal => 'Réduire le panneau droit';
+  @override
+  String get collapseFirstVertical => 'Réduire le panneau supérieur';
+  @override
+  String get collapseSecondVertical => 'Réduire le panneau inférieur';
+
+  // ── ParkUpload ──
+  @override
+  String get addFileText => 'Ajouter un fichier';
+  @override
+  String get uploadFailed => 'Échec du téléversement';
+  @override
+  String get fileTypeNotSupported => 'Type de fichier non pris en charge';
+  @override
+  String get imageOnlyUpload => 'Seuls les fichiers image sont autorisés';
+  @override
+  String get imageOnlyConstraint => 'Images uniquement';
+  @override
+  String fileSizeExceedsText(double maxSizeMB) =>
+      'La taille du fichier ne peut pas dépasser ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)} Mo';
+  @override
+  String supportedFormatsText(List<String> formats) =>
+      'Formats pris en charge : ${formats.join(' / ')}';
+  @override
+  String singleFileLimitText(double maxSizeMB) =>
+      'Fichier unique ne dépassant pas ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)} Mo';
+  @override
+  String get deleteFileLabel => 'Supprimer le fichier';
+  @override
+  String get dragUploadAreaLabel => 'Zone de glisser-déposer pour le téléversement';
+  @override
+  String get cropImageTitle => "Recadrer l'image";
+  @override
+  String get pullingStatus => 'Tirage en cours';
+
+  // ── B62 ParkText ──
+  @override
+  String get copiedText => 'Copié';
+
+  // ── B62 ParkTimePicker ──
+  @override
+  String get selectTimeText => "Veuillez sélectionner l'heure";
+  @override
+  String get chooseTimeText => "Sélectionner l'heure";
+  @override
+  String get currentSelectionText => 'Sélection actuelle';
+
+  // ── B62 ParkDatePicker shortcuts ──
+  @override
+  String get shortcutToday => "Aujourd'hui";
+  @override
+  String get shortcutLast7Days => '7 derniers jours';
+  @override
+  String get shortcutLast30Days => '30 derniers jours';
+  @override
+  String get shortcutThisMonth => 'Ce mois-ci';
+
+  // ── B62 ParkCalendar ──
+  @override
+  String dateSemanticFormat(int year, int month, int day) =>
+      '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/$year';
+
+  // ── B62 ParkFormRule validation ──
+  @override
+  String get validationFailed => 'Échec de la validation';
+  @override
+  String lengthMustBe(int len) => 'La longueur doit être de $len caractères';
+  @override
+  String get invalidNumber => 'Veuillez saisir un nombre valide';
+  @override
+  String get invalidInteger => 'Veuillez saisir un entier valide';
+  @override
+  String get invalidEmail => 'Veuillez saisir une adresse e-mail valide';
+  @override
+  String get invalidUrl => 'Veuillez saisir une URL valide';
+  @override
+  String get invalidPhone => 'Veuillez saisir un numéro de téléphone valide';
+  @override
+  String cannotBeLessThan(num min) => 'Ne peut pas être inférieur à $min';
+  @override
+  String cannotBeGreaterThan(num max) => 'Ne peut pas être supérieur à $max';
+  @override
+  String lengthCannotBeLessThan(num min) => 'La longueur ne peut pas être inférieure à $min';
+  @override
+  String lengthCannotBeGreaterThan(num max) => 'La longueur ne peut pas être supérieure à $max';
+
+  // ── B62 表单引擎 ──
+  @override
+  String selectField(String fieldName) => 'Veuillez sélectionner $fieldName';
+  @override
+  String get noImages => 'Aucune image';
+  @override
+  String get selectFromAlbum => "Sélectionner dans l'album";
+  @override
+  String get takePhoto => 'Prendre une photo';
+  @override
+  String selectedFilesCount(int count) => '$count fichiers sélectionnés';
+  @override
+  String get chooseFile => 'Choisir un fichier';
+  @override
+  String get unnamedGroup => 'Groupe sans nom';
+  @override
+  String get validationTimeout => 'La validation a expiré, veuillez réessayer plus tard';
+  @override
+  String get usernameAlreadyExists => "Le nom d'utilisateur existe déjà";
+  @override
+  String get emailAlreadyRegistered => "L'e-mail est déjà enregistré";
+  @override
+  String idCardFormatError(String detail) => 'Format de carte d\'identité invalide ($detail)';
+  @override
+  String get selectProvince => 'Sélectionner la province';
+  @override
+  String get selectCity => 'Sélectionner la ville';
+  @override
+  String get selectDistrict => 'Sélectionner le district';
+
+  // ── 日期范围快捷扩展 ──
+  @override
+  String get shortcutLast90Days => '90 derniers jours';
+  @override
+  String get shortcutMonthToDate => 'Mois en cours';
+
+  // ── Tour 引导 ──
+  @override
+  String get skipText => 'Passer';
+  @override
+  String get tourSemanticsLabel => 'Guide des fonctionnalités';
+  @override
+  String stepIndicatorFormat(int current, int total) => 'Étape \u{24}{current + 1} / \u{24}total';
+  @override
+  String get closeTourLabel => 'Fermer le guide';
+  @override
+  String get skipTourLabel => 'Passer le guide';
+
+  // ── Result 状态码语义 ──
+  @override
+  String statusCodeSemantic(String title, String? description, String? code) {
+    final buffer = StringBuffer(title);
+    if (description != null) buffer.write(', \u{24}description');
+    if (code != null) buffer.write(', code d\'état \u{24}code');
+    return buffer.toString();
+  }
+
+  // ── Steps 步骤状态 ──
+  @override
+  String get stepStatusFinish => 'Terminé';
+  @override
+  String get stepStatusProcess => 'En cours';
+  @override
+  String get stepStatusError => 'Erreur';
+  @override
+  String get stepStatusWaiting => 'En attente';
+  @override
+  String stepSemanticFormat(int step, String title, String status, String? description) {
+    final buffer = StringBuffer('Étape \u{24}{step + 1}: \u{24}title, \u{24}status');
+    if (description != null) buffer.write(', \u{24}description');
+    return buffer.toString();
+  }
+
+  // ── Select 加载/空态 ──
+  @override
+  String get loadingOptionsText => 'Chargement…';
+  @override
+  String get selectEmptyText => 'Aucune option';
+
+  // ── Remaining component l10n keys ──
+  @override
+  String get fileTypeLabel => 'Type de fichier';
+  @override
+  String get previewLabel => 'Aperçu';
+  @override
+  String get imageInvalidFormat => "Le contenu du fichier n'est pas un format d'image valide";
+  @override
+  String get clickToSort => 'Cliquer pour trier';
+  @override
+  String anchorLabel(String label) => 'Ancre : $label';
+  @override
+  String get rotateLabel => 'Pivoter';
+  @override
+  String get flipHorizontal => 'Retourner horizontalement';
+  @override
+  String get flipVertical => 'Retourner verticalement';
+  @override
+  String hueSliderSemantic(int degrees) => 'Curseur de teinte, $degrees degrés';
+  @override
+  String get saturationValuePickerLabel => 'Sélecteur de saturation et de valeur';
+  @override
+  String currentColorSemantic(String value) => 'Couleur actuelle $value';
+  @override
+  String colorValueSemantic(String value) => 'Valeur de couleur $value';
+  @override
+  String get colorFormatSwitch => 'Changer le format de couleur';
+  @override
+  String switchToFormat(String format) => 'Passer à $format';
+  @override
+  String get emptyValueLabel => 'Vide';
+
+  // ── Navigation / Display ──
+  @override
+  String get navigationDrawerLabel => 'Tiroir de navigation';
+  @override
+  String get layoutLabel => 'Mise en page';
+  @override
+  String get backLabel => 'Retour';
+  @override
+  String get treeSelectedLabel => 'Sélectionné';
+  @override
+  String get treeExpandedLabel => 'Développé';
+  @override
+  String get treeCollapsedLabel => 'Réduit';
+  @override
+  String get treeDraggableLabel => 'Glissable pour réorganiser';
+
+  // ── Input 组件国际化 ──
+  @override
+  String get shortcutYesterday => 'Hier';
+  @override
+  String get shortcutThisQuarter => 'Ce trimestre';
+  @override
+  String get moveRightLabel => 'Déplacer à droite';
+  @override
+  String get moveLeftLabel => 'Déplacer à gauche';
+  @override
+  String totalItemsCount(int count) => '$count éléments au total';
+  @override
+  String get selectedLabel => 'Sélectionné';
+  @override
+  String get searchNodesHint => 'Rechercher des nœuds';
+  @override
+  String get searchAllNodesSemantic => 'Rechercher tous les nœuds';
+  @override
+  String get checkedStateLabel => 'Coché';
+  @override
+  String get indeterminateStateLabel => 'Partiellement coché';
+  @override
+  String get uncheckedStateLabel => 'Décoché';
+  @override
+  String get selectedStateLabel => 'Sélectionné';
+  @override
+  String get expandedStateLabel => 'Développé';
+  @override
+  String get collapsedStateLabel => 'Réduit';
+  @override
+  String get disabledStateLabel => 'Désactivé';
+  @override
+  String checkboxDisabledLabel(String label) => '$label, désactivé';
+  @override
+  String checkboxLabel(String label) => label;
+
+  // ── Watermark ──
+  @override
+  String get watermarkLabel => "Filigrane";
+  @override
+  String get expandSubmenuLabel => 'Développer le sous-menu';
 }

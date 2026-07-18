@@ -3,6 +3,19 @@ import 'park_bindable.dart';
 import 'park_binding_service.dart';
 import 'park_binding_form_scope.dart';
 
+/// 可绑定表单组件的统一接口。
+///
+/// 所有支持数据绑定的 Park 表单组件（ParkInput、ParkSelect 等）均实现此接口，
+/// 提供 [bindKey] 和 [bindingService] 两个属性。
+/// [BindableFormFieldMixin] 通过此接口进行类型安全的访问，避免 `(widget as dynamic)`。
+abstract class ParkBindableWidget {
+  /// 绑定键（点号分隔的路径，如 user.name）。
+  String? get bindKey;
+
+  /// 绑定服务实例。不设时尝试从 [ParkBindingFormScope] 获取。
+  ParkBindingService? get bindingService;
+}
+
 /// FormField 状态类专用绑定混入。
 ///
 /// 为 Park 输入组件（ParkInput/ParkTextarea/ParkSwitch/ParkSelect）提供
@@ -16,8 +29,10 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
   ParkBindable<T>? _bindable;
   bool _isLinked = false;
 
-  String? get _bindKey => (widget as dynamic).bindKey;
-  ParkBindingService? get _bindingService => (widget as dynamic).bindingService;
+  String? get _bindKey =>
+      (widget is ParkBindableWidget) ? (widget as ParkBindableWidget).bindKey : null;
+  ParkBindingService? get _bindingService =>
+      (widget is ParkBindableWidget) ? (widget as ParkBindableWidget).bindingService : null;
 
   @override
   void initState() {

@@ -118,6 +118,7 @@ class _ParkBackTopState extends State<ParkBackTop>
   }
 
   void _onScroll() {
+    if (!mounted) return;
     if (!_effectiveController.hasClients) {
       if (_visible) {
         setState(() => _visible = false);
@@ -129,6 +130,7 @@ class _ParkBackTopState extends State<ParkBackTop>
     final shouldShow =
         _effectiveController.offset >= _effectiveThreshold;
     if (shouldShow != _visible) {
+      if (!mounted) return;
       setState(() => _visible = shouldShow);
       if (shouldShow) {
         _animController.forward();

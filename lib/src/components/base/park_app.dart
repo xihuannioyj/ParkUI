@@ -10,7 +10,7 @@ import '../../l10n/park_localizations.dart';
 ///
 /// 使用 [ParkApp] 替代直接使用 [MaterialApp]，可自动完成：
 /// - [ParkThemeData] 注入（亮色/暗色主题自动切换）
-/// - [ParkLocalizations] 注入（中/英/日等语言）
+/// - [ParkLocalizations] 注入（中/英/日/韩/西班牙/法等语言）
 /// - [ParkConfigProvider] 注入（组件内可通过 `context.parkTheme` 访问）
 ///
 /// ```dart
@@ -101,6 +101,12 @@ class ParkApp extends StatelessWidget {
         return const ParkLocalizationsEn();
       case ParkLocale.ja:
         return const ParkLocalizationsJa();
+      case ParkLocale.ko:
+        return const ParkLocalizationsKo();
+      case ParkLocale.es:
+        return const ParkLocalizationsEs();
+      case ParkLocale.fr:
+        return const ParkLocalizationsFr();
     }
   }
 
@@ -116,11 +122,13 @@ class ParkApp extends StatelessWidget {
           brightness: isDark ? Brightness.dark : Brightness.light,
           colorSchemeSeed: parkTheme.colors.brand,
         );
+    final List<ThemeExtension> extensions =
+        <ThemeExtension>[
+          parkTheme,
+          ...?additionalExtensions?.cast<ThemeExtension>(),
+        ];
     return base.copyWith(
-      extensions: <ThemeExtension<dynamic>>[
-        parkTheme,
-        ...?additionalExtensions,
-      ],
+      extensions: extensions,
     );
   }
 
@@ -182,4 +190,13 @@ enum ParkLocale {
 
   /// 日文
   ja,
+
+  /// 韩文
+  ko,
+
+  /// 西班牙文
+  es,
+
+  /// 法文
+  fr,
 }

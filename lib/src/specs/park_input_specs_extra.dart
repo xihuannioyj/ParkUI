@@ -48,6 +48,8 @@ final ParkComponentSpec _parkFormItemSpec = ParkComponentSpec(
     ParkPropertyDef(name: 'bindKey', type: 'String?', defaultVal: 'null', description: '绑定键（点号分隔路径）。置于已注入绑定服务的 ParkForm 内可双向绑定字段值。不设时行为不变。'),
     ParkPropertyDef(name: 'colon', type: 'bool?', defaultVal: 'null', description: '覆盖表单级 colon 设置；null 时继承表单级。'),
     ParkPropertyDef(name: 'layout', type: 'ParkFormLayout?', defaultVal: 'null', description: '表单项布局；null 时继承 ParkForm / ParkFormScope。'),
+    ParkPropertyDef(name: 'wrapperCol', type: 'int?', defaultVal: 'null', description: '控件列占格数（24 栅格），覆盖表单级 ParkForm.wrapperCol。需配合 labelCol 使用。'),
+    ParkPropertyDef(name: 'control', type: 'ParkAbstractControl?', defaultVal: 'null', description: '响应式表单控件。传入后表单项自动监听控件的校验状态变化，在控件被触碰过且校验失败时显示错误信息。'),
   ],
   events: const <ParkEventDef>[],
   methods: const <ParkMethodDef>[],
@@ -124,7 +126,7 @@ ParkFormItem(
     ParkDemoScenario(
       title: '内联校验规则 (rules)',
       description: 'rules 配置必填与邮箱格式，ParkFormItem.validateByRules 按规则链返回首个错误。'
-          ' 表单级统一校验需配合 ParkForm.validate / ParkDynamicForm 运行时生效（B30）。'
+          ' 表单级统一校验需配合 ParkForm.validate / ParkForm 运行时生效（B30）。'
           ' / rules enforce required + email format; evaluated via validateByRules.',
       code: '''
 ParkFormItem(
@@ -149,7 +151,7 @@ ParkFormItem(
   ],
 );
 
-/// 输入类补充组件规格字典（6 个组件）。
+/// 输入类补充组件规格字典（7 个组件）。
 Map<String, ParkComponentSpec> get parkInputSpecsExtra =>
     <String, ParkComponentSpec>{
       'ParkSegmented': _parkSegmentedSpec,
@@ -158,6 +160,7 @@ Map<String, ParkComponentSpec> get parkInputSpecsExtra =>
       'ParkFormItem': _parkFormItemSpec,
       'ParkMentions': _parkMentionsSpec,
       'ParkCheckboxGroup': _parkCheckboxGroupSpec,
+      'ParkDatePreset': _parkDatePresetSpec,
     };
 
 // ---------------------------------------------------------------------------
@@ -516,7 +519,7 @@ final ParkComponentSpec _parkSegmentedSpec = ParkComponentSpec(
       type: 'ParkBindingService?',
       defaultVal: 'null',
       description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -765,10 +768,22 @@ final ParkComponentSpec _parkCalendarSpec = ParkComponentSpec(
       description: '当前多选日期（multiple 模式）。',
     ),
     ParkPropertyDef(
-      name: 'mode',
-      type: 'ParkCalendarMode',
-      defaultVal: 'ParkCalendarMode.single',
-      description: '选择模式：single / range / multiple。',
+      name: 'selectionMode',
+      type: 'ParkCalendarSelectionMode',
+      defaultVal: 'ParkCalendarSelectionMode.single',
+      description: '选择模式（新 API）：single / range。当为 range 时配合 rangeStart/rangeEnd/onRangeChange 使用。',
+    ),
+    ParkPropertyDef(
+      name: 'rangeStart',
+      type: 'DateTime?',
+      defaultVal: 'null',
+      description: '范围选择开始日期（新 API，配合 selectionMode = range 使用）。',
+    ),
+    ParkPropertyDef(
+      name: 'rangeEnd',
+      type: 'DateTime?',
+      defaultVal: 'null',
+      description: '范围选择结束日期（新 API，配合 selectionMode = range 使用）。',
     ),
     ParkPropertyDef(
       name: 'minDate',
@@ -799,6 +814,12 @@ final ParkComponentSpec _parkCalendarSpec = ParkComponentSpec(
       type: 'Widget Function(DateTime, bool, bool, bool)?',
       defaultVal: 'null',
       description: '自定义日期单元格渲染器，替换默认的日期单元格 Widget。',
+    ),
+    ParkPropertyDef(
+      name: 'cellRender',
+      type: 'Widget Function(DateTime, bool, bool, bool, bool)?',
+      defaultVal: 'null',
+      description: '自定义日期单元格渲染器（新 API），提供 (date, isSelected, isInRange, isRangeStart, isRangeEnd) 五个参数。与 cellBuilder 同时设置时 cellRender 优先。',
     ),
     ParkPropertyDef(
       name: 'disabledDate',
@@ -832,7 +853,7 @@ final ParkComponentSpec _parkCalendarSpec = ParkComponentSpec(
       type: 'ParkBindingService?',
       defaultVal: 'null',
       description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -848,6 +869,11 @@ final ParkComponentSpec _parkCalendarSpec = ParkComponentSpec(
       description: '范围选择变更回调。',
     ),
     ParkEventDef(
+      name: 'onRangeChange',
+      signature: 'void Function(DateTime?, DateTime?)?',
+      description: '范围变化回调（新 API），返回当前选中的开始/结束日期。',
+    ),
+    ParkEventDef(
       name: 'onMultipleChanged',
       signature: 'ValueChanged<List<DateTime>>?',
       description: '多选变更回调。',
@@ -861,7 +887,7 @@ final ParkComponentSpec _parkCalendarSpec = ParkComponentSpec(
   methods: const <ParkMethodDef>[],
   basicUsageCode: '''
 ParkCalendar(
-  mode: ParkCalendarMode.single,
+  selectionMode: ParkCalendarSelectionMode.single,
   onChanged: (DateTime date) {},
 )
 ''',
@@ -891,13 +917,13 @@ ParkCalendar(
       description: '默认 single 模式日历。',
       code: '''
 ParkCalendar(
-  mode: ParkCalendarMode.single,
+  selectionMode: ParkCalendarSelectionMode.single,
   onChanged: (DateTime date) {},
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
         child: ParkCalendar(
-          mode: ParkCalendarMode.single,
+          selectionMode: ParkCalendarSelectionMode.single,
           onChanged: (DateTime date) {},
         ),
       ),
@@ -907,14 +933,14 @@ ParkCalendar(
       description: 'range 模式可选择一个起止区间。',
       code: '''
 ParkCalendar(
-  mode: ParkCalendarMode.range,
-  onRangeChanged: (DateTimeRange range) {},
+  selectionMode: ParkCalendarSelectionMode.range,
+  onRangeChange: (DateTime? start, DateTime? end) {},
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
         child: ParkCalendar(
-          mode: ParkCalendarMode.range,
-          onRangeChanged: (DateTimeRange range) {},
+          selectionMode: ParkCalendarSelectionMode.range,
+          onRangeChange: (DateTime? start, DateTime? end) {},
         ),
       ),
     ),
@@ -939,7 +965,7 @@ ParkCalendar(
       description: 'minDate/maxDate 限制可选范围；disabledDates 禁用特定日期。',
       code: '''
 ParkCalendar(
-  mode: ParkCalendarMode.single,
+  selectionMode: ParkCalendarSelectionMode.single,
   minDate: DateTime(2025, 6, 1),
   maxDate: DateTime(2025, 6, 30),
   disabledDates: [DateTime(2025, 6, 15), DateTime(2025, 6, 20)],
@@ -948,7 +974,7 @@ ParkCalendar(
       builder: (BuildContext context) => SizedBox(
         width: 320,
         child: ParkCalendar(
-          mode: ParkCalendarMode.single,
+          selectionMode: ParkCalendarSelectionMode.single,
           minDate: DateTime(2025, 6, 1),
           maxDate: DateTime(2025, 6, 30),
           disabledDates: <DateTime>[
@@ -964,14 +990,14 @@ ParkCalendar(
       description: 'firstDayOfWeek: 0 将周日设为每周第一天。',
       code: '''
 ParkCalendar(
-  mode: ParkCalendarMode.single,
+  selectionMode: ParkCalendarSelectionMode.single,
   firstDayOfWeek: 0,
   onChanged: (DateTime date) {},
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
         child: ParkCalendar(
-          mode: ParkCalendarMode.single,
+          selectionMode: ParkCalendarSelectionMode.single,
           firstDayOfWeek: 0,
           onChanged: (DateTime date) {},
         ),
@@ -983,14 +1009,14 @@ ParkCalendar(
           ' / onPanelChange fires when the visible month changes (e.g. for lazy-loading remote data).',
       code: '''
 ParkCalendar(
-  mode: ParkCalendarMode.single,
+  selectionMode: ParkCalendarSelectionMode.single,
   onPanelChange: (DateTime visibleMonth) {},
   onChanged: (DateTime date) {},
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
         child: ParkCalendar(
-          mode: ParkCalendarMode.single,
+          selectionMode: ParkCalendarSelectionMode.single,
           onPanelChange: (DateTime visibleMonth) {},
           onChanged: (DateTime date) {},
         ),
@@ -1065,6 +1091,42 @@ final ParkComponentSpec _parkDateRangePickerSpec = ParkComponentSpec(
       type: 'String?',
       defaultVal: 'null',
       description: '绑定键（点号分隔路径）。不设时组件行为不变。',
+    ),
+    ParkPropertyDef(
+      name: 'bindingService',
+      type: 'ParkBindingService?',
+      defaultVal: 'null',
+      description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。',
+    ),
+    ParkPropertyDef(
+      name: 'presets',
+      type: 'List<ParkDatePreset>?',
+      defaultVal: 'null',
+      description: '预设快捷项列表（使用 ParkDatePreset 构建，支持回调闭包）。',
+    ),
+    ParkPropertyDef(
+      name: 'startHintText',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '起始日期占位文字。',
+    ),
+    ParkPropertyDef(
+      name: 'endHintText',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '结束日期占位文字。',
+    ),
+    ParkPropertyDef(
+      name: 'resetText',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '重置按钮文字。',
+    ),
+    ParkPropertyDef(
+      name: 'renderExtraFooter',
+      type: 'Widget?',
+      defaultVal: 'null',
+      description: '自定义底部 footer 组件，渲染在日期选择面板底部确认按钮下方。',
     ),
   ],
   events: const <ParkEventDef>[
@@ -1283,13 +1345,13 @@ ParkDateRangePicker(
 )''',
       builder: (BuildContext context) => _DateRangePickerBindingDemo(),
     ),
-    // ── ParkDateRangePicker: ParkDynamicForm 示例 ──
+    // ── ParkDateRangePicker: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
-      description: '在 ParkDynamicForm 中以 schema 配置 date 字段类型用作日期范围。'
-          ' / ParkDynamicForm fieldType=date demo (range mode).',
+      title: '动态表单（ParkForm）',
+      description: '在 ParkForm 中以 schema 配置 date 字段类型用作日期范围。'
+          ' / ParkForm fieldType=date demo (range mode).',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'drp_demo',
     fields: [
@@ -1306,7 +1368,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'drp_demo',
             fields: <ParkFormFieldSchema>[
@@ -1524,7 +1586,7 @@ final ParkComponentSpec _parkCheckboxGroupSpec = ParkComponentSpec(
 - selectAll 开启后顶部显示全选复选框
 
 ## 搭配推荐
-- 搭配 ParkForm / ParkDynamicForm 使用
+- 搭配 ParkForm / ParkForm 使用
 - 搭配 ParkFormItem 包裹获得表单标签与校验
 ''',
   demos: <ParkDemoScenario>[
@@ -1647,3 +1709,93 @@ class _ParkCheckboxGroupDemo2State extends State<_ParkCheckboxGroupDemo2> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// ParkDatePreset
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkDatePresetSpec = ParkComponentSpec(
+  name: 'ParkDatePreset',
+  title: '日期预设 / Date Preset',
+  category: 'input',
+  description:
+      '日期选择器预设快捷项数据类，提供一组常用日期范围的快速选择。'
+      '通过 onSelect 回调在点击时设置对应的日期值。'
+      '非 Widget，作为 ParkDatePicker / ParkDateRangePicker 的 presets 参数使用。'
+      ' / Date picker preset data class for quick date-range selection. '
+      'Not a widget — used as the presets parameter of ParkDatePicker / ParkDateRangePicker.',
+  icon: Icons.event_outlined,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(name: 'label', type: 'String', required: true, description: '显示文字 / Display label'),
+    ParkPropertyDef(name: 'date', type: 'DateTime?', defaultVal: 'null', description: '预设日期（DatePicker 使用）/ Preset date (for DatePicker)'),
+    ParkPropertyDef(name: 'startDate', type: 'DateTime?', defaultVal: 'null', description: '预设起始日期（DateRangePicker 使用）/ Preset start date (for DateRangePicker)'),
+    ParkPropertyDef(name: 'endDate', type: 'DateTime?', defaultVal: 'null', description: '预设结束日期（DateRangePicker 使用）/ Preset end date (for DateRangePicker)'),
+  ],
+  events: const <ParkEventDef>[
+    ParkEventDef(name: 'onSelect', signature: 'VoidCallback', description: '预设选中回调 / Preset selection callback'),
+  ],
+  methods: const <ParkMethodDef>[
+    ParkMethodDef(name: 'ParkDatePreset.today', signature: 'factory', description: '今天（DatePicker）/ Today'),
+    ParkMethodDef(name: 'ParkDatePreset.yesterday', signature: 'factory', description: '昨天（DatePicker）/ Yesterday'),
+    ParkMethodDef(name: 'ParkDatePreset.thisMonth', signature: 'factory', description: '本月第一天（DatePicker）/ First day of month'),
+    ParkMethodDef(name: 'ParkDatePreset.last7Days', signature: 'factory', description: '近 7 天（DateRangePicker）/ Last 7 days'),
+    ParkMethodDef(name: 'ParkDatePreset.last30Days', signature: 'factory', description: '近 30 天（DateRangePicker）/ Last 30 days'),
+    ParkMethodDef(name: 'ParkDatePreset.thisMonthRange', signature: 'factory', description: '本月至今（DateRangePicker）/ This month to date'),
+    ParkMethodDef(name: 'ParkDatePreset.thisQuarter', signature: 'factory', description: '本季度（DateRangePicker）/ This quarter'),
+  ],
+  basicUsageCode: '''
+ParkDatePicker(
+  presets: [
+    ParkDatePreset.today(l10n, (date) => print(date)),
+    ParkDatePreset.thisMonth(l10n, (date) => print(date)),
+  ],
+)
+''',
+  guide: '''
+## 何时使用 / When to use
+- 为 DatePicker 或 DateRangePicker 提供快捷日期选择 / Provide quick date selection for date pickers
+- 常用预设：今天、昨天、近 7 天、近 30 天、本月、本季度等
+
+## 使用建议 / Usage tips
+- ParkDatePreset 是数据类，不是 Widget / ParkDatePreset is a data class, not a widget
+- 通过工厂构造函数（today / yesterday / last7Days 等）快速创建预设
+- 需要传入 ParkLocalizations 实例以获取国际化文案
+- DatePicker 使用 date 字段，DateRangePicker 使用 startDate / endDate 字段
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '预设列表 / Preset list',
+      description: '展示 ParkDatePreset 的常用工厂方法 / Show common factory methods',
+      code: '''
+// DatePicker 预设
+ParkDatePreset.today(l10n, (date) => ...)
+ParkDatePreset.yesterday(l10n, (date) => ...)
+ParkDatePreset.thisMonth(l10n, (date) => ...)
+
+// DateRangePicker 预设
+ParkDatePreset.last7Days(l10n, (start, end) => ...)
+ParkDatePreset.last30Days(l10n, (start, end) => ...)
+ParkDatePreset.thisMonthRange(l10n, (start, end) => ...)
+ParkDatePreset.thisQuarter(l10n, (start, end) => ...)''',
+      builder: (BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ParkDatePreset', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('数据类，非 Widget。通过工厂方法创建：', style: TextStyle(fontSize: 14)),
+            SizedBox(height: 4),
+            Text('DatePicker: today / yesterday / thisMonth', style: TextStyle(fontSize: 13, fontFamily: 'monospace')),
+            Text('DateRangePicker: last7Days / last30Days / thisMonthRange / thisQuarter', style: TextStyle(fontSize: 13, fontFamily: 'monospace')),
+          ],
+        ),
+      ),
+    ),
+  ],
+);

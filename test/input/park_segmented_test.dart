@@ -84,6 +84,89 @@ void main() {
       expect(slider.width, closeTo(textSize.width + 2 * hPadding, 2.0));
     });
   });
+
+  group('ParkSegmented - disabled', () {
+    testWidgets('disabled widget does not respond to taps', (tester) async {
+      String? tapped;
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: _items,
+        disabled: true,
+        onChanged: (v) => tapped = v,
+      )));
+      await tester.tap(find.text('周'));
+      expect(tapped, isNull);
+    });
+
+    testWidgets('individual disabled item', (tester) async {
+      String? tapped;
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: const [
+          ParkSegmentedItem(value: 'a', label: 'A'),
+          ParkSegmentedItem(value: 'b', label: 'B', disabled: true),
+          ParkSegmentedItem(value: 'c', label: 'C'),
+        ],
+        onChanged: (v) => tapped = v,
+      )));
+      await tester.tap(find.text('B'));
+      expect(tapped, isNull);
+    });
+  });
+
+  group('ParkSegmented - multiSelect', () {
+    testWidgets('multi-select mode renders', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: _items,
+        multiSelect: true,
+        multiValues: const ['day', 'month'],
+      )));
+      expect(find.byType(ParkSegmented), findsOneWidget);
+    });
+
+    testWidgets('multi-select tap toggles values', (tester) async {
+      List<String>? changed;
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: _items,
+        multiSelect: true,
+        multiValues: const ['day'],
+        onMultiChanged: (v) => changed = v,
+      )));
+      await tester.tap(find.text('周'));
+      expect(changed, isNotNull);
+      expect(changed!, contains('week'));
+    });
+  });
+
+  group('ParkSegmented - sizes', () {
+    testWidgets('small size renders', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: _items,
+        size: ParkSegmentedSize.small,
+      )));
+      expect(find.byType(ParkSegmented), findsOneWidget);
+    });
+
+    testWidgets('large size renders', (tester) async {
+      await tester.pumpWidget(_wrap(ParkSegmented(
+        items: _items,
+        size: ParkSegmentedSize.large,
+      )));
+      expect(find.byType(ParkSegmented), findsOneWidget);
+    });
+  });
+
+  group('ParkSegmented - block mode', () {
+    testWidgets('block mode expands to full width', (tester) async {
+      await tester.pumpWidget(_wrap(SizedBox(
+        width: 400,
+        child: ParkSegmented(
+          items: _items,
+          block: true,
+        ),
+      )));
+      final seg = tester.widget<ParkSegmented>(find.byType(ParkSegmented));
+      expect(seg.block, isTrue);
+    });
+  });
 }
 
 /// 受控包装：用外部按钮改变 value，验证 didUpdateWidget 同步。

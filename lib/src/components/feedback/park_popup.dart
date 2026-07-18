@@ -515,7 +515,10 @@ class _ParkBottomSheetContent<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
-    Widget content = builder(context);
+    Widget content = Container(
+      color: park.colors.surface,
+      child: builder(context),
+    );
     if (showDragHandle) {
       content = Column(
         mainAxisSize: MainAxisSize.min,

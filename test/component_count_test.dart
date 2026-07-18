@@ -5,11 +5,24 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+/// 获取 park_ui 包根目录（flutter test 时 cwd 为包根）
+String _packageRoot() {
+  // flutter test 从包根运行，cwd 即为包根
+  final cwd = Directory.current.path;
+  // 如果 cwd 已经是 park_ui 目录
+  if (File('$cwd/lib/park_ui.dart').existsSync()) return cwd;
+  // 如果 cwd 是项目根（从根运行），定位到 packages/park_ui
+  if (File('$cwd/packages/park_ui/lib/park_ui.dart').existsSync()) {
+    return '$cwd/packages/park_ui';
+  }
+  return cwd;
+}
+
 void main() {
   group('ParkComponentRegistry - 组件数量断言', () {
     test('lib/src/components 目录下导出的组件文件数量稳定', () {
-      // 扫描 lib/src/components 目录下的所有 .dart 文件
-      final componentsDir = Directory('lib/src/components');
+      final root = _packageRoot();
+      final componentsDir = Directory('$root/lib/src/components');
       expect(componentsDir.existsSync(), isTrue,
           reason: 'lib/src/components 目录应存在');
 
@@ -21,12 +34,13 @@ void main() {
 
       // 当前实际组件文件数量
       // 如果新增或删除组件，需同步更新此断言值
-      expect(dartFiles.length, equals(111),
-          reason: '组件文件数量应为 111，如有变更请更新此断言值');
+      expect(dartFiles.length, equals(112),
+          reason: '组件文件数量应为 112，如有变更请更新此断言值');
     });
 
     test('park_ui.dart 导出的组件文件数量稳定', () {
-      final barrelFile = File('lib/park_ui.dart');
+      final root = _packageRoot();
+      final barrelFile = File('$root/lib/park_ui.dart');
       expect(barrelFile.existsSync(), isTrue,
           reason: 'lib/park_ui.dart 应存在');
 
@@ -38,12 +52,13 @@ void main() {
 
       // 当前 barrel 文件中导出的组件数量
       // 如果新增或删除组件导出，需同步更新此断言值
-      expect(componentExports.length, equals(99),
-          reason: 'barrel 文件中组件导出数量应为 99，如有变更请更新此断言值');
+      expect(componentExports.length, equals(105),
+          reason: 'barrel 文件中组件导出数量应为 105，如有变更请更新此断言值');
     });
 
     test('各子目录组件分布合理', () {
-      final componentsDir = Directory('lib/src/components');
+      final root = _packageRoot();
+      final componentsDir = Directory('$root/lib/src/components');
       final subdirs = componentsDir
           .listSync()
           .whereType<Directory>()

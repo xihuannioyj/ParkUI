@@ -220,7 +220,7 @@ ParkButtonGroup(
   ],
 );
 
-/// 基础组件规格字典（8 个组件 / Base components (8)）。
+/// 基础组件规格字典（11 个组件 / Base components (11)）。
 Map<String, ParkComponentSpec> get parkBaseSpecs =>
     <String, ParkComponentSpec>{
       'ParkButton': _parkButtonSpec,
@@ -231,6 +231,9 @@ Map<String, ParkComponentSpec> get parkBaseSpecs =>
       'ParkLink': _parkLinkSpec,
       'ParkInkWell': _parkInkWellSpec,
       'ParkButtonGroup': _parkButtonGroupSpec,
+      'ParkFloatButton': _parkFloatButtonSpec,
+      'ParkTitle': _parkTitleSpec,
+      'ParkParagraph': _parkParagraphSpec,
     };
 
 // ---------------------------------------------------------------------------
@@ -409,6 +412,13 @@ final ParkComponentSpec _parkButtonSpec = ParkComponentSpec(
       defaultVal: 'false',
       description:
           '是否为纯图标按钮（无文字），影响内边距与最小宽度 / Icon-only (no text); affects padding & min width',
+    ),
+    ParkPropertyDef(
+      name: 'tooltip',
+      type: 'String?',
+      defaultVal: 'null',
+      description:
+          '工具提示文本（长按或悬停时显示） / Tooltip text (shown on long-press or hover)',
     ),
     ParkPropertyDef(
       name: 'height',
@@ -3376,6 +3386,314 @@ StatefulBuilder(
             ],
           );
         },
+      ),
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// ParkFloatButton
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkFloatButtonSpec = ParkComponentSpec(
+  name: 'ParkFloatButton',
+  title: '悬浮按钮 / Float Button',
+  category: 'base',
+  description:
+      '悬浮在页面上的操作按钮，对标 Ant Design FloatButton。'
+      '支持单按钮模式与菜单模式（传入 items 列表），'
+      '可配置位置、尺寸、形状、角标等。'
+      ' / Floating action button anchored to page corner, '
+      'supporting single-button and menu modes with position, size, shape, and badge options.',
+  icon: Icons.add_circle_outline,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(name: 'icon', type: 'IconData?', defaultVal: 'null', description: '按钮图标 / Button icon'),
+    ParkPropertyDef(name: 'label', type: 'String?', defaultVal: 'null', description: '按钮文字（仅 rounded 形状时显示）/ Label text (rounded shape only)'),
+    ParkPropertyDef(name: 'items', type: 'List<ParkFloatButtonItem>?', defaultVal: 'null', description: '菜单项列表（传入后进入菜单模式）/ Menu items (triggers menu mode)'),
+    ParkPropertyDef(name: 'position', type: 'ParkFloatButtonPosition', defaultVal: 'bottomRight', description: '悬浮位置 / Float position'),
+    ParkPropertyDef(name: 'size', type: 'ParkFloatButtonSize', defaultVal: 'normal', description: '按钮尺寸（small 40px / normal 56px）/ Button size'),
+    ParkPropertyDef(name: 'type', type: 'ParkFloatButtonType', defaultVal: 'defaultType', description: '按钮类型（primary 品牌色 / defaultType 白底）/ Button type'),
+    ParkPropertyDef(name: 'shape', type: 'ParkFloatButtonShape', defaultVal: 'circle', description: '按钮形状（circle / rounded）/ Button shape'),
+    ParkPropertyDef(name: 'tooltip', type: 'String?', defaultVal: 'null', description: '工具提示文字 / Tooltip text'),
+    ParkPropertyDef(name: 'badge', type: 'int?', defaultVal: 'null', description: '角标数字 / Badge number'),
+    ParkPropertyDef(name: 'badgeDot', type: 'bool', defaultVal: 'false', description: '是否显示红点角标（优先于 badge）/ Red dot badge (overrides badge)'),
+    ParkPropertyDef(name: 'bottom', type: 'double?', defaultVal: 'null', description: '距底部偏移量 / Bottom offset'),
+    ParkPropertyDef(name: 'side', type: 'double?', defaultVal: 'null', description: '距侧边偏移量 / Side offset'),
+    ParkPropertyDef(name: 'backgroundColor', type: 'Color?', defaultVal: 'null', description: '自定义背景色 / Custom background color'),
+    ParkPropertyDef(name: 'iconColor', type: 'Color?', defaultVal: 'null', description: '自定义图标色 / Custom icon color'),
+  ],
+  events: const <ParkEventDef>[
+    ParkEventDef(name: 'onPressed', signature: 'VoidCallback?', description: '按钮点击回调（单按钮模式）/ Tap callback (single mode)'),
+  ],
+  methods: const <ParkMethodDef>[],
+  basicUsageCode: '''
+ParkFloatButton(
+  icon: Icons.add,
+  onPressed: () {},
+)
+''',
+  guide: '''
+## 何时使用 / When to use
+- 页面上需要一个常驻的快捷操作入口 / Persistent quick-action entry on a page
+- 对标 Ant Design FloatButton 的使用场景 / Same scenarios as Ant Design FloatButton
+
+## 使用建议 / Usage tips
+- 单按钮模式：不传 items，直接使用 onPressed / Single mode: omit items, use onPressed
+- 菜单模式：传入 items 列表，点击主按钮展开子菜单 / Menu mode: pass items, tap trigger to expand
+- position 控制悬浮在右下角或左下角 / position controls bottom-right or bottom-left
+- badge / badgeDot 提供角标能力 / badge / badgeDot for badge display
+- 外部对标：Ant Design FloatButton（ng.ant.design/components/float-button）
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '基础悬浮按钮 / Basic',
+      description: '单按钮模式，默认白底圆形 / Single button, default white circle',
+      code: '''
+ParkFloatButton(
+  icon: Icons.add,
+  onPressed: () {},
+)''',
+      builder: (BuildContext context) => SizedBox(
+        height: 80,
+        child: Stack(
+          children: [
+            ParkFloatButton(
+              icon: Icons.add,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    ),
+    ParkDemoScenario(
+      title: '主要类型 / Primary',
+      description: '品牌色背景 / Brand color background',
+      code: '''
+ParkFloatButton(
+  icon: Icons.add,
+  type: ParkFloatButtonType.primary,
+  onPressed: () {},
+)''',
+      builder: (BuildContext context) => SizedBox(
+        height: 80,
+        child: Stack(
+          children: [
+            ParkFloatButton(
+              icon: Icons.add,
+              type: ParkFloatButtonType.primary,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    ),
+    ParkDemoScenario(
+      title: '菜单模式 / Menu mode',
+      description: '传入 items 展开子菜单 / Pass items to expand sub-menu',
+      code: '''
+ParkFloatButton(
+  icon: Icons.more_horiz,
+  items: [
+    ParkFloatButtonItem(icon: Icons.edit, label: '编辑'),
+    ParkFloatButtonItem(icon: Icons.delete, label: '删除'),
+  ],
+)''',
+      builder: (BuildContext context) => SizedBox(
+        height: 200,
+        child: Stack(
+          children: [
+            ParkFloatButton(
+              icon: Icons.more_horiz,
+              items: const [
+                ParkFloatButtonItem(icon: Icons.edit, label: '编辑'),
+                ParkFloatButtonItem(icon: Icons.delete, label: '删除'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+    ParkDemoScenario(
+      title: '角标 / Badge',
+      description: '显示数字角标和红点角标 / Number badge and dot badge',
+      code: '''
+ParkFloatButton(
+  icon: Icons.notifications,
+  badge: 5,
+  onPressed: () {},
+)''',
+      builder: (BuildContext context) => SizedBox(
+        height: 80,
+        child: Stack(
+          children: [
+            ParkFloatButton(
+              icon: Icons.notifications,
+              badge: 5,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// ParkTitle
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkTitleSpec = ParkComponentSpec(
+  name: 'ParkTitle',
+  title: '标题 / Title',
+  category: 'base',
+  description:
+      '语义化标题组件，对标 Ant Design Typography.Title。'
+      '提供 1-5 级标题，可选副标题和复制功能。'
+      ' / Semantic title component, mirroring Ant Design Typography.Title. '
+      'Provides level 1-5 headings with optional subtitle and copy support.',
+  icon: Icons.title,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(name: 'text', type: 'String', required: true, description: '标题文本 / Title text'),
+    ParkPropertyDef(name: 'level', type: 'int', defaultVal: '1', description: '标题级别 1-5（1 最大）/ Heading level 1-5 (1 = largest)'),
+    ParkPropertyDef(name: 'subtitle', type: 'String?', defaultVal: 'null', description: '副标题 / Subtitle'),
+    ParkPropertyDef(name: 'copyable', type: 'bool', defaultVal: 'false', description: '是否可复制 / Copyable'),
+    ParkPropertyDef(name: 'textAlign', type: 'TextAlign?', defaultVal: 'null', description: '文本对齐 / Text alignment'),
+  ],
+  events: const <ParkEventDef>[],
+  methods: const <ParkMethodDef>[],
+  basicUsageCode: '''
+ParkTitle(text: '一级标题', level: 1)
+''',
+  guide: '''
+## 何时使用 / When to use
+- 需要语义化标题排版时 / When semantic heading layout is needed
+- 对标 Ant Design Typography.Title 场景 / Same as Ant Design Typography.Title
+
+## 使用建议 / Usage tips
+- level 1-5 映射到 park.typography 的 display/h1-h3/bodySmall / level 1-5 maps to display/h1-h3/bodySmall
+- copyable 显示复制图标，点击复制到剪贴板 / copyable shows copy icon, copies to clipboard
+- subtitle 在标题下方显示辅助文字 / subtitle shows helper text below the title
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '标题级别 / Levels',
+      description: 'level 1-5 不同字号 / Different font sizes for level 1-5',
+      code: '''
+Column(children: [
+  ParkTitle(text: '一级标题 h1', level: 1),
+  ParkTitle(text: '二级标题 h2', level: 2),
+  ParkTitle(text: '三级标题 h3', level: 3),
+  ParkTitle(text: '四级标题 h4', level: 4),
+  ParkTitle(text: '五级标题 h5', level: 5),
+])''',
+      builder: (BuildContext context) => const Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ParkTitle(text: '一级标题 h1', level: 1),
+          ParkTitle(text: '二级标题 h2', level: 2),
+          ParkTitle(text: '三级标题 h3', level: 3),
+          ParkTitle(text: '四级标题 h4', level: 4),
+          ParkTitle(text: '五级标题 h5', level: 5),
+        ],
+      ),
+    ),
+    ParkDemoScenario(
+      title: '副标题 / Subtitle',
+      description: '标题 + 副标题组合 / Title with subtitle',
+      code: '''
+ParkTitle(text: '带副标题', level: 2, subtitle: '这是副标题说明文字')''',
+      builder: (BuildContext context) => const ParkTitle(
+        text: '带副标题',
+        level: 2,
+        subtitle: '这是副标题说明文字',
+      ),
+    ),
+    ParkDemoScenario(
+      title: '可复制 / Copyable',
+      description: '点击复制图标复制到剪贴板 / Click copy icon to clipboard',
+      code: '''
+ParkTitle(text: '可复制标题', level: 3, copyable: true)''',
+      builder: (BuildContext context) => const ParkTitle(
+        text: '可复制标题',
+        level: 3,
+        copyable: true,
+      ),
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// ParkParagraph
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkParagraphSpec = ParkComponentSpec(
+  name: 'ParkParagraph',
+  title: '段落 / Paragraph',
+  category: 'base',
+  description:
+      '段落排版组件，对标 Ant Design Typography.Paragraph。'
+      '支持最大行数省略、展开/收起、复制和编辑功能。'
+      ' / Paragraph typography component, mirroring Ant Design Typography.Paragraph. '
+      'Supports maxLines ellipsis, expandable collapse, copy, and edit features.',
+  icon: Icons.notes,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(name: 'text', type: 'String', required: true, description: '段落文本 / Paragraph text'),
+    ParkPropertyDef(name: 'maxLines', type: 'int?', defaultVal: 'null', description: '最大行数（超出省略）/ Max lines (ellipsis on overflow)'),
+    ParkPropertyDef(name: 'expandable', type: 'bool', defaultVal: 'false', description: '是否可展开/收起 / Expandable'),
+    ParkPropertyDef(name: 'copyable', type: 'bool', defaultVal: 'false', description: '是否可复制 / Copyable'),
+    ParkPropertyDef(name: 'editable', type: 'bool', defaultVal: 'false', description: '是否显示编辑图标 / Show edit icon'),
+    ParkPropertyDef(name: 'textAlign', type: 'TextAlign?', defaultVal: 'null', description: '文本对齐 / Text alignment'),
+    ParkPropertyDef(name: 'expandText', type: 'String?', defaultVal: 'null', description: '自定义展开按钮文字 / Custom expand label'),
+    ParkPropertyDef(name: 'collapseText', type: 'String?', defaultVal: 'null', description: '自定义收起按钮文字 / Custom collapse label'),
+  ],
+  events: const <ParkEventDef>[
+    ParkEventDef(name: 'onEdit', signature: 'VoidCallback?', description: '编辑按钮点击回调 / Edit button tap callback'),
+  ],
+  methods: const <ParkMethodDef>[],
+  basicUsageCode: '''
+ParkParagraph(text: '这是一段文字...')
+''',
+  guide: '''
+## 何时使用 / When to use
+- 需要段落排版、文本省略展开、复制等能力时 / When paragraph layout, text truncation with expand, or copy is needed
+- 对标 Ant Design Typography.Paragraph / Same as Ant Design Typography.Paragraph
+
+## 使用建议 / Usage tips
+- maxLines + expandable 实现省略后展开/收起 / maxLines + expandable for truncation with expand/collapse
+- copyable 显示复制图标 / copyable shows copy icon
+- editable 显示编辑图标，点击触发 onEdit / editable shows edit icon, triggers onEdit
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '基础段落 / Basic',
+      description: '普通段落文本 / Plain paragraph text',
+      code: '''
+ParkParagraph(text: '这是一段普通的段落文本，用于展示 ParkParagraph 的基础用法。')''',
+      builder: (BuildContext context) => const ParkParagraph(
+        text: '这是一段普通的段落文本，用于展示 ParkParagraph 的基础用法。',
+      ),
+    ),
+    ParkDemoScenario(
+      title: '省略展开 / Expandable',
+      description: 'maxLines 省略 + 展开/收起 / maxLines truncation with expand/collapse',
+      code: '''
+ParkParagraph(
+  text: '这是一段较长的文本...' * 3,
+  maxLines: 2,
+  expandable: true,
+)''',
+      builder: (BuildContext context) => ParkParagraph(
+        text: List.filled(6, '这是一段较长的文本，用于演示省略和展开功能。').join(''),
+        maxLines: 2,
+        expandable: true,
+      ),
+    ),
+    ParkDemoScenario(
+      title: '可复制 / Copyable',
+      description: '显示复制图标 / Shows copy icon',
+      code: '''
+ParkParagraph(text: '可复制的段落', copyable: true)''',
+      builder: (BuildContext context) => const ParkParagraph(
+        text: '可复制的段落，点击右侧图标可复制到剪贴板。',
+        copyable: true,
       ),
     ),
   ],

@@ -136,7 +136,7 @@ Map<String, ParkComponentSpec> get parkNavSpecs =>
             type: 'ParkBindingService?',
             defaultVal: 'null',
             description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-                '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+                '如果组件位于 ParkForm 内且表单已注入 bindingService，'
                 '此参数可省略（自动从 ParkBindingFormScope 获取）。',
           ),
         ],
@@ -429,7 +429,7 @@ Map<String, ParkComponentSpec> get parkNavSpecs =>
             type: 'ParkBindingService?',
             defaultVal: 'null',
             description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-                '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+                '如果组件位于 ParkForm 内且表单已注入 bindingService，'
                 '此参数可省略（自动从 ParkBindingFormScope 获取）。',
           ),
         ],
@@ -543,12 +543,6 @@ ParkTabBarItem(icon: Icons.notifications, label: '提醒', dotIndicator: true)''
             type: 'List<Widget>?',
             defaultVal: 'null',
             description: '右侧操作按钮列表（如搜索、更多等 IconButton）。',
-          ),
-          ParkPropertyDef(
-            name: 'actions',
-            type: 'List<Widget>?',
-            defaultVal: 'null',
-            description: '右侧操作按钮列表别名（优先于 rightActions）。',
           ),
           ParkPropertyDef(
             name: 'transparent',
@@ -821,7 +815,7 @@ ParkTabBarItem(icon: Icons.notifications, label: '提醒', dotIndicator: true)''
             type: 'ParkBindingService?',
             defaultVal: 'null',
             description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-                '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+                '如果组件位于 ParkForm 内且表单已注入 bindingService，'
                 '此参数可省略（自动从 ParkBindingFormScope 获取）。',
           ),
         ],

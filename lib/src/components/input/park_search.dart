@@ -223,7 +223,9 @@ class _ParkSearchState extends State<ParkSearch>
           _historyLoaded = true;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // SharedPreference 读取失败时静默降级，不影响主搜索功能
+    }
   }
 
   List<String> get _filteredSuggestions {

@@ -5,9 +5,9 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
 import '../../l10n/park_localizations.dart';
 
-/// ParkCalendar 模式（旧 API）。
+/// ParkCalendar 模式（旧 API，内部使用）。
 ///
-/// 保留以保持向后兼容。新代码请使用 [ParkCalendarSelectionMode]。
+/// 新代码请使用 [ParkCalendarSelectionMode]。
 @Deprecated('Use ParkCalendarSelectionMode instead')
 enum ParkCalendarMode {
   /// 单日选择
@@ -20,9 +20,9 @@ enum ParkCalendarMode {
   multiple,
 }
 
-/// ParkCalendar 选择模式（新 API）。
+/// ParkCalendar 选择模式。
 ///
-/// 提供更简洁的选择模式定义：
+/// 提供选择模式定义：
 /// - [single]：单日选择（默认）
 /// - [range]：范围选择
 enum ParkCalendarSelectionMode {
@@ -170,8 +170,11 @@ class _DashedBorderPainter extends CustomPainter {
 
   _DashedBorderPainter({
     required this.color,
+    // ignore: unused_element_parameter
     this.strokeWidth = 1.0,
+    // ignore: unused_element_parameter
     this.dashWidth = 3.0,
+    // ignore: unused_element_parameter
     this.dashGap = 2.0,
   });
 
@@ -192,7 +195,7 @@ class _DashedBorderPainter extends CustomPainter {
     for (final metric in metrics) {
       double distance = 0;
       while (distance < metric.length) {
-        final end = (distance + dashWidth).clamp(0.0, metric.length) as double;
+        final end = (distance + dashWidth).clamp(0.0, metric.length);
         final segmentPath = metric.extractPath(distance, end);
         canvas.drawPath(segmentPath, paint);
         distance += dashWidth + dashGap;
@@ -391,7 +394,7 @@ class _ParkCalendarState extends State<ParkCalendar>
     if (_isNewRangeMode) {
       final start = widget.rangeStart;
       final end = widget.rangeEnd;
-      if (start == null || (end != null && start != null)) {
+      if (start == null || end != null) {
         // 开始新选择：设置 rangeStart，清空 rangeEnd
         widget.onRangeChange?.call(date, null);
       } else {

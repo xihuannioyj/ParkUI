@@ -20,6 +20,7 @@ enum ParkNoticeBarMode {
 class ParkNoticeBar extends StatefulWidget {
   final String text;
   final Widget? icon;
+  /// 当 true 时显示关闭按钮。
   final bool closable;
   final VoidCallback? onClose;
   final bool scrollable;
@@ -27,9 +28,6 @@ class ParkNoticeBar extends StatefulWidget {
 
   /// 当 true 且 scrollable 为 false 时，允许文本换行显示。
   final bool wrap;
-
-  /// 当 true 时显示关闭按钮（等同于 [closable]）。
-  final bool closeable;
 
   /// 右侧额外操作组件。
   final Widget? extra;
@@ -52,7 +50,6 @@ class ParkNoticeBar extends StatefulWidget {
     this.scrollable = false,
     this.variant = ParkNoticeBarVariant.info,
     this.wrap = false,
-    this.closeable = false,
     this.extra,
     this.speed,
     this.prefixWidget,
@@ -71,7 +68,6 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
   late final ScrollController _scrollController;
-  double _marqueeMaxExtent = 0;
 
   @override
   void initState() {
@@ -119,8 +115,6 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
 
     final maxExtent = _scrollController.position.maxScrollExtent;
     if (maxExtent <= 0) return;
-
-    _marqueeMaxExtent = maxExtent;
 
     final durationMs = widget.speed != null
         ? (maxExtent / widget.speed! * 1000).toInt()
@@ -293,7 +287,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
                       overflow: widget.wrap ? null : TextOverflow.ellipsis,
                     ),
             ),
-            if (widget.closable || widget.closeable) ...[
+            if (widget.closable) ...[
               SizedBox(width: park.spacing.sm),
               Semantics(
                 button: true,

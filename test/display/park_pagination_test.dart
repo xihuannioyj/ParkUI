@@ -148,4 +148,88 @@ void main() {
       expect(find.byType(ParkPagination), findsOneWidget);
     });
   });
+
+  group('ParkPagination - 快速跳转', () {
+    testWidgets('showQuickJumper 显示跳转输入框', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ParkPagination(
+          total: 100,
+          current: 1,
+          pageSize: 10,
+          showQuickJumper: true,
+        ),
+      ));
+      // 应有 TextField 用于跳转
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('跳转输入提交后触发 onChange', (tester) async {
+      int changedPage = 0;
+      await tester.pumpWidget(_wrap(
+        ParkPagination(
+          total: 100,
+          current: 1,
+          pageSize: 10,
+          showQuickJumper: true,
+          onChange: (page, size) => changedPage = page,
+        ),
+      ));
+      await tester.enterText(find.byType(TextField), '5');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(changedPage, 5);
+    });
+  });
+
+  group('ParkPagination - 每页条数', () {
+    testWidgets('showSizeChanger 显示下拉选择器', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ParkPagination(
+          total: 100,
+          current: 1,
+          pageSize: 10,
+          showSizeChanger: true,
+        ),
+      ));
+      expect(find.byType(DropdownButton<int>), findsOneWidget);
+    });
+  });
+
+  group('ParkPagination - 总页数计算', () {
+    testWidgets('total=0 时显示 1 页', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ParkPagination(
+          total: 0,
+          current: 1,
+          pageSize: 10,
+          simple: true,
+        ),
+      ));
+      expect(find.text('1 / 1'), findsOneWidget);
+    });
+
+    testWidgets('total=10 pageSize=10 显示 1 页', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ParkPagination(
+          total: 10,
+          current: 1,
+          pageSize: 10,
+          simple: true,
+        ),
+      ));
+      expect(find.text('1 / 1'), findsOneWidget);
+    });
+
+    testWidgets('total=11 pageSize=10 显示 2 页', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ParkPagination(
+          total: 11,
+          current: 1,
+          pageSize: 10,
+          simple: true,
+        ),
+      ));
+      expect(find.text('1 / 2'), findsOneWidget);
+    });
+  });
 }

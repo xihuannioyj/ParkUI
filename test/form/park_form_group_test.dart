@@ -4,7 +4,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/form/group/form_group_exports.dart';
+import 'package:park_ui/src/form/models/form_field_schema.dart';
 
 /// Helper: build a simple [ParkFormFieldSchema].
 ParkFormFieldSchema _field({
@@ -259,17 +260,15 @@ void main() {
       group.changes.listen(events.add);
 
       group.batch(() {
-        group.patchValue({'a': '1'});
-        group.patchValue({'b': '2'});
+        group.notifyValueChanged('a');
+        group.notifyValueChanged('b');
       });
 
       // Allow microtask to flush stream events
       await Future<void>.delayed(Duration.zero);
 
-      // patchValue internally calls _batchStart/_batchEnd, so each patchValue
-      // emits its own batch. The outer batch() wraps the two patchValue calls.
-      // Each patchValue emits events for the fields it changes.
-      expect(events.length, greaterThanOrEqualTo(2));
+      // Both notifications should be flushed after batch ends
+      expect(events.length, 2);
       group.dispose();
     });
 

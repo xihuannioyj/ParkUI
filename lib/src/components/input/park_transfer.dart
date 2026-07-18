@@ -16,7 +16,7 @@ import '../base/park_button_style.dart';
 ///     ParkTransferItem(key: '2', title: '选项B'),
 ///   ],
 ///   targetKeys: ['2'],
-///   onChange: (keys, direction) => print('$direction: $keys'),
+///   onChanged: (keys, direction) => print('$direction: $keys'),
 /// )
 /// ```
 ///
@@ -31,7 +31,15 @@ class ParkTransfer extends StatefulWidget {
   final List<String>? targetKeys;
 
   /// 选中变更回调（返回当前目标 keys + 移动方向）。
+  @Deprecated('Use onChanged instead')
   final void Function(List<String> targetKeys, TransferDirection direction)? onChange;
+
+  /// 选中变更回调（返回当前目标 keys + 移动方向）。
+  final void Function(List<String> targetKeys, TransferDirection direction)? onChanged;
+
+  /// 内部使用的有效回调：优先使用 onChanged，回退到 onChange。
+  void Function(List<String> targetKeys, TransferDirection direction)? get _effectiveOnChanged =>
+      onChanged ?? onChange;
 
   /// 左侧标题 Widget。null 时不显示标题。
   final Widget? leftTitle;
@@ -56,7 +64,9 @@ class ParkTransfer extends StatefulWidget {
     super.key,
     required this.dataSource,
     this.targetKeys,
+    // ignore: deprecated_member_use_from_same_package
     this.onChange,
+    this.onChanged,
     this.leftTitle,
     this.rightTitle,
     this.showSearch = false,
@@ -127,7 +137,7 @@ class _ParkTransferState extends State<ParkTransfer> {
       _rightSelected.clear();
     }
     setState(() {});
-    widget.onChange?.call(_targetKeys.toList(), dir);
+    widget._effectiveOnChanged?.call(_targetKeys.toList(), dir);
   }
 
   @override

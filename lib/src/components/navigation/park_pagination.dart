@@ -24,7 +24,7 @@ enum ParkPaginationSize {
 ///   total: 100,
 ///   current: 1,
 ///   pageSize: 10,
-///   onChange: (page, pageSize) {
+///   onChanged: (page, pageSize) {
 ///     setState(() => _page = page);
 ///   },
 /// )
@@ -42,7 +42,17 @@ class ParkPagination extends StatefulWidget {
   /// 页码或每页条数变化时的回调
   ///
   /// 参数：(新页码, 新每页条数)
+  @Deprecated('Use onChanged instead')
   final void Function(int page, int pageSize)? onChange;
+
+  /// 页码或每页条数变化时的回调
+  ///
+  /// 参数：(新页码, 新每页条数)
+  final void Function(int page, int pageSize)? onChanged;
+
+  /// 内部使用的有效回调：优先使用 onChanged，回退到 onChange。
+  void Function(int page, int pageSize)? get _effectiveOnChanged =>
+      onChanged ?? onChange;
 
   /// 是否显示每页条数选择器
   final bool showSizeChanger;
@@ -56,7 +66,7 @@ class ParkPagination extends StatefulWidget {
   /// 每页条数变更回调（仅在 [showSizeChanger] 为 true 时生效）
   ///
   /// 参数：[currentPage] 为重置后的页码（1-based），[size] 为变更后的每页条数。
-  /// 注意：[onChange] 也会在每页条数变更时触发，[onShowSizeChange] 是额外的专有回调。
+  /// 注意：[onChanged] 也会在每页条数变更时触发，[onShowSizeChange] 是额外的专有回调。
   final void Function(int currentPage, int size)? onShowSizeChange;
 
   /// 是否显示总条数信息（"共 X 条"）
@@ -88,7 +98,9 @@ class ParkPagination extends StatefulWidget {
     required this.total,
     this.current = 1,
     this.pageSize = 10,
+    // ignore: deprecated_member_use_from_same_package
     this.onChange,
+    this.onChanged,
     this.showSizeChanger = false,
     this.pageSizeOptions,
     this.showQuickJumper = false,
@@ -133,7 +145,7 @@ class _ParkPaginationState extends State<ParkPagination>
     if (initialValue != null && initialValue != widget.current) {
       final int clamped = initialValue.clamp(1, _totalPages);
       if (clamped != widget.current) {
-        widget.onChange?.call(clamped, widget.pageSize);
+        widget._effectiveOnChanged?.call(clamped, widget.pageSize);
       }
     }
   }
@@ -218,7 +230,7 @@ class _ParkPaginationState extends State<ParkPagination>
     if (widget.disabled) return;
     final clamped = page.clamp(1, _totalPages);
     if (clamped == widget.current) return;
-    widget.onChange?.call(clamped, widget.pageSize);
+    widget._effectiveOnChanged?.call(clamped, widget.pageSize);
     boundValue = clamped;
   }
 
@@ -226,7 +238,7 @@ class _ParkPaginationState extends State<ParkPagination>
     if (widget.disabled) return;
     // 切换每页条数时重置当前页为 1，避免超出新总数范围
     const newCurrent = 1;
-    widget.onChange?.call(newCurrent, newSize);
+    widget._effectiveOnChanged?.call(newCurrent, newSize);
     widget.onShowSizeChange?.call(newCurrent, newSize);
     boundValue = newCurrent;
   }

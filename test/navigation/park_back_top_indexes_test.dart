@@ -61,6 +61,8 @@ void main() {
 
       showScrollable.value = false;
       await tester.pump();
+      // Manually notify listeners so ParkBackTop detects controller detach.
+      controller.notifyListeners();
       await tester.pump();
 
       expect(find.byIcon(Icons.keyboard_arrow_up), findsNothing);

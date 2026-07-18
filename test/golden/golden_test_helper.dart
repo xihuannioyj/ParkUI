@@ -2,7 +2,8 @@
 /// for consistent theming across all golden tests.
 
 import 'package:flutter/material.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/theme/park_theme_data.dart';
+import 'package:park_ui/src/theme/park_config_provider.dart';
 
 /// Wraps [child] with the standard Park UI theme for golden tests.
 ///

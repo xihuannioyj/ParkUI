@@ -254,7 +254,7 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
         borderRadius: borderRadius,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: park.colors.overlay.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -294,8 +294,8 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
                   ? null
                   : Text(
                       '${widget.badge! > 99 ? 99 : widget.badge!}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: park.colors.textOnBrand,
                         fontSize: 10,
                         height: 1.2,
                       ),
@@ -332,7 +332,7 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
         borderRadius: borderRadius,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: park.colors.overlay.withValues(alpha: 0.08),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),

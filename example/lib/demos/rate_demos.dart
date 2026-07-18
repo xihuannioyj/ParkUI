@@ -62,7 +62,7 @@ class RateDemo extends StatelessWidget {
 
         ParkText('只读模式', preset: ParkTextPreset.h3),
         const SizedBox(height: 12),
-        const ParkRate(
+        ParkRate(
           value: 3.5,
           readOnly: true,
           allowHalf: true,

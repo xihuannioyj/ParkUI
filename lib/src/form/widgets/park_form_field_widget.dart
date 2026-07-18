@@ -67,15 +67,15 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.number:
       case ParkFieldType.textarea:
       case ParkFieldType.richText:
-        return _buildTextField();
+        return _buildTextField(context);
       case ParkFieldType.select:
         return _buildSelect(context, l10n);
       case ParkFieldType.radio:
-        return _buildRadio();
+        return _buildRadio(context);
       case ParkFieldType.checkbox:
-        return _buildCheckbox();
+        return _buildCheckbox(context);
       case ParkFieldType.toggle:
-        return _buildToggle();
+        return _buildToggle(context);
       case ParkFieldType.date:
         return _buildDatePicker(context, l10n);
       case ParkFieldType.image:
@@ -85,21 +85,21 @@ class ParkFormFieldWidget extends StatelessWidget {
       case ParkFieldType.region:
         return _buildRegionSelector(context, l10n);
       case ParkFieldType.slider:
-        return _buildSlider();
+        return _buildSlider(context);
       case ParkFieldType.stepper:
-        return _buildStepper();
+        return _buildStepper(context);
       case ParkFieldType.rate:
-        return _buildRate();
+        return _buildRate(context);
       case ParkFieldType.search:
-        return _buildSearch(l10n);
+        return _buildSearch(context, l10n);
       case ParkFieldType.cascader:
-        return _buildCascader(l10n);
+        return _buildCascader(context, l10n);
       case ParkFieldType.treeSelect:
-        return _buildTreeSelect();
+        return _buildTreeSelect(context);
       case ParkFieldType.picker:
         return _buildPicker(context, l10n);
       case ParkFieldType.upload:
-        return _buildUpload(l10n);
+        return _buildUpload(context, l10n);
     }
   }
 
@@ -122,7 +122,8 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 根据 [labelLayout] 决定标签与控件的排列方式：
   /// - stacked（默认）：标签在上，控件在下。
   /// - inline：标签和控件并排同行。
-  Widget _wrapWithFieldContainer(Widget child) {
+  Widget _wrapWithFieldContainer(BuildContext context, Widget child) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     if (labelLayout == ParkLabelLayout.inline) {
       final double effectiveLabelWidth = labelWidth ?? 80.0;
       return Padding(
@@ -138,9 +139,9 @@ class ParkFormFieldWidget extends StatelessWidget {
                   TextSpan(
                     children: <InlineSpan>[
                       if (required)
-                        const TextSpan(
+                        TextSpan(
                           text: '* ',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
+                          style: TextStyle(color: park.colors.error, fontSize: 14),
                         ),
                       TextSpan(text: field.labelName),
                     ],
@@ -162,7 +163,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                         field.helpText!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: park.colors.textSecondary,
                         ),
                       ),
                     ),
@@ -171,8 +172,8 @@ class ParkFormFieldWidget extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         errorText!,
-                        style: const TextStyle(
-                          color: Colors.red,
+                        style: TextStyle(
+                          color: park.colors.error,
                           fontSize: 12,
                         ),
                       ),
@@ -204,7 +205,8 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 支持 text / number / textarea / richText 类型，
   /// 根据 fieldControl 渲染子变体：password / number / phone / email / url / search。
   /// 自动消费 [ParkFieldUiConfig] 中的 prefix/suffix/rows/height/showCount。
-  Widget _buildTextField() {
+  Widget _buildTextField(BuildContext context) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final bool isMultiLine =
         field.fieldType == ParkFieldType.textarea ||
         field.fieldType == ParkFieldType.richText;
@@ -261,7 +263,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         padding: const EdgeInsets.only(left: 12),
         child: Text(
           field.uiConfig.prefix!,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          style: TextStyle(color: park.colors.textSecondary, fontSize: 14),
         ),
       );
     }
@@ -301,6 +303,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - grouped → 分组下拉（grouped=true）。
   /// - single（默认）→ 标准单选下拉。
   Widget _buildSelect(BuildContext context, ParkLocalizations l10n) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final String? fc = field.fieldControl;
@@ -322,7 +325,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         }
       }
 
-      return _wrapWithFieldContainer(
+      return _wrapWithFieldContainer(context,
         GestureDetector(
           onTap: (disabled || field.isReadonly)
               ? null
@@ -333,7 +336,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 42),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: park.colors.border),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -347,7 +350,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                         : selectedLabels.join('\u3001'),
                     style: TextStyle(
                       color: selectedLabels.isEmpty
-                          ? Colors.grey.shade500
+                          ? park.colors.textPlaceholder
                           : null,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -434,7 +437,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 根据 fieldControl 渲染子变体：
   /// - button_style → 按钮样式单选（SegmentedButton 风格）。
   /// - single / group（默认）→ 标准单选组。
-  Widget _buildRadio() {
+  Widget _buildRadio(BuildContext context) {
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final String? fc = field.fieldControl;
@@ -443,7 +446,7 @@ class ParkFormFieldWidget extends StatelessWidget {
     // button_style 变体：使用 SegmentedButton 风格。
     if (fc == 'button_style') {
       final String currentValue = value?.toString() ?? '';
-      return _wrapWithFieldContainer(
+      return _wrapWithFieldContainer(context,
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -475,7 +478,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         )
         .toList();
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       ParkRadio(
         options: options,
         value: value?.toString(),
@@ -494,7 +497,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   ///
   /// 使用 [ParkFormFieldSchema.optionLabelKey] 和 [ParkFormFieldSchema.optionValueKey]
   /// 映射选项数据。
-  Widget _buildCheckbox() {
+  Widget _buildCheckbox(BuildContext context) {
     final List<dynamic> currentSelected =
         (value as List<dynamic>? ?? <dynamic>[]).toList();
 
@@ -524,7 +527,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         .map((String label) => ParkCheckboxOption(label: label, value: label))
         .toList();
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       ParkCheckboxGroup(
         options: checkboxOptions,
         value: selectedLabels,
@@ -549,8 +552,8 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkSwitch 开关。
-  Widget _buildToggle() {
-    return _wrapWithFieldContainer(
+  Widget _buildToggle(BuildContext context) {
+    return _wrapWithFieldContainer(context,
       _SwitchAdapter(
         value: (value as bool?) ?? false,
         disabled: disabled || field.isReadonly,
@@ -570,6 +573,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - time → 时间选择。
   /// - datetime → 日期+时间选择。
   Widget _buildDatePicker(BuildContext context, ParkLocalizations l10n) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final DateTime? dateValue = value is DateTime ? value as DateTime : null;
     final String? fc = field.fieldControl;
 
@@ -578,7 +582,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       final TimeOfDay timeValue = dateValue != null
           ? TimeOfDay.fromDateTime(dateValue)
           : TimeOfDay.now();
-      return _wrapWithFieldContainer(
+      return _wrapWithFieldContainer(context,
         GestureDetector(
           onTap: (disabled || field.isReadonly)
               ? null
@@ -598,7 +602,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 42),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: park.colors.border),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -635,7 +639,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkSlider 滑杆。
-  Widget _buildSlider() {
+  Widget _buildSlider(BuildContext context) {
     final double currentValue = (value is num)
         ? (value as num).toDouble()
         : ((field.config['min'] as num?)?.toDouble() ?? 0);
@@ -646,7 +650,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         ? ((maxVal - minVal) / stepVal).round()
         : null;
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       _SliderAdapter(
         value: currentValue,
         min: minVal,
@@ -663,13 +667,13 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkStepper 步进器。
-  Widget _buildStepper() {
+  Widget _buildStepper(BuildContext context) {
     final int currentValue = (value is num) ? (value as num).toInt() : 0;
     final int minVal = (field.config['min'] as int?) ?? 0;
     final int maxVal = (field.config['max'] as int?) ?? 99;
     final int stepVal = (field.config['step'] as int?) ?? 1;
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       _StepperAdapter(
         value: currentValue,
         min: minVal,
@@ -686,11 +690,11 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkRate 评分。
-  Widget _buildRate() {
+  Widget _buildRate(BuildContext context) {
     final double currentValue = (value is num) ? (value as num).toDouble() : 0;
     final int count = (field.config['count'] as int?) ?? 5;
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       _RateAdapter(
         value: currentValue,
         count: count,
@@ -705,8 +709,8 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkSearch 搜索框。
-  Widget _buildSearch(ParkLocalizations l10n) {
-    return _wrapWithFieldContainer(
+  Widget _buildSearch(BuildContext context, ParkLocalizations l10n) {
+    return _wrapWithFieldContainer(context,
       _SearchAdapter(
         value: value?.toString() ?? '',
         hintText: field.fieldPrompt.isNotEmpty ? field.fieldPrompt : l10n.searchText,
@@ -723,7 +727,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   ///
   /// 使用 [ParkFormFieldSchema.optionLabelKey]、[ParkFormFieldSchema.optionValueKey]
   /// 和 [ParkFormFieldSchema.optionChildrenKey] 映射选项数据。
-  Widget _buildCascader(ParkLocalizations l10n) {
+  Widget _buildCascader(BuildContext context, ParkLocalizations l10n) {
     final List<ParkCascaderOption> options = _buildCascaderOptions(
       _effectiveOptions,
     );
@@ -773,7 +777,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   /// 构建 ParkTreeSelect 树形选择器。
-  Widget _buildTreeSelect() {
+  Widget _buildTreeSelect(BuildContext context) {
     final List<ParkTreeNode> nodes = _buildTreeNodes(_effectiveOptions);
     final Set<String> selectedKeys = value is Set
         ? (value as Set).map((dynamic e) => e.toString()).toSet()
@@ -781,7 +785,7 @@ class ParkFormFieldWidget extends StatelessWidget {
               ? (value as List).map((dynamic e) => e.toString()).toSet()
               : <String>{});
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       ParkTreeSelect(
         nodes: nodes,
         selectedKeys: selectedKeys,
@@ -823,6 +827,7 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 使用 [ParkFormFieldSchema.optionLabelKey] 和 [ParkFormFieldSchema.optionValueKey]
   /// 映射选项数据。
   Widget _buildPicker(BuildContext context, ParkLocalizations l10n) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final String lk = field.optionLabelKey;
     final String vk = field.optionValueKey;
     final List<Map<String, dynamic>> opts = _effectiveOptions;
@@ -845,7 +850,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       optionValueKey: field.optionValueKey,
     );
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       GestureDetector(
         onTap: (field.isReadonly || disabled)
             ? null
@@ -865,7 +870,7 @@ class ParkFormFieldWidget extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 42),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: park.colors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -889,7 +894,8 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// - image（默认）→ 图片上传（含裁剪）。
   /// - file → 通用文件上传。
   /// - avatar → 头像上传（圆形预览）。
-  Widget _buildUpload(ParkLocalizations l10n) {
+  Widget _buildUpload(BuildContext context, ParkLocalizations l10n) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final String? fc = field.fieldControl;
     final List<ParkUploadFile> files = <ParkUploadFile>[];
     if (value is String && (value as String).isNotEmpty) {
@@ -905,7 +911,7 @@ class ParkFormFieldWidget extends StatelessWidget {
 
     // file 变体：简化文件上传 UI。
     if (fc == 'file') {
-      return _wrapWithFieldContainer(
+      return _wrapWithFieldContainer(context,
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -914,7 +920,7 @@ class ParkFormFieldWidget extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   l10n.selectedFilesCount(files.length),
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  style: TextStyle(fontSize: 13, color: park.colors.textPrimary),
                 ),
               ),
             ParkButton(
@@ -935,7 +941,7 @@ class ParkFormFieldWidget extends StatelessWidget {
     }
 
     // 默认 image / avatar 变体使用 ParkUpload。
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       ParkUpload(
         files: files,
         maxCount: (field.config['maxCount'] as int?) ?? 9,
@@ -1031,7 +1037,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       }
     }
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1098,12 +1104,13 @@ class ParkFormFieldWidget extends StatelessWidget {
   /// 原生平台使用 mobile_scanner 相机扫码，
   /// Web 端展示"暂不支持"占位。
   Widget _buildScanner(BuildContext context) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final String simulatedValue =
         (field.config['simulatedValue'] as String?) ??
         'SIMULATED_SCAN_CODE_001';
     final service = ParkFormImageService.instance();
 
-    return _wrapWithFieldContainer(
+    return _wrapWithFieldContainer(context,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1117,7 +1124,7 @@ class ParkFormFieldWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 errorText!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: TextStyle(color: park.colors.error, fontSize: 12),
               ),
             ),
         ],
@@ -1131,6 +1138,7 @@ class ParkFormFieldWidget extends StatelessWidget {
 
   /// 构建地区选择器。
   Widget _buildRegionSelector(BuildContext context, ParkLocalizations l10n) {
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final List<Map<String, dynamic>> regionOpts = _effectiveOptions;
     final bool hasNestedChildren = regionOpts.any(
       (Map<String, dynamic> item) => item['children'] is List,
@@ -1167,7 +1175,7 @@ class ParkFormFieldWidget extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 42),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: park.colors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -1275,7 +1283,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 42),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: park.colors.border),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1293,7 +1301,7 @@ class ParkFormFieldWidget extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               errorText!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: TextStyle(color: park.colors.error, fontSize: 12),
             ),
           ),
       ],
@@ -1384,7 +1392,7 @@ class _MultiSelectSheetContentState
 
   @override
   Widget build(BuildContext context) {
-    final park = Theme.of(context).extension<ParkThemeData>();
+    final park = Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final l10n = ParkLocalizations.of(context);
     final double bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -1402,17 +1410,17 @@ class _MultiSelectSheetContentState
                 width: 32,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: park?.colors.border ?? Colors.grey.shade300,
+                  color: park.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               // 搜索框
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                  park?.spacing.md ?? 16,
-                  park?.spacing.sm ?? 8,
-                  park?.spacing.md ?? 16,
-                  park?.spacing.xs ?? 4,
+                  park.spacing.md,
+                  park.spacing.sm,
+                  park.spacing.md,
+                  park.spacing.xs,
                 ),
                 child: ParkInput(
                   controller: _searchController,
@@ -1425,13 +1433,12 @@ class _MultiSelectSheetContentState
                 child: _filteredOptions.isEmpty
                     ? Padding(
                         padding: EdgeInsets.symmetric(
-                          vertical: park?.spacing.lg ?? 32,
+                          vertical: park.spacing.lg,
                         ),
                         child: Text(
                           l10n.noData,
                           style: TextStyle(
-                            color: park?.colors.textSecondary ??
-                                Colors.grey.shade500,
+                            color: park.colors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
@@ -1439,7 +1446,7 @@ class _MultiSelectSheetContentState
                     : ListView.builder(
                         shrinkWrap: true,
                         padding: EdgeInsets.symmetric(
-                          horizontal: park?.spacing.sm ?? 8,
+                          horizontal: park.spacing.sm,
                         ),
                         itemCount: _filteredOptions.length,
                         itemBuilder: (BuildContext ctx, int index) {
@@ -1460,8 +1467,7 @@ class _MultiSelectSheetContentState
                               dense: true,
                               controlAffinity:
                                   ListTileControlAffinity.trailing,
-                              activeColor:
-                                  park?.colors.brand,
+                              activeColor: park.colors.brand,
                             ),
                           );
                         },
@@ -1470,10 +1476,10 @@ class _MultiSelectSheetContentState
               // 底部操作按钮
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                  park?.spacing.md ?? 16,
-                  park?.spacing.sm ?? 8,
-                  park?.spacing.md ?? 16,
-                  park?.spacing.md ?? 16,
+                  park.spacing.md,
+                  park.spacing.sm,
+                  park.spacing.md,
+                  park.spacing.md,
                 ),
                 child: Row(
                   children: <Widget>[
@@ -1484,7 +1490,7 @@ class _MultiSelectSheetContentState
                         child: Text(l10n.cancelText),
                       ),
                     ),
-                    SizedBox(width: park?.spacing.sm ?? 12),
+                    SizedBox(width: park.spacing.sm),
                     Expanded(
                       child: ParkButton(
                         variant: ParkButtonVariant.primary,

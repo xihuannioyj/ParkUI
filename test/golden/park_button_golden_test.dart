@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:park_ui/park_ui.dart';
+import 'package:park_ui/src/components/base/park_button.dart';
+import 'package:park_ui/src/components/base/park_button_style.dart';
 
 import 'golden_test_helper.dart';
 

@@ -30,7 +30,7 @@ enum ParkCheckboxShape {
 ///   onChanged: (v) => print(v),
 /// )
 /// ```
-class ParkCheckbox extends FormField<bool> {
+class ParkCheckbox extends FormField<bool> implements ParkBindableWidget {
   /// 绑定键（点号分隔的路径，如 user.name）。不设时组件行为不变（零侵入）。
   final String? bindKey;
 
@@ -303,12 +303,8 @@ class ParkCheckboxGroup extends StatefulWidget {
   const ParkCheckboxGroup({
     super.key,
     this.options = const <ParkCheckboxOption>[],
-    @Deprecated('Use options (List<ParkCheckboxOption>) instead')
-    this.options2,
     this.value = const [],
     this.onChanged,
-    @Deprecated('Use onChanged instead')
-    this.onChange2,
     this.layout = ParkCheckboxGroupLayout.vertical,
     this.disabled = false,
     this.selectAll = false,
@@ -317,10 +313,6 @@ class ParkCheckboxGroup extends StatefulWidget {
   /// 选项列表（富模型，单一真源 API）。
   final List<ParkCheckboxOption> options;
 
-  /// 选项列表（富模型）。[options] 的兼容别名，已废弃，请使用 [options]。
-  @Deprecated('Use options (List<ParkCheckboxOption>) instead')
-  final List<ParkCheckboxOption>? options2;
-
   /// 已选中的值
   final List<String> value;
 
@@ -328,10 +320,6 @@ class ParkCheckboxGroup extends StatefulWidget {
   ///
   /// [values] 当前选中的值列表；[selectedOptions] 当前选中的富选项列表。
   final void Function(List<String> values, List<ParkCheckboxOption> selectedOptions)? onChanged;
-
-  /// 选中值变化回调（富模型）。[onChanged] 的兼容别名，已废弃，请使用 [onChanged]。
-  @Deprecated('Use onChanged instead')
-  final void Function(List<String> values, List<ParkCheckboxOption> changedOptions)? onChange2;
 
   /// 布局方式
   final ParkCheckboxGroupLayout layout;
@@ -350,10 +338,7 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   late List<String> _selected;
 
   /// 统一解析后的选项列表
-  List<ParkCheckboxOption> get _resolvedOptions {
-    if (widget.options2 != null) return widget.options2!;
-    return widget.options;
-  }
+  List<ParkCheckboxOption> get _resolvedOptions => widget.options;
 
   @override
   void initState() {
@@ -408,7 +393,6 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
         .where((ParkCheckboxOption o) => _selected.contains(o.value))
         .toList();
     widget.onChanged?.call(List<String>.from(_selected), selected);
-    widget.onChange2?.call(List<String>.from(_selected), selected);
   }
 
   @override

@@ -84,7 +84,9 @@ class ParkBindable<T> extends ValueNotifier<T> {
     // 通知所属服务移除引用
     try {
       _owner?.removeBindable(path);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ParkBindable.dispose: $e');
+    }
     super.dispose();
   }
 }

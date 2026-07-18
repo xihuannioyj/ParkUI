@@ -694,13 +694,13 @@ StatefulBuilder(
         );
       },
     ),
-    // ── ParkInputGroup: ParkDynamicForm 示例 ──
+    // ── ParkInputGroup: ParkForm 示例 ──
     ParkDemoScenario(
-      title: '动态表单（ParkDynamicForm）',
-      description: 'ParkInputGroup 组合内的字段可通过 ParkDynamicForm schema 等效表达。'
-          ' / ParkDynamicForm demo: equivalent schema for grouped fields.',
+      title: '动态表单（ParkForm）',
+      description: 'ParkInputGroup 组合内的字段可通过 ParkForm schema 等效表达。'
+          ' / ParkForm demo: equivalent schema for grouped fields.',
       code: '''
-ParkDynamicForm(
+ParkForm(
   schema: ParkFormSchema(
     formKey: 'group_demo',
     fields: [
@@ -725,7 +725,7 @@ ParkDynamicForm(
 )''',
       builder: (BuildContext context) => SizedBox(
         width: 320,
-        child: ParkDynamicForm(
+        child: ParkForm(
           schema: ParkFormSchema(
             formKey: 'group_demo',
             fields: <ParkFormFieldSchema>[

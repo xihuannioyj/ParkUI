@@ -1576,7 +1576,7 @@ final ParkComponentSpec _parkDropdownMenu = ParkComponentSpec(
       type: 'ParkBindingService?',
       defaultVal: 'null',
       description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
-          '如果组件位于 ParkForm/ParkDynamicForm 内且表单已注入 bindingService，'
+          '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
   ],
@@ -1959,12 +1959,6 @@ final ParkComponentSpec _parkNoticeBar = ParkComponentSpec(
       type: 'bool',
       defaultVal: 'false',
       description: '非滚动时是否允许文本换行显示',
-    ),
-    ParkPropertyDef(
-      name: 'closeable',
-      type: 'bool',
-      defaultVal: 'false',
-      description: '是否显示关闭按钮（等同 closable）',
     ),
     ParkPropertyDef(
       name: 'extra',
