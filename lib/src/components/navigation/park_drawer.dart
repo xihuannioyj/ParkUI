@@ -362,6 +362,14 @@ class _ParkDrawerState extends State<ParkDrawer> {
     // 键盘事件监听包裹
     Widget content = _buildDrawerContent(park, colors);
 
+    // Overlay 环境无 Material → 子内容（含用户传入的 child/header/footer）
+    // 会继承 fallback DefaultTextStyle（红色 48px + 黄色下划线），
+    // 必须包一层透明 Material 提供标准文本样式环境。
+    content = Material(
+      type: MaterialType.transparency,
+      child: content,
+    );
+
     if (widget.keyboard) {
       content = KeyboardListener(
         focusNode: _focusNode,

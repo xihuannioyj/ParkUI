@@ -260,6 +260,9 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                             fontSize: park.typography.sizeBodySmall,
                             fontWeight: park.typography.weightBold,
                             color: park.colors.textPrimary,
+                            // Overlay 无 Material → fallback style 黄色下划线，
+                            // 必须显式清除。
+                            decoration: TextDecoration.none,
                           ),
                         ),
                         if (widget.description != null) ...[
@@ -269,6 +272,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                             style: TextStyle(
                               fontSize: park.typography.sizeCaption,
                               color: park.colors.textSecondary,
+                              decoration: TextDecoration.none,
                             ),
                           ),
                         ],

@@ -436,6 +436,9 @@ class _ParkMessageState extends State<ParkMessage> {
                         fontSize: park.typography.sizeBody,
                         fontWeight: park.typography.weightMedium,
                         color: park.colors.textPrimary,
+                        // Overlay 无 Material → fallback style 黄色下划线，
+                        // 必须显式清除（ParkMessage.show 走 overlay 路径）。
+                        decoration: TextDecoration.none,
                       ),
                     ),
                     if (widget.content != null) ...[
@@ -445,6 +448,7 @@ class _ParkMessageState extends State<ParkMessage> {
                         style: park.typography.body.copyWith(
                           fontSize: park.typography.sizeBodySmall,
                           color: park.colors.textSecondary,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                     ],
