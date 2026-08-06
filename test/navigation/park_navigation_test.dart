@@ -165,4 +165,44 @@ void main() {
 
     expect(selected, 'B');
   });
+
+  group('ParkSteps sticky', () {
+    testWidgets('默认模式渲染普通步骤条', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: [ParkThemeData.light()]),
+        home: Scaffold(
+          body: ParkSteps(
+            steps: const [ParkStep(title: 'A'), ParkStep(title: 'B')],
+            currentStep: 1,
+          ),
+        ),
+      ));
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('B'), findsOneWidget);
+      expect(find.byType(SliverPersistentHeader), findsNothing);
+    });
+
+    testWidgets('sticky=true 返回 SliverPersistentHeader', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: [ParkThemeData.light()]),
+        home: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              ParkSteps(
+                steps: const [ParkStep(title: 'A'), ParkStep(title: 'B')],
+                currentStep: 0,
+                sticky: true,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 600)),
+            ],
+          ),
+        ),
+      ));
+      expect(find.byType(SliverPersistentHeader), findsOneWidget);
+      // 滚动后步骤条仍可见（固定头部）
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
+      await tester.pump();
+      expect(find.text('A'), findsOneWidget);
+    });
+  });
 }

@@ -273,10 +273,12 @@ class _ParkDropdownFilterState extends State<ParkDropdownFilter> {
       );
     }
 
+    // 非滚动模式：标签均分铺满整行宽度（每个标签 Expanded 等宽）。
     return Row(
       mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: labels,
+      children: <Widget>[
+        for (final Widget label in labels) Expanded(child: label),
+      ],
     );
   }
 

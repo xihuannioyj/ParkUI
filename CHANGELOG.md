@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+- ParkSteps 新增 sticky 属性：true 时以 SliverPersistentHeader 渲染，可在 CustomScrollView 中固定头部；false（默认）随列表滚动。仅水平方向支持。
+- ParkSteps sticky 回归测试（默认模式 + 固定头部模式）。
+
 ## 0.8.0 (2026-07-17)
 
 ### Fixes

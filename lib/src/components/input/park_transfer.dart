@@ -275,14 +275,26 @@ class _ParkTransferState extends State<ParkTransfer> {
             ),
             child: Row(
               children: [
-                DefaultTextStyle(
-                  style: TextStyle(fontSize: park.typography.sizeBody, fontWeight: FontWeight.w600, color: park.colors.textPrimary),
-                  child: title,
+                Flexible(
+                  child: DefaultTextStyle(
+                    style: TextStyle(
+                      fontSize: park.typography.sizeBody,
+                      fontWeight: FontWeight.w600,
+                      color: park.colors.textPrimary,
+                    ),
+                    child: title,
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Semantics(
                   label: l10n.totalItemsCount(items.length),
-                  child: Text('${items.length}', style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textSecondary)),
+                  child: Text(
+                    '${items.length}',
+                    style: TextStyle(
+                      fontSize: park.typography.sizeCaption,
+                      color: park.colors.textSecondary,
+                    ),
+                  ),
                 ),
               ],
             ),

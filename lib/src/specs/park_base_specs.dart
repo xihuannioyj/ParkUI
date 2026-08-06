@@ -234,6 +234,7 @@ Map<String, ParkComponentSpec> get parkBaseSpecs =>
       'ParkFloatButton': _parkFloatButtonSpec,
       'ParkTitle': _parkTitleSpec,
       'ParkParagraph': _parkParagraphSpec,
+      'ParkTypography': _parkTypographySpec,
     };
 
 // ---------------------------------------------------------------------------
@@ -3694,6 +3695,141 @@ ParkParagraph(text: '可复制的段落', copyable: true)''',
       builder: (BuildContext context) => const ParkParagraph(
         text: '可复制的段落，点击右侧图标可复制到剪贴板。',
         copyable: true,
+      ),
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// ParkTypography
+// ---------------------------------------------------------------------------
+final ParkComponentSpec _parkTypographySpec = ParkComponentSpec(
+  name: 'ParkTypography',
+  title: '排版体系 / Typography',
+  category: 'base',
+  description:
+      '全局排版设计令牌体系：display / h1 / h2 / h3 / body / bodySmall / caption / overline '
+      '各级字号与字重预设，通过 ParkText / ParkTitle 等组件消费。'
+      ' / Global typography design-token system: display / h1 / h2 / h3 / body / bodySmall / caption / overline '
+      'size & weight presets, consumed by ParkText / ParkTitle and friends.',
+  icon: Icons.format_size,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(
+      name: 'sizeDisplay',
+      type: 'double',
+      defaultVal: '32',
+      description: 'display 级字号（页面大标题）/ Display size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeH1',
+      type: 'double',
+      defaultVal: '24',
+      description: 'h1 字号 / H1 size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeH2',
+      type: 'double',
+      defaultVal: '20',
+      description: 'h2 字号 / H2 size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeH3',
+      type: 'double',
+      defaultVal: '17',
+      description: 'h3 字号 / H3 size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeBody',
+      type: 'double',
+      defaultVal: '15',
+      description: '正文字号 / Body size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeBodySmall',
+      type: 'double',
+      defaultVal: '13',
+      description: '小号正文 / Small body size',
+    ),
+    ParkPropertyDef(
+      name: 'sizeCaption',
+      type: 'double',
+      defaultVal: '12',
+      description: '辅助说明字号 / Caption size',
+    ),
+    ParkPropertyDef(
+      name: 'weightRegular',
+      type: 'FontWeight',
+      defaultVal: 'w400',
+      description: '常规字重 / Regular weight',
+    ),
+    ParkPropertyDef(
+      name: 'weightMedium',
+      type: 'FontWeight',
+      defaultVal: 'w500',
+      description: '中等字重 / Medium weight',
+    ),
+    ParkPropertyDef(
+      name: 'weightBold',
+      type: 'FontWeight',
+      defaultVal: 'w600',
+      description: '加粗字重 / Bold weight',
+    ),
+  ],
+  events: const <ParkEventDef>[],
+  methods: const <ParkMethodDef>[],
+  basicUsageCode: '''
+// 排版令牌通过主题注入，组件自动消费：
+ParkText('标题', preset: ParkTextPreset.h2)
+ParkText('正文', preset: ParkTextPreset.body)
+ParkTitle('页面标题', level: 1)
+
+// 直接读取令牌值：
+final typography = ParkTheme.of(context).typography;
+final h2Size = typography.sizeH2;
+''',
+  guide: '''
+## 何时使用 / When to use
+- 需要统一页面字阶时，使用排版预设而不是散落的魔法字号
+- ParkText / ParkTitle / ParkParagraph 已内置预设消费
+
+## 使用建议 / Usage tips
+- 标题层级：display（营销大标题）> h1 > h2 > h3
+- 正文：body / bodySmall；辅助信息：caption；标签徽标：overline
+- 语义组件（按钮、输入框）字号由组件自身从令牌读取，无需手工设置
+- 暗色主题下颜色自动切换，字号令牌保持不变
+''',
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '字号预设 / Preset sizes',
+      description: 'display 到 overline 全字阶预览 / Full size scale preview',
+      code: '''
+ParkText('Display 32', preset: ParkTextPreset.display)
+ParkText('H1 24', preset: ParkTextPreset.h1)
+ParkText('H2 20', preset: ParkTextPreset.h2)
+ParkText('H3 17', preset: ParkTextPreset.h3)
+ParkText('Body 15', preset: ParkTextPreset.body)
+ParkText('Caption 12', preset: ParkTextPreset.caption)
+ParkText('OVERLINE', preset: ParkTextPreset.overline)''',
+      builder: (BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: const <Widget>[
+          ParkText('Display 32', preset: ParkTextPreset.display),
+          SizedBox(height: 4),
+          ParkText('H1 24', preset: ParkTextPreset.h1),
+          SizedBox(height: 4),
+          ParkText('H2 20', preset: ParkTextPreset.h2),
+          SizedBox(height: 4),
+          ParkText('H3 17', preset: ParkTextPreset.h3),
+          SizedBox(height: 4),
+          ParkText('Body 15', preset: ParkTextPreset.body),
+          SizedBox(height: 4),
+          ParkText('Body Small 13', preset: ParkTextPreset.bodySmall),
+          SizedBox(height: 4),
+          ParkText('Caption 12', preset: ParkTextPreset.caption),
+          SizedBox(height: 4),
+          ParkText('OVERLINE 11', preset: ParkTextPreset.overline),
+        ],
       ),
     ),
   ],

@@ -505,18 +505,16 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
       case ParkCheckboxGroupLayout.horizontal:
         final items = <Widget>[];
         if (selectAllWidget != null) {
-          items.add(Padding(
-            padding: EdgeInsets.only(right: park.spacing.base),
-            child: selectAllWidget,
-          ));
+          items.add(selectAllWidget);
         }
-        items.addAll(checkboxes.map(
-          (Widget cb) => Padding(
-            padding: EdgeInsets.only(right: park.spacing.base),
-            child: cb,
-          ),
-        ));
-        return Row(mainAxisSize: MainAxisSize.min, children: items);
+        items.addAll(checkboxes);
+        // Wrap 替代 Row：窄屏下自动换行，避免右侧溢出
+        return Wrap(
+          spacing: park.spacing.base,
+          runSpacing: park.spacing.sm,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: items,
+        );
 
       case ParkCheckboxGroupLayout.vertical:
         final items = <Widget>[];

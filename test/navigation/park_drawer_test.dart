@@ -198,4 +198,86 @@ void main() {
       expect(find.text('内容'), findsNothing);
     });
   });
+
+  group('ParkDrawer widthFactor（屏宽百分比）', () {
+    testWidgets('widthFactor 2/3 时抽屉宽度 = 屏宽 × 2/3', (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 3.0; // 逻辑 360x640
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: [ParkThemeData.light()]),
+        home: const Scaffold(
+          body: ParkDrawer(
+            widthFactor: 2 / 3,
+            child: Text('drawer content'),
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // 抽屉内容容器宽度 = 360 * 2/3 = 240（SizedBox(width: effectiveWidth)）
+      final contentBox = tester.widget<SizedBox>(
+        find
+            .ancestor(
+              of: find.text('drawer content'),
+              matching: find.byType(SizedBox),
+            )
+            .first,
+      );
+      expect(contentBox.width, closeTo(240, 1),
+          reason: 'widthFactor=2/3 时内容宽应为 240，实际 ${contentBox.width}');
+    });
+
+    testWidgets('widthFactor 越界自动 clamp 到 0.1~1.0', (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 3.0; // 逻辑 360x640
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: [ParkThemeData.light()]),
+        home: const Scaffold(
+          body: ParkDrawer(
+            widthFactor: 5.0, // 超范围 → clamp 到 1.0 = 全宽
+            child: Text('clamped'),
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+      final box = tester.widget<SizedBox>(
+        find
+            .ancestor(of: find.text('clamped'), matching: find.byType(SizedBox))
+            .first,
+      );
+      expect(box.width, closeTo(360, 1),
+          reason: 'clamp 后应全宽 360，实际 ${box.width}');
+    });
+
+    testWidgets('widthFactor 为 null 时保持默认 size 行为', (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 3.0; // 逻辑 360x640
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(extensions: [ParkThemeData.light()]),
+        home: const Scaffold(
+          body: ParkDrawer(
+            size: ParkDrawerSize.small,
+            child: Text('default'),
+          ),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 100));
+      final box = tester.widget<SizedBox>(
+        find
+            .ancestor(of: find.text('default'), matching: find.byType(SizedBox))
+            .first,
+      );
+      expect(box.width, closeTo(256, 1),
+          reason: '默认 size 行为不变，实际 ${box.width}');
+    });
+  });
 }

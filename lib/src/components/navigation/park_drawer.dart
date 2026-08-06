@@ -86,6 +86,17 @@ class ParkDrawer extends StatefulWidget {
   /// 当设置了 [size] 且 [width] 仍为默认值时，[size] 优先生效。
   final double width;
 
+  /// 抽屉宽度占屏宽的比例（0.1 ~ 1.0，即 10% ~ 100%）。
+  ///
+  /// 移动端屏宽碎片化（320~430+），固定像素宽度在窄屏变全屏、宽屏又显窄，
+  /// 使用百分比可自适应。设置后优先于 [width] / [size]；默认 null 保持
+  /// 原有固定像素行为，完全向后兼容。
+  ///
+  /// ```dart
+  /// ParkDrawer(widthFactor: 2 / 3) // 抽屉宽度 = 屏宽 × 2/3
+  /// ```
+  final double? widthFactor;
+
   /// 弹出位置（向后兼容，当 [placement] 非 null 时被覆盖）
   final ParkDrawerPosition position;
 
@@ -143,6 +154,7 @@ class ParkDrawer extends StatefulWidget {
     this.header,
     this.footer,
     this.width = 280,
+    this.widthFactor,
     this.position = ParkDrawerPosition.left,
     this.placement,
     this.closable = true,
@@ -174,6 +186,7 @@ class ParkDrawer extends StatefulWidget {
     ParkDrawerPlacement? placement,
     ParkDrawerPosition position = ParkDrawerPosition.left,
     double width = 280,
+    double? widthFactor,
     bool closable = true,
     bool keyboard = true,
     bool loading = false,
@@ -198,6 +211,7 @@ class ParkDrawer extends StatefulWidget {
         placement: placement,
         position: position,
         width: width,
+        widthFactor: widthFactor,
         closable: closable,
         keyboard: keyboard,
         loading: loading,
@@ -245,6 +259,15 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
   /// 解析尺寸
   double get _resolvedSize {
+    // widthFactor（屏宽比例）优先：水平方向取屏宽比例，垂直方向取屏高比例。
+    final double? factor = widget.widthFactor;
+    if (factor != null) {
+      final double clamped = factor.clamp(0.1, 1.0);
+      final double screenExtent = _isHorizontal
+          ? MediaQuery.sizeOf(context).width
+          : MediaQuery.sizeOf(context).height;
+      return screenExtent * clamped;
+    }
     // 如果用户显式传了非默认 width，优先使用
     if (widget.width != 280) return widget.width;
     switch (widget.size) {

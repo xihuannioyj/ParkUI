@@ -332,6 +332,10 @@ class ParkGridRow extends StatelessWidget {
   }
 
   /// 构建单行视觉布局。
+  ///
+  /// 每列用 Expanded(flex: span) 按 24 格比例分宽，列内 padding halfGutter
+  /// 消化间距。注意：不能用负 padding 抵消首尾 gutter（debug 模式断言
+  /// `padding.isNonNegative` 会崩溃），首尾各保留 halfGutter 空隙。
   Widget _buildVisualRow(
     List<_ResolvedCol> rowCols,
     double containerWidth,
@@ -349,57 +353,33 @@ class ParkGridRow extends StatelessWidget {
     for (var i = 0; i < rowCols.length; i++) {
       final col = rowCols[i];
 
-      // 偏移间距
+      // 偏移间距（按格数弹性占位）
       if (col.offset > 0) {
-        colWidgets.add(SizedBox(
-          width: (col.offset / 24) * containerWidth,
-        ));
+        colWidgets.add(Spacer(flex: col.offset));
       }
 
-      // 列内容
-      final colWidth = (col.span / 24) * containerWidth - gutter;
-      final effectiveWidth = colWidth > 0 ? colWidth : 0.0;
-
-      Widget colContent = SizedBox(
-        width: effectiveWidth,
-        child: col.child,
+      // 列内容：flex 按 span 比例分宽，内部 padding 消化 gutter
+      colWidgets.add(
+        Expanded(
+          flex: col.span,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: halfGutter),
+            child: col.child,
+          ),
+        ),
       );
-
-      // 应用 gutter padding
-      if (gutter > 0) {
-        colContent = Padding(
-          padding: EdgeInsets.symmetric(horizontal: halfGutter),
-          child: colContent,
-        );
-      }
-
-      colWidgets.add(colContent);
     }
 
-    // 如果 justify 不是 start，且还有剩余空间，添加弹性间距
-    Widget rowContent;
+    // justify 非 start 时，剩余空间用 Spacer 占位
     if (mainAxis != MainAxisAlignment.start && remainingSpan > 0) {
-      colWidgets.add(SizedBox(
-        width: (remainingSpan / 24) * containerWidth -
-            (gutter > 0 ? gutter : 0),
-      ));
+      colWidgets.add(Spacer(flex: remainingSpan));
     }
 
-    rowContent = Row(
+    return Row(
       crossAxisAlignment: crossAxis,
       mainAxisAlignment: mainAxis,
       children: colWidgets,
     );
-
-    // 最外层 padding 用于首尾 gutter
-    if (gutter > 0) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: halfGutter),
-        child: rowContent,
-      );
-    }
-
-    return rowContent;
   }
 
   CrossAxisAlignment _resolveCrossAxisAlignment(ParkGridRowAlign align) {

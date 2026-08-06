@@ -257,6 +257,8 @@ class _ParkLoadingState extends State<ParkLoading>
             style: park.typography.body.copyWith(
               fontSize: park.typography.sizeBodySmall,
               color: park.colors.textSecondary,
+              // 阻断 Overlay fallback DefaultTextStyle 的黄色下划线继承。
+              decoration: TextDecoration.none,
             ),
           ),
         ],

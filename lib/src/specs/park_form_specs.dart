@@ -1158,20 +1158,25 @@ class _FormLayoutDemoState extends State<_FormLayoutDemo> {
         // 切换按钮（ParkSegmented 使用 String 值）
         Row(
           children: [
-            ParkText('布局：', preset: ParkTextPreset.bodySmall),
-            ParkSegmented(
-              value: _layout == ParkFormLayout.horizontal ? 'horizontal' : 'vertical',
-              items: [
-                ParkSegmentedItem(value: 'horizontal', label: '水平'),
-                ParkSegmentedItem(value: 'vertical', label: '纵向'),
-              ],
-              onChanged: (String v) {
-                setState(() {
-                  _layout = v == 'horizontal'
-                      ? ParkFormLayout.horizontal
-                      : ParkFormLayout.vertical;
-                });
-              },
+            const ParkText('布局：', preset: ParkTextPreset.bodySmall),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ParkSegmented(
+                value: _layout == ParkFormLayout.horizontal
+                    ? 'horizontal'
+                    : 'vertical',
+                items: [
+                  ParkSegmentedItem(value: 'horizontal', label: '水平'),
+                  ParkSegmentedItem(value: 'vertical', label: '纵向'),
+                ],
+                onChanged: (String v) {
+                  setState(() {
+                    _layout = v == 'horizontal'
+                        ? ParkFormLayout.horizontal
+                        : ParkFormLayout.vertical;
+                  });
+                },
+              ),
             ),
           ],
         ),

@@ -289,11 +289,17 @@ class ParkToast extends StatelessWidget {
   }
 
   Widget _buildPill(ParkThemeData park) {
-    final bg = bgColor ?? park.colors.overlay;
-    final pill = Builder(
-      builder: (BuildContext context) {
-        final double screenWidth = MediaQuery.sizeOf(context).width;
-        final double maxWidth = screenWidth * 0.82;
+    // 默认背景必须 100% 不透明（如 ParkLoading 气泡用 surface 的解法）：
+    // 任何残留透明度都会透出底下页面内容（如顶部装饰条），视觉上出现异常色线。
+    final bg = bgColor ?? const Color(0xFF1A1A1A);
+    // 用 LayoutBuilder 拿真实布局约束计算宽度，避免依赖 MediaQuery.sizeOf：
+    // ScreenUtil 等库会替换 MediaQuery.size 为设计稿假尺寸，导致宽度基准错误。
+    final pill = LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double baseWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        final double maxWidth = baseWidth * 0.82;
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: park.spacing.lg),
           child: ConstrainedBox(
@@ -472,7 +478,8 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final bg = widget.bgColor ?? park.colors.overlay;
+    // 默认背景必须 100% 不透明（禁用半透明 colors.overlay，零透出）。
+    final bg = widget.bgColor ?? const Color(0xFF1A1A1A);
 
     Widget toastWidget = SafeArea(
       child: Semantics(
@@ -497,32 +504,43 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
                     _resumeTimer();
                   }
                 },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: park.spacing.lg),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.sizeOf(context).width * 0.82,
-                    ),
-                    child: Container(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 用真实布局约束（ScreenUtil 无法伪造约束）计算 82% 宽度，
+                    // 避免 MediaQuery.sizeOf 被替换为设计稿假尺寸。
+                    final double baseWidth = constraints.maxWidth.isFinite
+                        ? constraints.maxWidth
+                        : MediaQuery.sizeOf(context).width;
+                    return Padding(
                       padding: EdgeInsets.symmetric(
-                        horizontal: park.spacing.base,
-                        vertical: park.spacing.sm,
+                        horizontal: park.spacing.lg,
                       ),
-                      decoration: BoxDecoration(
-                        color: bg,
-                        borderRadius: park.radius.brFull,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: baseWidth * 0.82,
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: park.spacing.base,
+                            vertical: park.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            borderRadius: park.radius.brFull,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: widget.contentWidget != null
+                              ? widget.contentWidget!
+                              : _ParkToastBody(
+                                  message: widget.message,
+                                  icon: widget.icon,
+                                  park: park,
+                                  isLoading: widget.isLoading,
+                                ),
+                        ),
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: widget.contentWidget != null
-                          ? widget.contentWidget!
-                          : _ParkToastBody(
-                              message: widget.message,
-                              icon: widget.icon,
-                              park: park,
-                              isLoading: widget.isLoading,
-                            ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -573,6 +591,10 @@ class _ParkToastBody extends StatelessWidget {
       style: park.typography.body.copyWith(
         fontSize: park.typography.sizeBody,
         color: park.colors.textOnBrand,
+        // Overlay 环境无 Material → DefaultTextStyle 回退到 fallback style
+        // （黄色下划线），Text(inherit: true) 会继承该装饰。必须显式清除，
+        // 否则 toast 文本下方出现黄色线条。
+        decoration: TextDecoration.none,
       ),
     );
   }

@@ -372,14 +372,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Each col with span=12 in a 480px container should be 240px wide
-      final sizedBoxes = tester.widgetList<SizedBox>(
-        find.descendant(
-          of: find.byType(ParkGridRow),
-          matching: find.byType(SizedBox),
-        ),
-      );
-      final colBoxes = sizedBoxes.where((sb) => sb.width == 240).toList();
-      expect(colBoxes.length, 2);
+      final halfWidth = tester.getSize(find.text('Half')).width;
+      final otherWidth = tester.getSize(find.text('Other Half')).width;
+      expect(halfWidth, closeTo(240, 1));
+      expect(otherWidth, closeTo(240, 1));
     });
 
     testWidgets('ParkBreakpoint.matchName 返回正确断点', (tester) async {

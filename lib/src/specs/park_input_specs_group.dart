@@ -214,17 +214,17 @@ Column(
   mainAxisSize: MainAxisSize.min,
   children: [
     ParkInputGroup(size: ParkInputSize.small, children: [
-      ParkInput(hintText: '小', bordered: false),
+      ParkInput(hintText: '小', size: ParkInputSize.small, bordered: false),
       ParkButton(height: 32, child: Text('Go')),
     ]),
     SizedBox(height: _kSpacing.sm),
     ParkInputGroup(size: ParkInputSize.medium, children: [
-      ParkInput(hintText: '中', bordered: false),
+      ParkInput(hintText: '中', size: ParkInputSize.medium, bordered: false),
       ParkButton(height: 48, child: Text('Go')),
     ]),
     SizedBox(height: _kSpacing.sm),
     ParkInputGroup(size: ParkInputSize.large, children: [
-      ParkInput(hintText: '大', bordered: false),
+      ParkInput(hintText: '大', size: ParkInputSize.large, bordered: false),
       ParkButton(height: 56, child: Text('Go')),
     ]),
   ],
@@ -236,7 +236,11 @@ Column(
           ParkInputGroup(
             size: ParkInputSize.small,
             children: <Widget>[
-              ParkInput(hintText: '小', bordered: false),
+              ParkInput(
+                hintText: '小',
+                size: ParkInputSize.small,
+                bordered: false,
+              ),
               ParkButton(height: 32, child: const Text('Go')),
             ],
           ),
@@ -244,7 +248,11 @@ Column(
           ParkInputGroup(
             size: ParkInputSize.medium,
             children: <Widget>[
-              ParkInput(hintText: '中', bordered: false),
+              ParkInput(
+                hintText: '中',
+                size: ParkInputSize.medium,
+                bordered: false,
+              ),
               ParkButton(height: 48, child: const Text('Go')),
             ],
           ),
@@ -252,7 +260,11 @@ Column(
           ParkInputGroup(
             size: ParkInputSize.large,
             children: <Widget>[
-              ParkInput(hintText: '大', bordered: false),
+              ParkInput(
+                hintText: '大',
+                size: ParkInputSize.large,
+                bordered: false,
+              ),
               ParkButton(height: 56, child: const Text('Go')),
             ],
           ),
@@ -266,7 +278,7 @@ Column(
 ParkInputGroup(
   compact: false,
   children: [
-    ParkInput(hintText: '邮箱'),
+    SizedBox(width: 140, child: ParkInput(hintText: '邮箱')),
     ParkButton(child: Text('订阅')),
   ],
 )
@@ -274,7 +286,10 @@ ParkInputGroup(
       builder: (BuildContext context) => ParkInputGroup(
         compact: false,
         children: <Widget>[
-          ParkInput(hintText: '邮箱'),
+          SizedBox(
+            width: 140,
+            child: ParkInput(hintText: '邮箱'),
+          ),
           ParkButton(child: const Text('订阅')),
         ],
       ),

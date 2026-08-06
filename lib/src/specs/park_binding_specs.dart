@@ -1043,6 +1043,7 @@ class _BatchBindingDemoState extends State<_BatchBindingDemo> {
               preset: ParkTextPreset.body),
           const SizedBox(height: 12),
           ParkButton(
+            block: true,
             onPressed: () {
               _service.batch(() {
                 _service.setValue<String>('name', '李四');
@@ -1050,16 +1051,17 @@ class _BatchBindingDemoState extends State<_BatchBindingDemo> {
                 _service.setValue<String>('hobby', '音乐');
               });
             },
-            child: const ParkText('batch 更新 3 字段（1 次通知）'),
+            child: const ParkText('batch 更新（1 次通知）'),
           ),
           const SizedBox(height: 8),
           ParkButton(
+            block: true,
             onPressed: () {
               _service.setValue<String>('name', '王五');
               _service.setValue<String>('city', '广州');
               _service.setValue<String>('hobby', '运动');
             },
-            child: const ParkText('逐条更新 3 字段（3 次通知）'),
+            child: const ParkText('逐条更新（3 次通知）'),
           ),
         ],
       ),

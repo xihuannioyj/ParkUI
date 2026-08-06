@@ -127,6 +127,15 @@ class ParkSteps extends StatelessWidget {
   /// 是否响应式布局（窄屏时自动切换为垂直方向）
   final bool responsive;
 
+  /// 是否固定头部（SliverPersistentHeader）。
+  ///
+  /// - `true`：返回 [SliverPersistentHeader]（pinned），需放在 `CustomScrollView` 的 slivers 中，
+  ///   滚动时步骤条固定在顶部不随内容滚走；
+  /// - `false`（默认）：普通 Widget，随列表滚动。
+  ///
+  /// 仅水平方向支持；垂直方向忽略该属性。
+  final bool sticky;
+
   const ParkSteps({
     super.key,
     required this.steps,
@@ -140,6 +149,7 @@ class ParkSteps extends StatelessWidget {
     this.successIcon,
     this.progressDot = false,
     this.responsive = false,
+    this.sticky = false,
   });
 
   /// 是否可交互（clickable 且提供了回调）
@@ -167,10 +177,32 @@ class ParkSteps extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    Widget stepsWidget;
     if (direction == ParkStepsDirection.horizontal) {
-      return _buildHorizontal(park, l10n);
+      stepsWidget = _buildHorizontal(park, l10n);
+    } else {
+      stepsWidget = _buildVertical(park, l10n);
     }
-    return _buildVertical(park, l10n);
+
+    // 固定头部：用 SliverPersistentHeader 包裹，需放入 CustomScrollView 的 slivers。
+    if (sticky && direction == ParkStepsDirection.horizontal) {
+      return SliverPersistentHeader(
+        pinned: true,
+        delegate: _ParkStepsSliverDelegate(
+          child: Container(
+            width: double.infinity,
+            color: park.colors.surface,
+            padding: EdgeInsets.symmetric(
+              vertical: park.spacing.sm,
+              horizontal: park.spacing.base,
+            ),
+            child: stepsWidget,
+          ),
+        ),
+      );
+    }
+
+    return stepsWidget;
   }
 
   // ==========================================================================
@@ -704,5 +736,32 @@ class _StepProgressPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _StepProgressPainter oldDelegate) {
     return oldDelegate.percent != percent || oldDelegate.color != color;
+  }
+}
+
+/// ParkSteps 固定头部委托：滚动时步骤条固定在顶部。
+class _ParkStepsSliverDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _ParkStepsSliverDelegate({required this.child});
+
+  @override
+  double get minExtent => 64;
+
+  @override
+  double get maxExtent => 64;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _ParkStepsSliverDelegate oldDelegate) {
+    return oldDelegate.child != child;
   }
 }
