@@ -2591,15 +2591,15 @@ ParkStepper(
     // ParkStepper Binding Demo
     // -----------------------------------------------------------------------
     ParkDemoScenario(
-      title: '绑定演示',
+      title: '双向绑定（ParkBinding）',
       description:
           '通过 bindKey + bindingService 实现双向绑定，下方实时回显绑定模型值。'
           ' / bindKey + bindingService for two-way binding, model values shown below.',
       code: '''
-final service = ParkBindingService({'count': 3});
+final service = ParkBindingService({'count': 5});
 
 ParkStepper(
-  value: 3,
+  value: 5,
   min: 0,
   max: 99,
   bindKey: 'count',
@@ -2806,7 +2806,7 @@ class _StepperBindingDemoState extends State<_StepperBindingDemo> {
   @override
   void initState() {
     super.initState();
-    _service = ParkBindingService(<String, dynamic>{'count': 3});
+    _service = ParkBindingService(<String, dynamic>{'count': 5});
     _service.watchEffect(() {
       _service.getValue<int>('count');
       if (mounted) setState(() {});
@@ -2828,7 +2828,7 @@ class _StepperBindingDemoState extends State<_StepperBindingDemo> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           ParkStepper(
-            value: 3,
+            value: 5,
             min: 0,
             max: 99,
             bindKey: 'count',
@@ -3130,18 +3130,18 @@ ParkRate(
     // ParkRate Binding Demo
     // -----------------------------------------------------------------------
     ParkDemoScenario(
-      title: '绑定演示',
+      title: '双向绑定（ParkBinding）',
       description:
           '通过 bindKey + bindingService 实现双向绑定，下方实时回显绑定模型值。'
           ' / bindKey + bindingService for two-way binding, model values shown below.',
       code: '''
-final service = ParkBindingService({'rating': 4.0});
+final service = ParkBindingService({'score': 3.0});
 
 ParkRate(
-  value: 4.0,
+  value: 3.0,
   count: 5,
   allowHalf: true,
-  bindKey: 'rating',
+  bindKey: 'score',
   bindingService: service,
 )''',
       builder: (context) => _RateBindingDemo(),
@@ -3372,9 +3372,9 @@ class _RateBindingDemoState extends State<_RateBindingDemo> {
   @override
   void initState() {
     super.initState();
-    _service = ParkBindingService(<String, dynamic>{'rating': 4.0});
+    _service = ParkBindingService(<String, dynamic>{'score': 3.0});
     _service.watchEffect(() {
-      _service.getValue<double>('rating');
+      _service.getValue<double>('score');
       if (mounted) setState(() {});
     });
   }
@@ -3394,10 +3394,10 @@ class _RateBindingDemoState extends State<_RateBindingDemo> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           ParkRate(
-            value: 4.0,
+            value: 3.0,
             count: 5,
             allowHalf: true,
-            bindKey: 'rating',
+            bindKey: 'score',
             bindingService: _service,
           ),
           const SizedBox(height: 16),

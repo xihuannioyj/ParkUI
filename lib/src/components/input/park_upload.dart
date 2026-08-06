@@ -4,6 +4,7 @@ import 'dart:ui' show PathMetric;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../display/park_avatar.dart' show ParkAvatarShape;
 import 'park_upload_io_stub.dart'
     if (dart.library.io) 'park_upload_io_native.dart'
     if (dart.library.html) 'park_upload_io_web.dart';
@@ -136,6 +137,9 @@ class ParkDropFile {
   const ParkDropFile({required this.name, this.path});
 }
 
+/// 上传类型。
+enum ParkUploadType { image, avatar }
+
 /// Park 文件上传组件。
 ///
 /// 面向动态表单场景增强：
@@ -264,6 +268,18 @@ class ParkUpload extends StatefulWidget {
   /// / Max output height in pixels after cropping. Null means no limit.
   final int? cropMaxHeight;
 
+  /// 上传类型（图片 / 头像）。
+  final ParkUploadType? uploadType;
+
+  /// 头像形状。
+  final ParkAvatarShape? avatarShape;
+
+  /// 头像尺寸。默认 80。
+  final double avatarSize;
+
+  /// 是否启用内置预览。默认 true。
+  final bool enableBuiltInPreview;
+
   const ParkUpload({
     super.key,
     required this.files,
@@ -294,6 +310,10 @@ class ParkUpload extends StatefulWidget {
     this.cropAspectRatio,
     this.cropMaxWidth,
     this.cropMaxHeight,
+    this.uploadType,
+    this.avatarShape,
+    this.avatarSize = 80,
+    this.enableBuiltInPreview = true,
   });
 
   /// 校验文件是否符合当前上传器约束。
@@ -859,10 +879,15 @@ class _ParkUploadState extends State<ParkUpload> {
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final l10n = ParkLocalizations.of(context);
 
+    // avatar 模式：渲染单个圆形/圆角头像上传区。
+    if (widget.uploadType == ParkUploadType.avatar) {
+      return _buildAvatar(park, l10n);
+    }
+
     // 解析有效的 listType：null 时自动推断
     final ParkUploadListType effectiveListType =
         widget.listType ??
-        (widget.imageOnly
+        (widget.uploadType == ParkUploadType.image || widget.imageOnly
             ? ParkUploadListType.pictureCard
             : ParkUploadListType.text);
 
@@ -945,6 +970,9 @@ class _ParkUploadState extends State<ParkUpload> {
             l10n,
             size: 80,
             borderRadius: BorderRadius.circular(radius.md),
+            icon: widget.uploadType == ParkUploadType.image
+                ? Icons.add_photo_alternate_outlined
+                : Icons.add,
           ),
       ],
     );
@@ -1044,11 +1072,11 @@ class _ParkUploadState extends State<ParkUpload> {
                 ),
               ),
             if (widget.removable)
-              Semantics(
-                label: l10n.deleteFileLabel,
-                child: Positioned(
-                  top: -6,
-                  right: -6,
+              Positioned(
+                top: -6,
+                right: -6,
+                child: Semantics(
+                  label: l10n.deleteFileLabel,
                   child: GestureDetector(
                     onTap: () => widget.onRemove?.call(file),
                     child: Container(
@@ -1068,6 +1096,127 @@ class _ParkUploadState extends State<ParkUpload> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// avatar 模式：单个圆形/圆角头像上传区。
+  ///
+  /// - 无文件：相机图标占位，点击触发 [_handleAdd]。
+  /// - 有文件：显示图片（非图片显示文件类型图标），右上角删除按钮。
+  /// - 上传中：半透明遮罩 + 线性进度条。
+  /// - 出错：红色遮罩 + 错误图标。
+  Widget _buildAvatar(ParkThemeData park, ParkLocalizations l10n) {
+    final double size = widget.avatarSize;
+    final ParkAvatarShape shape =
+        widget.avatarShape ?? ParkAvatarShape.circle;
+    final BorderRadius radius = switch (shape) {
+      ParkAvatarShape.circle => BorderRadius.circular(size / 2),
+      ParkAvatarShape.rounded => park.radius.brLg,
+      ParkAvatarShape.square => BorderRadius.zero,
+    };
+    final ParkUploadFile? file =
+        widget.files.isNotEmpty ? widget.files.first : null;
+    final bool isUploading = file?.status == ParkUploadFileStatus.uploading;
+    final bool isError = file?.status == ParkUploadFileStatus.error;
+
+    return Semantics(
+      label: l10n.addFileText,
+      child: GestureDetector(
+        onTap: _handleAdd,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Container(
+            width: size,
+            height: size,
+            color: park.colors.disabledBg,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                // 内容：图片 / 文件图标 / 相机占位
+                if (file != null && ParkUpload._isImagePath(file.path))
+                  buildFileImageWidget(file.path, fit: BoxFit.cover)
+                else if (file != null)
+                  Center(
+                    child: Icon(
+                      ParkUpload._fileIconForPath(file.path),
+                      size: 28,
+                      color: park.colors.textPlaceholder,
+                    ),
+                  )
+                else
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        Icons.camera_alt_outlined,
+                        size: 24,
+                        color: park.colors.textPlaceholder,
+                      ),
+                    ],
+                  ),
+                // 上传中：进度指示
+                if (isUploading)
+                  Positioned.fill(
+                    child: Container(
+                      color: park.colors.overlay.withValues(alpha: 0.55),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: LinearProgressIndicator(
+                            value: file!.progress > 0 ? file.progress : null,
+                            minHeight: 3,
+                            backgroundColor: Colors.white24,
+                            valueColor:
+                                AlwaysStoppedAnimation(park.colors.brand),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                // 出错：错误指示
+                if (isError)
+                  Positioned.fill(
+                    child: Container(
+                      color: park.colors.error.withValues(alpha: 0.15),
+                      child: Center(
+                        child: Icon(
+                          Icons.error_outline,
+                          color: park.colors.error,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                // 删除按钮
+                if (file != null && widget.removable && !isUploading)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Semantics(
+                      label: l10n.deleteFileLabel,
+                      child: GestureDetector(
+                        onTap: () => widget.onRemove?.call(file),
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: park.colors.overlay,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.delete_outline,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1113,6 +1262,7 @@ class _ParkUploadState extends State<ParkUpload> {
     ParkLocalizations l10n, {
     required double size,
     required BorderRadius borderRadius,
+    IconData icon = Icons.add,
   }) {
     final colors = park.colors;
 
@@ -1135,7 +1285,7 @@ class _ParkUploadState extends State<ParkUpload> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(Icons.add, size: 24, color: colors.textPlaceholder),
+              Icon(icon, size: 24, color: colors.textPlaceholder),
             ],
           ),
         ),

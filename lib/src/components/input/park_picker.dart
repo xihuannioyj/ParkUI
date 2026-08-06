@@ -4,6 +4,7 @@ import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import 'park_cascader.dart';
 
 /// 选择器选项
 class ParkPickerItem {
@@ -206,6 +207,49 @@ class ParkPicker extends StatefulWidget {
         );
       },
     );
+  }
+
+  /// 弹出级联选择器面板
+  ///
+  /// 返回用户选中的各级 value 列表，取消时返回 null。
+  static Future<List<T>?> showCascading<T>({
+    required BuildContext context,
+    String? title,
+    required List<ParkCascadingNode<T>> options,
+    required ParkCascadingMode mode,
+  }) async {
+    final cascaderOptions = options.map((n) => n.toOption()).toList();
+    final result = await ParkCascader.showSheet(
+      context,
+      options: cascaderOptions,
+      title: title,
+      mode: mode,
+    );
+    if (result == null) return null;
+    final mapped = <T>[];
+    _mapPath<T>(options, result, 0, mapped);
+    return mapped;
+  }
+
+  static bool _mapPath<T>(
+    List<ParkCascadingNode<T>> nodes,
+    List<String> path,
+    int level,
+    List<T> result,
+  ) {
+    if (level >= path.length) return true;
+    for (final node in nodes) {
+      if (node.value.toString() == path[level]) {
+        result.add(node.value);
+        if (node.children != null) {
+          if (_mapPath<T>(node.children!, path, level + 1, result)) return true;
+        } else if (level + 1 >= path.length) {
+          return true;
+        }
+        result.removeLast();
+      }
+    }
+    return false;
   }
 
   @override

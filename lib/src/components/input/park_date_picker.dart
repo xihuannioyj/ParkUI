@@ -163,6 +163,9 @@ class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
   /// 为 null 时无变化。
   final Widget? renderExtraFooter;
 
+  /// 允许的日期范围列表。设置后仅范围内的日期可选。
+  final List<DateTimeRange>? allowedDateRanges;
+
   ParkDatePicker({
     super.key,
     this.bindKey,
@@ -189,6 +192,7 @@ class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
     this.presets,
     this.presetItems,
     this.renderExtraFooter,
+    this.allowedDateRanges,
     super.onSaved,
     super.validator,
     super.autovalidateMode = AutovalidateMode.disabled,
@@ -413,6 +417,73 @@ class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
     }
   }
 
+  /// 弹出日期选择器面板（独立调用，不依赖 FormField）
+  static Future<DateTime?> show(
+    BuildContext context, {
+    DateTime? initialDate,
+    DateTime? firstDate,
+    DateTime? lastDate,
+    ParkDatePickerMode mode = ParkDatePickerMode.date,
+    String? title,
+    List<DateTimeRange>? allowedDateRanges,
+  }) async {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final now = DateTime.now();
+    final effective = initialDate ?? now;
+    final first = firstDate ?? DateTime(1900);
+    final last = lastDate ?? DateTime(2100);
+
+    DateTime tempDate = effective;
+    if (tempDate.isBefore(first)) tempDate = first;
+    if (tempDate.isAfter(last)) tempDate = last;
+
+    final CupertinoDatePickerMode cupertinoMode;
+    switch (mode) {
+      case ParkDatePickerMode.date:
+      case ParkDatePickerMode.yearMonth:
+        cupertinoMode = CupertinoDatePickerMode.date;
+        break;
+      case ParkDatePickerMode.time:
+        cupertinoMode = CupertinoDatePickerMode.time;
+        break;
+      case ParkDatePickerMode.dateTime:
+        cupertinoMode = CupertinoDatePickerMode.dateAndTime;
+        break;
+      case ParkDatePickerMode.timeWithSeconds:
+        cupertinoMode = CupertinoDatePickerMode.time;
+        break;
+    }
+
+    return showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return _DatePickerSheet(
+          title: title,
+          mode: cupertinoMode,
+          initialDateTime: tempDate,
+          minimumDate: first,
+          maximumDate: last,
+          useYearMonth: mode == ParkDatePickerMode.yearMonth,
+          useSeconds: mode == ParkDatePickerMode.timeWithSeconds,
+          onDateChanged: (dt) => tempDate = dt,
+          shortcuts: const [],
+          onShortcutTap: null,
+          presets: const [],
+          onPresetTap: null,
+          park: park,
+          disabledDate: allowedDateRanges != null
+              ? (dt) => !allowedDateRanges.any(
+                  (r) => !dt.isBefore(r.start) && !dt.isAfter(r.end))
+              : null,
+          renderExtraFooter: null,
+        );
+      },
+    );
+  }
+
   static void _showPicker(_ParkDatePickerState state) async {
     final widget = state.widget;
     final context = state.context;
@@ -441,7 +512,7 @@ class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
         cupertinoMode = CupertinoDatePickerMode.dateAndTime;
         break;
       case ParkDatePickerMode.timeWithSeconds:
-        cupertinoMode = CupertinoDatePickerMode.dateAndTime;
+        cupertinoMode = CupertinoDatePickerMode.time;
         break;
       case ParkDatePickerMode.yearMonth:
         cupertinoMode = CupertinoDatePickerMode.date;
@@ -460,6 +531,7 @@ class ParkDatePicker extends FormField<DateTime> implements ParkBindableWidget {
           minimumDate: widget.firstDate,
           maximumDate: widget.lastDate,
           useYearMonth: widget.mode == ParkDatePickerMode.yearMonth,
+          useSeconds: widget.mode == ParkDatePickerMode.timeWithSeconds,
           onDateChanged: (dt) {
             tempDate = dt;
           },
@@ -558,6 +630,7 @@ class _DatePickerSheet extends StatefulWidget {
   final DateTime? minimumDate;
   final DateTime? maximumDate;
   final bool useYearMonth;
+  final bool useSeconds;
   final ValueChanged<DateTime> onDateChanged;
   final List<ParkDatePickerShortcut>? shortcuts;
   final ValueChanged<DateTime>? onShortcutTap;
@@ -582,6 +655,7 @@ class _DatePickerSheet extends StatefulWidget {
     required this.park,
     this.disabledDate,
     this.renderExtraFooter,
+    this.useSeconds = false,
   });
 
   @override
@@ -700,6 +774,7 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
                     const SizedBox.shrink(),
                   Semantics(
                     button: true,
+                    enabled: true,
                     label: ParkLocalizations.of(context).confirmText,
                     child: GestureDetector(
                       onTap: () => Navigator.of(context).pop(_tempDate),
@@ -813,20 +888,46 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
               SizedBox(height: spacing.xs),
             ],
 
-            // 日期选择器
-            SizedBox(
-              height: 220,
-              child: CupertinoDatePicker(
-                mode: widget.mode,
-                initialDateTime: _tempDate,
-                minimumDate: widget.minimumDate,
-                maximumDate: widget.maximumDate,
-                onDateTimeChanged: (dt) {
-                  _tempDate = dt;
-                  widget.onDateChanged(dt);
-                },
+            // 日期选择器（timeWithSeconds 模式用 H:M:S 三个滚轮）
+            if (widget.useSeconds)
+              SizedBox(
+                height: 220,
+                child: CupertinoTimerPicker(
+                  mode: CupertinoTimerPickerMode.hms,
+                  initialTimerDuration: Duration(
+                    hours: _tempDate.hour,
+                    minutes: _tempDate.minute,
+                    seconds: _tempDate.second,
+                  ),
+                  onTimerDurationChanged: (Duration d) {
+                    setState(() {
+                      _tempDate = DateTime(
+                        _tempDate.year,
+                        _tempDate.month,
+                        _tempDate.day,
+                        d.inHours,
+                        d.inMinutes.remainder(60),
+                        d.inSeconds.remainder(60),
+                      );
+                    });
+                    widget.onDateChanged(_tempDate);
+                  },
+                ),
+              )
+            else
+              SizedBox(
+                height: 220,
+                child: CupertinoDatePicker(
+                  mode: widget.mode,
+                  initialDateTime: _tempDate,
+                  minimumDate: widget.minimumDate,
+                  maximumDate: widget.maximumDate,
+                  onDateTimeChanged: (dt) {
+                    _tempDate = dt;
+                    widget.onDateChanged(dt);
+                  },
+                ),
               ),
-            ),
 
             // ── 自定义 Footer ──
             if (widget.renderExtraFooter != null) ...[

@@ -146,12 +146,15 @@ class ParkTooltip extends StatefulWidget {
 
 class _ParkTooltipState extends State<ParkTooltip>
     with SingleTickerProviderStateMixin {
-  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _triggerKey = GlobalKey();
+  final GlobalKey _bubbleKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   Timer? _showTimer;
   Timer? _hideTimer;
   Timer? _autoHideTimer;
   bool _internalVisible = false;
+  Size _bubbleSize = Size.zero;
+  bool _bubbleMeasured = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
@@ -264,13 +267,28 @@ class _ParkTooltipState extends State<ParkTooltip>
 
   void _ensureOverlay() {
     if (_overlayEntry != null) return;
+    _bubbleMeasured = false;
+    _bubbleSize = Size.zero;
     _overlayEntry = OverlayEntry(builder: _buildOverlay);
     Overlay.of(context, rootOverlay: true).insert(_overlayEntry!);
+    // First frame renders the bubble invisibly so its size can be measured.
+    // The bubble key is attached in the FIRST frame so the callback can
+    // read its size immediately after layout.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _overlayEntry == null) return;
+      final box = _bubbleKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize) {
+        _bubbleSize = box.size;
+      }
+      _bubbleMeasured = true;
+      _overlayEntry?.markNeedsBuild();
+    });
   }
 
   void _removeOverlay() {
-    _overlayEntry?.remove();
+    final entry = _overlayEntry;
     _overlayEntry = null;
+    if (entry != null && entry.mounted) entry.remove();
   }
 
   // -----------------------------------------------------------------------
@@ -307,7 +325,7 @@ class _ParkTooltipState extends State<ParkTooltip>
       );
     }
 
-    // The bubble.
+    // The bubble with maxWidth constraint.
     Widget bubble = Container(
       constraints: BoxConstraints(maxWidth: widget.maxWidth),
       padding: effectivePadding,
@@ -357,93 +375,102 @@ class _ParkTooltipState extends State<ParkTooltip>
       );
     }
 
-    // Position with CompositedTransformFollower.
-    final followerOffset = _followerOffset(widget.placement);
-    final followerAnchor = _followerAnchor(widget.placement);
-    final targetAnchor = _targetAnchor(widget.placement);
+    // Calculate position using GlobalKey.
+    final triggerRenderBox =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    final screenSize = MediaQuery.of(context).size;
 
-    return Semantics(
-      label: widget.message,
-      container: true,
-      liveRegion: true,
-      child: CompositedTransformFollower(
-        link: _layerLink,
-        showWhenUnlinked: false,
-        offset: followerOffset,
-        targetAnchor: targetAnchor,
-        followerAnchor: followerAnchor,
+    if (triggerRenderBox == null) {
+      // Fallback: render at center if trigger not found (e.g., in tests).
+      return Center(
+        child: Semantics(
+          label: widget.message,
+          container: true,
+          liveRegion: true,
+          child: animated,
+        ),
+      );
+    }
+
+    final triggerPosition = triggerRenderBox.localToGlobal(Offset.zero);
+    final triggerSize = triggerRenderBox.size;
+    final g = widget.gap;
+
+    // First frame: render bubble invisibly at the trigger position to
+    // measure its real size. The key must be attached HERE (first frame)
+    // so the post-frame callback can read its size.
+    if (!_bubbleMeasured || _bubbleSize == Size.zero) {
+      return Positioned(
+        left: triggerPosition.dx.clamp(0.0, screenSize.width),
+        top: triggerPosition.dy.clamp(0.0, screenSize.height),
+        child: Opacity(
+          opacity: 0,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: widget.maxWidth),
+            child: Semantics(
+              label: widget.message,
+              container: true,
+              liveRegion: true,
+              child: KeyedSubtree(key: _bubbleKey, child: animated),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Second frame: position the bubble using the measured size.
+    double left;
+    double top;
+
+    switch (widget.placement) {
+      case ParkTooltipPlacement.top:
+        left = triggerPosition.dx + triggerSize.width / 2 - _bubbleSize.width / 2;
+        top = triggerPosition.dy - _bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.topLeft:
+        left = triggerPosition.dx;
+        top = triggerPosition.dy - _bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.topRight:
+        left = triggerPosition.dx + triggerSize.width - _bubbleSize.width;
+        top = triggerPosition.dy - _bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.bottom:
+        left = triggerPosition.dx + triggerSize.width / 2 - _bubbleSize.width / 2;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.bottomLeft:
+        left = triggerPosition.dx;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.bottomRight:
+        left = triggerPosition.dx + triggerSize.width - _bubbleSize.width;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.left:
+        left = triggerPosition.dx - _bubbleSize.width - g;
+        top = triggerPosition.dy + triggerSize.height / 2 - _bubbleSize.height / 2;
+        break;
+      case ParkTooltipPlacement.right:
+        left = triggerPosition.dx + triggerSize.width + g;
+        top = triggerPosition.dy + triggerSize.height / 2 - _bubbleSize.height / 2;
+        break;
+    }
+
+    // Clamp to screen bounds.
+    left = left.clamp(0.0, (screenSize.width - _bubbleSize.width).clamp(0.0, double.infinity));
+    top = top.clamp(0.0, (screenSize.height - _bubbleSize.height).clamp(0.0, double.infinity));
+
+    return Positioned(
+      left: left,
+      top: top,
+      child: Semantics(
+        label: widget.message,
+        container: true,
+        liveRegion: true,
         child: animated,
       ),
     );
-  }
-
-  // -----------------------------------------------------------------------
-  // Placement geometry helpers
-  // -----------------------------------------------------------------------
-
-  /// Offset applied to the follower based on placement + gap.
-  Offset _followerOffset(ParkTooltipPlacement p) {
-    final g = widget.gap;
-    switch (p) {
-      case ParkTooltipPlacement.top:
-        return Offset(0, -g);
-      case ParkTooltipPlacement.topLeft:
-        return Offset(0, -g);
-      case ParkTooltipPlacement.topRight:
-        return Offset(0, -g);
-      case ParkTooltipPlacement.bottom:
-        return Offset(0, g);
-      case ParkTooltipPlacement.bottomLeft:
-        return Offset(0, g);
-      case ParkTooltipPlacement.bottomRight:
-        return Offset(0, g);
-      case ParkTooltipPlacement.left:
-        return Offset(-g, 0);
-      case ParkTooltipPlacement.right:
-        return Offset(g, 0);
-    }
-  }
-
-  Alignment _followerAnchor(ParkTooltipPlacement p) {
-    switch (p) {
-      case ParkTooltipPlacement.top:
-        return Alignment.bottomCenter;
-      case ParkTooltipPlacement.topLeft:
-        return Alignment.bottomLeft;
-      case ParkTooltipPlacement.topRight:
-        return Alignment.bottomRight;
-      case ParkTooltipPlacement.bottom:
-        return Alignment.topCenter;
-      case ParkTooltipPlacement.bottomLeft:
-        return Alignment.topLeft;
-      case ParkTooltipPlacement.bottomRight:
-        return Alignment.topRight;
-      case ParkTooltipPlacement.left:
-        return Alignment.centerRight;
-      case ParkTooltipPlacement.right:
-        return Alignment.centerLeft;
-    }
-  }
-
-  Alignment _targetAnchor(ParkTooltipPlacement p) {
-    switch (p) {
-      case ParkTooltipPlacement.top:
-        return Alignment.topCenter;
-      case ParkTooltipPlacement.topLeft:
-        return Alignment.topLeft;
-      case ParkTooltipPlacement.topRight:
-        return Alignment.topRight;
-      case ParkTooltipPlacement.bottom:
-        return Alignment.bottomCenter;
-      case ParkTooltipPlacement.bottomLeft:
-        return Alignment.bottomLeft;
-      case ParkTooltipPlacement.bottomRight:
-        return Alignment.bottomRight;
-      case ParkTooltipPlacement.left:
-        return Alignment.centerLeft;
-      case ParkTooltipPlacement.right:
-        return Alignment.centerRight;
-    }
   }
 
   Alignment _scaleAlignment(ParkTooltipPlacement p) {
@@ -469,8 +496,8 @@ class _ParkTooltipState extends State<ParkTooltip>
 
   @override
   Widget build(BuildContext context) {
-    Widget child = CompositedTransformTarget(
-      link: _layerLink,
+    Widget child = KeyedSubtree(
+      key: _triggerKey,
       child: widget.child,
     );
 

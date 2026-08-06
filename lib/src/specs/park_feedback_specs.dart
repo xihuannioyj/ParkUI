@@ -634,6 +634,36 @@ final ParkComponentSpec _parkToast = ParkComponentSpec(
       },
     ),
     ParkDemoScenario(
+      title: '超长文本',
+      description: '超长文本自动换行、4 行截断省略，不越界',
+      code:
+          "ParkToast.show(context, '这是一段非常非常长的提示文本，用于验证 Toast 在超长内容下自动换行并在第 4 行截断为省略号，不会出现布局越界报错，也不会撑破屏幕，请放心使用超长提示信息……')",
+      builder: (BuildContext context) => ParkButton(
+        onPressed: () => ParkToast.show(
+          context,
+          '这是一段非常非常长的提示文本，用于验证 Toast 在超长内容下自动换行并在第 4 行截断为省略号，不会出现布局越界报错，也不会撑破屏幕，请放心使用超长提示信息，例如接口返回的详细错误描述、操作指引说明、或者很长的一段系统通知内容，全部都会被安全地展示出来。',
+          duration: const Duration(seconds: 4),
+        ),
+        child: const Text('超长文本'),
+      ),
+    ),
+    ParkDemoScenario(
+      title: '超长文本 + 图标',
+      description: '带图标 + 超长文本：图标固定、文本收缩换行',
+      code:
+          "ParkToast.error(context, '这是一段非常非常长的错误提示文本，用于验证带图标的 Toast 在超长内容下文本自动收缩换行并截断省略，图标保持完整显示，不会出现布局越界报错……', position: ParkToastPosition.top)",
+      builder: (BuildContext context) => ParkButton(
+        variant: ParkButtonVariant.danger,
+        onPressed: () => ParkToast.error(
+          context,
+          '这是一段非常非常长的错误提示文本，用于验证带图标的 Toast 在超长内容下文本自动收缩换行并截断省略，图标保持完整显示，不会出现布局越界报错，也不会撑破屏幕边缘。',
+          position: ParkToastPosition.top,
+          duration: const Duration(seconds: 4),
+        ),
+        child: const Text('超长文本+图标'),
+      ),
+    ),
+    ParkDemoScenario(
       title: '可点击关闭',
       description: '点击 Toast 触发 onClick，并监听 onClose',
       code:

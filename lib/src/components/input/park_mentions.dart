@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import '../../binding/park_binding_service.dart';
+import '../../binding/park_binding_form_scope.dart';
+import '../../binding/park_bindable.dart';
 
 /// 提及条目（@ 某人 / # 标签 的数据源单元）。
 ///
@@ -88,6 +91,12 @@ class ParkMentions extends StatefulWidget {
   /// 弹出面板最大高度（默认 240）。
   final double popupMaxHeight;
 
+  /// 绑定键（点号分隔的路径，如 "text"）。
+  final String? bindKey;
+
+  /// 绑定服务实例。
+  final ParkBindingService? bindingService;
+
   const ParkMentions({
     super.key,
     required this.items,
@@ -103,6 +112,8 @@ class ParkMentions extends StatefulWidget {
     this.filterOption,
     this.mentionBuilder,
     this.popupMaxHeight = 240.0,
+    this.bindKey,
+    this.bindingService,
   });
 
   @override
@@ -115,6 +126,8 @@ class _ParkMentionsState extends State<ParkMentions> {
   final FocusNode _keyboardFocusNode = FocusNode();
   OverlayEntry? _overlayEntry;
 
+  ParkBindable<String>? _bindable;
+
   String? _activeTrigger;
   List<ParkMentionItem> _filtered = <ParkMentionItem>[];
   int _selectedIndex = 0;
@@ -125,6 +138,46 @@ class _ParkMentionsState extends State<ParkMentions> {
     super.initState();
     _controller = TextEditingController(text: widget.value ?? '');
     _focusNode.addListener(_onFocusChange);
+    _tryLinkBinding();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tryLinkBinding();
+  }
+
+  void _tryLinkBinding() {
+    final String? key = widget.bindKey;
+    if (key == null || _bindable != null) return;
+    final ParkBindingService? service = widget.bindingService ??
+        ParkBindingFormScope.of(context)?.service;
+    if (service == null) return;
+
+    _bindable = service.bind<String>(key);
+    final String initial = _bindable!.value;
+    if (initial.isNotEmpty && initial != _controller.text) {
+      _controller.text = initial;
+    }
+    _bindable!.addListener(_onBindableChanged);
+  }
+
+  /// model → UI 方向同步（绑定值变化时更新输入框）。
+  void _onBindableChanged() {
+    if (!mounted || _bindable == null) return;
+    final String value = _bindable!.value;
+    if (value != _controller.text) {
+      _controller.text = value;
+    }
+  }
+
+  /// UI → model 方向同步。
+  void _syncToBindable(String value) {
+    final ParkBindable<String>? bindable = _bindable;
+    if (bindable != null && bindable.value != value) {
+      // ignore: avoid_dynamic_calls
+      (bindable as dynamic).value = value;
+    }
   }
 
   @override
@@ -133,6 +186,13 @@ class _ParkMentionsState extends State<ParkMentions> {
     // 受控模式：外部 value 变化时同步文本（仅在确有差异时，避免光标跳动）。
     if (widget.value != null && widget.value != _controller.text) {
       _controller.text = widget.value!;
+    }
+    // bindKey / bindingService 变化时重新绑定
+    if (widget.bindKey != oldWidget.bindKey ||
+        widget.bindingService != oldWidget.bindingService) {
+      _bindable?.removeListener(_onBindableChanged);
+      _bindable = null;
+      _tryLinkBinding();
     }
   }
 
@@ -314,6 +374,7 @@ class _ParkMentionsState extends State<ParkMentions> {
       selection: TextSelection.collapsed(offset: newCaret),
     );
     _hidePanel();
+    _syncToBindable(newText);
     widget.onChanged?.call(newText);
     widget.onSelect?.call(item, trigger);
     _focusNode.requestFocus();
@@ -355,6 +416,7 @@ class _ParkMentionsState extends State<ParkMentions> {
 
   @override
   void dispose() {
+    _bindable?.removeListener(_onBindableChanged);
     _hidePanel();
     _controller.dispose();
     _focusNode.removeListener(_onFocusChange);
@@ -389,6 +451,7 @@ class _ParkMentionsState extends State<ParkMentions> {
         maxLines: widget.maxLines,
         minLines: widget.minLines,
         onChanged: (String value) {
+          _syncToBindable(value);
           widget.onChanged?.call(value);
           _refreshPanel();
         },

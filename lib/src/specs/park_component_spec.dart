@@ -129,6 +129,9 @@ class ParkComponentSpec {
   /// 动态表单 Schema 属性详解（Markdown，按组件视角；仅非空时渲染于 API Tab「方法」之后）。
   final String dynamicFormSchemaDoc;
 
+  /// 关联组件名称列表（如 ['ParkNavBar', 'ParkSliverAppBar']）。
+  final List<String> relatedComponents;
+
   /// 创建组件规格。
   const ParkComponentSpec({
     required this.name,
@@ -144,5 +147,6 @@ class ParkComponentSpec {
     this.guide = '',
     this.schemaDoc = '',
     this.dynamicFormSchemaDoc = '',
+    this.relatedComponents = const <String>[],
   });
 }

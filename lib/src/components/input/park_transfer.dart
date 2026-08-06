@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import '../../binding/park_binding_service.dart';
+import '../../binding/park_binding_form_scope.dart';
+import '../../binding/park_bindable.dart';
 import '../base/park_button.dart';
 import '../base/park_button_style.dart';
 
@@ -59,6 +62,12 @@ class ParkTransfer extends StatefulWidget {
   /// 自定义渲染项。
   final Widget Function(ParkTransferItem item, bool selected)? renderItem;
 
+  /// 绑定键（点号分隔的路径）。
+  final String? bindKey;
+
+  /// 绑定服务实例。
+  final ParkBindingService? bindingService;
+
   /// 创建 [ParkTransfer]。
   const ParkTransfer({
     super.key,
@@ -73,6 +82,8 @@ class ParkTransfer extends StatefulWidget {
     this.oneWay = false,
     this.disabled = false,
     this.renderItem,
+    this.bindKey,
+    this.bindingService,
   });
 
   @override
@@ -97,6 +108,7 @@ class ParkTransferItem {
 
 class _ParkTransferState extends State<ParkTransfer> {
   late Set<String> _targetKeys;
+  ParkBindable<List<String>>? _bindable;
   final _leftController = TextEditingController();
   final _rightController = TextEditingController();
   final Set<String> _leftSelected = {};
@@ -106,6 +118,51 @@ class _ParkTransferState extends State<ParkTransfer> {
   void initState() {
     super.initState();
     _targetKeys = Set<String>.from(widget.targetKeys ?? []);
+    _tryLinkBinding();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tryLinkBinding();
+  }
+
+  void _tryLinkBinding() {
+    final String? key = widget.bindKey;
+    if (key == null || _bindable != null) return;
+    final ParkBindingService? service = widget.bindingService ??
+        ParkBindingFormScope.of(context)?.service;
+    if (service == null) return;
+
+    _bindable = service.bind<List<String>>(key);
+    final List<String> initial = _bindable!.value;
+    if (initial.isNotEmpty) {
+      _targetKeys = Set<String>.from(initial);
+    }
+    _bindable!.addListener(_onBindableChanged);
+  }
+
+  /// model → UI 方向同步。
+  void _onBindableChanged() {
+    if (!mounted || _bindable == null) return;
+    final List<String> value = _bindable!.value;
+    final Set<String> next = Set<String>.from(value);
+    if (next.length != _targetKeys.length ||
+        !next.containsAll(_targetKeys)) {
+      setState(() => _targetKeys = next);
+    }
+  }
+
+  /// UI → model 方向同步。
+  void _syncToBindable() {
+    final ParkBindable<List<String>>? bindable = _bindable;
+    if (bindable == null) return;
+    final List<String> value = _targetKeys.toList();
+    if (bindable.value.length != value.length ||
+        !Set<String>.from(bindable.value).containsAll(value)) {
+      // ignore: avoid_dynamic_calls
+      (bindable as dynamic).value = value;
+    }
   }
 
   @override
@@ -115,6 +172,12 @@ class _ParkTransferState extends State<ParkTransfer> {
       setState(() {
         _targetKeys = Set<String>.from(widget.targetKeys ?? []);
       });
+    }
+    if (widget.bindKey != oldWidget.bindKey ||
+        widget.bindingService != oldWidget.bindingService) {
+      _bindable?.removeListener(_onBindableChanged);
+      _bindable = null;
+      _tryLinkBinding();
     }
   }
 
@@ -137,11 +200,13 @@ class _ParkTransferState extends State<ParkTransfer> {
       _rightSelected.clear();
     }
     setState(() {});
+    _syncToBindable();
     widget._effectiveOnChanged?.call(_targetKeys.toList(), dir);
   }
 
   @override
   void dispose() {
+    _bindable?.removeListener(_onBindableChanged);
     _leftController.dispose();
     _rightController.dispose();
     super.dispose();

@@ -1,8 +1,22 @@
+import 'dart:math' as math;
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_colors.dart';
+import '../../theme/tokens/park_typography.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
+
+/// 级联选择器展示模式。
+enum ParkCascadingMode {
+  /// 滚轮模式（每级一个滚轮）。
+  wheel,
+
+  /// 列表模式（面包屑 + 层级列表）。
+  list,
+}
 
 /// 级联选项节点（树形结构）
 class ParkCascaderOption {
@@ -27,6 +41,28 @@ class ParkCascaderOption {
 
   /// 是否为叶子节点
   bool get isLeaf => children == null || children!.isEmpty;
+}
+
+/// 泛型级联节点（供 [ParkPicker.showCascading] 使用）
+class ParkCascadingNode<T> {
+  final String label;
+  final T value;
+  final List<ParkCascadingNode<T>>? children;
+
+  const ParkCascadingNode({
+    required this.label,
+    required this.value,
+    this.children,
+  });
+
+  bool get isLeaf => children == null || children!.isEmpty;
+
+  /// 转换为 [ParkCascaderOption] 树
+  ParkCascaderOption toOption() => ParkCascaderOption(
+        label: label,
+        value: value.toString(),
+        children: children?.map((c) => c.toOption()).toList(),
+      );
 }
 
 /// 级联选择器展开子级触发方式
@@ -288,6 +324,34 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
     return labels;
   }
 
+  /// 弹出级联选择器底部面板（供 [ParkPicker.showCascading] 复用）
+  static Future<List<String>?> showSheet(
+    BuildContext context, {
+    required List<ParkCascaderOption> options,
+    String? title,
+    ParkCascadingMode mode = ParkCascadingMode.list,
+  }) {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final l10n = ParkLocalizations.of(context);
+    return showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return _CascaderSheet(
+          options: options,
+          selectedPath: const [],
+          park: park,
+          emptyText: l10n.noData,
+          title: title,
+          mode: mode,
+          autoDrillDown: true,
+        );
+      },
+    );
+  }
+
   static void _showSheet(_ParkCascaderState state) async {
     final widget = state.widget;
     final context = state.context;
@@ -343,22 +407,28 @@ class _CascaderSheet extends StatefulWidget {
   final List<String> selectedPath;
   final ParkThemeData park;
   final String emptyText;
+  final String? title;
+  final ParkCascadingMode mode;
   final bool searchable;
   final bool changeOnSelect;
   final ParkCascaderExpandTrigger expandTrigger;
   final bool showSearch;
   final bool multiple;
+  final bool autoDrillDown;
 
   const _CascaderSheet({
     required this.options,
     required this.selectedPath,
     required this.park,
     required this.emptyText,
+    this.title,
+    this.mode = ParkCascadingMode.list,
     this.searchable = false,
     this.changeOnSelect = false,
     this.expandTrigger = ParkCascaderExpandTrigger.click,
     this.showSearch = false,
     this.multiple = false,
+    this.autoDrillDown = false,
   });
 
   @override
@@ -385,8 +455,27 @@ class _CascaderSheetState extends State<_CascaderSheet> {
   void initState() {
     super.initState();
     _tempPath = List<String>.from(widget.selectedPath);
-    // 定位到最后一个有子级的层级
-    _currentLevel = _tempPath.isEmpty ? 0 : _tempPath.length - 1;
+    // autoDrillDown（showCascading 路径）且无初始路径时自动下钻：
+    // 每级选中第一个可用选项直到叶子，使面板打开即展示"默认选中项的子级"。
+    if (widget.autoDrillDown && _tempPath.isEmpty && widget.options.isNotEmpty) {
+      var current = widget.options;
+      while (current.isNotEmpty) {
+        final first = current
+            .where((ParkCascaderOption o) => !o.disabled)
+            .firstOrNull ?? current.first;
+        _tempPath.add(first.value);
+        if (first.isLeaf ||
+            first.children == null ||
+            first.children!.isEmpty) {
+          break;
+        }
+        current = first.children!;
+      }
+    }
+    // 定位层级：autoDrillDown 停在最深非叶子层级（显示其子级）；
+    // 组件路径（ParkCascader widget）从第一级开始，便于用户浏览全部选项。
+    _currentLevel =
+        widget.autoDrillDown && _tempPath.isNotEmpty ? _tempPath.length - 1 : 0;
 
     if (widget.multiple) {
       _selectedPaths = Set<String>.from(widget.selectedPath);
@@ -702,6 +791,20 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                       ),
                     ),
                   ),
+                  if (widget.title != null)
+                    Expanded(
+                      child: Text(
+                        widget.title!,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: typo.sizeBody,
+                          fontWeight: typo.weightMedium,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
                   GestureDetector(
                     onTap: _canConfirm
                         ? () {
@@ -766,6 +869,9 @@ class _CascaderSheetState extends State<_CascaderSheet> {
             ] else if (widget.searchable && isSearching && !widget.showSearch) ...[
               // 旧 searchable 搜索结果
               Flexible(child: _buildSearchResults(park, searchResults)),
+            ] else if (widget.mode == ParkCascadingMode.wheel) ...[
+              // wheel 模式：每级一个滚轮，横向并排
+              Flexible(child: _buildWheel(park)),
             ] else ...[
               // 层级面包屑导航
               SingleChildScrollView(
@@ -957,6 +1063,96 @@ class _CascaderSheetState extends State<_CascaderSheet> {
 
         return result;
       },
+    );
+  }
+
+  /// wheel 模式：每一级一个 [CupertinoPicker] 滚轮，横向并排。
+  ///
+  /// 切换上一级选项会重置后续层级的路径（联动）。
+  Widget _buildWheel(ParkThemeData park) {
+    final colors = park.colors;
+    final typo = park.typography;
+    const double itemExtent = 36;
+    const double wheelHeight = 200;
+
+    // 已展开的层级数 = 当前路径深度（至少 1 级）
+    final int levelCount = math.max(1, _tempPath.length);
+
+    return SizedBox(
+      height: wheelHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (int level = 0; level < levelCount; level++)
+            Expanded(
+              child: _buildWheelColumn(park, colors, typo, level, itemExtent),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWheelColumn(
+    ParkThemeData park,
+    ParkColors colors,
+    ParkTypography typo,
+    int level,
+    double itemExtent,
+  ) {
+    final List<ParkCascaderOption> options = _getOptionsAtLevel(level);
+    if (options.isEmpty) return const SizedBox.shrink();
+
+    final int initialIndex = _tempPath.length > level
+        ? options.indexWhere((o) => o.value == _tempPath[level])
+        : 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(
+          child: CupertinoPicker(
+            key: ValueKey<String>('cascading_wheel_$level'),
+            scrollController: FixedExtentScrollController(
+              initialItem: initialIndex.clamp(0, options.length - 1),
+            ),
+            itemExtent: itemExtent,
+            squeeze: 1.0,
+            diameterRatio: 1.2,
+            backgroundColor: Colors.transparent,
+            onSelectedItemChanged: (int index) {
+              if (!mounted) return;
+              if (index < 0 || index >= options.length) return;
+              final ParkCascaderOption option = options[index];
+              setState(() {
+                // 清空当前层级及之后的选择，重新选择
+                while (_tempPath.length > level) {
+                  _tempPath.removeLast();
+                }
+                _tempPath.add(option.value);
+                // 有子级则进入下一级，否则停留在叶子
+                _currentLevel = option.isLeaf
+                    ? level
+                    : level + 1;
+              });
+            },
+            children: options.map((ParkCascaderOption o) {
+              return Center(
+                child: Text(
+                  o.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: typo.sizeBody,
+                    color: o.disabled
+                        ? colors.textDisabled
+                        : colors.textPrimary,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 

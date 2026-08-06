@@ -213,8 +213,8 @@ void main() {
   });
 
   group('ParkCard - enums', () {
-    test('ParkCardVariant has 3 values', () {
-      expect(ParkCardVariant.values.length, 3);
+    test('ParkCardVariant has 4 values', () {
+      expect(ParkCardVariant.values.length, 4);
     });
 
     test('ParkCardSize has 2 values', () {

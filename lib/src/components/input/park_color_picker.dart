@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../l10n/park_localizations.dart';
+import '../../binding/park_binding_service.dart';
+import '../../binding/park_binding_form_scope.dart';
+import '../../binding/park_bindable.dart';
 
 // ============================================================================
 // ParkColorFormat — 颜色展示/输入格式
@@ -357,6 +360,12 @@ class ParkColorPicker extends StatefulWidget {
   /// 当前颜色展示/输入格式（默认 [ParkColorFormat.hex]）。
   final ParkColorFormat format;
 
+  /// 绑定键（点号分隔的路径）。
+  final String? bindKey;
+
+  /// 绑定服务实例。
+  final ParkBindingService? bindingService;
+
   /// 创建 [ParkColorPicker]。
   const ParkColorPicker({
     super.key,
@@ -366,6 +375,8 @@ class ParkColorPicker extends StatefulWidget {
     this.enableCustom = true,
     this.showFormatSwitch = false,
     this.format = ParkColorFormat.hex,
+    this.bindKey,
+    this.bindingService,
   });
 
   @override
@@ -375,6 +386,7 @@ class ParkColorPicker extends StatefulWidget {
 class _ParkColorPickerState extends State<ParkColorPicker> {
   late Color _selected;
   late ParkColorFormat _format;
+  ParkBindable<Color>? _bindable;
 
   // HSV 面板状态
   late double _hue;
@@ -410,6 +422,49 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
     _selected = widget.value ?? Colors.blue;
     _format = widget.format;
     _syncHsvFromColor(_selected);
+    _tryLinkBinding();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tryLinkBinding();
+  }
+
+  void _tryLinkBinding() {
+    final String? key = widget.bindKey;
+    if (key == null || _bindable != null) return;
+    final ParkBindingService? service = widget.bindingService ??
+        ParkBindingFormScope.of(context)?.service;
+    if (service == null) return;
+
+    _bindable = service.bind<Color>(key);
+    if (_bindable!.value != null) {
+      _selected = _bindable!.value;
+      _syncHsvFromColor(_selected);
+    }
+    _bindable!.addListener(_onBindableChanged);
+  }
+
+  /// model → UI 方向同步。
+  void _onBindableChanged() {
+    if (!mounted || _bindable == null) return;
+    final Color? value = _bindable!.value;
+    if (value != null && value != _selected) {
+      setState(() {
+        _selected = value!;
+        _syncHsvFromColor(_selected);
+      });
+    }
+  }
+
+  /// UI → model 方向同步。
+  void _syncToBindable(Color color) {
+    final ParkBindable<Color>? bindable = _bindable;
+    if (bindable != null && bindable.value != color) {
+      // ignore: avoid_dynamic_calls
+      (bindable as dynamic).value = color;
+    }
   }
 
   @override
@@ -422,6 +477,18 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
     if (widget.format != oldWidget.format) {
       _format = widget.format;
     }
+    if (widget.bindKey != oldWidget.bindKey ||
+        widget.bindingService != oldWidget.bindingService) {
+      _bindable?.removeListener(_onBindableChanged);
+      _bindable = null;
+      _tryLinkBinding();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bindable?.removeListener(_onBindableChanged);
+    super.dispose();
   }
 
   /// 从 [color] 同步 HSV 状态变量。
@@ -448,6 +515,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
       _selected = color;
       _syncHsvFromColor(color);
     });
+    _syncToBindable(color);
     widget.onChanged?.call(color);
   }
 
@@ -459,6 +527,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
       _value = hsv.value;
       _selected = color;
     });
+    _syncToBindable(color);
     widget.onChanged?.call(color);
   }
 

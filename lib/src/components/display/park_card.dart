@@ -7,7 +7,7 @@ import '../../theme/tokens/park_spacing.dart';
 import 'park_skeleton.dart';
 
 /// ParkCard 样式变体
-enum ParkCardVariant { outlined, ghost, inner }
+enum ParkCardVariant { outlined, ghost, inner, preview }
 
 /// ParkCard 尺寸预设
 enum ParkCardSize { small, defaultSize }
@@ -95,6 +95,9 @@ class ParkCard extends StatefulWidget {
   /// 是否显示左侧彩色指示条（显示在标题左侧，icon 为空时有效）
   final bool showIndicator;
 
+  /// 自定义边框颜色（覆盖主题默认边框色）
+  final Color? borderColor;
+
   const ParkCard({
     super.key,
     this.title,
@@ -118,6 +121,7 @@ class ParkCard extends StatefulWidget {
     this.description,
     this.icon,
     this.showIndicator = false,
+    this.borderColor,
   });
 
   @override
@@ -143,6 +147,11 @@ class _ParkCardState extends State<ParkCard> {
       bool useGlass,
     })
     surface = _resolveSurface(park);
+
+    // Determine effective border: borderColor overrides theme border when set.
+    final Border? effectiveBorder = widget.borderColor != null && surface.border != null
+        ? Border.all(color: widget.borderColor!, width: 1)
+        : surface.border;
 
     final BorderRadius cardRadius = widget.borderRadius ?? radius.brMd;
     final EdgeInsetsGeometry defaultPadding = widget.size == ParkCardSize.small
@@ -325,7 +334,7 @@ class _ParkCardState extends State<ParkCard> {
                     decoration: BoxDecoration(
                       color: surface.color,
                       borderRadius: cardRadius,
-                      border: surface.border,
+                      border: effectiveBorder,
                     ),
                     child: cardContent,
                   ),
@@ -339,7 +348,7 @@ class _ParkCardState extends State<ParkCard> {
               decoration: BoxDecoration(
                 color: surface.color,
                 borderRadius: cardRadius,
-                border: surface.border,
+                border: effectiveBorder,
                 boxShadow: surface.shadows,
               ),
               child: cardContent,

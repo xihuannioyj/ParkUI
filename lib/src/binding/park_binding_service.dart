@@ -170,13 +170,28 @@ class ParkBindingService {
   }
 
   /// 安全地解析绑定初始值，避免原始类型不匹配导致的类型转换异常。
+  ///
+  /// 当模型中没有该路径且未提供 [defaultValue] 时，返回类型空值兜底
+  /// （String→''、int→0、double→0.0、bool→false），而不是对非空类型
+  /// 执行 `null as T`（会抛 `type 'Null' is not a subtype of type 'T'`）。
+  /// 数值类型（int↔double）之间自动转换。
   T _resolveBoundValue<T>(dynamic raw, T? defaultValue) {
     final dynamic candidate = raw ?? defaultValue;
     if (candidate == null) {
-      return candidate as T;
+      if (T == String) return '' as T;
+      if (T == int) return 0 as T;
+      if (T == double) return 0.0 as T;
+      if (T == bool) return false as T;
+      return null as T;
     }
     if (T == String && candidate is! String) {
       return candidate.toString() as T;
+    }
+    if (T == double && candidate is int) {
+      return (candidate as num).toDouble() as T;
+    }
+    if (T == int && candidate is double) {
+      return (candidate as num).toInt() as T;
     }
     return candidate as T;
   }
@@ -223,6 +238,16 @@ class ParkBindingService {
       return bindable.value;
     }
     final dynamic result = ParkBindingPath.resolve(path, _model);
+    if (result == null) return null;
+    if (T == double && result is int) {
+      return (result as num).toDouble() as T;
+    }
+    if (T == int && result is double) {
+      return (result as num).toInt() as T;
+    }
+    if (T == String && result is! String) {
+      return result.toString() as T;
+    }
     return result as T?;
   }
 

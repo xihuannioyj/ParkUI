@@ -255,6 +255,12 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 200),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    // 受控模式 open=true 从初始即显示。
+    if (widget.open) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showTour();
+      });
+    }
   }
 
   @override
@@ -404,26 +410,26 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
       opacity: _fadeAnim,
       child: Semantics(
         label: l10n.tourSemanticsLabel,
-        child: Stack(
-        children: [
-          // === 遮罩层 ===
-          if (widget.mask && step.mask != false)
-            GestureDetector(
-              onTap: widget.closeOnMaskTap ? _close : null,
-              child: _ParkTourMask(
-                targetKey: step.target,
-                gap: step.gap ?? widget.gap,
-                borderRadius: step.borderRadius ?? widget.highlightRadius,
-                maskColor: widget.maskColor ?? park.colors.overlay,
-              ),
-            )
-          else
-            // 无遮罩时的拦截层
-            if (widget.closeOnMaskTap)
-              GestureDetector(
-                onTap: _close,
-                child: const SizedBox.expand(),
-              ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              // === 遮罩层 ===
+              if (widget.mask && step.mask != false)
+                _ParkTourMask(
+                  targetKey: step.target,
+                  gap: step.gap ?? widget.gap,
+                  borderRadius: step.borderRadius ?? widget.highlightRadius,
+                  maskColor: widget.maskColor ?? park.colors.overlay,
+                  onTap: widget.closeOnMaskTap ? _close : null,
+                )
+              else
+                // 无遮罩时的拦截层
+                if (widget.closeOnMaskTap)
+                  GestureDetector(
+                    onTap: _close,
+                    child: const SizedBox.expand(),
+                  ),
 
           // === 气泡 ===
           if (step.target != null)
@@ -468,7 +474,8 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
               stepIndicatorBuilder: widget.stepIndicatorBuilder,
             ),
         ],
-      ),
+          ),
+        ),
       ),
     );
   }
@@ -483,24 +490,32 @@ class _ParkTourMask extends StatelessWidget {
   final EdgeInsets gap;
   final double borderRadius;
   final Color maskColor;
+  final VoidCallback? onTap;
 
   const _ParkTourMask({
     this.targetKey,
     required this.gap,
     required this.borderRadius,
     required this.maskColor,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Positioned 必须是 Stack 的直接子级：将 GestureDetector 放在
+    // Positioned.fill 内部，而不是把 Positioned 包在 GestureDetector 里。
     return Positioned.fill(
-      child: ClipPath(
-        clipper: _TourMaskClipper(
-          targetKey: targetKey,
-          gap: gap,
-          borderRadius: borderRadius,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ClipPath(
+          clipper: _TourMaskClipper(
+            targetKey: targetKey,
+            gap: gap,
+            borderRadius: borderRadius,
+          ),
+          child: Container(color: maskColor),
         ),
-        child: Container(color: maskColor),
       ),
     );
   }
@@ -701,25 +716,32 @@ class _PositionedBubble extends StatelessWidget {
     return Positioned(
       left: bubblePos.dx,
       top: bubblePos.dy,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showArrow && _arrowOnTop(arrowDir))
-            _buildArrow(arrowDir),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (showArrow && _arrowOnRight(arrowDir))
-                _buildArrow(arrowDir),
-              bubble,
-              if (showArrow && _arrowOnLeft(arrowDir))
-                _buildArrow(arrowDir),
-            ],
-          ),
-          if (showArrow && _arrowOnBottom(arrowDir))
-            _buildArrow(arrowDir),
-        ],
+      child: ConstrainedBox(
+        // Positioned 未指定宽度时 child 约束为无界，必须限制在屏幕内，
+        // 否则内部 Row/Column 会无限扩展导致 RenderFlex overflow。
+        constraints: BoxConstraints(
+          maxWidth: (screenSize.width - 16).clamp(0.0, double.infinity),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showArrow && _arrowOnTop(arrowDir))
+              _buildArrow(arrowDir),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showArrow && _arrowOnRight(arrowDir))
+                  _buildArrow(arrowDir),
+                bubble,
+                if (showArrow && _arrowOnLeft(arrowDir))
+                  _buildArrow(arrowDir),
+              ],
+            ),
+            if (showArrow && _arrowOnBottom(arrowDir))
+              _buildArrow(arrowDir),
+          ],
+        ),
       ),
     );
   }
@@ -1032,20 +1054,24 @@ class _TourBubbleContent extends StatelessWidget {
                   top: BorderSide(color: park.colors.divider),
                 ),
               ),
-              child: Row(
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: park.spacing.xs,
+                runSpacing: park.spacing.xs,
                 children: [
                   // 步数指示器
                   if (stepIndicatorBuilder != null)
                     stepIndicatorBuilder!(index, total)
                   else
-                    Text(
-                      l10n.stepIndicatorFormat(index, total),
-                      style: park.typography.caption.copyWith(
-                        color: park.colors.textPlaceholder,
+                    Padding(
+                      padding: EdgeInsets.only(right: park.spacing.xs),
+                      child: Text(
+                        l10n.stepIndicatorFormat(index, total),
+                        style: park.typography.caption.copyWith(
+                          color: park.colors.textPlaceholder,
+                        ),
                       ),
                     ),
-
-                  const Spacer(),
 
                   // 跳过按钮（非最后一步）
                   if (!isLast)

@@ -240,8 +240,8 @@ class ParkColors {
       // 文字（暗色模式）
       textPrimary: Color(0xFFFFFFFF),
       textSecondary: Color(0xFFADB8C9), // 浅 slate
-      textPlaceholder: Color(0xFF7A8AA0),
-      textDisabled: Color(0xFF7A8A9E), // WCAG AA ≥4.5:1 on #0F2438
+      textPlaceholder: Color(0xFF7C8CA2),
+      textDisabled: Color(0xFF7B8BA0), // WCAG AA ≥4.5:1 on #0F2438
       textOnBrand: Color(0xFFFFFFFF),
 
       // 边框 & 分割线（暗色模式）

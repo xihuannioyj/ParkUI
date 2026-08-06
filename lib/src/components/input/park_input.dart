@@ -112,7 +112,12 @@ class ParkInput extends FormField<String> implements ParkBindableWidget {
     this.style,
     this.onCompositionStart,
     this.onCompositionEnd,
-  }) : _extController = controller,
+    this.actionButton,
+  }) : assert(
+         searchButton == null || actionButton == null,
+         'ParkInput: searchButton 与 actionButton 不能同时设置。',
+       ),
+       _extController = controller,
        super(
          initialValue: controller?.text ?? initialValue ?? '',
          builder: (FormFieldState<String> field) {
@@ -134,6 +139,9 @@ class ParkInput extends FormField<String> implements ParkBindableWidget {
 
   /// 后置 Widget（优先级低于 [suffixIcon]，可放任意 Widget）
   final Widget? suffix;
+
+  /// 输入框内右侧操作按钮（如发送验证码）
+  final Widget? actionButton;
 
   final bool clearable;
   final bool obscureText;
@@ -585,6 +593,10 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
       suffixWidgets.add(inputWidget.suffix!);
     }
 
+    if (inputWidget.actionButton != null) {
+      suffixWidgets.add(inputWidget.actionButton!);
+    }
+
     final inputField = TextField(
       controller: state._controller,
       focusNode: state._focusNode,
@@ -932,6 +944,48 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
                 }
               : null,
           child: childContent,
+        ),
+      ),
+    );
+  }
+}
+
+/// 输入框操作按钮样式
+enum ParkInputActionButtonStyle { text, filled }
+
+/// 输入框操作按钮（如"发送验证码"）
+///
+/// 放置在 [ParkInput.actionButton] 中，渲染为文字按钮。
+class ParkInputActionButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final ParkInputActionButtonStyle? style;
+
+  const ParkInputActionButton({
+    super.key,
+    required this.child,
+    this.onPressed,
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: park.radius.brSm,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: park.spacing.sm),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            fontSize: park.typography.sizeBodySmall,
+            color: onPressed != null
+                ? park.colors.brand
+                : park.colors.textDisabled,
+            fontWeight: park.typography.weightMedium,
+          ),
+          child: child,
         ),
       ),
     );

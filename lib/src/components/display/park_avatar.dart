@@ -5,7 +5,7 @@ import '../../theme/park_theme_data.dart';
 enum ParkAvatarSize { small, medium, large, xlarge }
 
 /// Avatar shape.
-enum ParkAvatarShape { circle, square }
+enum ParkAvatarShape { circle, rounded, square }
 
 /// Avatar online status.
 enum ParkAvatarStatus { online, offline, busy, away }

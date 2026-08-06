@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../l10n/park_localizations.dart';
+import '../../binding/park_binding_service.dart';
+import '../../binding/park_binding_form_scope.dart';
+import '../../binding/park_bindable.dart';
 
 /// 时间选择器组件
 ///
@@ -34,6 +37,12 @@ class ParkTimePicker extends StatefulWidget {
   /// 标签文字。
   final String? label;
 
+  /// 绑定键（点号分隔的路径）。
+  final String? bindKey;
+
+  /// 绑定服务实例。
+  final ParkBindingService? bindingService;
+
   /// 创建 [ParkTimePicker]。
   const ParkTimePicker({
     super.key,
@@ -43,6 +52,8 @@ class ParkTimePicker extends StatefulWidget {
     this.showSeconds = false,
     this.disabled = false,
     this.label,
+    this.bindKey,
+    this.bindingService,
   });
 
   @override
@@ -52,11 +63,51 @@ class ParkTimePicker extends StatefulWidget {
 class _ParkTimePickerState extends State<ParkTimePicker> {
   late TimeOfDay? _selected;
   int _second = 0;
+  ParkBindable<TimeOfDay>? _bindable;
 
   @override
   void initState() {
     super.initState();
     _selected = widget.value;
+    _tryLinkBinding();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tryLinkBinding();
+  }
+
+  void _tryLinkBinding() {
+    final String? key = widget.bindKey;
+    if (key == null || _bindable != null) return;
+    final ParkBindingService? service = widget.bindingService ??
+        ParkBindingFormScope.of(context)?.service;
+    if (service == null) return;
+
+    _bindable = service.bind<TimeOfDay>(key);
+    if (_bindable!.value != null) {
+      _selected = _bindable!.value;
+    }
+    _bindable!.addListener(_onBindableChanged);
+  }
+
+  /// model → UI 方向同步。
+  void _onBindableChanged() {
+    if (!mounted || _bindable == null) return;
+    final TimeOfDay? value = _bindable!.value;
+    if (value != _selected) {
+      setState(() => _selected = value);
+    }
+  }
+
+  /// UI → model 方向同步。
+  void _syncToBindable(TimeOfDay? value) {
+    final ParkBindable<TimeOfDay>? bindable = _bindable;
+    if (bindable != null && bindable.value != value) {
+      // ignore: avoid_dynamic_calls
+      (bindable as dynamic).value = value;
+    }
   }
 
   @override
@@ -68,6 +119,12 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
       if (!widget.showSeconds) {
         _second = 0;
       }
+    }
+    if (widget.bindKey != oldWidget.bindKey ||
+        widget.bindingService != oldWidget.bindingService) {
+      _bindable?.removeListener(_onBindableChanged);
+      _bindable = null;
+      _tryLinkBinding();
     }
   }
 
@@ -116,6 +173,7 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
       );
       if (time != null && mounted) {
         setState(() => _selected = time);
+        _syncToBindable(time);
         widget.onChanged?.call(time);
       }
     }
@@ -143,7 +201,11 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text(widget.label ?? ParkLocalizations.of(context).chooseTimeText),
+              // 固定宽高阻断 AlertDialog 的 intrinsic 测量下探到
+              // CupertinoTimerPicker 内部的 LayoutBuilder（否则报
+              // "LayoutBuilder does not support returning intrinsic dimensions"）。
               content: SizedBox(
+                width: 320,
                 height: 200,
                 child: CupertinoTimerPicker(
                   mode: CupertinoTimerPickerMode.hms,
@@ -178,8 +240,15 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
         _selected = time;
         _second = seconds;
       });
+      _syncToBindable(time);
       widget.onChanged?.call(time);
     }
+  }
+
+  @override
+  void dispose() {
+    _bindable?.removeListener(_onBindableChanged);
+    super.dispose();
   }
 
   @override

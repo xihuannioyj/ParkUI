@@ -3,6 +3,8 @@ import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../../binding/park_binding_form_scope.dart';
+import '../../binding/park_bindable.dart';
 import '../../l10n/park_localizations.dart';
 
 // ============================================================================
@@ -308,6 +310,8 @@ class ParkCheckboxGroup extends StatefulWidget {
     this.layout = ParkCheckboxGroupLayout.vertical,
     this.disabled = false,
     this.selectAll = false,
+    this.bindKey,
+    this.bindingService,
   });
 
   /// 选项列表（富模型，单一真源 API）。
@@ -330,12 +334,19 @@ class ParkCheckboxGroup extends StatefulWidget {
   /// 是否在顶部显示"全选"复选框
   final bool selectAll;
 
+  /// 绑定键（点号分隔的路径）。
+  final String? bindKey;
+
+  /// 绑定服务实例。
+  final ParkBindingService? bindingService;
+
   @override
   State<ParkCheckboxGroup> createState() => _ParkCheckboxGroupState();
 }
 
 class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   late List<String> _selected;
+  ParkBindable<List<String>>? _bindable;
 
   /// 统一解析后的选项列表
   List<ParkCheckboxOption> get _resolvedOptions => widget.options;
@@ -344,6 +355,50 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   void initState() {
     super.initState();
     _selected = List<String>.from(widget.value);
+    _tryLinkBinding();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tryLinkBinding();
+  }
+
+  void _tryLinkBinding() {
+    final String? key = widget.bindKey;
+    if (key == null || _bindable != null) return;
+    final ParkBindingService? service = widget.bindingService ??
+        ParkBindingFormScope.of(context)?.service;
+    if (service == null) return;
+
+    _bindable = service.bind<List<String>>(key);
+    final List<String> initial = _bindable!.value;
+    if (initial.isNotEmpty) {
+      _selected = List<String>.from(initial);
+    }
+    _bindable!.addListener(_onBindableChanged);
+  }
+
+  /// model → UI 方向同步。
+  void _onBindableChanged() {
+    if (!mounted || _bindable == null) return;
+    final List<String> value = _bindable!.value;
+    if (value.length != _selected.length ||
+        !Set<String>.from(value).containsAll(_selected)) {
+      setState(() => _selected = List<String>.from(value));
+    }
+  }
+
+  /// UI → model 方向同步。
+  void _syncToBindable() {
+    final ParkBindable<List<String>>? bindable = _bindable;
+    if (bindable == null) return;
+    final List<String> value = List<String>.from(_selected);
+    if (bindable.value.length != value.length ||
+        !Set<String>.from(bindable.value).containsAll(value)) {
+      // ignore: avoid_dynamic_calls
+      (bindable as dynamic).value = value;
+    }
   }
 
   @override
@@ -352,6 +407,18 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
     if (oldWidget.value != widget.value) {
       _selected = List<String>.from(widget.value);
     }
+    if (widget.bindKey != oldWidget.bindKey ||
+        widget.bindingService != oldWidget.bindingService) {
+      _bindable?.removeListener(_onBindableChanged);
+      _bindable = null;
+      _tryLinkBinding();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bindable?.removeListener(_onBindableChanged);
+    super.dispose();
   }
 
   void _toggle(ParkCheckboxOption option) {
@@ -392,6 +459,7 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
     final List<ParkCheckboxOption> selected = _resolvedOptions
         .where((ParkCheckboxOption o) => _selected.contains(o.value))
         .toList();
+    _syncToBindable();
     widget.onChanged?.call(List<String>.from(_selected), selected);
   }
 
