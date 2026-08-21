@@ -119,7 +119,8 @@ class _ParkCellState extends State<ParkCell> {
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: park.typography.sizeBody,
-        fontWeight: park.typography.weightMedium,
+        // label 不加粗（三档 12/13/14 规范）
+        fontWeight: park.typography.weightRegular,
         color: park.colors.textPrimary,
       ),
     );
@@ -230,6 +231,8 @@ class _ParkCellState extends State<ParkCell> {
             widget.note!,
             style: TextStyle(
               fontSize: park.typography.sizeBodySmall,
+              // value 加粗（label/value 规范：值加粗）
+              fontWeight: park.typography.weightBold,
               color: isDisabled ? park.colors.textDisabled : park.colors.textSecondary,
             ),
           ),

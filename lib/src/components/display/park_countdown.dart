@@ -194,20 +194,30 @@ class _ParkCountdownState extends State<ParkCountdown>
         _shimmerController = null;
       }
     }
-    if (oldWidget.remaining != widget.remaining) {
-      if (oldWidget.controller != widget.controller) {
-        _controller.removeListener(_onControllerUpdate);
-        if (_ownsController) {
-          _controller.pause();
-          _controller.dispose();
-          _controller = ParkCountdownController(remaining: widget.remaining);
-          _controller.addListener(_onControllerUpdate);
-          _controller.start(widget.onFinish);
-        } else {
-          _controller = widget.controller!;
-          _controller.addListener(_onControllerUpdate);
-        }
+    if (oldWidget.controller != widget.controller) {
+      // 外部控制器被替换：迁移监听（外部 → 内部 的切换也安全处理）。
+      _controller.removeListener(_onControllerUpdate);
+      if (_ownsController || widget.controller == null) {
+        _controller.pause();
+        _controller.dispose();
+        _ownsController = true;
+        _controller = ParkCountdownController(remaining: widget.remaining);
+      } else {
+        _controller = widget.controller!;
       }
+      _controller.addListener(_onControllerUpdate);
+      _controller.start(widget.onFinish);
+    } else if (oldWidget.remaining != widget.remaining && _ownsController) {
+      // 内部控制器 + remaining 变化：重建控制器使新值生效
+      // （原实现把此分支嵌套在 controller 变化判断里，恒不可达 → 死代码）。
+      _controller.removeListener(_onControllerUpdate);
+      _controller.pause();
+      _controller.dispose();
+      _controller = ParkCountdownController(remaining: widget.remaining);
+      _controller.addListener(_onControllerUpdate);
+      _controller.start(widget.onFinish);
+    }
+    if (oldWidget.remaining != widget.remaining) {
       _displayRemaining = _controller.remaining;
     }
   }
@@ -223,9 +233,13 @@ class _ParkCountdownState extends State<ParkCountdown>
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
 
-    final hours = _displayRemaining.inHours;
-    final minutes = _displayRemaining.inMinutes % 60;
-    final seconds = _displayRemaining.inSeconds % 60;
+    // 边界防御：负初始值在 Dart 取模下会显示错误值（如 00:00:59），钳制到零。
+    final Duration display = _displayRemaining.isNegative
+        ? Duration.zero
+        : _displayRemaining;
+    final hours = display.inHours;
+    final minutes = display.inMinutes % 60;
+    final seconds = display.inSeconds % 60;
 
     final sizeConfig = _resolveSize(park);
 
@@ -237,7 +251,7 @@ class _ParkCountdownState extends State<ParkCountdown>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // 时
-        if (hours > 0 || _displayRemaining.inHours > 0) ...[
+        if (hours > 0 || display.inHours > 0) ...[
           _buildDigitBox(
             _pad(hours),
             sizeConfig,

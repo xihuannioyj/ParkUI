@@ -132,9 +132,10 @@ class _ParkWatermarkState extends State<ParkWatermark> {
     if (widget.image != null) {
       return Stack(
         children: [
-          // Hidden render of the image widget for capture via RepaintBoundary.
-          Opacity(
-            opacity: 0,
+          // 隐藏渲染待捕获的图片：不能用 Opacity(0)（不绘制 → toImage 抛
+          // !debugNeedsPaint 断言），改为平移到视口外——仍参与绘制但不可见。
+          Transform.translate(
+            offset: const Offset(-10000, 0),
             child: RepaintBoundary(
               key: _imageKey,
               child: widget.image,
@@ -222,10 +223,15 @@ class _WatermarkPainter extends CustomPainter {
     final halfW = textPainter.width / 2;
     final halfH = textPainter.height / 2;
 
-    for (double y = -halfH; y < size.height + gapY; y += gapY) {
-      for (double x = -halfW; x < size.width + gapX; x += gapX) {
+    // 边界防御：gapX/gapY <= 0 时循环永不前进 → paint 死循环卡死 UI，
+    // 钳制到最小间距。
+    final double effGapX = gapX > 0 ? gapX : 16.0;
+    final double effGapY = gapY > 0 ? gapY : 16.0;
+
+    for (double y = -halfH; y < size.height + effGapY; y += effGapY) {
+      for (double x = -halfW; x < size.width + effGapX; x += effGapX) {
         canvas.save();
-        canvas.translate(x + gapX / 2, y + gapY / 2);
+        canvas.translate(x + effGapX / 2, y + effGapY / 2);
         canvas.rotate(radians);
         textPainter.paint(canvas, Offset(-halfW, -halfH));
         canvas.restore();
@@ -236,7 +242,12 @@ class _WatermarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_WatermarkPainter old) =>
-      text != old.text || color != old.color || fontSize != old.fontSize || rotate != old.rotate;
+      text != old.text ||
+      color != old.color ||
+      fontSize != old.fontSize ||
+      rotate != old.rotate ||
+      gapX != old.gapX ||
+      gapY != old.gapY;
 }
 
 /// Paints tiled image watermark on the canvas using [canvas.drawImageRect].
@@ -273,14 +284,17 @@ class _ImageWatermarkPainter extends CustomPainter {
 
     final stepX = rotatedW + gapX;
     final stepY = rotatedH + gapY;
+    // 边界防御：stepX/stepY <= 0（gapX/gapY 过负）时平铺循环永不前进 → 死循环。
+    final double effStepX = stepX > 0 ? stepX : rotatedW + 16.0;
+    final double effStepY = stepY > 0 ? stepY : rotatedH + 16.0;
 
     final srcRect = Rect.fromLTWH(0, 0, imgW, imgH);
 
     // Tile across the canvas with extra margin for rotation overflow.
-    for (double y = -rotatedH; y < size.height + stepY; y += stepY) {
-      for (double x = -rotatedW; x < size.width + stepX; x += stepX) {
+    for (double y = -rotatedH; y < size.height + effStepY; y += effStepY) {
+      for (double x = -rotatedW; x < size.width + effStepX; x += effStepX) {
         canvas.save();
-        canvas.translate(x + stepX / 2, y + stepY / 2);
+        canvas.translate(x + effStepX / 2, y + effStepY / 2);
         canvas.rotate(radians);
         final dstRect = Rect.fromLTWH(-imgW / 2, -imgH / 2, imgW, imgH);
         canvas.drawImageRect(image, srcRect, dstRect, Paint());

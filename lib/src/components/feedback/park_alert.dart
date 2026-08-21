@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
+/// 警告提示尺寸。
+enum ParkAlertSize {
+  /// 小尺寸（紧凑内边距与字号）
+  small,
+
+  /// 中尺寸（默认）
+  medium,
+
+  /// 大尺寸
+  large,
+}
+
 /// 警告提示组件
 ///
 /// 展示带状态颜色的提示信息，支持成功/警告/错误/信息四种类型。
@@ -46,6 +58,9 @@ class ParkAlert extends StatelessWidget {
   /// 是否为无边框 banner 风格（默认 false）。
   final bool banner;
 
+  /// 尺寸（small / medium / large），控制内边距与字号。
+  final ParkAlertSize size;
+
   /// 创建 [ParkAlert]。
   const ParkAlert({
     super.key,
@@ -59,6 +74,7 @@ class ParkAlert extends StatelessWidget {
     this.onClose,
     this.showIcon = true,
     this.banner = false,
+    this.size = ParkAlertSize.medium,
   });
 
   @override
@@ -68,10 +84,22 @@ class ParkAlert extends StatelessWidget {
 
     final (Color bgColor, Color borderColor, Color iconColor, IconData defaultIcon) =
         _getTypeColors(park);
+    // size 生效：小/中/大档的内边距与标题字号
+    final double contentPadding = switch (size) {
+      ParkAlertSize.small => park.spacing.sm,
+      ParkAlertSize.medium =>
+        banner ? park.spacing.md : park.spacing.base,
+      ParkAlertSize.large => park.spacing.lg,
+    };
+    final double messageFontSize = switch (size) {
+      ParkAlertSize.small => park.typography.sizeCaption,
+      ParkAlertSize.medium => park.typography.sizeBodySmall,
+      ParkAlertSize.large => park.typography.sizeBody,
+    };
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(banner ? park.spacing.md : park.spacing.base),
+      padding: EdgeInsets.all(contentPadding),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: banner ? null : park.radius.brSm,
@@ -97,7 +125,7 @@ class ParkAlert extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      fontSize: park.typography.sizeBodySmall,
+                      fontSize: messageFontSize,
                       fontWeight: FontWeight.w600,
                       color: park.colors.textPrimary,
                     ),

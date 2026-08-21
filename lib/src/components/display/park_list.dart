@@ -167,6 +167,9 @@ class _ParkListState<T> extends State<ParkList<T>> {
 
     final maxScroll = _effectiveController.position.maxScrollExtent;
     final currentScroll = _effectiveController.position.pixels;
+    // 边界防御：内容不足一屏时 maxScrollExtent == 0，任意滚动都会满足差值，
+    // 反复触发 onLoadMore。
+    if (maxScroll <= 0) return;
     // 当滚动到距离底部 100px 内时触发加载更多
     if (maxScroll - currentScroll <= 100.0) {
       widget.onLoadMore!.call();

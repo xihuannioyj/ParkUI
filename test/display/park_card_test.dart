@@ -217,8 +217,8 @@ void main() {
       expect(ParkCardVariant.values.length, 4);
     });
 
-    test('ParkCardSize has 2 values', () {
-      expect(ParkCardSize.values.length, 2);
+    test('ParkCardSize has 3 values', () {
+      expect(ParkCardSize.values.length, 3);
     });
   });
 }

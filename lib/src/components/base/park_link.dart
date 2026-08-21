@@ -143,12 +143,13 @@ class ParkLink extends StatefulWidget {
     this.loading = false,
     this.visited = false,
     this.linkStyle = ParkLinkStyle.defaultStyle,
-    this.linkSize = ParkLinkSize.medium,
+    ParkLinkSize? size,
+    @Deprecated('使用 size 参数替代 linkSize') ParkLinkSize? linkSize,
     this.hoverColor,
     this.visitedColor,
     this.download = false,
     this.rel,
-  });
+  }) : linkSize = size ?? linkSize ?? ParkLinkSize.medium;
 
   @override
   State<ParkLink> createState() => _ParkLinkState();

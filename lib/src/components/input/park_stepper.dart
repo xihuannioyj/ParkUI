@@ -60,7 +60,11 @@ class ParkStepper extends FormField<int> implements ParkBindableWidget {
     super.validator,
     super.autovalidateMode,
     super.onSaved,
-  }) : super(
+  })  : // P1-2：step<=0 时步进无意义（同值回调风暴/方向反转），构造期拦截。
+        assert(step > 0, 'step must be greater than 0'),
+        assert(min == null || max == null || min! <= max!,
+            'min must be <= max'),
+        super(
           initialValue: value,
           builder: (FormFieldState<int> field) {
             final state = field as _ParkStepperState;
@@ -388,6 +392,13 @@ class _StepperButtonState extends State<_StepperButton> {
   void _startRepeat() {
     if (!widget.longPressEnabled || widget.onTap == null) return;
     _repeatTimer = Timer.periodic(const Duration(milliseconds: 120), (_) {
+      if (!mounted) return;
+      // P1-1：到边界后父组件把 onTap 置 null（按钮禁用），
+      // 此时停止重复，否则 onOverLimit 以 ~8Hz 无限重放。
+      if (widget.onTap == null) {
+        _stopRepeat();
+        return;
+      }
       widget.onLongPressTick?.call();
     });
   }

@@ -27,6 +27,12 @@ class ParkFormFieldExpressionEvaluator {
 
     final String expr = expression.trim();
 
+    // 支持 && / || / 括号组合。
+    if (expr.contains('&&') || expr.contains('||') || expr.contains('(')) {
+      return _evaluateLogical(expr, values);
+    }
+
+
     // 按运算符长度降序尝试匹配，避免 '>=' 被 '>' 抢先匹配。
     const List<String> operators = <String>[
       '!=', '==', '>=', '<=', '>', '<',
@@ -165,4 +171,73 @@ class ParkFormFieldExpressionEvaluator {
     }
     return false;
   }
+
+  /// 简易逻辑表达式求值：支持 &&、||、括号嵌套。
+  ///
+  /// 处理顺序：先找最外层括号，再按 || 拆分，最后按 && 拆分。
+  static bool? _evaluateLogical(String expr, Map<String, dynamic> values) {
+    String e = expr.trim();
+
+    // 括号包裹整个表达式时先解包。
+    while (e.startsWith('(') && e.endsWith(')') && _isWrapped(e)) {
+      e = e.substring(1, e.length - 1).trim();
+    }
+
+    // 从左到右寻找最外层 ||。
+    final int orIndex = _findLogicalOperator(e, '||');
+    if (orIndex != -1) {
+      final bool? left = _evaluateLogical(e.substring(0, orIndex), values);
+      final bool? right = _evaluateLogical(e.substring(orIndex + 2), values);
+      return (left ?? false) || (right ?? false);
+    }
+
+    // 最外层 &&。
+    final int andIndex = _findLogicalOperator(e, '&&');
+    if (andIndex != -1) {
+      final bool? left = _evaluateLogical(e.substring(0, andIndex), values);
+      final bool? right = _evaluateLogical(e.substring(andIndex + 2), values);
+      return (left ?? false) && (right ?? false);
+    }
+
+    // 递归处理括号子表达式。
+    if (e.startsWith('(') && e.endsWith(')') && _isWrapped(e)) {
+      return _evaluateLogical(e.substring(1, e.length - 1), values);
+    }
+
+    return evaluate(e, values);
+  }
+
+  /// 判断字符串整体被一对括号包裹。
+  static bool _isWrapped(String e) {
+    int depth = 0;
+    for (int i = 0; i < e.length; i++) {
+      final String ch = e[i];
+      if (ch == '(') depth++;
+      if (ch == ')') depth--;
+      if (depth == 0 && i < e.length - 1) return false;
+    }
+    return depth == 0;
+  }
+
+  /// 寻找最外层逻辑运算符位置（忽略括号内的运算符）。
+  static int _findLogicalOperator(String e, String op) {
+    int depth = 0;
+    final int len = op.length;
+    for (int i = 0; i <= e.length - len; i++) {
+      final String ch = e[i];
+      if (ch == '(') {
+        depth++;
+        continue;
+      }
+      if (ch == ')') {
+        depth--;
+        continue;
+      }
+      if (depth == 0 && e.substring(i, i + len) == op) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
 }

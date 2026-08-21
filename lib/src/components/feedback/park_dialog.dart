@@ -56,6 +56,8 @@ class ParkDialog extends StatefulWidget {
   State<ParkDialog> createState() => _ParkDialogState();
 
   /// When true, dialog content is destroyed when closed (unmounted).
+  ///
+  /// 保留向后兼容：当前无实际效果——dialog 关闭后由框架自动卸载。
   final bool destroyOnClose;
 
   /// Custom close icon widget (replaces default X icon when [closable] is true).
@@ -457,6 +459,7 @@ class ParkDialog extends StatefulWidget {
         fullscreen: fullscreen,
         actions: actions,
         afterClose: afterClose,
+        closeIcon: null,
       );
     });
 
@@ -490,6 +493,7 @@ class _ParkDialogState extends State<ParkDialog> {
       fullscreen: widget.fullscreen,
       afterClose: widget.afterClose,
       actions: widget.actions,
+      closeIcon: widget.closeIcon,
     );
   }
 }
@@ -516,6 +520,7 @@ class _ParkDialogOverlay extends StatefulWidget {
   final bool fullscreen;
   final VoidCallback? afterClose;
   final List<Widget>? actions;
+  final Widget? closeIcon;
 
   const _ParkDialogOverlay({
     super.key,
@@ -540,6 +545,7 @@ class _ParkDialogOverlay extends StatefulWidget {
     this.fullscreen = false,
     this.afterClose,
     this.actions,
+    this.closeIcon,
   });
 
   @override
@@ -666,7 +672,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                     label: ParkLocalizations.of(context).closeText,
                     child: GestureDetector(
                     onTap: () => _dismiss(widget.onCancel),
-                    child: Icon(
+                    child: widget.closeIcon ?? Icon(
                       Icons.close,
                       size: 20,
                       color: park.colors.textSecondary,

@@ -35,6 +35,7 @@ abstract class ParkLocalizations {
   String get closeText;
   String get doneText;
   String get resetText;
+  String get addTabText;
 
   // ── 占位 ──
   String get selectPlaceholder;
@@ -60,6 +61,7 @@ abstract class ParkLocalizations {
   String get searchHistory;
   String get matchedHistory;
   String get noSearchHistory;
+  String get searchKeywordEmpty;
 
   // ── 其他 ──
   String get noMore;
@@ -172,6 +174,7 @@ abstract class ParkLocalizations {
   String fileSizeExceedsText(double maxSizeMB);
   String supportedFormatsText(List<String> formats);
   String singleFileLimitText(double maxSizeMB);
+  String maxFileCountText(int maxCount);
   String get deleteFileLabel;
   String get dragUploadAreaLabel;
   String get cropImageTitle;
@@ -390,6 +393,7 @@ class ParkLocalizationsZh implements ParkLocalizations {
   String get deleteText => '删除';
   @override
   String get closeText => '关闭';
+  String get addTabText => '添加标签';
   @override
   String get doneText => '完成';
   @override
@@ -428,6 +432,8 @@ class ParkLocalizationsZh implements ParkLocalizations {
   String get matchedHistory => '匹配历史';
   @override
   String get noSearchHistory => '暂无搜索记录';
+  @override
+  String get searchKeywordEmpty => '请输入搜索关键词';
   @override
   String get noMore => '没有更多';
   @override
@@ -595,6 +601,9 @@ class ParkLocalizationsZh implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       '单文件不超过 ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
+
+  @override
+  String maxFileCountText(int maxCount) => '最多上传 $maxCount 个文件';
   @override
   String get deleteFileLabel => '删除文件';
   @override
@@ -849,6 +858,7 @@ class ParkLocalizationsEn implements ParkLocalizations {
   String get deleteText => 'Delete';
   @override
   String get closeText => 'Close';
+  String get addTabText => 'Add tab';
   @override
   String get doneText => 'Done';
   @override
@@ -887,6 +897,7 @@ class ParkLocalizationsEn implements ParkLocalizations {
   String get matchedHistory => 'Matched history';
   @override
   String get noSearchHistory => 'No search history';
+  String get searchKeywordEmpty => 'Please enter a keyword';
   @override
   String get noMore => 'No more';
   @override
@@ -1053,6 +1064,8 @@ class ParkLocalizationsEn implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       'Single file no more than ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
+  @override
+  String maxFileCountText(int maxCount) => 'Up to $maxCount files';
   @override
   String get deleteFileLabel => 'Delete file';
   @override
@@ -1307,6 +1320,7 @@ class ParkLocalizationsJa implements ParkLocalizations {
   String get deleteText => '削除';
   @override
   String get closeText => '閉じる';
+  String get addTabText => 'タブを追加';
   @override
   String get doneText => '完了';
   @override
@@ -1345,6 +1359,7 @@ class ParkLocalizationsJa implements ParkLocalizations {
   String get matchedHistory => '一致履歴';
   @override
   String get noSearchHistory => '検索履歴がありません';
+  String get searchKeywordEmpty => '検索キーワードを入力してください';
   @override
   String get noMore => 'これ以上ありません';
   @override
@@ -1511,6 +1526,8 @@ class ParkLocalizationsJa implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       '単一ファイルは ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB まで';
+  @override
+  String maxFileCountText(int maxCount) => '最大 $maxCount ファイル';
   @override
   String get deleteFileLabel => 'ファイルを削除';
   @override
@@ -1765,6 +1782,7 @@ class ParkLocalizationsKo implements ParkLocalizations {
   String get deleteText => '삭제';
   @override
   String get closeText => '닫기';
+  String get addTabText => '탭 추가';
   @override
   String get doneText => '완료';
   @override
@@ -1803,6 +1821,7 @@ class ParkLocalizationsKo implements ParkLocalizations {
   String get matchedHistory => '일치 기록';
   @override
   String get noSearchHistory => '검색 기록이 없습니다';
+  String get searchKeywordEmpty => '검색어를 입력하세요';
   @override
   String get noMore => '더 이상 없음';
   @override
@@ -1969,6 +1988,8 @@ class ParkLocalizationsKo implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       '단일 파일 ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB 이하';
+  @override
+  String maxFileCountText(int maxCount) => '최대 $maxCount개 파일';
   @override
   String get deleteFileLabel => '파일 삭제';
   @override
@@ -2223,6 +2244,7 @@ class ParkLocalizationsEs implements ParkLocalizations {
   String get deleteText => 'Eliminar';
   @override
   String get closeText => 'Cerrar';
+  String get addTabText => 'Añadir pestaña';
   @override
   String get doneText => 'Hecho';
   @override
@@ -2261,6 +2283,7 @@ class ParkLocalizationsEs implements ParkLocalizations {
   String get matchedHistory => 'Historial coincidente';
   @override
   String get noSearchHistory => 'Sin historial de búsqueda';
+  String get searchKeywordEmpty => 'Introduzca una palabra clave';
   @override
   String get noMore => 'No hay más';
   @override
@@ -2427,6 +2450,8 @@ class ParkLocalizationsEs implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       'Archivo único no mayor a ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)}MB';
+  @override
+  String maxFileCountText(int maxCount) => 'Hasta $maxCount archivos';
   @override
   String get deleteFileLabel => 'Eliminar archivo';
   @override
@@ -2681,6 +2706,7 @@ class ParkLocalizationsFr implements ParkLocalizations {
   String get deleteText => 'Supprimer';
   @override
   String get closeText => 'Fermer';
+  String get addTabText => 'Ajouter un onglet';
   @override
   String get doneText => 'Terminé';
   @override
@@ -2719,6 +2745,7 @@ class ParkLocalizationsFr implements ParkLocalizations {
   String get matchedHistory => 'Historique correspondant';
   @override
   String get noSearchHistory => "Aucun historique de recherche";
+  String get searchKeywordEmpty => "Veuillez saisir un mot-clé";
   @override
   String get noMore => 'Plus rien';
   @override
@@ -2885,6 +2912,8 @@ class ParkLocalizationsFr implements ParkLocalizations {
   @override
   String singleFileLimitText(double maxSizeMB) =>
       'Fichier unique ne dépassant pas ${maxSizeMB.toStringAsFixed(maxSizeMB % 1 == 0 ? 0 : 1)} Mo';
+  @override
+  String maxFileCountText(int maxCount) => "Jusqu'à $maxCount fichiers";
   @override
   String get deleteFileLabel => 'Supprimer le fichier';
   @override

@@ -9,7 +9,7 @@ const double _kDefaultElevation = 0.0;
 const double _kDefaultExpandedHeight = 200.0;
 
 /// 返回按钮图标尺寸（与 ParkNavBar 保持一致）。
-const double _kBackIconSize = 20.0;
+const double _kBackIconSize = 16.0;
 
 /// 标题与 leading / actions 之间的默认间距（对齐 Flutter NavigationToolbar）。
 const double _kDefaultTitleSpacing = NavigationToolbar.kMiddleSpacing;

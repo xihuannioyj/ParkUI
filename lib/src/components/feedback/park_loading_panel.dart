@@ -51,7 +51,9 @@ class ParkInlineLoading extends StatelessWidget {
   const ParkInlineLoading.button({
     super.key,
     this.size = 16,
-    this.color = Colors.white,
+    // 主题统一：默认 null 由 ParkLoading 按主题解析（深色按钮上用反色），
+    // 原硬编码 Colors.white 在暗色主题下置于深色背景上不可见。
+    this.color,
   })  : text = null,
         usePanel = false,
         centered = false;
@@ -135,7 +137,8 @@ class ParkLoadingPanel extends StatelessWidget {
 
     return AbsorbPointer(
       child: Container(
-        color: Colors.white.withValues(alpha: 0.18),
+        // 主题统一：遮罩走 overlay 令牌（原硬编码白色面纱在暗色主题下刺眼）
+        color: park.colors.overlay.withValues(alpha: 0.18),
         alignment: Alignment.center,
         child: card,
       ),

@@ -150,6 +150,11 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
       // 仅移除超出新列表长度的条目，避免不必要的重新测量。
       _measuredHeights.removeWhere((key, _) => key >= widget.items.length);
       _isMeasuring = _measuredHeights.length < widget.items.length;
+      // M4：数据整体替换（即使长度相同）也重排 —— 新内容的自然高度分布
+      // 可能与旧内容不同，直接复用旧列分配会导致瀑布流失衡。
+      if (!_isMeasuring && _measuredHeights.length == widget.items.length) {
+        _doLayout(_columnCount, _getCachedHeights());
+      }
       _deferredMeasurement = false;
       if (mounted) setState(() {});
     } else if (oldWidget.columns != widget.columns ||
@@ -178,6 +183,9 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
 
+    // 边界防御：内容不足一屏（含测量阶段高度为 0）时 maxScrollExtent == 0，
+    // 任意滚动都会误触发 onLoadMore。
+    if (maxScroll <= 0) return;
     // 距离底部 200px 时触发加载
     if (maxScroll - currentScroll <= 200.0) {
       widget.onLoadMore!();
@@ -186,14 +194,18 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
 
   /// 根据父容器宽度计算列数
   int _calculateColumnCount(double parentWidth) {
+    int count;
     if (widget.minColumnWidth != null && widget.minColumnWidth! > 0) {
-      final count = (parentWidth /
+      count = (parentWidth /
               (widget.minColumnWidth! + _effectiveColumnSpacing))
           .floor()
           .clamp(1, 100);
-      return count;
+    } else {
+      count = widget.columns;
     }
-    return widget.columns;
+    // 边界防御：列数 <= 0（release 下 assert 被裁剪）会导致 _columnIndices 越界
+    // 与列宽除零/负数，运行时兜底为 1 列。
+    return count < 1 ? 1 : count;
   }
 
   /// 获取有效 item 数量
@@ -367,9 +379,11 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     if (!mounted) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return;
-
-    final height = renderBox.size.height;
+    // 边界防御：item 未产生尺寸（builder 返回 shrink 等）时写入兜底高度，
+    // 否则测量阶段会永久卡住（后续批次永不调度）。
+    final double height = (renderBox == null || !renderBox.hasSize)
+        ? 100.0
+        : renderBox.size.height;
     if (_measuredHeights[index] != height) {
       _measuredHeights[index] = height;
     }
@@ -389,9 +403,12 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
 
   /// 列宽计算
   double _columnWidth(double parentWidth, int columnCount) {
-    return (parentWidth -
-            (columnCount - 1) * _effectiveColumnSpacing) /
-        columnCount;
+    if (columnCount < 1) return parentWidth;
+    final double width =
+        (parentWidth - (columnCount - 1) * _effectiveColumnSpacing) /
+            columnCount;
+    // 边界防御：窄容器（宽度 < 间距总和）时列宽为负会触发布局断言。
+    return width < 0 ? 0.0 : width;
   }
 
   /// 最终布局渲染
@@ -402,6 +419,11 @@ class _ParkMasonryState<T> extends State<ParkMasonry<T>> {
     ParkThemeData park,
   ) {
     // 构建每列的内容
+    // 边界防御：响应式模式下列数可能随窗口变宽增长，而 _columnIndices 是按
+    // 旧列数分配的，直接索引会 RangeError。这里按当前列数重新分配后再渲染。
+    if (_columnIndices.length != columnCount) {
+      _doLayout(columnCount, _getCachedHeights());
+    }
     final columns = List<Widget>.generate(columnCount, (colIdx) {
       final indices = _columnIndices[colIdx];
       return Column(

@@ -287,7 +287,7 @@ void main() {
     // Reset functionality
     // -----------------------------------------------------------------------
 
-    testWidgets('reset clears form values', (tester) async {
+    testWidgets('reset restores initial values', (tester) async {
       final formKey = GlobalKey<FormState>();
 
       await tester.pumpWidget(_wrap(ParkForm(
@@ -302,11 +302,14 @@ void main() {
           tester.state<ParkFormState>(find.byType(ParkForm));
       expect(formState.values['name'], equals('Alice'));
 
-      // Call reset
+      // 修改值后再 reset：应恢复到 initialValues（而非清空，
+      // 否则 reset 后 submit 会丢失所有初始字段）
+      formState.setValue('name', 'Bob');
       formState.reset();
       await tester.pump();
 
-      expect(formState.values, isEmpty);
+      expect(formState.values['name'], equals('Alice'),
+          reason: 'reset 应恢复 initialValues（P1 修复）');
     });
 
     testWidgets('onReset callback is invoked', (tester) async {

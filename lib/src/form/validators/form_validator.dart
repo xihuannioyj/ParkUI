@@ -88,6 +88,32 @@ class ParkFormValidators {
     return FormValidatorResult.success();
   }
 
+  /// 数值范围校验。
+  ///
+  /// 当 [value] 为 num 时，[ParkFormFieldSchema.minLength] 作为最小值，
+  /// [ParkFormFieldSchema.maxLength] / [ParkFormFieldSchema.fieldLength] 作为最大值。
+  static FormValidatorResult numberRange(
+    dynamic value,
+    ParkFormFieldSchema field,
+  ) {
+    if (value is! num) {
+      return FormValidatorResult.success();
+    }
+    final num number = value;
+    final int? min = field.minLength;
+    final int? max = field.maxLength ??
+        (field.fieldLength > 0 ? field.fieldLength : null);
+
+    if (min != null && number < min) {
+      return FormValidatorResult.error('${field.labelName}不能小于$min');
+    }
+    if (max != null && number > max) {
+      return FormValidatorResult.error('${field.labelName}不能大于$max');
+    }
+    return FormValidatorResult.success();
+  }
+
+
   /// 正则校验。
   ///
   /// [value] 当前值。

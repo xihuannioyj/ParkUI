@@ -237,13 +237,25 @@ class _DashedLinePainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
 
+    // 边界防御：dashWidth + dashGap <= 0 时 while 循环永不前进会卡死 UI，
+    // 退化为实线。
+    final double step = dashWidth + dashGap;
+    if (step <= 0) {
+      if (axis == Axis.horizontal) {
+        canvas.drawLine(Offset.zero, Offset(size.width, 0), paint);
+      } else {
+        canvas.drawLine(Offset.zero, Offset(0, size.height), paint);
+      }
+      return;
+    }
+
     if (axis == Axis.horizontal) {
       final y = size.height / 2;
       double startX = 0;
       while (startX < size.width) {
         final endX = (startX + dashWidth).clamp(0.0, size.width);
         canvas.drawLine(Offset(startX, y), Offset(endX, y), paint);
-        startX += dashWidth + dashGap;
+        startX += step;
       }
     } else {
       final x = size.width / 2;
@@ -251,7 +263,7 @@ class _DashedLinePainter extends CustomPainter {
       while (startY < size.height) {
         final endY = (startY + dashWidth).clamp(0.0, size.height);
         canvas.drawLine(Offset(x, startY), Offset(x, endY), paint);
-        startY += dashWidth + dashGap;
+        startY += step;
       }
     }
   }

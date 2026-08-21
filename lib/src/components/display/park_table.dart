@@ -921,34 +921,10 @@ class _ParkTableState extends State<ParkTable> {
       ),
     );
 
-    if (widget.sticky) {
-      return ClipRect(
-        child: CustomScrollView(
-          scrollDirection: Axis.vertical,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _ParkStickyHeaderDelegate(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: headerContent,
-                ),
-                height: _headerHeight(park),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return headerContent;
-  }
-
-  double _headerHeight(ParkThemeData park) {
-    final padding = _cellPadding();
-    return padding.vertical + 22; // ~20px text + vertical padding
+    // sticky 模式：吸顶由 _buildStickyTable 的「有界高度 Column + 数据区垂直滚动」实现，
+    // 表头本身无需嵌套 SliverPersistentHeader（shrinkWrap 视口 + pinned 会产生非法
+    // SliverGeometry 导致布局崩溃），这里仅返回内容。
+    return ClipRect(child: headerContent);
   }
 
   Widget _buildSelectAllCheckbox(
@@ -1008,19 +984,15 @@ class _ParkTableState extends State<ParkTable> {
   Widget _buildTableBody(List<Map<String, dynamic>> data, ParkThemeData park) {
     Widget rows = _buildDataRows(data, park);
 
-    if (widget.sticky) {
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: _totalRowWidth(),
-          child: rows,
-        ),
-      );
-    }
+    // Column 模式（expandable / tree）的 rows 是 stretch Column，
+    // 必须给定固定宽度，否则水平 SingleChildScrollView 传入无限宽约束导致布局崩溃。
+    final bool needsFixedWidth = _hasExpandedRow || _isTreeMode;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: rows,
+      child: needsFixedWidth
+          ? SizedBox(width: _totalRowWidth(), child: rows)
+          : rows,
     );
   }
 
@@ -1151,23 +1123,8 @@ class _ParkTableState extends State<ParkTable> {
         children.add(Divider(height: 1, color: park.colors.divider));
       }
 
-      if (widget.sticky) {
-        return CustomScrollView(
-          scrollDirection: Axis.vertical,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          slivers: [
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => children[index],
-                childCount: children.length,
-                addAutomaticKeepAlives: true,
-              ),
-            ),
-          ],
-        );
-      }
-
+      // sticky / expandable / tree 场景行集合：普通 Column 排布，
+      // 吸顶由 _buildStickyTable 统一处理（不再嵌套 shrinkWrap CustomScrollView）。
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1876,7 +1833,12 @@ class _ParkTableState extends State<ParkTable> {
       );
     }
 
-    // sticky / expandable 场景：保留原有的分离式 header + body 布局
+    // sticky：吸顶表头（有界高度时表头固定、数据区独立垂直滚动；无界高度时退化为普通排布）
+    if (widget.sticky) {
+      return _buildStickyTable(data, headerBg, park);
+    }
+
+    // expandable / tree 场景：保留原有的分离式 header + body 布局
     // （它们都用 SizedBox(width: col.width ?? 120)，宽度计算一致）
     final Widget header = _buildTableHeader(data, headerBg, park);
     final Widget body = _buildTableBody(data, park);
@@ -1884,6 +1846,58 @@ class _ParkTableState extends State<ParkTable> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[header, body],
+    );
+  }
+
+  /// sticky 吸顶表头布局。
+  ///
+  /// 有界高度（如外层 SizedBox/Expanded 提供固定高度）时：表头固定，数据区独立垂直滚动，
+  /// 表头与数据区共享同一横向滚动容器保证列对齐；无界高度时退化为普通排布避免崩溃。
+  Widget _buildStickyTable(
+    List<Map<String, dynamic>> data,
+    Color headerBg,
+    ParkThemeData park,
+  ) {
+    final Widget header = _buildTableHeader(data, headerBg, park);
+    final Widget body = _buildDataRows(data, park);
+    final double totalWidth = _totalRowWidth();
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        if (!constraints.hasBoundedHeight) {
+          // 无界高度：整表按内容排布，横向可滚动
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: totalWidth,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[header, body],
+              ),
+            ),
+          );
+        }
+        // 有界高度：表头吸顶，数据区垂直滚动
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: totalWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                header,
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: body,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2226,31 +2240,6 @@ class _FixedLayer extends StatelessWidget {
       ),
       child: child,
     );
-  }
-}
-
-/// 吸顶表头委托
-class _ParkStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  final double height;
-
-  _ParkStickyHeaderDelegate({required this.child, required this.height});
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  bool shouldRebuild(covariant _ParkStickyHeaderDelegate oldDelegate) {
-    return child != oldDelegate.child || height != oldDelegate.height;
   }
 }
 

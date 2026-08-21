@@ -161,4 +161,22 @@ void main() {
       expect(ParkMenuThemeMode.values.length, 2);
     });
   });
+
+  group('ParkMenu - size', () {
+    testWidgets('renders with all three sizes', (tester) async {
+      for (final size in ParkMenuSize.values) {
+        await tester.pumpWidget(_wrap(
+          ParkMenu(
+            items: const [
+              ParkMenuItem(key: 'a', label: 'Item A', icon: Icons.home),
+            ],
+            size: size,
+          ),
+        ));
+        expect(find.text('Item A'), findsOneWidget);
+        expect(find.byIcon(Icons.home), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
+  });
 }

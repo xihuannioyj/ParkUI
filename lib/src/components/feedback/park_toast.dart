@@ -28,6 +28,8 @@ class ParkToast extends StatelessWidget {
   final VoidCallback? afterClose;
 
   /// When true, toast overlay is destroyed when hidden (saves memory).
+  ///
+  /// 保留向后兼容：当前无实际效果——overlay 由框架自动管理销毁。
   final bool destroyOnHide;
 
   const ParkToast({
@@ -54,7 +56,12 @@ class ParkToast extends StatelessWidget {
 
   /// Update global toast configuration.
   static void config({int? maxCount}) {
-    _config = ParkToastConfig(maxCount: maxCount ?? _config.maxCount);
+    // 边界防御：maxCount <= 0 时 _activeToasts 为空也会进入淘汰循环，
+    // 对空 Map 取 keys.first 抛 StateError。
+    final int safeMaxCount = (maxCount ?? _config.maxCount) < 1
+        ? 1
+        : (maxCount ?? _config.maxCount);
+    _config = ParkToastConfig(maxCount: safeMaxCount);
   }
 
   /// Reset configuration to defaults (useful in tests).
@@ -175,7 +182,9 @@ class ParkToast extends StatelessWidget {
     ParkToastPosition position = ParkToastPosition.center,
     String? key,
   }) {
-    final effectiveKey = key ?? '_loading_auto';
+    // 每次 loading 使用唯一 key：共享 '_loading_auto' 会导致后开的 loading
+    // 顶掉先开的，且先开调用方返回的 dismiss 会误关后开的 loading。
+    final effectiveKey = key ?? '_loading_auto_${_autoId++}';
     _showToast(
       context,
       message: message,
@@ -215,7 +224,9 @@ class ParkToast extends StatelessWidget {
     }
 
     // Enforce maxCount: dismiss oldest toasts when limit reached.
-    while (_activeToasts.length >= _config.maxCount) {
+    // 边界防御：即使 maxCount 被外部构造为 0，也绝不从空 Map 取 first。
+    while (_activeToasts.isNotEmpty &&
+        _activeToasts.length >= _config.maxCount) {
       final oldestKey = _activeToasts.keys.first;
       _activeToasts[oldestKey]?.dismiss();
       _activeToasts.remove(oldestKey);
@@ -291,7 +302,8 @@ class ParkToast extends StatelessWidget {
   Widget _buildPill(ParkThemeData park) {
     // 默认背景必须 100% 不透明（如 ParkLoading 气泡用 surface 的解法）：
     // 任何残留透明度都会透出底下页面内容（如顶部装饰条），视觉上出现异常色线。
-    final bg = bgColor ?? const Color(0xFF1A1A1A);
+    // 主题统一：走 inverseSurface 令牌（亮色模式深色胶囊、暗色模式浅色胶囊）。
+    final bg = bgColor ?? park.colors.inverseSurface;
     // 用 LayoutBuilder 拿真实布局约束计算宽度，避免依赖 MediaQuery.sizeOf：
     // ScreenUtil 等库会替换 MediaQuery.size 为设计稿假尺寸，导致宽度基准错误。
     final pill = LayoutBuilder(
@@ -479,7 +491,8 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     // 默认背景必须 100% 不透明（禁用半透明 colors.overlay，零透出）。
-    final bg = widget.bgColor ?? const Color(0xFF1A1A1A);
+    // 主题统一：走 inverseSurface 令牌。
+    final bg = widget.bgColor ?? park.colors.inverseSurface;
 
     Widget toastWidget = SafeArea(
       child: Semantics(

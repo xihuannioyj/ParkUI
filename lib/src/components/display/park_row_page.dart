@@ -64,7 +64,7 @@ class ParkRowPage extends StatelessWidget {
           item.value,
           style: theme.textTheme.titleSmall?.copyWith(
             color: park.colors.textPrimary,
-            fontSize: 14,
+            fontSize: park.typography.sizeBodySmall,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -83,22 +83,13 @@ class ParkRowPage extends StatelessWidget {
             item.label,
             style: theme.textTheme.bodySmall?.copyWith(
               color: park.colors.textSecondary,
-              fontSize: 12,
+              fontSize: park.typography.sizeCaption,
             ),
           ),
-          const SizedBox(height: 6),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: park.colors.background,
-              borderRadius: BorderRadius.circular(park.radius.md),
-              border: Border.all(
-                color: park.colors.border.withValues(alpha: 0.9),
-              ),
-            ),
-            child: Row(children: valueChildren),
-          ),
+          const SizedBox(height: 4),
+          // 干净清爽：value 直接呈现（无边框、无背景容器），
+          // 与 ParkCell 的「标签 + 值」风格保持一致，避免小边框块。
+          Row(children: valueChildren),
         ],
       ),
     );

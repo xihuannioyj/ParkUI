@@ -419,6 +419,8 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
                   onChanged: (String value) {
                     setState(() {
                       _keyword = value;
+                      // P1-1：过滤后同步选中索引与滚轮位置
+                      _syncSelectionAfterFilter();
                     });
                   },
                   decoration: InputDecoration(
@@ -455,19 +457,7 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
     dynamic typo,
     dynamic colors,
   ) {
-    final List<ParkPickerItem> visibleItems = _keyword.trim().isEmpty
-        ? widget.items
-        : widget.items
-              .where(
-                (ParkPickerItem item) =>
-                    item.label.toLowerCase().contains(
-                      _keyword.trim().toLowerCase(),
-                    ) ||
-                    item.value.toLowerCase().contains(
-                      _keyword.trim().toLowerCase(),
-                    ),
-              )
-              .toList();
+    final List<ParkPickerItem> visibleItems = _filteredSingle(widget.items);
 
     if (_selectedIndex >= visibleItems.length) {
       _selectedIndex = visibleItems.isEmpty ? 0 : visibleItems.length - 1;
@@ -491,9 +481,9 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
       onSelectedItemChanged: (index) {
         _selectedIndex = index;
       },
-      children: visibleItems.map((item) {
-        final isSelected =
-            visibleItems.indexOf(item) == _selectedIndex;
+      children: List.generate(visibleItems.length, (index) {
+        final ParkPickerItem item = visibleItems[index];
+        final isSelected = index == _selectedIndex;
         if (widget.itemBuilder != null) {
           return widget.itemBuilder!(item, isSelected);
         }
@@ -508,8 +498,34 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
             ),
           ),
         );
-      }).toList(),
+      }),
     );
+  }
+
+  /// 单列过滤（搜索关键词为空时返回全部；P1-2 提取公共过滤，消除重复计算）。
+  List<ParkPickerItem> _filteredSingle(List<ParkPickerItem> items) {
+    final String kw = _keyword.trim().toLowerCase();
+    if (kw.isEmpty) return items;
+    return items
+        .where(
+          (ParkPickerItem item) =>
+              item.label.toLowerCase().contains(kw) ||
+              item.value.toLowerCase().contains(kw),
+        )
+        .toList();
+  }
+
+  /// 搜索过滤后同步选中索引与滚轮位置（P1-1）：
+  /// 列表收窄后若选中越界则钳制，并让滚轮跳到选中项，避免
+  /// "滚轮停在旧位置、确认却是另一项"的错位。
+  void _syncSelectionAfterFilter() {
+    final List<ParkPickerItem> visible = _filteredSingle(widget.items);
+    if (_selectedIndex >= visible.length) {
+      _selectedIndex = visible.isEmpty ? 0 : visible.length - 1;
+    }
+    if (_scrollController.hasClients) {
+      _scrollController.jumpToItem(_selectedIndex);
+    }
   }
 
   Widget _buildMultiColumnPicker(ParkThemeData park) {
@@ -648,21 +664,11 @@ class _ParkPickerSheetState extends State<_ParkPickerSheet>
   }
 
   void _handleSingleColumnConfirm() {
-    final List<ParkPickerItem> visibleItems = _keyword.trim().isEmpty
-        ? widget.items
-        : widget.items
-              .where(
-                (ParkPickerItem item) =>
-                    item.label.toLowerCase().contains(
-                      _keyword.trim().toLowerCase(),
-                    ) ||
-                    item.value.toLowerCase().contains(
-                      _keyword.trim().toLowerCase(),
-                    ),
-              )
-              .toList();
+    final List<ParkPickerItem> visibleItems = _filteredSingle(widget.items);
     if (visibleItems.isEmpty) return;
-    final selected = visibleItems[_selectedIndex];
+    // 防御：确保索引在界内（与 _syncSelectionAfterFilter 一致）
+    final int safeIndex = _selectedIndex.clamp(0, visibleItems.length - 1).toInt();
+    final selected = visibleItems[safeIndex];
     if (selected.disabled) return;
     widget.onConfirm?.call(selected.value);
     boundValue = selected.value;

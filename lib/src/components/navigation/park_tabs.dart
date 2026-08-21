@@ -43,6 +43,9 @@ enum ParkTabType {
 
 /// Park Tab 尺寸
 enum ParkTabSize {
+  /// 小尺寸
+  small,
+
   /// 中等尺寸（默认）
   medium,
 
@@ -239,7 +242,7 @@ class ParkTabs extends StatefulWidget {
 }
 
 class _ParkTabsState extends State<ParkTabs>
-    with SingleTickerProviderStateMixin, BindableWidgetMixin<int, ParkTabs> {
+    with TickerProviderStateMixin, BindableWidgetMixin<int, ParkTabs> {
   TabController? _controller;
   bool _suppressChangeNotification = false;
   int _lastReportedIndex = 0;
@@ -304,6 +307,14 @@ class _ParkTabsState extends State<ParkTabs>
   @override
   void didUpdateWidget(covariant ParkTabs oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 控制器长度与 tabs 失配时重建：除了长度变化，还覆盖"同一 List 实例
+    // 原地增删"的场景（oldWidget.tabs 与 widget.tabs 引用相同、长度判断失效）。
+    if (_controller != null && _controller!.length != widget.tabs.length) {
+      final int preservedIndex = _controller!.index;
+      _disposeController();
+      _createController(preservedIndex: preservedIndex);
+      return;
+    }
     if (oldWidget.tabs.length != widget.tabs.length) {
       _disposeController();
       _createController();
@@ -325,16 +336,19 @@ class _ParkTabsState extends State<ParkTabs>
     }
   }
 
-  void _createController() {
+  void _createController({int? preservedIndex}) {
     if (!_hasTabs) {
       _controller = null;
       _lastReportedIndex = 0;
       return;
     }
 
+    final int startIndex = (preservedIndex ?? _effectiveIndex)
+        .clamp(0, widget.tabs.length - 1)
+        .toInt();
     final TabController controller = TabController(
       length: widget.tabs.length,
-      initialIndex: _effectiveIndex,
+      initialIndex: startIndex,
       vsync: this,
     );
     controller.addListener(_handleTabChange);
@@ -463,19 +477,30 @@ class _ParkTabsState extends State<ParkTabs>
 
   /// 构建内容区域
   Widget _buildContent(TabController controller) {
+    // 边界防御：release 下构造期 assert 被裁剪，children 长度可能与 tabs 不一致
+    // （或 children 为空），直接按 controller.index 索引会 RangeError。
+    final List<Widget>? children = widget.children;
+    final bool childrenValid =
+        children != null && children.isNotEmpty && children.length == widget.tabs.length;
+    if (!childrenValid) {
+      return const SizedBox.shrink();
+    }
+
     // destroyInactiveTabPane：仅渲染当前激活标签页的内容
     if (widget.destroyInactiveTabPane) {
       return AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
-          return widget.children![controller.index];
+          final int idx =
+              controller.index.clamp(0, children.length - 1).toInt();
+          return children[idx];
         },
       );
     }
 
     final view = TabBarView(
       controller: controller,
-      children: widget.children!,
+      children: children,
     );
 
     if (!widget.animated) {
@@ -483,9 +508,11 @@ class _ParkTabsState extends State<ParkTabs>
       return AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
+          final int idx =
+              controller.index.clamp(0, children.length - 1).toInt();
           return IndexedStack(
-            index: controller.index,
-            children: widget.children!,
+            index: idx,
+            children: children,
           );
         },
       );
@@ -499,10 +526,12 @@ class _ParkTabsState extends State<ParkTabs>
     final colors = park.colors;
     final indicator = _resolvedIndicatorType;
     final isCard = indicator == ParkTabIndicatorType.card;
-    final isLarge = widget.size == ParkTabSize.large;
-    final labelFontSize = isLarge
-        ? park.typography.sizeBody + 2.0
-        : park.typography.sizeBody;
+    // 三档尺寸：small / medium（默认）/ large
+    final double labelFontSize = switch (widget.size) {
+      ParkTabSize.small => park.typography.sizeBodySmall,
+      ParkTabSize.medium => park.typography.sizeBody,
+      ParkTabSize.large => park.typography.sizeBody + 2.0,
+    };
 
     // 构建标签列表（支持 tabBuilder 和 gutter 间距）
     final rawTabs = widget.tabs.asMap().entries.map(
@@ -527,30 +556,9 @@ class _ParkTabsState extends State<ParkTabs>
       tabWidgets = rawTabs;
     }
 
-    // 添加"+"按钮
-    if (_effectiveShowAddButton) {
-      tabWidgets.add(
-        Padding(
-          padding: EdgeInsets.only(left: park.spacing.sm),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _effectiveOnTabAdd,
-            child: Semantics(
-              button: true,
-              label: 'Add tab',
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: Icon(
-                  Icons.add,
-                  size: isLarge ? 22 : 18,
-                  color: colors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+    // 注意：'+' 添加按钮绝不能放进 TabBar.tabs（会与 TabController.length 失配
+    // 触发 "Controller's length does not match the number of tabs" 断言），
+    // 统一放到 TabBar 外侧的 Row（与 extra 槽位并列）。
 
     // 自动检测是否需要滚动：tab 数量过多时自动启用 scrollable 防止溢出
     final int tabCount = tabWidgets.length;
@@ -617,14 +625,41 @@ class _ParkTabsState extends State<ParkTabs>
 
     Widget bar = Container(
       decoration: barDecoration,
-      child: _effectiveExtra != null
+      child: (_effectiveExtra != null || _effectiveShowAddButton)
           ? Row(
               children: [
                 Expanded(child: tabBar),
-                Padding(
-                  padding: EdgeInsets.only(right: park.spacing.sm),
-                  child: _effectiveExtra!,
-                ),
+                if (_effectiveShowAddButton)
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: park.spacing.sm,
+                    ),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _effectiveOnTabAdd,
+                      child: Semantics(
+                        button: true,
+                        label: ParkLocalizations.of(context).addTabText,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Icon(
+                            Icons.add,
+                            size: switch (widget.size) {
+                              ParkTabSize.small => 16,
+                              ParkTabSize.medium => 18,
+                              ParkTabSize.large => 22,
+                            },
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_effectiveExtra != null)
+                  Padding(
+                    padding: EdgeInsets.only(right: park.spacing.sm),
+                    child: _effectiveExtra!,
+                  ),
               ],
             )
           : tabBar,
@@ -661,7 +696,7 @@ class _ParkTabsState extends State<ParkTabs>
           if (_effectiveShowAddButton)
             Semantics(
               button: true,
-              label: 'Add tab',
+              label: ParkLocalizations.of(context).addTabText,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _effectiveOnTabAdd,

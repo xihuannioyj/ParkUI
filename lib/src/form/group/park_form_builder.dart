@@ -1,6 +1,7 @@
 import 'park_abstract_control.dart';
 import 'park_form_group.dart';
 import '../models/form_field_schema.dart';
+import '../validators/form_regex_safety.dart';
 import '../regex/park_regex_registry.dart';
 
 /// Builds [ParkFormGroup] from [ParkFormSchema] or JSON.
@@ -136,12 +137,36 @@ class ParkFormBuilder {
       });
     }
 
+      // Numeric range validation (minLength acts as min, maxLength/fieldLength as max).
+      if (schema.minLength != null || schema.maxLength != null || schema.fieldLength > 0) {
+        validators.add((dynamic value) {
+          if (value is num) {
+            if (schema.minLength != null && value < schema.minLength!) {
+              return ParkFormError(
+                'min',
+                '${schema.labelName}不能小于${schema.minLength}',
+              );
+            }
+            final int? max = schema.maxLength ??
+                (schema.fieldLength > 0 ? schema.fieldLength : null);
+            if (max != null && value > max) {
+              return ParkFormError(
+                'max',
+                '${schema.labelName}不能大于$max',
+              );
+            }
+          }
+          return null;
+        });
+      }
+
+
     // Regex validation: direct expression takes priority over regexTag.
     if (schema.regexExpression != null && schema.regexExpression!.isNotEmpty) {
-      final RegExp regex = RegExp(schema.regexExpression!);
+      final RegExp? regex = trySafeFormRegExp(schema.regexExpression!);
       validators.add((dynamic value) {
         if (value is String && value.isNotEmpty) {
-          if (!regex.hasMatch(value)) {
+          if (regex == null || !regex.hasMatch(value)) {
             return ParkFormError(
               'pattern',
               schema.validatorMessage ?? '${schema.labelName}格式不正确',
@@ -153,10 +178,10 @@ class ParkFormBuilder {
     } else if (schema.regexTag != null && schema.regexTag!.isNotEmpty) {
       final String? pattern = ParkRegexRegistry.get(schema.regexTag!);
       if (pattern != null) {
-        final RegExp regex = RegExp(pattern);
+        final RegExp? regex = trySafeFormRegExp(pattern);
         validators.add((dynamic value) {
           if (value is String && value.isNotEmpty) {
-            if (!regex.hasMatch(value)) {
+            if (regex == null || !regex.hasMatch(value)) {
               return ParkFormError(
                 'pattern',
                 schema.validatorMessage ?? '${schema.labelName}格式不正确',

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../l10n/park_localizations.dart';
@@ -109,9 +111,18 @@ class _ParkSplitterState extends State<ParkSplitter> {
     }
   }
 
-  double get _effectiveMinRatio => widget.minRatio ?? 0.0;
+  // 边界防御：minRatio > maxRatio 时 clamp 抛 ArgumentError，先归一化。
+  double get _effectiveMinRatio {
+    final double m = widget.minRatio ?? 0.0;
+    final double M = widget.maxRatio ?? 1.0;
+    return m <= M ? m : M;
+  }
 
-  double get _effectiveMaxRatio => widget.maxRatio ?? 1.0;
+  double get _effectiveMaxRatio {
+    final double m = widget.minRatio ?? 0.0;
+    final double M = widget.maxRatio ?? 1.0;
+    return m <= M ? M : m;
+  }
 
   double get _effectiveRatio {
     final r = widget.ratio ?? _ratio;
@@ -164,7 +175,8 @@ class _ParkSplitterState extends State<ParkSplitter> {
       builder: (BuildContext context, BoxConstraints constraints) {
         final totalWidth = constraints.maxWidth;
         final dividerWidth = thickness;
-        final availableWidth = totalWidth - dividerWidth;
+        // 边界防御：分隔条比容器宽时 available 为负 → SizedBox 负宽断言崩溃。
+        final availableWidth = math.max(0.0, totalWidth - dividerWidth);
         final firstWidth = availableWidth * ratio;
         final secondWidth = availableWidth * (1.0 - ratio);
 
@@ -215,9 +227,15 @@ class _ParkSplitterState extends State<ParkSplitter> {
     final ratio = _effectiveRatio;
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final totalHeight = constraints.maxHeight;
+        // 边界防御：置于滚动容器时 maxHeight 可能为无穷 → SizedBox(height:∞)
+        // 布局崩溃；退化为 minHeight/0。
+        final double totalHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : (constraints.minHeight.isFinite
+                ? constraints.minHeight
+                : 0.0);
         final dividerHeight = thickness;
-        final availableHeight = totalHeight - dividerHeight;
+        final availableHeight = math.max(0.0, totalHeight - dividerHeight);
         final firstHeight = availableHeight * ratio;
         final secondHeight = availableHeight * (1.0 - ratio);
 
@@ -281,6 +299,8 @@ class _ParkSplitterState extends State<ParkSplitter> {
           final delta = isHorizontal ? details.delta.dx : details.delta.dy;
           final dividerSize = thickness;
           final available = totalExtent - dividerSize;
+          // 边界防御：available<=0 时 delta/0 得 NaN/Infinity → 比例错乱。
+          if (available <= 0) return;
           final deltaRatio = delta / available;
           _updateRatio(ratio + deltaRatio);
         },
@@ -298,6 +318,7 @@ class _ParkSplitterState extends State<ParkSplitter> {
           width: isHorizontal ? dividerWidth : double.infinity,
           height: isHorizontal ? double.infinity : dividerWidth,
           child: Stack(
+            clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: <Widget>[
               // 分隔条背景
@@ -322,13 +343,24 @@ class _ParkSplitterState extends State<ParkSplitter> {
                     ),
                   ),
                 ),
-              // 折叠按钮
-              if (widget.collapsible) _buildCollapseButtons(
-                park: park,
-                l10n: l10n,
-                isHorizontal: isHorizontal,
-                dragColor: dragColor,
-              ),
+              // 折叠按钮：分隔条本身只有几像素厚，两个按钮（~18px）
+              // 无法放进分隔条内——OverflowBox 让按钮悬浮在分隔条上
+              // （类似 VS Code 折叠把手），避免 RenderFlex 溢出。
+              // 注意 Positioned.fill 必须保持 Stack 直接子级。
+              if (widget.collapsible)
+                Positioned.fill(
+                  child: OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    alignment: Alignment.center,
+                    child: _buildCollapseButtons(
+                      park: park,
+                      l10n: l10n,
+                      isHorizontal: isHorizontal,
+                      dragColor: dragColor,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -342,11 +374,10 @@ class _ParkSplitterState extends State<ParkSplitter> {
     required bool isHorizontal,
     required Color dragColor,
   }) {
-    return Positioned.fill(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
           // 折叠第一个面板的按钮（向左/向上折叠）
           _CollapseButton(
             icon: isHorizontal ? Icons.chevron_left : Icons.keyboard_arrow_up,
@@ -365,7 +396,6 @@ class _ParkSplitterState extends State<ParkSplitter> {
             dragColor: dragColor,
           ),
         ],
-      ),
     );
   }
 }

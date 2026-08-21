@@ -208,7 +208,7 @@ class ParkFab extends StatelessWidget {
             label!,
             style: TextStyle(
               color: fg,
-              fontSize: 14,
+              fontSize: park.typography.sizeBodySmall,
               fontWeight: FontWeight.w500,
             ),
           ),

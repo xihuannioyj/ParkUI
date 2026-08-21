@@ -626,25 +626,27 @@ class _ParkTreeState extends State<ParkTree> {
       return Text(label, style: baseStyle);
     }
 
-    final lowerLabel = label.toLowerCase();
-    final lowerQuery = query.toLowerCase();
+    // 大小写不敏感高亮：直接在原始字符串上匹配。
+    // 原实现用 lowercase 串的索引切原串，遇到 toLowerCase() 改变长度的字符
+    // （如 'İ'→'i̇'）时索引错位，substring 抛 RangeError。
+    final highlightPattern =
+        RegExp(RegExp.escape(query), caseSensitive: false);
     final spans = <InlineSpan>[];
     int start = 0;
 
-    int idx;
-    while ((idx = lowerLabel.indexOf(lowerQuery, start)) != -1) {
-      if (idx > start) {
-        spans.add(TextSpan(text: label.substring(start, idx)));
+    for (final Match match in highlightPattern.allMatches(label)) {
+      if (match.start > start) {
+        spans.add(TextSpan(text: label.substring(start, match.start)));
       }
       spans.add(TextSpan(
-        text: label.substring(idx, idx + query.length),
+        text: label.substring(match.start, match.end),
         style: TextStyle(
           backgroundColor: park.colors.warning.withAlpha(60),
           color: park.colors.brand,
           fontWeight: park.typography.weightMedium,
         ),
       ));
-      start = idx + query.length;
+      start = match.end;
     }
     if (start < label.length) {
       spans.add(TextSpan(text: label.substring(start)));

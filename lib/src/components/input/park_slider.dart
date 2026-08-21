@@ -69,8 +69,10 @@ class ParkSlider extends FormField<double> implements ParkBindableWidget {
     super.validator,
     super.autovalidateMode,
     super.onSaved,
-  }) : super(
-          initialValue: value.clamp(min, max),
+  })  : assert(min <= max, 'min must be <= max'),
+        super(
+          // 边界防御：release 下 assert 被裁剪，min > max 时 clamp 抛 ArgumentError。
+          initialValue: value.clamp(_safeMin(min, max), _safeMax(min, max)),
           builder: (FormFieldState<double> field) {
             final state = field as _ParkSliderState;
             final park =
@@ -87,6 +89,10 @@ class ParkSlider extends FormField<double> implements ParkBindableWidget {
   final ValueChanged<double>? onChangeEnd;
   final Color? activeColor;
   final bool showValue;
+
+  /// min/max 归一化（min > max 时交换，防御非法参数）。
+  static double _safeMin(double min, double max) => min <= max ? min : max;
+  static double _safeMax(double min, double max) => min <= max ? max : min;
 
   /// 是否启用范围选择模式（双滑块）
   final bool range;
@@ -151,7 +157,8 @@ class ParkSlider extends FormField<double> implements ParkBindableWidget {
 
   /// 根据 step 计算出的有效 divisions。
   int? get effectiveDivisions {
-    if (divisions != null) return divisions;
+    // P1-5：divisions<=0 时 Flutter Slider 断言崩溃，运行时兜底为 null。
+    if (divisions != null && divisions! > 0) return divisions;
     if (step != null && step! > 0) {
       final range = max - min;
       final d = (range / step!).round();
@@ -181,8 +188,16 @@ class _ParkSliderState extends FormFieldState<double>
     super.initState();
     final w = widget as ParkSlider;
     if (w.range) {
-      _rangeStart = (w.rangeStart ?? w.min).clamp(w.min, w.max);
-      _rangeEnd = (w.rangeEnd ?? w.max).clamp(w.min, w.max);
+      // 边界防御：min > max 时 clamp 抛 ArgumentError，先归一化。
+      final safeMin = ParkSlider._safeMin(w.min, w.max);
+      final safeMax = ParkSlider._safeMax(w.min, w.max);
+      // P1-4：rangeStart > rangeEnd 时交换，避免 RangeSlider 断言崩溃。
+      final double rawStart = w.rangeStart ?? safeMin;
+      final double rawEnd = w.rangeEnd ?? safeMax;
+      final double lo = rawStart <= rawEnd ? rawStart : rawEnd;
+      final double hi = rawStart <= rawEnd ? rawEnd : rawStart;
+      _rangeStart = lo.clamp(safeMin, safeMax);
+      _rangeEnd = hi.clamp(safeMin, safeMax);
     }
   }
 
@@ -192,10 +207,15 @@ class _ParkSliderState extends FormFieldState<double>
     final oldSlider = oldWidget as ParkSlider;
     final newSlider = widget as ParkSlider;
     if (newSlider.range) {
-      final newStart = (newSlider.rangeStart ?? newSlider.min)
-          .clamp(newSlider.min, newSlider.max);
-      final newEnd = (newSlider.rangeEnd ?? newSlider.max)
-          .clamp(newSlider.min, newSlider.max);
+      final safeMin = ParkSlider._safeMin(newSlider.min, newSlider.max);
+      final safeMax = ParkSlider._safeMax(newSlider.min, newSlider.max);
+      // P1-4：rangeStart > rangeEnd 时交换。
+      final double rawStart = newSlider.rangeStart ?? safeMin;
+      final double rawEnd = newSlider.rangeEnd ?? safeMax;
+      final double lo = rawStart <= rawEnd ? rawStart : rawEnd;
+      final double hi = rawStart <= rawEnd ? rawEnd : rawStart;
+      final double newStart = lo.clamp(safeMin, safeMax);
+      final double newEnd = hi.clamp(safeMin, safeMax);
       if (newStart != _rangeStart || newEnd != _rangeEnd) {
         setState(() {
           _rangeStart = newStart;
@@ -207,7 +227,9 @@ class _ParkSliderState extends FormFieldState<double>
     final newInitial = newSlider.initialValue;
     final oldInitial = oldSlider.initialValue;
     if (newInitial != null && newInitial != oldInitial && newInitial != value) {
-      setValue(newInitial.clamp(newSlider.min, newSlider.max));
+      setValue(newInitial.clamp(
+          ParkSlider._safeMin(newSlider.min, newSlider.max),
+          ParkSlider._safeMax(newSlider.min, newSlider.max)));
     }
   }
 
@@ -217,19 +239,23 @@ class _ParkSliderState extends FormFieldState<double>
     (widget as ParkSlider).onChanged?.call(value ?? 0);
   }
 
-  /// 将值吸附到最近的刻度标记。
+  /// 将值吸附到最近的刻度标记（P1-5：marks 越界值先钳制到 [min,max]）。
   double _snapToMark(double value, List<double> marks) {
     if (marks.isEmpty) return value;
+    final w = this.widget as ParkSlider;
+    final double lo = ParkSlider._safeMin(w.min, w.max);
+    final double hi = ParkSlider._safeMax(w.min, w.max);
     int nearest = 0;
     double minDist = double.infinity;
     for (int i = 0; i < marks.length; i++) {
-      final dist = (value - marks[i]).abs();
+      final double mark = marks[i].clamp(lo, hi).toDouble();
+      final double dist = (value - mark).abs();
       if (dist < minDist) {
         minDist = dist;
         nearest = i;
       }
     }
-    return marks[nearest];
+    return marks[nearest].clamp(lo, hi).toDouble();
   }
 
   /// 处理 onChanged，包含吸附逻辑。
@@ -305,7 +331,11 @@ class _ParkSliderState extends FormFieldState<double>
       }
     }
 
-    w.onChangeEnd?.call(snappedStart);
+    // P1-3：回传被拖动侧的终值（原实现恒回传 start 值，
+    // 拖 END 拇指时父组件拿到的是左值）。
+    final bool draggingStart = values.start != _rangeStart;
+    final double reported = draggingStart ? snappedStart : snappedEnd;
+    w.onChangeEnd?.call(reported);
   }
 }
 
@@ -571,7 +601,7 @@ class _ParkSliderBuilder extends StatelessWidget {
                         color: isActive
                             ? activeColor
                             : park.colors.textSecondary,
-                        fontSize: 10,
+                        fontSize: park.typography.sizeOverline,
                       ),
                     ),
                   ),

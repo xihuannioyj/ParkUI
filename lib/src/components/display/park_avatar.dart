@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 
@@ -100,7 +102,9 @@ class ParkAvatar extends StatelessWidget {
     }
   }
 
-  double _fontSize(double avatarSize) => avatarSize * (0.4 - gap * 0.01);
+  // 边界防御：gap 过大时 0.4 - gap*0.01 会 ≤ 0 → 负字号 TextStyle 断言崩溃。
+  double _fontSize(double avatarSize) =>
+      avatarSize * (0.4 - gap * 0.01).clamp(0.12, 1.0).toDouble();
 
   double _iconSize(double avatarSize) => avatarSize * 0.5;
 
@@ -228,12 +232,14 @@ class ParkAvatar extends StatelessWidget {
     }
 
     if (badge != null) {
+      // Positioned 必须是 Stack 的直接子节点（ParentDataWidget 只能作用于
+      // 直接子级），Semantics 移入 Positioned 内部（修复 ParentData 异常）。
       stackChildren.add(
-        Semantics(
-          liveRegion: status != null,
-          child: Positioned(
-            right: -2,
-            bottom: -2,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Semantics(
+            liveRegion: status != null,
             child: badge!,
           ),
         ),
@@ -288,17 +294,20 @@ class ParkAvatar extends StatelessWidget {
     }
 
     if (text != null && text!.isNotEmpty) {
-      return Container(
-        width: dim,
-        height: dim,
-        alignment: Alignment.center,
-        color: backgroundColor ?? park.colors.brand,
-        child: Text(
-          text![0].toUpperCase(),
-          style: TextStyle(
-            fontSize: _fontSize(dim),
-            fontWeight: park.typography.weightBold,
-            color: park.colors.textOnBrand,
+      return Semantics(
+        label: text,
+        child: Container(
+          width: dim,
+          height: dim,
+          alignment: Alignment.center,
+          color: backgroundColor ?? park.colors.brand,
+          child: Text(
+            text![0].toUpperCase(),
+            style: TextStyle(
+              fontSize: _fontSize(dim),
+              fontWeight: park.typography.weightBold,
+              color: park.colors.textOnBrand,
+            ),
           ),
         ),
       );
@@ -377,7 +386,10 @@ class ParkAvatarGroup extends StatelessWidget {
     final park = Theme.of(context).extension<ParkThemeData>() ??
         ParkThemeData.light();
     final dim = _resolveSize(park);
-    final effectiveMax = count ?? maxCount;
+    // 边界防御：空列表直接返回 shrink，避免渲染出 (dim-overlap) 宽的空占位框。
+    if (avatars.isEmpty) return const SizedBox.shrink();
+    // 边界防御：maxCount/count 传负数时 clamp(0, 负数) 会抛 ArgumentError。
+    final effectiveMax = math.max(0, count ?? maxCount);
     final visibleCount = avatars.length.clamp(0, effectiveMax);
     final remaining = avatars.length - visibleCount;
     final totalWidth = dim + (visibleCount - 1) * (dim - overlap) +

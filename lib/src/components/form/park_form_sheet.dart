@@ -48,6 +48,8 @@ class ParkFormSheet {
       isDismissible: barrierDismissible,
       enableDrag: barrierDismissible,
       backgroundColor: Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (ctx) {
         return _ParkFormSheetContent<T>(
           title: title,

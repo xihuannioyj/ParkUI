@@ -120,5 +120,32 @@ void main() {
     test('ParkDropdownPlacement has 4 values', () {
       expect(ParkDropdownPlacement.values.length, 4);
     });
+
+    test('ParkDropdownMenuSize has 3 values', () {
+      expect(ParkDropdownMenuSize.values.length, 3);
+    });
+  });
+
+  group('ParkDropdownMenu - size', () {
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      for (final size in ParkDropdownMenuSize.values) {
+        await tester.pumpWidget(_wrap(
+          ParkDropdownMenu(
+            size: size,
+            trigger: Text(size.name),
+            items: const [
+              ParkDropdownMenuItem(label: 'Item', value: 'i'),
+            ],
+          ),
+        ));
+        await tester.tap(find.text(size.name));
+        await tester.pumpAndSettle();
+        expect(find.text('Item'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        // 拆掉整棵树，避免上一个菜单的 OverlayEntry 残留阻塞下次点击
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    });
   });
 }

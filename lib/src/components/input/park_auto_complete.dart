@@ -93,10 +93,12 @@ class _ParkAutoCompleteState extends State<ParkAutoComplete> {
   }
 
   void _select(String value) {
-    _controller.text = value;
-    _controller.selection = TextSelection.fromPosition(TextPosition(offset: value.length));
+    // 提交类回调统一 trim（选中即提交语义，与 ParkSearch 建议项点击一致）
+    final String trimmed = value.trim();
+    _controller.text = trimmed;
+    _controller.selection = TextSelection.fromPosition(TextPosition(offset: trimmed.length));
     _hideSuggestions();
-    widget.onSelected?.call(value);
+    widget.onSelected?.call(trimmed);
   }
 
   Widget _buildDropdown() {

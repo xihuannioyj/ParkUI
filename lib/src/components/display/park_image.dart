@@ -121,6 +121,12 @@ class _ParkImageState extends State<ParkImage> {
   int _loadAttempt = 0;
   bool _isVisible = false;
   bool _hasError = false;
+  /// 本次 src 是否已回调过 onLoad（防重复触发）。
+  bool _loadNotified = false;
+  /// 最近一次已计数的失败加载尝试（防父级重建反复消耗重试次数）。
+  int _lastErrorAttempt = -1;
+  /// lazy 模式监听的滚动位置。
+  ScrollPosition? _scrollPosition;
 
   @override
   void initState() {
@@ -134,12 +140,30 @@ class _ParkImageState extends State<ParkImage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // lazy 模式：监听滚动位置，滚入视口时触发加载。
+    // 原实现只在 initState 检查一次，非虚拟化滚动容器（SingleChildScrollView/
+    // Column 等）中图片永远不加载。
+    if (!widget.lazy) return;
+    final ScrollableState? scrollable = Scrollable.maybeOf(context);
+    final ScrollPosition? newPosition = scrollable?.position;
+    if (!identical(newPosition, _scrollPosition)) {
+      _scrollPosition?.removeListener(_checkVisibility);
+      _scrollPosition = newPosition;
+      newPosition?.addListener(_checkVisibility);
+    }
+  }
+
+  @override
   void didUpdateWidget(ParkImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.src != widget.src) {
       _retryCount = 0;
       _loadAttempt++;
       _hasError = false;
+      _loadNotified = false;
+      _lastErrorAttempt = -1;
       _isVisible = !widget.lazy;
       if (widget.lazy) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -152,6 +176,13 @@ class _ParkImageState extends State<ParkImage> {
         _checkVisibility();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollPosition?.removeListener(_checkVisibility);
+    _scrollPosition = null;
+    super.dispose();
   }
 
   void _checkVisibility() {
@@ -181,6 +212,9 @@ class _ParkImageState extends State<ParkImage> {
 
   void _onLoadSuccess() {
     if (!mounted) return;
+    // 防重复：frameBuilder 在父级每次重建后都会触发，onLoad 只回调一次。
+    if (_loadNotified) return;
+    _loadNotified = true;
     _hasError = false;
     if (!widget.memoryCache) {
       PaintingBinding.instance.imageCache.evict(NetworkImage(widget.src));
@@ -190,10 +224,15 @@ class _ParkImageState extends State<ParkImage> {
 
   void _onLoadError() {
     if (!mounted) return;
+    // 同一次加载尝试只计一次失败：父级重建会让 errorBuilder 反复触发，
+    // 原实现会把重试次数耗尽并误触发 onError。
+    if (_lastErrorAttempt == _loadAttempt) return;
+    _lastErrorAttempt = _loadAttempt;
     _hasError = true;
     if (_retryCount < widget.retry) {
       _retryCount++;
       _loadAttempt++;
+      _loadNotified = false;
       setState(() {});
     } else {
       widget.onError?.call();
@@ -281,6 +320,12 @@ class _ParkImageState extends State<ParkImage> {
 
     Widget buildImageContent() {
       if (!schemeValid) {
+        // scheme 非法（或 src 为空）：不走 Image 错误路径，需手动通知 onError
+        // （非法 scheme 重试无意义，直接回调一次）。
+        if (!_hasError) {
+          _hasError = true;
+          widget.onError?.call();
+        }
         return _buildErrorWidget(park, effectiveWidth, effectiveHeight);
       }
       if (!_isVisible && widget.lazy) {

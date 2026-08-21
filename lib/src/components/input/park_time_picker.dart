@@ -296,7 +296,7 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
                       child: Text(
                         displayText,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: park.typography.sizeBodySmall,
                           color: _selected != null
                               ? park.colors.textPrimary
                               : park.colors.textPlaceholder,

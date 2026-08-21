@@ -707,6 +707,12 @@ final ParkComponentSpec _parkCascader = ParkComponentSpec(
       defaultVal: 'false',
       description: '是否启用多选模式。为 true 时每个选项前显示复选框，父节点选中联动子节点。 / Enable multi-select mode',
     ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkCascaderSize',
+      defaultVal: 'ParkCascaderSize.medium',
+      description: '级联选择器尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小。 / Size: small / medium / large',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -4363,12 +4369,17 @@ class _UploadBindKeyDemoState extends State<_UploadBindKeyDemo> {
                   children: <Widget>[
                     Icon(Icons.sync, size: 16, color: _kColors.brand),
                     const SizedBox(width: 8),
-                    Text(
-                      'model JSON — 共 ${filePaths.length} 个文件',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: _kColors.brand,
-                        fontWeight: FontWeight.w500,
+                    // Flexible：窄屏下长文案不溢出
+                    Expanded(
+                      child: Text(
+                        'model JSON — 共 ${filePaths.length} 个文件',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _kColors.brand,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],

@@ -92,7 +92,8 @@ class _ParkRefreshState extends State<ParkRefresh>
 
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.vertical ||
-        !_isAtTop) {
+        // 顶部用于下拉刷新，底部用于上拉加载更多；中间位置不处理
+        !(_isAtTop || _isAtBottom)) {
       return false;
     }
 

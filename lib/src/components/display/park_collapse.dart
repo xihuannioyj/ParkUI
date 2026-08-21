@@ -24,6 +24,18 @@ enum ParkCollapseCollapsible {
   disabled,
 }
 
+/// Collapse panel size preset.
+enum ParkCollapseSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// Data model for a single collapse item.
 class ParkCollapseItem {
   /// Creates a ParkCollapseItem.
@@ -86,6 +98,7 @@ class ParkCollapse extends StatefulWidget {
     this.contentPadding,
     this.expandIcon,
     this.expandIconPosition = ParkExpandIconPosition.end,
+    this.size = ParkCollapseSize.medium,
   });
 
   /// The list of collapsible items.
@@ -142,6 +155,9 @@ class ParkCollapse extends StatefulWidget {
   /// Defaults to [ParkExpandIconPosition.end] for backward compatibility.
   final ParkExpandIconPosition expandIconPosition;
 
+  /// 折叠面板尺寸（small / medium / large），控制头部与内容内边距、标题字号与图标大小。
+  final ParkCollapseSize size;
+
   @override
   State<ParkCollapse> createState() => _ParkCollapseState();
 }
@@ -156,15 +172,29 @@ class _ParkCollapseState extends State<ParkCollapse>
     bindingService = widget.bindingService;
     super.initState();
     final initialValue = boundValue;
-    _activeKeys = Set.from(initialValue ?? widget.activeKeys);
+    _activeKeys = _normalize(Set.from(initialValue ?? widget.activeKeys));
   }
 
   @override
   void didUpdateWidget(covariant ParkCollapse oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.activeKeys != widget.activeKeys) {
-      _activeKeys = Set.from(widget.activeKeys);
+      _activeKeys = _normalize(Set.from(widget.activeKeys));
     }
+  }
+
+  /// accordion 模式下归一化：初始 activeKeys 含多个 key 时只保留 items 顺序中
+  /// 第一个已激活的 key，避免多个面板同时展开破坏单开语义。
+  Set<String> _normalize(Set<String> keys) {
+    if (!widget.accordion || keys.length <= 1) return keys;
+    String? firstActive;
+    for (final item in widget.items) {
+      if (keys.contains(item.key)) {
+        firstActive = item.key;
+        break;
+      }
+    }
+    return <String>{firstActive ?? keys.first};
   }
 
   void _toggle(String itemKey) {
@@ -210,17 +240,43 @@ class _ParkCollapseState extends State<ParkCollapse>
     final isOpen = _activeKeys.contains(item.key);
     final isDisabled = item.disabled;
 
-    final headerPad = widget.headerPadding ?? EdgeInsets.symmetric(
-      horizontal: park.spacing.base,
-      vertical: park.spacing.md,
-    );
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets defaultHeaderPad = switch (widget.size) {
+      ParkCollapseSize.small => EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.sm,
+        ),
+      ParkCollapseSize.medium => EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.md,
+        ),
+      ParkCollapseSize.large => EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.base,
+        ),
+    };
+    final EdgeInsets defaultContentPad = switch (widget.size) {
+      ParkCollapseSize.small => EdgeInsets.fromLTRB(
+          park.spacing.sm, 0, park.spacing.sm, park.spacing.sm),
+      ParkCollapseSize.medium => EdgeInsets.fromLTRB(
+          park.spacing.base, 0, park.spacing.base, park.spacing.base),
+      ParkCollapseSize.large => EdgeInsets.fromLTRB(
+          park.spacing.lg, 0, park.spacing.lg, park.spacing.lg),
+    };
+    final double iconSize = switch (widget.size) {
+      ParkCollapseSize.small => 16.0,
+      ParkCollapseSize.medium => 20.0,
+      ParkCollapseSize.large => 24.0,
+    };
+    final double titleFontSize = switch (widget.size) {
+      ParkCollapseSize.small => park.typography.sizeCaption,
+      ParkCollapseSize.medium => park.typography.sizeBody,
+      ParkCollapseSize.large => park.typography.sizeBody,
+    };
 
-    final contentPad = widget.contentPadding ?? EdgeInsets.fromLTRB(
-      park.spacing.base,
-      0,
-      park.spacing.base,
-      park.spacing.base,
-    );
+    final headerPad = widget.headerPadding ?? defaultHeaderPad;
+
+    final contentPad = widget.contentPadding ?? defaultContentPad;
 
     final bgColor = isDisabled
         ? park.colors.disabledBg.withValues(alpha: 0.3)
@@ -235,7 +291,7 @@ class _ParkCollapseState extends State<ParkCollapse>
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 Icons.keyboard_arrow_down,
-                size: 20,
+                size: iconSize,
                 color: isDisabled
                     ? park.colors.textDisabled
                     : park.colors.textSecondary,
@@ -271,7 +327,7 @@ class _ParkCollapseState extends State<ParkCollapse>
             if (item.icon != null) ...[
               Icon(
                 item.icon,
-                size: 20,
+                size: iconSize,
                 color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
               ),
               SizedBox(width: park.spacing.sm),
@@ -283,7 +339,7 @@ class _ParkCollapseState extends State<ParkCollapse>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: park.typography.sizeBody,
+                      fontSize: titleFontSize,
                       fontWeight: park.typography.weightMedium,
                       color: isDisabled ? park.colors.textDisabled : park.colors.textPrimary,
                     ),

@@ -74,6 +74,8 @@ class ParkOverlay extends StatefulWidget {
   final bool custom;
 
   /// Name of the transition animation to use.
+  ///
+  /// 保留向后兼容：当前仅支持默认 fade 过渡，未实现多过渡切换。
   final String transitionName;
 
   /// 静态方法：弹出全屏遮罩层。
@@ -101,7 +103,9 @@ class ParkOverlay extends StatefulWidget {
     final Completer<void> completer = Completer<void>();
     bool dismissed = false;
     Timer? autoCloseTimer;
-    late OverlayEntry entry;
+    // 可空：show() 后同帧内 dismiss() 时 entry 尚未赋值，
+    // late 会抛 LateInitializationError。
+    OverlayEntry? entry;
     final popupKey = GlobalKey<_ParkOverlayPopupState>();
 
     void dismiss() {
@@ -112,19 +116,22 @@ class ParkOverlay extends StatefulWidget {
       final state = popupKey.currentState;
       if (state != null) {
         state.reverseAndDismiss(() {
-          if (entry.mounted) entry.remove();
+          if (entry?.mounted ?? false) entry!.remove();
           if (!completer.isCompleted) completer.complete();
         });
       } else {
-        if (entry.mounted) entry.remove();
+        if (entry?.mounted ?? false) entry!.remove();
         if (!completer.isCompleted) completer.complete();
       }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 同帧已 dismiss：不再插入 entry，避免遮罩永久残留。
+      if (dismissed) return;
+      if (!context.mounted) return;
       final OverlayState overlay = Overlay.of(context, rootOverlay: true);
 
-      entry = OverlayEntry(
+      final OverlayEntry created = OverlayEntry(
         builder: (BuildContext ctx) {
           return _ParkOverlayPopup(
             key: popupKey,
@@ -141,8 +148,9 @@ class ParkOverlay extends StatefulWidget {
           );
         },
       );
+      entry = created;
 
-      overlay.insert(entry);
+      overlay.insert(created);
 
       if (autoClose != null) {
         autoCloseTimer = Timer(autoClose, dismiss);
@@ -179,7 +187,12 @@ class _ParkOverlayState extends State<ParkOverlay>
       if (widget.visible) {
         _controller.forward();
       } else {
-        _controller.reverse();
+        // 关闭动画完成后触发 afterClose（此前声明但未消费的死参数，现补上）。
+        _controller.reverse().whenComplete(() {
+          if (mounted) {
+            widget.afterClose?.call();
+          }
+        });
       }
     }
   }

@@ -30,71 +30,85 @@ class _InputTokenItem {
 }
 
 /// 输入框令牌展示卡片构建器。
+///
+/// 修复：长令牌名（等宽字体）在窄屏下使 Row 溢出——名称改 Flexible 弹性收缩；
+/// 颜色统一改用 Park 主题令牌（原硬编码 white/grey/blue，暗色主题不可读）。
 Widget _buildInputTokenCard({
   required String title,
   required List<_InputTokenItem> items,
 }) {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ParkText(title, preset: ParkTextPreset.h3),
-        const SizedBox(height: 12),
-        ...items.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    item.name,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
+  return Builder(builder: (BuildContext context) {
+    final ParkThemeData park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: park.colors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: park.colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ParkText(title, preset: ParkTextPreset.h3),
+          const SizedBox(height: 12),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: park.colors.brand.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: park.colors.brand,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${item.value.toInt()}px',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace',
+                  const SizedBox(width: 12),
+                  Text(
+                    '${item.value.toInt()}px',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'monospace',
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    item.description,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: park.colors.textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+    });
 }
 
 /// 输入组件规格字典（8 个组件）。
@@ -424,16 +438,6 @@ final ParkComponentSpec _parkInputSpec = ParkComponentSpec(
       name: 'onTapOutside',
       signature: 'VoidCallback?',
       description: '点击输入框外部时的回调 / Called when tapping outside the field',
-    ),
-    ParkEventDef(
-      name: 'onCompositionStart',
-      signature: 'ValueChanged<String>?',
-      description: '输入法组合开始回调（CJK 输入法开始组合时触发） / IME composition start (CJK)',
-    ),
-    ParkEventDef(
-      name: 'onCompositionEnd',
-      signature: 'ValueChanged<String>?',
-      description: '输入法组合结束回调（CJK 输入法结束组合时触发） / IME composition end (CJK)',
     ),
     ParkEventDef(
       name: 'validator',
@@ -1062,31 +1066,29 @@ StatefulBuilder(
       },
     ),
     ParkDemoScenario(
-      title: '可交互：输入法组合演示',
+      title: '可交互：实时回显输入',
       description:
-          '通过 StatefulBuilder 实时回显 ParkInput 的 onCompositionStart /'
-          ' onCompositionEnd 回调（CJK 输入法组合开始与结束）。'
-          ' / StatefulBuilder echoes onCompositionStart and onCompositionEnd.',
+          '通过 StatefulBuilder 实时回显 ParkInput 的 onChanged 回调。'
+          ' / StatefulBuilder echoes onChanged.',
       code: '''
 StatefulBuilder(
   builder: (ctx, setState) {
-    String log = '等待输入法组合...';
+    String log = '等待输入...';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         ParkText(log, preset: ParkTextPreset.bodySmall),
         ParkInput(
-          hintText: '使用中文输入法输入',
-          onCompositionStart: (v) => setState(() => log = 'onCompositionStart: ' + v),
-          onCompositionEnd: (v) => setState(() => log = 'onCompositionEnd: ' + v),
+          hintText: '输入内容试试',
+          onChanged: (v) => setState(() => log = 'onChanged: ' + v),
         ),
       ],
     );
   },
 )''',
       builder: (BuildContext context) {
-        String log = '等待输入法组合...';
+        String log = '等待输入...';
         return StatefulBuilder(
           builder: (BuildContext ctx, StateSetter setState) {
             return Column(
@@ -1095,11 +1097,9 @@ StatefulBuilder(
               children: <Widget>[
                 ParkText(log, preset: ParkTextPreset.bodySmall),
                 ParkInput(
-                  hintText: '使用中文输入法输入',
-                  onCompositionStart: (String v) =>
-                      setState(() => log = 'onCompositionStart: ' + v),
-                  onCompositionEnd: (String v) =>
-                      setState(() => log = 'onCompositionEnd: ' + v),
+                  hintText: '输入内容试试',
+                  onChanged: (String v) =>
+                      setState(() => log = 'onChanged: ' + v),
                 ),
               ],
             );
@@ -1520,18 +1520,6 @@ final ParkComponentSpec _parkTextareaSpec = ParkComponentSpec(
       description: '是否为必填项（为 true 时在标签前显示红色星号） / Required; red asterisk',
     ),
     ParkPropertyDef(
-      name: 'onCompositionStart',
-      type: 'ValueChanged<String>?',
-      defaultVal: 'null',
-      description: '输入法组合开始回调（CJK 输入法开始组合时触发） / IME composition start callback (CJK)',
-    ),
-    ParkPropertyDef(
-      name: 'onCompositionEnd',
-      type: 'ValueChanged<String>?',
-      defaultVal: 'null',
-      description: '输入法组合结束回调（CJK 输入法结束组合时触发） / IME composition end callback (CJK)',
-    ),
-    ParkPropertyDef(
       name: 'bindKey',
       type: 'String?',
       defaultVal: 'null',
@@ -1568,16 +1556,6 @@ final ParkComponentSpec _parkTextareaSpec = ParkComponentSpec(
       name: 'onBlur',
       signature: 'VoidCallback?',
       description: '输入框失去焦点时的回调 / Called on blur',
-    ),
-    ParkEventDef(
-      name: 'onCompositionStart',
-      signature: 'ValueChanged<String>?',
-      description: '输入法组合开始回调（CJK 输入法开始组合时触发） / IME composition start',
-    ),
-    ParkEventDef(
-      name: 'onCompositionEnd',
-      signature: 'ValueChanged<String>?',
-      description: '输入法组合结束回调（CJK 输入法结束组合时触发） / IME composition end',
     ),
     ParkEventDef(
       name: 'validator',
@@ -1861,31 +1839,29 @@ StatefulBuilder(
       },
     ),
     ParkDemoScenario(
-      title: '可交互：输入法组合演示',
+      title: '可交互：实时回显输入',
       description:
-          '通过 StatefulBuilder 实时回显 ParkTextarea 的 onCompositionStart /'
-          ' onCompositionEnd 回调（CJK 输入法组合开始与结束）。'
-          ' / StatefulBuilder echoes onCompositionStart and onCompositionEnd.',
+          '通过 StatefulBuilder 实时回显 ParkTextarea 的 onChanged 回调。'
+          ' / StatefulBuilder echoes onChanged.',
       code: '''
 StatefulBuilder(
   builder: (ctx, setState) {
-    String log = '等待输入法组合...';
+    String log = '等待输入...';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         ParkText(log, preset: ParkTextPreset.bodySmall),
         ParkTextarea(
-          hintText: '使用中文输入法输入',
-          onCompositionStart: (v) => setState(() => log = 'onCompositionStart: ' + v),
-          onCompositionEnd: (v) => setState(() => log = 'onCompositionEnd: ' + v),
+          hintText: '输入内容试试',
+          onChanged: (v) => setState(() => log = 'onChanged: ' + v),
         ),
       ],
     );
   },
 )''',
       builder: (BuildContext context) {
-        String log = '等待输入法组合...';
+        String log = '等待输入...';
         return StatefulBuilder(
           builder: (BuildContext ctx, StateSetter setState) {
             return Column(
@@ -1894,11 +1870,9 @@ StatefulBuilder(
               children: <Widget>[
                 ParkText(log, preset: ParkTextPreset.bodySmall),
                 ParkTextarea(
-                  hintText: '使用中文输入法输入',
-                  onCompositionStart: (String v) =>
-                      setState(() => log = 'onCompositionStart: ' + v),
-                  onCompositionEnd: (String v) =>
-                      setState(() => log = 'onCompositionEnd: ' + v),
+                  hintText: '输入内容试试',
+                  onChanged: (String v) =>
+                      setState(() => log = 'onChanged: ' + v),
                 ),
               ],
             );

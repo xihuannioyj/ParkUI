@@ -133,7 +133,8 @@ class ParkRadio extends FormField<String> implements ParkBindableWidget {
     this.disabled = false,
     this.card = false,
     this.bordered = true,
-    this.radioSize = ParkRadioSize.medium,
+    ParkRadioSize? size,
+    @Deprecated('使用 size 参数替代 radioSize') ParkRadioSize? radioSize,
     this.readOnly = false,
     this.autoFocus = false,
     this.onFocus,
@@ -143,7 +144,8 @@ class ParkRadio extends FormField<String> implements ParkBindableWidget {
     FormFieldSetter<String>? onSaved,
     FormFieldValidator<String>? validator,
     bool autovalidateMode = false,
-  }) : super(
+  })  : radioSize = size ?? radioSize ?? ParkRadioSize.medium,
+        super(
           initialValue: value,
           onSaved: onSaved,
           validator: validator,

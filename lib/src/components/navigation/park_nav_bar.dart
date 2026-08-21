@@ -72,6 +72,9 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   /// 导航栏底部附加内容（如搜索栏、二级标签等）
   final PreferredSizeWidget? bottom;
 
+  /// [bottom] 的固定高度（用于 [preferredSize] 精确预留，避免底部内容挤压工具栏溢出）。
+  final double? bottomHeight;
+
   const ParkNavBar({
     super.key,
     this.title,
@@ -91,6 +94,7 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
     this.subTitle,
     this.onBackConfirm,
     this.bottom,
+    this.bottomHeight,
   });
 
   /// 以字符串快捷构造标题
@@ -135,8 +139,13 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize =>
-      Size.fromHeight(height + (safeAreaTop ? _defaultTopSafeInset : 0));
+  Size get preferredSize {
+    // 与 build 保持一致：总高计入 topInset 与 bottom 高度，
+    // 否则 Scaffold 预留高度与实际渲染高度错位、bottom 挤压工具栏溢出。
+    final double bottomH = bottomHeight ?? bottom?.preferredSize.height ?? 0;
+    return Size.fromHeight(
+        height + (safeAreaTop ? _defaultTopSafeInset : 0) + bottomH);
+  }
 
   static double get _defaultTopSafeInset {
     final views = WidgetsBinding.instance.platformDispatcher.views;
@@ -164,7 +173,8 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
     final showElevation = !transparent && elevation > 0;
 
     return Container(
-      height: height + topInset,
+      // 总高计入 bottom 高度，避免 bottom 挤压工具栏导致 RenderFlex 溢出。
+      height: height + topInset + (bottomHeight ?? bottom?.preferredSize.height ?? 0),
       decoration: BoxDecoration(
         color: bgColor,
         border: showBorder

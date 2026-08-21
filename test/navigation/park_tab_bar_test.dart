@@ -42,5 +42,20 @@ void main() {
       expect(find.byIcon(Icons.home), findsOneWidget);
       expect(find.byIcon(Icons.person), findsOneWidget);
     });
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      for (final size in ParkTabBarSize.values) {
+        await tester.pumpWidget(_wrap(ParkTabBar(
+          size: size,
+          items: [
+            ParkTabBarItem(icon: Icons.home, label: '首页'),
+            ParkTabBarItem(icon: Icons.message, label: '消息'),
+            ParkTabBarItem(icon: Icons.person, label: '我的'),
+          ],
+        )));
+        expect(find.text('首页'), findsOneWidget);
+        expect(find.text('消息'), findsOneWidget);
+        expect(find.text('我的'), findsOneWidget);
+      }
+    });
   });
 }

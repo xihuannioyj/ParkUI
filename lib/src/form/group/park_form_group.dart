@@ -120,6 +120,9 @@ class ParkFormFieldChangeEvent {
 class ParkFormGroup {
   final Map<String, ParkAbstractControl> _controls;
 
+  /// 统一 trim：String 值去两侧空白，其他类型原样返回。
+  static dynamic _trimValue(dynamic v) => v is String ? v.trim() : v;
+
   /// Runtime mutable field states keyed by field name.
   final Map<String, ParkFormField> fields;
 
@@ -148,9 +151,12 @@ class ParkFormGroup {
   // ═══ Value operations ═══
 
   /// Get all values (including hidden / disabled / readonly fields).
+  ///
+  /// 统一规整：所有 String 值去掉两侧空白（trim），保证提交（schema 表单 / 动态表单）
+  /// 拿到的文本字段不带首尾空格。
   Map<String, dynamic> get value => <String, dynamic>{
         for (final MapEntry<String, ParkAbstractControl> e in _controls.entries)
-          e.key: e.value.value,
+          e.key: _trimValue(e.value.value),
       };
 
   /// Batch set multiple field values.

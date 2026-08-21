@@ -314,7 +314,16 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
   @override
   void dispose() {
-    _afterCloseTimer?.cancel();
+    // afterClose 补偿：show() 模式下 onClose 会同步 entry.remove() →
+    // 本 State 在 300ms 定时器触发前就被销毁，若只 cancel 会让 afterClose
+    // 永不回调。销毁时若存在未触发的 afterClose 定时器，取消并立即补偿触发
+    // （组件已关闭并销毁，语义上"关闭后"即此刻）。
+    final Timer? pending = _afterCloseTimer;
+    _afterCloseTimer = null;
+    if (pending != null) {
+      pending.cancel();
+      widget.afterClose?.call();
+    }
     _focusNode.dispose();
     super.dispose();
   }
@@ -385,9 +394,20 @@ class _ParkDrawerState extends State<ParkDrawer> {
       final effectiveWidth = resolvedSize.clamp(0.0, maxWidth).toDouble();
       Widget drawerContent = SizedBox(width: effectiveWidth, child: content);
 
+      // 按方向对齐：right → 右侧，left → 左侧（Stack 默认 topStart 会把
+      // 右抽屉渲染到左侧，必须显式 Align）。
+      drawerContent = Align(
+        alignment: _effectivePlacement == ParkDrawerPlacement.right
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: drawerContent,
+      );
+
       if (widget.mask) {
         result = Stack(
-          key: ValueKey('dr_stack_${widget.zIndex}'),
+          // key 必须唯一：同屏左右两个抽屉（默认 zIndex 相同）会导致
+          // "Duplicate keys found" 崩溃，加入方向区分。
+          key: ValueKey('dr_stack_${widget.zIndex}_${_effectivePlacement}'),
           children: [
             Positioned.fill(
               child: GestureDetector(
@@ -409,9 +429,17 @@ class _ParkDrawerState extends State<ParkDrawer> {
       Widget drawerContent =
           SizedBox(height: effectiveHeight, child: content);
 
+      // 按方向对齐：bottom → 底部，top → 顶部
+      drawerContent = Align(
+        alignment: _effectivePlacement == ParkDrawerPlacement.bottom
+            ? Alignment.bottomCenter
+            : Alignment.topCenter,
+        child: drawerContent,
+      );
+
       if (widget.mask) {
         result = Stack(
-          key: ValueKey('dr_stack_${widget.zIndex}'),
+          key: ValueKey('dr_stack_${widget.zIndex}_${_effectivePlacement}'),
           children: [
             Positioned.fill(
               child: GestureDetector(
@@ -472,6 +500,8 @@ class _ParkDrawerState extends State<ParkDrawer> {
                   bottomLeft: Radius.circular(park.radius.lg),
                 ),
         ),
+        // 遮罩由 ParkDrawer 自绘（maskColor ?? park.colors.overlay，淡色），
+        // Drawer 无 scrimColor 参数，不再误传。
         backgroundColor: colors.surface,
         child: _buildInnerContent(park, colors),
       ),

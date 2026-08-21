@@ -391,8 +391,31 @@ final ParkComponentSpec _parkSpaceSpec = ParkComponentSpec(
   children: [Text('A'), Text('B'), Text('C')],
 )''',
   guide: '''
-## 使用指南
-ParkSpace 替代手动在 children 间加 SizedBox。预设工厂：xs(4)/sm(8)/md(16)/lg(24)/xl(32)。
+## 何时使用 / When to use
+- 替代手动在 children 之间逐个插入 SizedBox / Padding，统一管理一组元素间的水平或垂直间距 / Replacing manual SizedBox/Padding between children
+- 水平排列一组按钮、标签、图标等内联元素，如操作区、导航条目 / Horizontally arranging buttons, tags or icons (action areas, nav items)
+- 垂直堆叠表单字段、列表条目等区块，保证间距一致 / Vertically stacking form fields or list rows with consistent gaps
+- 需要自动换行的流式布局，如标签云、筛选条件组 / Flow layouts that auto-wrap, e.g. tag clouds, filter groups
+
+## 使用建议 / Usage tips
+- size 默认 8px；优先使用 xs(4)/sm(8)/md(16)/lg(24)/xl(32) 预设工厂，保证间距体系与设计令牌一致 / Prefer the xs–xl preset factories over raw sizes
+- wrap 仅在水平方向生效：为 true 时改用 Wrap 布局，换行间距 runSpacing 与 spacing 同值；垂直方向请使用多个 ParkSpace 或外层容器 / wrap applies to horizontal direction only
+- children 为空时组件渲染为 SizedBox.shrink()，不会产生额外占位，可安全用于动态列表 / Empty children render as zero-size, safe for dynamic lists
+- 水平/垂直模式通过在 children 之间插入 SizedBox 实现间距，不要再给每个 child 重复加 margin，避免间距翻倍 / Don't double-pad children with extra margins
+- mainAxisAlignment / crossAxisAlignment 直接透传给 Row/Column/Wrap，可用 spaceBetween / spaceEvenly 实现两端对齐或均分布局 / Alignment params pass through to the underlying layout
+- 自定义 size 建议取 4 的倍数，与 4px 基准间距体系保持像素对齐 / Keep custom sizes multiples of 4 for pixel alignment
+
+## 搭配推荐 / Compose with
+- 搭配 ParkTag / ParkBadge 组合标签云或状态徽标行 / ParkTag or ParkBadge for tag clouds and status rows
+- 搭配 ParkButtonGroup 或 ParkButton 组合「确定 / 取消」等操作区 / ParkButtonGroup or ParkButton for action areas
+- 搭配 ParkFormRow / ParkFormSection 垂直排布表单字段 / ParkFormRow and ParkFormSection for vertical form layouts
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.*（不消费） | 纯布局组件，不渲染色彩令牌，背景与分隔线由外层容器决定 |
+| 字体 | typography.*（不消费） | 不渲染文字，不消费字体令牌 |
+| 间距 | spacing.xs / sm / base / xl / xxl | 预设工厂 4/8/16/24/32 与 spacing 令牌数值对齐（md=16 对应 base，lg=24 对应 xl，xl=32 对应 xxl） |
 ''',
 );
 
@@ -631,8 +654,30 @@ final ParkComponentSpec _parkQRCodeSpec = ParkComponentSpec(
   ],
   basicUsageCode: '''ParkQRCode(data: 'https://example.com', size: 200)''',
   guide: '''
-## 使用指南
-支持 L/M/Q/H 四个纠错等级。可传入 logo widget 嵌入中心。
+## 何时使用 / When to use
+- 需要展示可被标准扫码器识别、可正常跳转的真实二维码（支付、加好友、下载链接等）/ Displaying real scannable QR codes for payment, contacts, deep links
+- 需要嵌入中心 Logo 的品牌化二维码 / Branded QR codes with a center logo
+- 需要跟随主题定制前景/背景配色的二维码（浅色卡片、暗色模式）/ QR codes color-matched to light/dark themes
+
+## 使用建议 / Usage tips
+- data 为必填参数，内容为空或纯空白时组件回退为纯色占位块而非二维码，业务侧应先校验数据 / data is required; empty input renders a plain placeholder
+- 嵌入 logo 会遮挡部分码面，建议同时把 errorCorrectionLevel 提升到 quartile 或 high，弥补纠错能力损失 / Raise the EC level to Q/H when embedding a logo
+- logoSize 默认等于 size * 0.25，logo 过大会显著降低识别成功率，尽量不超过二维码面积的 1/4 / Keep the logo around 25% of the QR area
+- 前景色与背景色需保持足够对比度（默认 textPrimary 前景 / surface 背景），低对比度组合可能导致扫码失败 / Keep foreground/background contrast high
+- 数据越长二维码矩阵越密集（版本自动选择），长 URL 建议先用短链服务压缩后再编码 / Longer data means a denser matrix; shorten long URLs first
+- size 为固定像素尺寸，请按扫码距离与容器宽度选取，避免过小导致无法识别 / size is fixed px — choose it for the actual scan distance
+
+## 搭配推荐 / Compose with
+- 搭配 ParkCard 承载二维码，适合支付、分享等卡片化展示场景 / ParkCard as a container
+- 搭配 ParkButton 提供「保存 / 分享」等操作入口 / ParkButton for actions
+- 搭配 ParkTooltip 在悬停或长按时提示 data 内容 / ParkTooltip to reveal the encoded data
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.surface / colors.textPrimary | 未显式传 backgroundColor / foregroundColor 时作为默认底色与前景色 |
+| 字体 | typography.* | 二维码为矩阵图形，组件不渲染文字，不消费字体令牌 |
+| 间距 | spacing.* | QrImageView 内边距为 0，周边留白由外层容器（如 ParkCard 内边距）控制 |
 ''',
 );
 
@@ -730,8 +775,30 @@ final ParkComponentSpec _parkWatermarkSpec = ParkComponentSpec(
   ],
   basicUsageCode: '''ParkWatermark(text: '机密文件', child: myContent)''',
   guide: '''
-## 使用指南
-通过 CustomPainter 叠加旋转文字水印。IgnorePointer 确保不阻挡内容交互。
+## 何时使用 / When to use
+- 为机密文件、草稿、审批单据等敏感内容叠加版权或状态标识 / Adding copyright or status marks to confidential content
+- 在表单、表格、图片等防截屏扩散场景中做视觉威慑 / Deterring screenshot leaks over forms, tables and images
+- 需要品牌水印（图片模式）铺满内容区域的场景 / Branding content with a tiled image watermark
+
+## 使用建议 / Usage tips
+- text 与 image 必须二选一（构造器断言强制），同时传入时 image 优先渲染 / Either text or image is required; image wins when both are set
+- 水印层由 IgnorePointer 包裹，默认不阻挡内容的点击、滚动等交互 / The overlay never blocks interaction
+- 默认颜色为 textPrimary 的 10% 透明度，需要更醒目或更淡时可显式传入 color / Default color is textPrimary at 10% alpha
+- gapX / gapY 小于等于 0 时内部会钳制到最小间距，避免平铺循环死循环卡死 UI / Gaps are clamped to avoid an infinite paint loop
+- image 模式通过 RenderRepaintBoundary.toImage 捕获一次并缓存，图片 widget 引用不变时不会重复捕获；超大图片水印注意内存与首帧开销 / Image is captured once and cached; watch memory for huge images
+- 文字水印的 color / fontSize / rotate / gapX / gapY 任一变化都会触发重绘，动态切换参数时注意性能 / Any param change triggers repaint
+
+## 搭配推荐 / Compose with
+- 包裹 ParkTable、ParkCard、ParkResult 等承载敏感数据的容器做版权标识 / Wrap sensitive containers like ParkTable or ParkCard
+- 在 ParkSheetScaffold、ParkDrawer 等弹层内容上叠加水印（如审批预览）/ Overlay on sheets and drawers
+- 搭配 ParkButton 提供「预览水印 / 移除水印」等切换操作（条件渲染被包裹内容）/ Toggle the watermark with a ParkButton
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.textPrimary | 默认水印色为 textPrimary.withAlpha(26)，即 10% 透明度 |
+| 字体 | typography.sizeBodySmall | 组件不直接消费令牌，默认 fontSize 14 与该值（14px）同值，可作自定义参考 |
+| 间距 | spacing.* | 平铺间距由 gapX / gapY 控制，不消费令牌；需要 8px 倍数对齐时可参考 spacing 体系 |
 ''',
 );
 
@@ -961,8 +1028,34 @@ final ParkComponentSpec _parkTreeSpec = ParkComponentSpec(
   ],
 )''',
   guide: '''
-## 使用指南
-ParkTreeNode 支持递归 children。multiSelect 启用 checkbox 多选。loadChildren 实现异步加载。
+## 何时使用 / When to use
+- 组织架构、目录、分类等层级数据的浏览与选择 / Browsing and selecting hierarchical data (org charts, directories, categories)
+- 需要多选勾选的授权、角色分配等场景（multiSelect）/ Multi-select assignments such as roles or permissions
+- 大型树按需展开的异步懒加载（loadChildren）/ Lazy loading large trees on demand
+- 需要对节点进行同级顺序调整的树形列表（draggable）/ Reordering siblings in a tree list
+
+## 使用建议 / Usage tips
+- ParkTreeNode 的 key 必须全局唯一，展开、选中、拖拽与搜索定位都依赖它 / key must be unique across the whole tree
+- 单选监听 onSelect；多选开启 multiSelect 并监听 onMultiSelect（返回已选 key 列表）；受控时传 selectedKeys，外部变化会自动同步（忽略顺序）/ Single vs multi selection; controlled via selectedKeys
+- checkStrictly 默认 false 时父子级联勾选（勾选父节点联动子孙、取消子节点自动取消祖先）；需要父子独立时置 true / Cascade checking by default; set checkStrictly to decouple parents and children
+- loadChildren 对叶子节点按需加载，结果缓存并优先展示；data 引用变化时缓存清空，加载中显示 spinner，异常被捕获不影响 UI；超大节点数也建议用它分层加载控制递归构建开销 / Async loading is cached per node and cleared when data changes; errors are swallowed; use it to keep very large trees responsive
+- draggable 启用长按拖拽，仅允许同级节点间重排，onDragReorder(oldIndex, newIndex) 回传同级索引；disabled 节点不可拖拽 / Long-press drag reorders siblings only; disabled nodes are excluded
+- searchQuery 非空时对节点文字做大小写不敏感高亮，并自动展开所有包含匹配的父节点 / searchQuery highlights matches case-insensitively and auto-expands parent nodes
+
+## 搭配推荐 / Compose with
+- 放入 ParkCard，或作为 ParkLayout 侧边栏中的目录、导航树 / Put inside a ParkCard or a sidebar layout
+- 与 ParkInput 组合：输入内容实时驱动 searchQuery 做树内搜索 / Pair with ParkInput to drive searchQuery
+- 多选结果经 onMultiSelect 回传后，用 ParkDescriptions 等展示已选节点 / Show selected keys via ParkDescriptions after onMultiSelect
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.brand | 选中文字、勾选图标、加载 spinner 与拖拽指示线；选中行背景为 brand.withAlpha(20) |
+| 色彩 | colors.warning | 搜索高亮背景（warning.withAlpha(60)） |
+| 色彩 | colors.textPrimary / colors.textSecondary | 节点文字与箭头、图标颜色 |
+| 字体 | typography.sizeBodySmall | 节点文字字号；高亮文字额外使用 typography.weightMedium |
+| 间距 | spacing.base / spacing.lg | 节点缩进 = spacing.base + 深度 × spacing.lg |
+| 间距 | spacing.xs | 节点行内边距与拖拽指示区高度 |
 ''',
 );
 
@@ -1059,8 +1152,31 @@ final ParkComponentSpec _parkLayoutSpec = ParkComponentSpec(
   body: Center(child: Text('内容')),
 )''',
   guide: '''
-## 使用指南
-基于 Scaffold+Column+Row 实现。sidebarLeft 控制侧边栏左右位置，showSidebarDivider 控制分割线。
+## 何时使用 / When to use
+- 管理后台、控制台类应用的标准页面骨架，需要「顶栏 + 侧边栏 + 内容 + 页脚」四区域布局 / Standard admin/console page shell with header, sidebar, content and footer
+- 需要统一全局导航与版权页脚，同时让内容区自适应占满剩余空间的场景 / Consistent global nav and footer while the content area fills remaining space
+- 侧边栏需要灵活放左 / 放右，并可按需显示或隐藏分割线的布局场景 / Layouts needing the sidebar on either side with an optional divider
+
+## 使用建议 / Usage tips
+- body 为必填参数；header、sidebar、footer 均可省略，缺省时对应区域自动不渲染，仅保留内容区 / body is required; header, sidebar and footer are all optional
+- sidebarWidth 控制侧边栏宽度（默认 240），窄屏或紧凑布局可适当调小 / sidebarWidth (default 240) controls the sidebar width
+- sidebarLeft: false 将侧边栏置于右侧，分割线会自动跟随切换位置 / sidebarLeft: false moves the sidebar to the right and the divider follows
+- showSidebarDivider: false 隐藏 1px 分割线（使用 colors.borderLight），适合需要与内容视觉融合的侧边栏 / Set false to hide the 1px divider for a seamless look
+- 内部使用 Column + Expanded + Row（crossAxisAlignment: stretch），侧边栏与内容区自动撑满可用高度，无需手动设置高度 / Height is filled automatically via Expanded + stretch
+- 侧边栏外层包了 Semantics（文案来自 ParkLocalizations.layoutLabel），无障碍场景下会被识别为独立区域 / The sidebar is wrapped in Semantics for accessibility
+
+## 搭配推荐 / Compose with
+- header 搭配 ParkNavBar，sidebar 搭配 ParkMenu / ParkSideBar 构建完整后台导航 / ParkNavBar in header, ParkMenu or ParkSideBar in sidebar
+- body 内放置 ParkCard、ParkTable、ParkAnchor 等业务内容，组织页面主体 / ParkCard, ParkTable or ParkAnchor inside body
+- footer 搭配 ParkFooter 展示版权与快捷链接 / ParkFooter for copyright and quick links
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.surface | 侧边栏背景色 |
+| 色彩 | colors.borderLight | 侧边栏与内容区之间的分割线颜色（1px VerticalDivider） |
+| 字体 | — | 布局本身不渲染文字，字体令牌由传入的 header / sidebar / footer 组件消费 |
+| 间距 | — | 侧边栏宽度由独立参数 sidebarWidth 控制（默认 240），不消费 spacing 令牌 |
 ''',
 );
 
@@ -1136,8 +1252,30 @@ final ParkComponentSpec _parkAnchorSpec = ParkComponentSpec(
   onChanged: (key) => print('选中: \$key'),
 )''',
   guide: '''
-## 使用指南
-ParkAnchorItem 包含 key 和 label。通过 ScrollController 联动滚动位置，offset 控制跳转偏移。
+## 何时使用 / When to use
+- 长页面文档、帮助中心等需要「目录 + 内容」联动定位的场景 / Docs and help-center pages with a linked table of contents
+- 表单、设置页等分区较多的页面，点击锚点快速跳转到对应区域 / Jumping to sections in long forms or settings pages
+- 需要随滚动自动高亮当前阅读区域的侧边导航 / Sidebar nav that highlights the section being read
+
+## 使用建议 / Usage tips
+- 建议为每个目标分区挂 GlobalKey 并填入 ParkAnchorItem.sectionKey，点击跳转与高亮定位最精确；不填时降级为 Key 匹配或滚动换算 / Prefer GlobalKeys via sectionKey for precise positioning
+- 传入 scrollController 才能启用滚动联动高亮与回退跳转；不传时仅支持点击跳转（依赖 sectionKey）/ scrollController enables scroll-linked highlight
+- item.key 应与目标 widget 的 Key 保持一致，作为 element 树回退定位的匹配依据 / Keep item.key consistent with the target widget key
+- offset（默认 80）是「视口顶部 + offset」的高亮激活阈值，用于考虑顶栏高度；scrollOffset 额外补偿点击跳转时 AppBar 等固定元素，两者叠加使用 / offset vs scrollOffset
+- 高亮采用「最后一个越过阈值的分区」规则，滚动到顶部时保持当前高亮；items 变化会自动清空 RenderBox 缓存并同步高亮到首项，缓存使滚动监听开销为 O(1) / Active rule and O(1) cached lookups
+- 点击跳转使用 300ms easeInOut 平滑滚动，目标偏移会 clamp 到滚动范围之内 / Smooth 300ms easeInOut scroll, clamped to range
+
+## 搭配推荐 / Compose with
+- 搭配 ParkLayout 的侧边栏区域放置锚点，配合 ParkCard 组织各分区内容 / ParkLayout sidebar + ParkCard sections
+- 搭配 ParkBackTop 为长页面提供回到顶部入口 / ParkBackTop for long pages
+- 搭配 ParkSticky 让锚点吸顶，长页面滚动时始终可见 / ParkSticky to keep the anchor visible
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.brand / colors.textSecondary | 激活项左侧 3px 边框与文字用 brand，未激活项文字用 textSecondary |
+| 字体 | typography.sizeCaption | 锚点项文字字号（13px），激活项加粗 w600、未激活项 w400 |
+| 间距 | spacing.base / spacing.sm | 锚点项水平内边距 base（16px）、垂直内边距 sm（8px） |
 ''',
 );
 
@@ -1174,6 +1312,13 @@ final ParkComponentSpec _parkMenuSpec = ParkComponentSpec(
       type: 'bool',
       defaultVal: 'false',
       description: '浅色模式（默认暗色）',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkMenuSize',
+      defaultVal: 'ParkMenuSize.medium',
+      description: '菜单尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小',
       required: false,
     ),
   ],
@@ -1227,7 +1372,9 @@ final ParkComponentSpec _parkMenuSpec = ParkComponentSpec(
 )''',
   guide: '''
 ## 使用指南
-ParkMenuItem 支持递归 children 实现多级。selectedKey 控制高亮，defaultExpandedKeys 控制展开，light 切换浅色。
+ParkMenuItem 支持递归 children 实现多级菜单。selectedKey 控制高亮，defaultExpandedKeys 控制展开；
+themeMode 切换主题模式（system / light / dark），mode 控制菜单模式（vertical / horizontal / inline），
+inlineCollapsed 折叠为纯图标栏（宽 collapsedWidth）。
 ''',
 );
 
@@ -1324,8 +1471,31 @@ final ParkComponentSpec _parkTimePickerSpec = ParkComponentSpec(
   onChanged: (time) => print(time.format(context)),
 )''',
   guide: '''
-## 使用指南
-基于 Flutter showTimePicker 封装。showSeconds 控制是否显示秒。
+## 何时使用 / When to use
+- 表单中采集时间字段（开始/结束时间、营业时间等），输出 HH:mm / Collecting time fields (start/end time, business hours) in forms
+- 需要精确到秒的时间（日志、预约时段、倒计时配置），开启 showSeconds 输出 HH:mm:ss / Precise-to-second values via showSeconds
+- 与日期选择器配合完成日期 + 时间的完整采集 / Paired with a date picker for full datetime input
+- 通过 bindKey 接入 ParkBindingService 表单绑定，实现 model ↔ UI 双向同步 / Two-way binding with ParkBindingService via bindKey
+
+## 使用建议 / Usage tips
+- value 类型为 TimeOfDay（不含秒）；showSeconds 为 true 时秒值由组件内部状态维护，外部传入新 value 会重置秒为 0 / Seconds live in internal state; external value changes reset them
+- onChanged 仅在用户点击弹窗确认后触发，实时预览发生在对话框内部；需要即时响应请在页面内自行监听 / onChanged fires after confirm, not on every wheel tick
+- showSeconds 为 false 时使用原生 Material showTimePicker；为 true 时改用 CupertinoTimerPicker（hms 模式）自绘对话框，两种交互请分别体验确认 / Two picker implementations depending on showSeconds
+- disabled 为 true 时点击无响应，背景切换为 disabledBg，右侧下拉箭头隐藏 / disabled blocks taps and swaps to disabledBg styling
+- 12/24 小时制跟随系统 MediaQuery.alwaysUse24HourFormatOf，秒格式下自动切换 HH:mm:ss 与 h:mm:ss AM/PM / Follows the system 24-hour format setting
+- bindKey 绑定后双向同步：model → UI 通过监听器刷新，UI → model 在选择后写回；绑定服务优先取构造参数 bindingService，其次 ParkBindingFormScope.of(context) / Binding service resolution: constructor param first, then form scope
+
+## 搭配推荐 / Compose with
+- 搭配 ParkDatePicker 组合「日期 + 时间」完整采集场景 / ParkDatePicker for datetime pairs
+- 搭配 ParkForm / ParkFormItem（schema 中 ext.control='timePicker'）用于 schema 驱动表单渲染 / ParkForm schema-driven forms
+- 搭配 ParkFormRow 组织标签与选择器布局 / ParkFormRow for label + picker layout
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.border / textPrimary / textSecondary / textPlaceholder / disabledBg | 边框、选中值、图标、占位文字与禁用态背景 |
+| 字体 | typography.sizeBodySmall | 选中值字号 14px；label 文字固定 13px |
+| 间距 | spacing.md / spacing.hSm | 容器内边距 12px；图标与文本间距 8px；圆角 radius.brSm (8px) |
 ''',
   dynamicFormSchemaDoc: '''### 对应字段类型
 `text`（文本），通过 `ext['control'] = 'timePicker'` 指定渲染为时间选择器。当前 `ParkFieldType` 无独立 `time` 枚举值，时间字段以 `text` 类型承载，值为 `HH:mm` 或 `HH:mm:ss` 格式字符串。
@@ -1433,8 +1603,33 @@ final ParkComponentSpec _parkColorPickerSpec = ParkComponentSpec(
   onChanged: (color) => print(color),
 )''',
   guide: '''
-## 使用指南
-默认 20 色环预设。可自定义 presetColors。选中项用 check 图标标记。onChanged 在选择色块时触发。
+## 何时使用 / When to use
+- 表单中需要可视化选色，如主题色、品牌色、标签配色 / Visual color picking in forms (theme, brand, tag colors)
+- 既有品牌预设色、又允许自由取色的配置面板 / Panels combining brand presets with free custom picking
+- 需要以 HEX / RGB / HSB 展示颜色值或切换展示格式的场景 / Displaying color values with format switching
+
+## 使用建议 / Usage tips
+- value 配合 onChanged 使用；value 更新时组件会自动同步内部状态与 HSV 面板 / value + onChanged; widget updates sync the internal HSV state
+- presetColors 语义：null 且未开 showFormatSwitch 时使用内置 20 色环；传空列表 [] 隐藏预设区；传自定义列表限定可选色；注意 presetColors 为 null 且 showFormatSwitch 为 true 时预设区同样不渲染 / null → built-in 20-color ring (skipped when showFormatSwitch is on); [] hides presets; a custom list limits the choices
+- enableCustom 默认开启 HSV 取色面板（饱和度/明度方形面板 + 色相条），仅需预设选择时可置 false 压缩高度；面板高度为宽度正方形但上限 200px / enableCustom toggles the HSV panel; the SV panel is square up to 200px
+- showFormatSwitch 开启后在底部提供 HEX / RGB / HSB 切换，当前展示格式由 format 控制 / showFormatSwitch enables HEX/RGB/HSB switching controlled by format
+- 表单联动：传入 bindKey（配合 bindingService 或外层 ParkBindingFormScope）可与模型字段双向绑定，模型变化自动回写 UI / Pass bindKey to two-way bind with the form model
+- 性能：HSV 面板拖动会连续触发 onChanged，高频回调中避免重逻辑 / Dragging the HSV panel fires onChanged continuously; keep callbacks light
+
+## 搭配推荐 / Compose with
+- 在 ParkForm（含动态表单 colorPicker 控件）中采集颜色字段，配合 bindKey 联动模型 / Collect color fields in ParkForm with bindKey
+- 与 ParkSheetScaffold、ParkDialog 组合，把选择器放入弹层作为「选择颜色」面板 / Put the picker inside a sheet or dialog as a color panel
+- 与 ParkButton 组合提供「重置为默认色」等快捷操作（外部维护 value）/ Combine with ParkButton for quick actions like resetting to default
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.brand | 选中色块边框、勾选图标与格式切换激活态 |
+| 色彩 | colors.textOnBrand / colors.textSecondary | 激活格式按钮文字色 / 颜色值文字色 |
+| 色彩 | colors.border | 预览条、色块与 SV 面板描边 |
+| 字体 | typography.sizeCaption | 格式切换标签字号 |
+| 字体 | typography.bodySmall | 颜色值文本样式（配合 monospace 字体族） |
+| 间距 | spacing.vSm / spacing.vXs | 预设区、取色面板、格式区之间的纵向间距 |
 ''',
   dynamicFormSchemaDoc: '''### 对应字段类型
 `text`（文本），通过 `ext['control'] = 'colorPicker'` 指定渲染为颜色选择器。颜色值以 HEX 字符串（如 `'#1677FF'`）存储与提交。
@@ -1568,8 +1763,32 @@ final ParkComponentSpec _parkAutoCompleteSpec = ParkComponentSpec(
   onSelected: (v) => print('选中: \$v'),
 )''',
   guide: '''
-## 使用指南
-基于 TextField + Overlay 实现。onSelected 选中建议、onChanged 监听输入。filterFn 可自定义过滤逻辑。
+## 何时使用 / When to use
+- 需要从固定候选集中快速输入或选择的场景，如标签、城市、商品名补全 / Fast entry or selection from a fixed option set (tags, cities, product names)
+- 输入即联想、默认按「包含匹配」过滤候选的搜索建议场景 / Suggest-as-you-type with default contains matching
+- 表单中需要自动补全的文本字段，配合 ParkForm 渲染为 autoComplete 控件 / Auto-suggest text fields in forms (ext.control = 'autoComplete')
+
+## 使用建议 / Usage tips
+- options 为必填的静态候选列表；候选量大时应先按需截断或服务端过滤后再传入，避免全量下发与前端过滤开销 / options is required; pre-filter large sets to avoid filtering cost
+- 默认 filterFn 为大小写不敏感的包含匹配；需要前缀匹配、拼音或模糊匹配时传入自定义 filterFn / Customize filterFn for prefix, pinyin or fuzzy matching
+- 输入自带 300ms 防抖后再过滤并弹层，高频输入无需自行节流；清空输入会自动收起建议 / Built-in 300ms debounce; empty input hides the overlay
+- 建议列表最多展示 maxSuggestions 条（默认 6），超出部分被截断，需要更多展示可调大该值 / maxSuggestions (default 6) caps the visible list
+- 选中项会 trim 后回填输入框并触发 onSelected（提交语义）；onChanged 在每次文字变化时触发（含清空），适合受控联动 / onSelected fires on pick (trimmed); onChanged fires on every text change
+- 有输入时后缀显示清空按钮（无障碍 label 来自 ParkLocalizations.clearText），点击即清空并收起弹层 / A clear suffix button appears while the input is non-empty
+
+## 搭配推荐 / Compose with
+- 在 ParkForm 中使用，通过 ParkFormFieldSchema 的 ext['control'] = 'autoComplete' 渲染为自动补全字段 / Use inside ParkForm via ext.control
+- 选中结果经 onSelected 回传后，用 ParkTag 展示已选标签或回填到其他表单字段 / Show picks with ParkTag or feed them into other fields
+- 与 ParkSearch 互补：需要受控候选集补全用 ParkAutoComplete，自由关键词搜索用 ParkSearch / Complements ParkSearch for free-text search
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.surface | 建议下拉面板背景色 |
+| 色彩 | colors.textPrimary / colors.textPlaceholder | 建议项文字与占位提示颜色 |
+| 色彩 | colors.border | 输入框与下拉面板边框颜色 |
+| 字体 | typography.sizeBodySmall | 建议项与占位提示的字号 |
+| 间距 | spacing.md / spacing.sm | 建议项与输入框内边距（水平 md、垂直 sm+2） |
 ''',
   dynamicFormSchemaDoc: '''### 对应字段类型
 `text`（单行文本），通过 `ext['control'] = 'autoComplete'` 指定渲染为自动完成控件。也可配合 `dataSourceType` 提供远程建议数据。
@@ -1911,6 +2130,28 @@ final ParkComponentSpec _parkTransferSpec = ParkComponentSpec(
       description: '自定义渲染项 / Custom item renderer',
       required: false,
     ),
+    ParkPropertyDef(
+      name: 'oneWay',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '单向模式（只允许从左到右移动）/ One-way mode',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'bindKey',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '绑定键（点号分隔的路径）。设此参数后组件进入双向绑定模式，'
+          '值变化自动同步到 ParkBindingService。',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'bindingService',
+      type: 'ParkBindingService?',
+      defaultVal: 'null',
+      description: '绑定服务实例。不设时尝试从 ParkBindingFormScope 获取。',
+      required: false,
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -1951,7 +2192,9 @@ final ParkComponentSpec _parkTransferSpec = ParkComponentSpec(
 )''',
   guide: '''
 ## 使用指南
-dataSource 定义全部项目，targetKeys 控制已选。支持搜索过滤和全选。
+dataSource 定义全部项目，targetKeys 控制已选，onChange 回调 (keys, direction)。
+支持搜索过滤（showSearch）和全选；oneWay 限制为单向移动；disabled 禁用全部交互；
+bindKey + bindingService 支持 ParkBinding 双向绑定。
 ''',
   dynamicFormSchemaDoc: '''### 对应字段类型
 `checkbox`（多选组），通过 `ext['control'] = 'transfer'` 指定渲染为穿梭框样式。提交值为已选 key 的字符串数组。
@@ -2156,8 +2399,32 @@ final ParkComponentSpec _parkPopconfirmSpec = ParkComponentSpec(
   child: ParkButton(child: Text('删除')),
 )''',
   guide: '''
-## 使用指南
-基于 Overlay 弹出。danger 模式使用红色确认按钮。autoCloseAfterConfirm 控制点击后是否自动关闭。
+## 何时使用 / When to use
+- 删除、清空、提交等不可逆或高风险操作，需要用户二次确认 / Irreversible or high-risk actions (delete, clear, submit) that need a second confirmation
+- 希望在触发元素附近就地确认，避免整页对话框打断操作流 / In-place confirmation near the trigger instead of a full-screen dialog
+- 需要确认后继续异步任务（如先提交请求再关闭）的流程 / Async workflows that continue after confirm (submit then close)
+
+## 使用建议 / Usage tips
+- child 为必填触发元素，点击后通过 Overlay 在下方弹出气泡；底部空间不足时自动翻转到上方并钳制水平边界，气泡最大宽度 280 / child is required; the bubble renders below the trigger and auto-flips or clamps to stay inside the viewport, max width 280
+- titleWidget / descriptionWidget 优先于 title / description，需要富文本或自定义布局时使用 widget 版本 / Widget variants win over string variants for rich content
+- confirmText / cancelText 为空时回退到本地化的「确定 / 取消」，需要自定义文案时显式传入 / Falls back to localized 确定/取消 when left empty
+- danger 会将确认按钮切换为 danger 变体，同时把 icon 渲染为错误色；删除等高风险操作建议开启 / danger turns the confirm button red and tints the icon
+- 异步确认推荐组合 confirmLoading + autoCloseAfterConfirm: false：先发起请求，成功后由业务代码关闭或重置 / For async confirm, set confirmLoading and keep autoCloseAfterConfirm: false, then close programmatically on success
+- 弹层生命周期：点击气泡外遮罩等同取消并触发 onCancel；组件销毁时自动清理 Overlay；触发元素首帧尚未完成布局时点击会被安全忽略 / Tapping the mask cancels; the overlay is auto-cleaned on dispose; taps before the trigger's first layout are safely ignored
+
+## 搭配推荐 / Compose with
+- 用 ParkButton 作为触发元素（普通操作 primary，危险操作 danger 变体）/ Use ParkButton as the trigger
+- 在 ParkTable、ParkCard 等容器内对行级删除、停用等操作加二次确认 / Add confirmations to row-level destructive actions inside ParkTable or ParkCard
+- 配合 ParkMessage / ParkToast 在 onConfirm 后提示操作结果 / Show the operation result via ParkMessage or ParkToast after confirm
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.surface | 气泡背景色；阴影基于 colors.overlay 10% 透明度 |
+| 色彩 | colors.brand / colors.error | 普通 / 危险确认按钮与标题图标颜色 |
+| 色彩 | colors.textPrimary / colors.textSecondary | 标题与描述文字颜色 |
+| 字体 | typography.sizeBody / typography.sizeCaption | 标题（w600）与描述文字字号 |
+| 间距 | spacing.base / spacing.sm | 气泡内边距与按钮间距 |
 ''',
 );
 
@@ -2376,6 +2643,13 @@ final ParkComponentSpec _parkNotificationSpec = ParkComponentSpec(
       description: '是否可手动关闭 / Closable',
       required: false,
     ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkNotificationSize',
+      defaultVal: 'ParkNotificationSize.medium',
+      description: '通知尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小',
+      required: false,
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -2445,8 +2719,31 @@ final ParkComponentSpec _parkNotificationSpec = ParkComponentSpec(
   description: '数据已保存',
 )''',
   guide: '''
-## 使用指南
-通过 ParkNotification.show(context, ...) 静态方法调用。支持 success/error/warning/info 四种类型。
+## 何时使用 / When to use
+- 全局操作结果的轻量反馈（成功 / 失败 / 警告 / 提示），不打断用户当前操作流 / Non-blocking global feedback for operation results
+- 表单提交、保存、删除等异步操作完成后的即时通知 / Instant results for async actions (submit, save, delete)
+- 与 ParkDialog 等模态提示相比，适合无需用户确认、可自动消失的短消息 / Short auto-dismissing messages where confirmation is unnecessary
+
+## 使用建议 / Usage tips
+- show 为静态方法，需传入可用的 BuildContext（内部挂到 Overlay.of(context, rootOverlay: true)），务必在 MaterialApp 之下调用 / Requires a context below MaterialApp for overlay insertion
+- duration 默认 3 秒自动关闭；传 Duration.zero 可禁用自动关闭，此时配合 closable 手动关闭 / Duration.zero disables auto-close; keep closable for manual dismissal
+- 同一时刻最多显示 5 条（_maxCount），超出时自动顶掉最早的通知；批量操作建议合并提示或调用 hide() 统一清理 / Max 5 concurrent, oldest evicted; hide() clears all
+- 连续弹出时通知按固定槽位（100px）自上而下堆叠，顶部偏移随数量递增，不会互相遮挡 / Notifications stack downward in fixed 100px slots
+- type 决定左侧图标与描边色（success/error/warning/info），可传 icon 完全自定义图标；closable=false 隐藏关闭按钮 / type drives icon + accent border; icon fully customizes it
+- onClose 在通知真正关闭（自动或手动，含退出动画完成后）触发，适合埋点或联动后续操作 / onClose fires after the exit animation completes
+
+## 搭配推荐 / Compose with
+- 搭配 ParkButton 触发操作后弹出结果通知，形成「操作 → 反馈」闭环 / ParkButton to trigger actions and show results
+- 搭配 ParkDialog 做分级提示：需要用户确认的重型操作用对话框，轻量结果用通知 / ParkDialog for confirmations, notification for lightweight results
+- 表单提交场景搭配 ParkForm 校验，提交失败时用 error 类型通知反馈 / ParkForm submit failure surfaced as error notifications
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.success / error / warning / info | 类型色：左侧图标 + 描边色 |
+| 色彩 | colors.surface / textPrimary / textSecondary | 通知底色、标题与描述文字 |
+| 字体 | typography.sizeBodySmall / sizeCaption / weightBold | 标题 14px 加粗、描述 13px；圆角 radius.brMd (12px)、阴影 shadows.md |
+| 间距 | spacing.base / md / xs | 内边距与屏幕右边距 16px、图标间距 12px、标题与描述间距 4px |
 ''',
 );
 
@@ -3119,7 +3416,7 @@ Widget _buildSpacePresetDemo(BuildContext context) => Column(
   ],
 );
 Widget _buildSpaceAlignDemo(BuildContext context) => SizedBox(
-  width: 240,
+  width: 280,
   child: ParkSpace(
     size: _kGapSm,
     mainAxisAlignment: MainAxisAlignment.spaceBetween,

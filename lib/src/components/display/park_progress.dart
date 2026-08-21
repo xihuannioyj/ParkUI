@@ -416,15 +416,17 @@ class _StripePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color;
-    final step = stripeWidth * 2;
+    // 边界防御：stripeWidth<=0 时 step<=0，x+=step 永不前进 → paint 死循环卡死 UI。
+    final double effectiveStripeWidth = stripeWidth > 0 ? stripeWidth : 8.0;
+    final step = effectiveStripeWidth * 2;
     final shift = offset * step;
 
     for (double x = -size.height + shift - step; x < size.width + step; x += step) {
       final path = Path()
         ..moveTo(x, size.height)
         ..lineTo(x + size.height, 0)
-        ..lineTo(x + size.height + stripeWidth, 0)
-        ..lineTo(x + stripeWidth, size.height)
+        ..lineTo(x + size.height + effectiveStripeWidth, 0)
+        ..lineTo(x + effectiveStripeWidth, size.height)
         ..close();
       canvas.drawPath(path, paint);
     }

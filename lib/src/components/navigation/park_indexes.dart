@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
@@ -126,12 +127,16 @@ class _ParkIndexesState extends State<ParkIndexes> {
   }
 
   void _onSelect(String index) {
-    if (_activeIndex == index) return;
+    // 原实现与内部 _activeIndex 比较后早退：外部受控（currentIndex）时内部值
+    // 可能 stale，导致"有效高亮是 A、点 A 却早退不回调"的反直觉行为；
+    // 重复点击同一字母也被吞（列表内容变化后无法"重跳"）。
+    // 修正：回调始终放行（由调用方决定是否忽略），仅浮层避免重复重建。
+    final bool changed = _effectiveActiveIndex != index;
     setState(() => _activeIndex = index);
     widget.onIndexSelected?.call(index);
     widget._effectiveOnChanged?.call(index);
 
-    if (widget.showOverlay) {
+    if (widget.showOverlay && changed) {
       _showOverlay(index);
     }
   }
@@ -140,7 +145,8 @@ class _ParkIndexesState extends State<ParkIndexes> {
     _removeOverlay();
     final entry = OverlayEntry(
       builder: (context) {
-        final park = Theme.of(context).extension<ParkThemeData>() ??
+        final park =
+            Theme.of(context).extension<ParkThemeData>() ??
             ParkThemeData.light();
         return IgnorePointer(
           child: Center(
@@ -160,8 +166,9 @@ class _ParkIndexesState extends State<ParkIndexes> {
                   index,
                   style: TextStyle(
                     color: park.colors.textOnBrand,
-                    fontSize: 28,
+                    fontSize: park.typography.sizeH1,
                     fontWeight: park.typography.weightBold,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
@@ -205,11 +212,33 @@ class _ParkIndexesState extends State<ParkIndexes> {
     });
   }
 
+  /// 根据可用高度计算实际行高。
+  ///
+  /// 当索引总高度（indexes.length * itemHeight）超出可用高度时，
+  /// 等比压缩行高，保证整个索引条完整显示在可用区域内，避免
+  /// "RenderFlex overflowed ... on the bottom" 的底部溢出报错。
+  double _effectiveItemHeight(double availableHeight) {
+    final double pref = widget.itemHeight > 0 ? widget.itemHeight : 18.0;
+    final int count = widget.indexes.length;
+    if (count > 0 &&
+        availableHeight.isFinite &&
+        availableHeight > 0 &&
+        pref * count > availableHeight) {
+      return availableHeight / count;
+    }
+    return pref;
+  }
+
   String? _yToIndex(double y) {
     if (widget.indexes.isEmpty) return null;
 
-    final itemH = widget.itemHeight;
-    final idx = (y / itemH).floor().clamp(0, widget.indexes.length - 1);
+    // 用实际渲染高度反推行高，与 build 中的自适应行高保持一致，
+    // 避免行高被压缩后拖拽映射错位。
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    final double availH = box?.size.height ?? 0;
+    final double itemH = _effectiveItemHeight(availH);
+
+    final int idx = (y / itemH).floor().clamp(0, widget.indexes.length - 1);
     return widget.indexes[idx];
   }
 
@@ -223,20 +252,38 @@ class _ParkIndexesState extends State<ParkIndexes> {
 
   @override
   Widget build(BuildContext context) {
-    final park = Theme.of(context).extension<ParkThemeData>() ??
-        ParkThemeData.light();
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final colors = park.colors;
     final actColor = widget.activeColor ?? colors.brand;
     final inactColor = colors.textSecondary;
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // 高度自适应：索引总高度超过可用高度时等比压缩 itemHeight，
+        // 避免索引过多（如公寓的楼层索引）导致底部 RenderFlex 溢出。
+        final double itemH = _effectiveItemHeight(constraints.maxHeight);
+        final double prefItemH = widget.itemHeight > 0
+            ? widget.itemHeight
+            : 18.0;
+        final double scale = prefItemH > 0 ? itemH / prefItemH : 1.0;
+        // 字号随行高等比缩放，保底可读字号，同时不超过行高以免文字被裁剪
+        final double baseFont = math.min(
+          math.max(widget.fontSize * scale, 8.0),
+          math.max(itemH - 2.0, 8.0),
+        );
+        final double activeFont = baseFont + 2 <= itemH
+            ? baseFont + 2
+            : baseFont;
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onVerticalDragStart: (DragStartDetails details) {
             final RenderBox? box = context.findRenderObject() as RenderBox?;
             if (box == null) return;
-            final Offset localOffset = box.globalToLocal(details.globalPosition);
+            final Offset localOffset = box.globalToLocal(
+              details.globalPosition,
+            );
             final index = _yToIndex(localOffset.dy);
             if (index != null) {
               _onSelect(index);
@@ -257,16 +304,14 @@ class _ParkIndexesState extends State<ParkIndexes> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => _onSelect(index),
                   child: SizedBox(
-                    height: widget.itemHeight,
-                    width: widget.itemHeight + 8,
+                    height: itemH,
+                    width: itemH + 8,
                     child: Center(
                       child: AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 150),
                         style: TextStyle(
                           color: isActive ? actColor : inactColor,
-                          fontSize: isActive
-                              ? widget.fontSize + 2
-                              : widget.fontSize,
+                          fontSize: isActive ? activeFont : baseFont,
                           fontWeight: isActive
                               ? park.typography.weightBold
                               : park.typography.weightMedium,

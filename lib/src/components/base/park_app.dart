@@ -122,11 +122,19 @@ class ParkApp extends StatelessWidget {
           brightness: isDark ? Brightness.dark : Brightness.light,
           colorSchemeSeed: parkTheme.colors.brand,
         );
-    final List<ThemeExtension> extensions =
-        <ThemeExtension>[
-          parkTheme,
-          ...?additionalExtensions?.cast<ThemeExtension>(),
-        ];
+    // 合并扩展：保留用户 theme/darkTheme 自带的 ThemeExtension，
+    // 再叠加 parkTheme 与 additionalExtensions（原实现整体替换会静默丢弃）。
+    // 注意：ThemeData.extensions 存储为 Map<Object, ThemeExtension>；用 .toList()
+    // 构造避免 F-bounded 泛型（ThemeExtension<T extends ThemeExtension<T>>）
+    // 在列表字面量里的实例化异常。
+    final List<ThemeExtension<dynamic>> extensions =
+        base.extensions.values.toList();
+    extensions.add(parkTheme);
+    // 局部变量以便可空性提升（公共字段无法被 flow promotion）
+    final List<ThemeExtension<dynamic>>? extraExtensions = additionalExtensions;
+    if (extraExtensions != null) {
+      extensions.addAll(extraExtensions);
+    }
     return base.copyWith(
       extensions: extensions,
     );

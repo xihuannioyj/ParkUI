@@ -226,6 +226,13 @@ class ParkFormConditionMatcher {
       return values[fieldKey] == expected;
     }
 
+      if (conditions.containsKey('field') && conditions.containsKey('not_equals')) {
+        final String fieldKey = conditions['field'].toString();
+        final dynamic expected = conditions['not_equals'];
+        return values[fieldKey] != expected;
+      }
+
+
     if (conditions.containsKey('field') && conditions.containsKey('not_empty')) {
       final String fieldKey = conditions['field'].toString();
       final dynamic fieldValue = values[fieldKey];
@@ -234,6 +241,16 @@ class ParkFormConditionMatcher {
       if (fieldValue is List && fieldValue.isEmpty) return false;
       return true;
     }
+
+      if (conditions.containsKey('field') && conditions.containsKey('empty')) {
+        final String fieldKey = conditions['field'].toString();
+        final dynamic fieldValue = values[fieldKey];
+        if (fieldValue == null) return true;
+        if (fieldValue is String && fieldValue.isEmpty) return true;
+        if (fieldValue is List && fieldValue.isEmpty) return true;
+        return false;
+      }
+
 
     if (conditions.containsKey('field') && conditions.containsKey('contains')) {
       final String fieldKey = conditions['field'].toString();
@@ -251,7 +268,7 @@ class ParkFormConditionMatcher {
       final dynamic fieldValue = values[fieldKey];
       final dynamic threshold = conditions['gt'];
       if (fieldValue == null || threshold == null) return false;
-      if (fieldValue is num && threshold is num) return fieldValue > threshold;
+      final int? cmp = _compareNumbers(fieldValue, threshold); if (cmp == null) return false; return cmp > 0;
       return false;
     }
 
@@ -260,7 +277,7 @@ class ParkFormConditionMatcher {
       final dynamic fieldValue = values[fieldKey];
       final dynamic threshold = conditions['lt'];
       if (fieldValue == null || threshold == null) return false;
-      if (fieldValue is num && threshold is num) return fieldValue < threshold;
+      final int? cmp = _compareNumbers(fieldValue, threshold); if (cmp == null) return false; return cmp < 0;
       return false;
     }
 
@@ -270,7 +287,7 @@ class ParkFormConditionMatcher {
       final dynamic threshold = conditions['gte'];
       if (fieldValue == null || threshold == null) return false;
       if (fieldValue is num && threshold is num) {
-        return fieldValue >= threshold;
+        return _compareNumbers(fieldValue, threshold) != null ? _compareNumbers(fieldValue, threshold)! >= 0 : false;
       }
       return false;
     }
@@ -281,7 +298,7 @@ class ParkFormConditionMatcher {
       final dynamic threshold = conditions['lte'];
       if (fieldValue == null || threshold == null) return false;
       if (fieldValue is num && threshold is num) {
-        return fieldValue <= threshold;
+        return _compareNumbers(fieldValue, threshold) != null ? _compareNumbers(fieldValue, threshold)! <= 0 : false;
       }
       return false;
     }
@@ -294,6 +311,15 @@ class ParkFormConditionMatcher {
       return false;
     }
 
+      if (conditions.containsKey('field') && conditions.containsKey('not_in')) {
+        final String fieldKey = conditions['field'].toString();
+        final dynamic list = conditions['not_in'];
+        final dynamic fieldValue = values[fieldKey];
+        if (list is List) return !list.contains(fieldValue);
+        return false;
+      }
+
+
     for (final MapEntry<String, dynamic> entry in conditions.entries) {
       if (values[entry.key] != entry.value) {
         return false;
@@ -301,4 +327,20 @@ class ParkFormConditionMatcher {
     }
     return true;
   }
+
+  /// 将值尝试转为 num，支持字符串数字（如 '5' -> 5）。
+  static num? _toNum(dynamic value) {
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  /// 数值比较：-1 / 0 / 1，无法比较时返回 null。
+  static int? _compareNumbers(dynamic a, dynamic b) {
+    final num? na = _toNum(a);
+    final num? nb = _toNum(b);
+    if (na == null || nb == null) return null;
+    return na.compareTo(nb);
+  }
+
 }

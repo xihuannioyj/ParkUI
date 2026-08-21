@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_spacing.dart';
@@ -117,8 +119,26 @@ class _ParkInputNumberState extends State<ParkInputNumber>
     return v == v.roundToDouble() ? v.toInt().toString() : v.toString();
   }
 
+  /// 按步进/精度小数位规整，消除二进制浮点累积误差
+  /// （0.1 步进连加三次得到 0.30000000000000004 → 0.3，P1-5）。
+  double _roundToStep(double v) {
+    final int stepDecimals = _decimalPlaces(widget.step);
+    final int p = widget.precision ?? stepDecimals;
+    if (p <= 0) return v;
+    final double factor = math.pow(10, p).toDouble();
+    return (v * factor).roundToDouble() / factor;
+  }
+
+  int _decimalPlaces(double value) {
+    final String s = value.toString();
+    final int idx = s.indexOf('.');
+    if (idx < 0) return 0;
+    return s.length - idx - 1;
+  }
+
   void _setValue(double v) {
-    final clamped = _clamp(v);
+    final double rounded = _roundToStep(v);
+    final double clamped = _clamp(rounded);
     if (clamped == _current) return;
     setState(() {
       _current = clamped;

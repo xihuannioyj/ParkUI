@@ -115,6 +115,12 @@ class ParkColors {
   /// 遮罩色（Dialog、Popup 背后的半透明层）
   final Color overlay;
 
+  /// 反色表面（如 Toast 深色胶囊底，亮色模式深色/暗色模式浅色）
+  final Color inverseSurface;
+
+  /// 反色表面上的文字色
+  final Color onInverseSurface;
+
   /// 禁用背景色
   final Color disabledBg;
 
@@ -146,6 +152,8 @@ class ParkColors {
     required this.background,
     required this.surface,
     required this.overlay,
+    this.inverseSurface = const Color(0xFF1A1A1A),
+    this.onInverseSurface = const Color(0xFFFFFFFF),
     required this.disabledBg,
   });
 
@@ -253,6 +261,9 @@ class ParkColors {
       background: Color(0xFF0A1B2E),
       surface: Color(0xFF0F2438),
       overlay: Color(0x99000000), // 黑 60%
+      // 反色表面：暗色模式下用浅色胶囊，保证 Toast 与深背景对比
+      inverseSurface: Color(0xFFE8ECF1),
+      onInverseSurface: Color(0xFF1A1A1A),
       disabledBg: Color(0xFF16283C),
     );
   }

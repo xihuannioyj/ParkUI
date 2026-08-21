@@ -290,9 +290,13 @@ class _ParkTextState extends State<ParkText> {
         );
 
     // 如果有 fontSize/fontWeight 覆盖但用了 style，也要合并
+    // 注意：style.color 仅在显式设置了 color / disabled / type 时才覆盖，
+    // 否则保留用户 style 自带颜色（原实现无条件覆盖，style 完全覆盖模式失效）。
+    final bool overrideColor =
+        widget.disabled || widget.color != null || typeColor != null;
     final mergedStyle = widget.style != null
         ? widget.style!.copyWith(
-            color: effectiveColor,
+            color: overrideColor ? effectiveColor : widget.style!.color,
             fontSize: widget.fontSize ?? widget.style!.fontSize,
             fontWeight: effectiveFontWeight ?? widget.style!.fontWeight,
             fontStyle: widget.italic ? FontStyle.italic : (widget.style!.fontStyle),

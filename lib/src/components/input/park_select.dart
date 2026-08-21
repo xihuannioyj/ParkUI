@@ -315,14 +315,16 @@ class ParkSelect extends FormField<String> implements ParkBindableWidget {
          },
        );
 
-  static double _minHeight(ParkSelectSize size) {
+  /// 最小高度：对齐 ParkSizing 输入框令牌（32/48/56），
+  /// 原硬编码 42/52 与 ParkInput 三档不一致。
+  static double _minHeight(ParkSelectSize size, ParkThemeData park) {
     switch (size) {
       case ParkSelectSize.small:
-        return 32;
+        return park.sizing.inputHeightSm;
       case ParkSelectSize.medium:
-        return 42;
+        return park.sizing.inputHeightMd;
       case ParkSelectSize.large:
-        return 52;
+        return park.sizing.inputHeightLg;
     }
   }
 
@@ -416,7 +418,7 @@ class ParkSelect extends FormField<String> implements ParkBindableWidget {
     }
 
     final borderColor = _borderColor(widget.status, state.hasError, park);
-    final minH = _minHeight(widget.size);
+    final minH = _minHeight(widget.size, park);
     final fontSize = _fontSize(widget.size, park);
 
     return Semantics(

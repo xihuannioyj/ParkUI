@@ -100,5 +100,38 @@ void main() {
       expect(find.text('Header'), findsOneWidget);
       expect(find.text('Footer'), findsOneWidget);
     });
+
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      await tester.pumpWidget(_wrap(Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 100,
+            child: ParkSideBar(
+              size: ParkSideBarSize.small,
+              items: const [ParkSideBarItem(icon: Icons.circle, label: '小')],
+            ),
+          ),
+          SizedBox(
+            height: 100,
+            child: ParkSideBar(
+              size: ParkSideBarSize.medium,
+              items: const [ParkSideBarItem(icon: Icons.circle, label: '中')],
+            ),
+          ),
+          SizedBox(
+            height: 100,
+            child: ParkSideBar(
+              size: ParkSideBarSize.large,
+              items: const [ParkSideBarItem(icon: Icons.circle, label: '大')],
+            ),
+          ),
+        ],
+      )));
+      expect(find.text('小'), findsOneWidget);
+      expect(find.text('中'), findsOneWidget);
+      expect(find.text('大'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

@@ -272,10 +272,11 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('disabled 时直接渲染 child 无交互包装', (tester) async {
+    testWidgets('disabled 时渲染 child 且不可交互（结构保留）', (tester) async {
+      var tapped = false;
       await tester.pumpWidget(_wrap(
         ParkInkWell(
-          onTap: () {},
+          onTap: () => tapped = true,
           disabled: true,
           child: const Text('Disabled Content'),
         ),
@@ -283,14 +284,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Disabled Content'), findsOneWidget);
-      // When disabled, no GestureDetector should be present
-      expect(
-        find.descendant(
-          of: find.byType(ParkInkWell),
-          matching: find.byType(GestureDetector),
-        ),
-        findsNothing,
-      );
+      // 结构恒定型（P1-6）：包装仍在，但点击不应触发回调
+      await tester.tap(find.text('Disabled Content'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(tapped, isFalse, reason: 'disabled 时点击不应触发 onTap');
     });
 
     testWidgets('长按触发 onLongPress 回调', (tester) async {

@@ -73,11 +73,13 @@ void main() {
       );
     });
 
-    testWidgets('button 构造为小尺寸白色加载且不居中', (tester) async {
+    testWidgets('button 构造为小尺寸加载且不居中（颜色按主题解析）', (tester) async {
       await tester.pumpWidget(_wrap(const ParkInlineLoading.button()));
       final loading = tester.widget<ParkLoading>(find.byType(ParkLoading));
       expect(loading.size, 16);
-      expect(loading.color, Colors.white);
+      // 主题统一：默认 null 由 ParkLoading 按主题解析（原硬编码白色，
+      // 暗色主题下不可见）
+      expect(loading.color, isNull);
       expect(
         find.ancestor(
           of: find.byType(ParkLoading),

@@ -89,6 +89,8 @@ class ParkPopup extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (ctx) {
         return _ParkPopupModal(
           title: title,
@@ -143,6 +145,8 @@ class ParkPopup extends StatefulWidget {
       context: context,
       isScrollControlled: isScrollControlled,
       backgroundColor: backgroundColor ?? Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       shape: borderRadius != null
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),

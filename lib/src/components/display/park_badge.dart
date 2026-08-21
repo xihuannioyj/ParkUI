@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 
 /// Badge size presets.
-enum ParkBadgeSize { small, medium }
+enum ParkBadgeSize { small, medium, large }
 
 /// Badge status — renders a colored status dot (no count).
 enum ParkBadgeStatus { success, info, defaultStatus, warning, error }
@@ -89,15 +89,35 @@ class ParkBadge extends StatelessWidget {
   /// Custom widget to display instead of the count number.
   final Widget? countWidget;
 
-  double get _dotSize => size == ParkBadgeSize.small ? 6 : 8;
+  double get _dotSize => switch (size) {
+        ParkBadgeSize.small => 6,
+        ParkBadgeSize.medium => 8,
+        ParkBadgeSize.large => 10,
+      };
 
-  double get _fontSize => size == ParkBadgeSize.small ? 10 : 12;
+  double get _fontSize => switch (size) {
+        ParkBadgeSize.small => 10,
+        ParkBadgeSize.medium => 12,
+        ParkBadgeSize.large => 14,
+      };
 
-  double get _minWidth => size == ParkBadgeSize.small ? 16 : 20;
+  double get _minWidth => switch (size) {
+        ParkBadgeSize.small => 16,
+        ParkBadgeSize.medium => 20,
+        ParkBadgeSize.large => 24,
+      };
 
-  double get _height => size == ParkBadgeSize.small ? 16 : 20;
+  double get _height => switch (size) {
+        ParkBadgeSize.small => 16,
+        ParkBadgeSize.medium => 20,
+        ParkBadgeSize.large => 24,
+      };
 
-  double get _padding => size == ParkBadgeSize.small ? 4 : 6;
+  double get _padding => switch (size) {
+        ParkBadgeSize.small => 4,
+        ParkBadgeSize.medium => 6,
+        ParkBadgeSize.large => 8,
+      };
 
   Color _statusColor(ParkThemeData park) {
     // color parameter takes highest priority
@@ -374,7 +394,7 @@ class ParkBadge extends StatelessWidget {
         ribbonText ?? '',
         style: TextStyle(
           color: textColor,
-          fontSize: 11,
+          fontSize: park.typography.sizeOverline,
           fontWeight: park.typography.weightBold,
         ),
         textAlign: TextAlign.center,

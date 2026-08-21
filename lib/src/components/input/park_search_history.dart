@@ -70,21 +70,58 @@ class ParkStorageSearchHistory implements ParkSearchHistory {
   final Map<String, List<String>> _cache = {};
   final Set<String> _loaded = {};
 
+  /// 正在异步加载的 scope → 加载 Future（防重复 preload，且等待共享）。
+  final Map<String, Future<void>> _pendingLoad = {};
+
   /// 预加载所有历史到缓存（在 app 启动或首次使用前调用）。
+  ///
+  /// 与 [addHistory] 采用「合并」而非「覆盖」语义：
+  /// 若加载完成前已有新写入的缓存（首次使用场景的竞态），
+  /// 保留新词在前、存储数据补齐在后，避免新写入被旧存储覆盖丢失。
   Future<void> preload(List<String> scopes) async {
     for (final scope in scopes) {
       final raw = await _storage.loadHistory(scope);
-      _cache[scope] = raw
+      final stored = raw
           .map((e) => e.toString().trim())
           .where((e) => e.isNotEmpty)
           .toList();
+      final existing = _cache[scope] ?? const <String>[];
+      // 合并：现有（新写入的）在前，存储数据去重补齐。
+      final merged = <String>[...existing];
+      for (final item in stored) {
+        if (!merged.contains(item)) {
+          merged.add(item);
+        }
+      }
+      _cache[scope] = merged.take(limit).toList();
       _loaded.add(scope);
     }
   }
 
-  Future<void> _ensureLoaded(String scope) async {
-    if (_loaded.contains(scope)) return;
-    await preload([scope]);
+  Future<void> _ensureLoaded(String scope) {
+    if (_loaded.contains(scope)) return Future<void>.value();
+    // 同一 scope 共享同一个加载 Future：并发调用方都会等到加载完成。
+    return _pendingLoad.putIfAbsent(scope, () async {
+      try {
+        await preload([scope]);
+      } finally {
+        _pendingLoad.remove(scope);
+      }
+    });
+  }
+
+  /// 持久化当前缓存；scope 尚未加载完成时延迟到加载（preload 合并）之后，
+  /// 避免只保存本次变更导致存储层丢失历史。
+  void _persist(String scope) {
+    if (!_loaded.contains(scope)) {
+      unawaited(
+        _ensureLoaded(scope).then((_) => _persist(scope)),
+      );
+      return;
+    }
+    unawaited(
+      _storage.saveHistory(scope, List.unmodifiable(_cache[scope] ?? const [])),
+    );
   }
 
   @override
@@ -98,24 +135,23 @@ class ParkStorageSearchHistory implements ParkSearchHistory {
   void addHistory(String scope, String keyword) {
     final kw = keyword.trim();
     if (kw.isEmpty) return;
+    // 同步写入缓存（保持 addHistory 立即可见），持久化延迟到加载完成合并后。
     final list = _cache.putIfAbsent(scope, () => []);
     list.remove(kw);
     list.insert(0, kw);
     if (list.length > limit) list.removeLast();
-    // 异步持久化
-    unawaited(_storage.saveHistory(scope, List.unmodifiable(list)));
+    _persist(scope);
   }
 
   @override
   void removeHistory(String scope, String keyword) {
     _cache[scope]?.remove(keyword.trim());
-    final list = _cache[scope] ?? [];
-    unawaited(_storage.saveHistory(scope, List.unmodifiable(list)));
+    _persist(scope);
   }
 
   @override
   void clearHistory(String scope) {
     _cache[scope] = [];
-    unawaited(_storage.saveHistory(scope, const []));
+    _persist(scope);
   }
 }

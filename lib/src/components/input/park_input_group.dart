@@ -89,7 +89,7 @@ class ParkInputGroup extends StatelessWidget {
 
     if (!compact) {
       // 非紧凑：子项各自保留边框，按间距排列，组本身不画边框。
-      return Row(
+      final Widget row = Row(
         mainAxisAlignment: mainAxisAlignment,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
@@ -99,6 +99,10 @@ class ParkInputGroup extends StatelessWidget {
           ],
         ],
       );
+      // P1-10：disabled 时阻断子项交互（原实现只改颜色形同虚设）
+      return disabled
+          ? IgnorePointer(child: row)
+          : row;
     }
 
     // 紧凑模式：单一圆角边框 + 裁剪 + 相邻 1px 分隔线，子项填满组高。
@@ -116,7 +120,7 @@ class ParkInputGroup extends StatelessWidget {
       rowChildren.add(Expanded(child: children[i]));
     }
 
-    return Container(
+    final Widget group = Container(
       // +2 用于边框（1px 上下）。子项通过 Expanded + CrossAxisAlignment.stretch
       // 自动填满内容区，无需额外留空。
       height: _groupHeight(sizing) + 2,
@@ -131,5 +135,7 @@ class ParkInputGroup extends StatelessWidget {
         children: rowChildren,
       ),
     );
+    // P1-10：disabled 时阻断子项交互（原实现只改颜色形同虚设）
+    return disabled ? IgnorePointer(child: group) : group;
   }
 }

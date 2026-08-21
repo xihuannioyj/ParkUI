@@ -18,6 +18,18 @@ enum ParkCascadingMode {
   list,
 }
 
+/// 级联选择器尺寸
+enum ParkCascaderSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// 级联选项节点（树形结构）
 class ParkCascaderOption {
   /// 显示文字
@@ -151,6 +163,9 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
   /// [value] 中每项为 [`encodePath`] 编码的路径。
   final bool multiple;
 
+  /// 级联选择器尺寸（small/medium/large），控制内边距、字号与图标大小。
+  final ParkCascaderSize size;
+
   /// 路径编码分隔符（不可见字符，用于 [multiple] 模式下编码多选路径）。
   static const String pathSeparator = '\x01';
 
@@ -177,6 +192,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
     this.expandTrigger = ParkCascaderExpandTrigger.click,
     this.showSearch = false,
     this.multiple = false,
+    this.size = ParkCascaderSize.medium,
     FormFieldSetter<List<String>>? onSaved,
     FormFieldValidator<List<String>>? validator,
     AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
@@ -258,6 +274,32 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
       }
     }
 
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets triggerPadding = switch (widget.size) {
+      ParkCascaderSize.small => EdgeInsets.symmetric(
+          horizontal: spacing.sm,
+          vertical: spacing.xs,
+        ),
+      ParkCascaderSize.medium => EdgeInsets.symmetric(
+          horizontal: spacing.md,
+          vertical: spacing.md,
+        ),
+      ParkCascaderSize.large => EdgeInsets.symmetric(
+          horizontal: spacing.lg,
+          vertical: spacing.lg,
+        ),
+    };
+    final double triggerFontSize = switch (widget.size) {
+      ParkCascaderSize.small => typo.sizeCaption,
+      ParkCascaderSize.medium => typo.sizeBody,
+      ParkCascaderSize.large => typo.sizeBody,
+    };
+    final double arrowIconSize = switch (widget.size) {
+      ParkCascaderSize.small => 16.0,
+      ParkCascaderSize.medium => 20.0,
+      ParkCascaderSize.large => 24.0,
+    };
+
     return GestureDetector(
       onTap: widget.enabled ? () => _showSheet(state) : null,
       child: Semantics(
@@ -265,10 +307,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
         label: hasValue ? displayText : ParkLocalizations.of(state.context).selectPlaceholder,
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: spacing.md,
-            vertical: spacing.md,
-          ),
+          padding: triggerPadding,
           decoration: BoxDecoration(
             color: widget.enabled ? colors.surface : colors.disabledBg,
             borderRadius: BorderRadius.circular(radius.md),
@@ -285,7 +324,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
                       ? displayText
                       : (widget.hintText ?? ParkLocalizations.of(state.context).selectPlaceholder),
                   style: TextStyle(
-                    fontSize: typo.sizeBody,
+                    fontSize: triggerFontSize,
                     color: widget.enabled
                         ? (hasValue ? colors.textPrimary : colors.textPlaceholder)
                         : colors.textDisabled,
@@ -296,7 +335,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
               ),
               Icon(
                 Icons.keyboard_arrow_right,
-                size: 20,
+                size: arrowIconSize,
                 color: colors.textPlaceholder,
               ),
             ],
@@ -330,6 +369,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
     required List<ParkCascaderOption> options,
     String? title,
     ParkCascadingMode mode = ParkCascadingMode.list,
+    ParkCascaderSize size = ParkCascaderSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -347,6 +387,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
           title: title,
           mode: mode,
           autoDrillDown: true,
+          size: size,
         );
       },
     );
@@ -374,6 +415,7 @@ class ParkCascader extends FormField<List<String>> implements ParkBindableWidget
           expandTrigger: widget.expandTrigger,
           showSearch: widget.showSearch,
           multiple: widget.multiple,
+          size: widget.size,
         );
       },
     );
@@ -416,6 +458,9 @@ class _CascaderSheet extends StatefulWidget {
   final bool multiple;
   final bool autoDrillDown;
 
+  /// 级联选择器尺寸（small/medium/large）。
+  final ParkCascaderSize size;
+
   const _CascaderSheet({
     required this.options,
     required this.selectedPath,
@@ -429,6 +474,7 @@ class _CascaderSheet extends StatefulWidget {
     this.showSearch = false,
     this.multiple = false,
     this.autoDrillDown = false,
+    this.size = ParkCascaderSize.medium,
   });
 
   @override
@@ -691,6 +737,68 @@ class _CascaderSheetState extends State<_CascaderSheet> {
     return lastOpt?.isLeaf ?? true;
   }
 
+  // ── 尺寸令牌 ──
+
+  /// 选项行内边距（小/中/大）。
+  EdgeInsets _optionPadding() => switch (widget.size) {
+        ParkCascaderSize.small => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.sm,
+            vertical: widget.park.spacing.xs,
+          ),
+        ParkCascaderSize.medium => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.base,
+            vertical: widget.park.spacing.md,
+          ),
+        ParkCascaderSize.large => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.lg,
+            vertical: widget.park.spacing.lg,
+          ),
+      };
+
+  /// 内容字号（选项/标签页/滚轮，小/中/大）。
+  double _contentFontSize() => switch (widget.size) {
+        ParkCascaderSize.small => widget.park.typography.sizeCaption,
+        ParkCascaderSize.medium => widget.park.typography.sizeBody,
+        ParkCascaderSize.large => widget.park.typography.sizeBody,
+      };
+
+  /// 行内图标大小（小/中/大）。
+  double _rowIconSize() => switch (widget.size) {
+        ParkCascaderSize.small => 14.0,
+        ParkCascaderSize.medium => 18.0,
+        ParkCascaderSize.large => 22.0,
+      };
+
+  /// 标签页内边距（小/中/大）。
+  EdgeInsets _tabPadding() => switch (widget.size) {
+        ParkCascaderSize.small => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.sm,
+            vertical: widget.park.spacing.xs,
+          ),
+        ParkCascaderSize.medium => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.md,
+            vertical: widget.park.spacing.sm,
+          ),
+        ParkCascaderSize.large => EdgeInsets.symmetric(
+            horizontal: widget.park.spacing.lg,
+            vertical: widget.park.spacing.md,
+          ),
+      };
+
+  /// 标签页分隔箭头大小（小/中/大）。
+  double _tabIconSize() => switch (widget.size) {
+        ParkCascaderSize.small => 14.0,
+        ParkCascaderSize.medium => 16.0,
+        ParkCascaderSize.large => 18.0,
+      };
+
+  /// 滚轮行高（小/中/大）。
+  double _wheelItemExtent() => switch (widget.size) {
+        ParkCascaderSize.small => 32.0,
+        ParkCascaderSize.medium => 36.0,
+        ParkCascaderSize.large => 40.0,
+      };
+
   // ── 构建 ──
 
   @override
@@ -731,14 +839,11 @@ class _CascaderSheetState extends State<_CascaderSheet> {
               setState(() => _currentLevel = i);
             },
             child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: spacing.md,
-                vertical: spacing.sm,
-              ),
+              padding: _tabPadding(),
               child: Text(
                 selectedLabel ?? ParkLocalizations.of(context).selectPlaceholder,
                 style: TextStyle(
-                  fontSize: typo.sizeBody,
+                  fontSize: _contentFontSize(),
                   color: _currentLevel == i ? colors.brand : colors.textSecondary,
                   fontWeight: _currentLevel == i
                       ? typo.weightMedium
@@ -751,7 +856,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
 
         if (i < _currentLevel) {
           tabs.add(
-            Icon(Icons.chevron_right, size: 16, color: colors.textPlaceholder),
+            Icon(Icons.chevron_right, size: _tabIconSize(), color: colors.textPlaceholder),
           );
         }
       }
@@ -979,23 +1084,20 @@ class _CascaderSheetState extends State<_CascaderSheet> {
         if (widget.multiple) {
           trailing = option.isLeaf
               ? const SizedBox.shrink()
-              : Icon(Icons.chevron_right, size: 18, color: colors.textPlaceholder);
+              : Icon(Icons.chevron_right, size: _rowIconSize(), color: colors.textPlaceholder);
         } else if (isSelected) {
           trailing = Padding(
             padding: EdgeInsets.only(right: spacing.xs),
-            child: Icon(Icons.check, size: 18, color: colors.brand),
+            child: Icon(Icons.check, size: _rowIconSize(), color: colors.brand),
           );
         } else {
           trailing = option.isLeaf
               ? const SizedBox.shrink()
-              : Icon(Icons.chevron_right, size: 18, color: colors.textPlaceholder);
+              : Icon(Icons.chevron_right, size: _rowIconSize(), color: colors.textPlaceholder);
         }
 
         final optionContent = Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: spacing.base,
-            vertical: spacing.md,
-          ),
+          padding: _optionPadding(),
           child: Row(
             children: [
               leading,
@@ -1004,7 +1106,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                 child: Text(
                   option.label,
                   style: TextStyle(
-                    fontSize: typo.sizeBody,
+                    fontSize: _contentFontSize(),
                     color: option.disabled
                         ? colors.textDisabled
                         : (widget.multiple
@@ -1071,8 +1173,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
   /// 切换上一级选项会重置后续层级的路径（联动）。
   Widget _buildWheel(ParkThemeData park) {
     final colors = park.colors;
-    final typo = park.typography;
-    const double itemExtent = 36;
+    final double itemExtent = _wheelItemExtent();
     const double wheelHeight = 200;
 
     // 已展开的层级数 = 当前路径深度（至少 1 级）
@@ -1085,7 +1186,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
         children: <Widget>[
           for (int level = 0; level < levelCount; level++)
             Expanded(
-              child: _buildWheelColumn(park, colors, typo, level, itemExtent),
+              child: _buildWheelColumn(colors, level, itemExtent),
             ),
         ],
       ),
@@ -1093,9 +1194,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
   }
 
   Widget _buildWheelColumn(
-    ParkThemeData park,
     ParkColors colors,
-    ParkTypography typo,
     int level,
     double itemExtent,
   ) {
@@ -1142,7 +1241,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: typo.sizeBody,
+                    fontSize: _contentFontSize(),
                     color: o.disabled
                         ? colors.textDisabled
                         : colors.textPrimary,
@@ -1221,10 +1320,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
             label: option.label,
             enabled: !option.disabled,
             child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: spacing.base,
-                vertical: spacing.md,
-              ),
+              padding: _optionPadding(),
               child: Row(
                 children: [
                   leading,
@@ -1233,7 +1329,7 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                     child: Text(
                       option.label,
                       style: TextStyle(
-                        fontSize: typo.sizeBody,
+                        fontSize: _contentFontSize(),
                         color: option.disabled
                             ? colors.textDisabled
                             : colors.textPrimary,
@@ -1243,10 +1339,10 @@ class _CascaderSheetState extends State<_CascaderSheet> {
                   if (isSelected)
                     Padding(
                       padding: EdgeInsets.only(right: spacing.xs),
-                      child: Icon(Icons.check, size: 18, color: colors.brand),
+                      child: Icon(Icons.check, size: _rowIconSize(), color: colors.brand),
                     ),
                   if (!option.isLeaf && !widget.multiple)
-                    Icon(Icons.chevron_right, size: 18, color: colors.textPlaceholder),
+                    Icon(Icons.chevron_right, size: _rowIconSize(), color: colors.textPlaceholder),
                 ],
               ),
             ),
@@ -1301,14 +1397,11 @@ class _CascaderSheetState extends State<_CascaderSheet> {
             button: true,
             label: labels.join(' / '),
             child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: spacing.base,
-              vertical: spacing.md,
-            ),
+            padding: _optionPadding(),
             child: Text(
               labels.join(' / '),
               style: TextStyle(
-                fontSize: typo.sizeBody,
+                fontSize: _contentFontSize(),
                 color: colors.textPrimary,
               ),
             ),

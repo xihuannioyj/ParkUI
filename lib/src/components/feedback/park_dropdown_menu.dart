@@ -45,6 +45,18 @@ enum ParkDropdownDirection { down, up }
 /// 下拉菜单位置（更细粒度的放置选项）
 enum ParkDropdownPlacement { bottomLeft, bottomRight, topLeft, topRight }
 
+/// 下拉菜单尺寸
+enum ParkDropdownMenuSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// 子菜单生命周期控制器。
 ///
 /// 管理所有活跃子菜单 OverlayEntry，在主菜单关闭时统一清理。
@@ -122,6 +134,9 @@ class ParkDropdownMenu extends StatefulWidget {
   /// 绑定服务实例。
   final ParkBindingService? bindingService;
 
+  /// 下拉菜单尺寸（small / medium / large），控制菜单项内边距、字号与图标大小。
+  final ParkDropdownMenuSize size;
+
   const ParkDropdownMenu({
     super.key,
     required this.items,
@@ -146,6 +161,7 @@ class ParkDropdownMenu extends StatefulWidget {
     this.onOpenChange,
     this.bindKey,
     this.bindingService,
+    this.size = ParkDropdownMenuSize.medium,
   });
 
   @override
@@ -271,6 +287,7 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
         placement: widget.placement,
         itemBuilder: widget.itemBuilder,
         maxHeight: widget.maxHeight,
+        size: widget.size,
       );
     });
 
@@ -339,6 +356,90 @@ class _ParkDropdownMenuState extends State<ParkDropdownMenu>
   }
 }
 
+/// 下拉菜单 size 令牌：三档内边距、字号与图标大小。
+typedef _ParkDropdownMenuSizeTokens = ({
+  EdgeInsets listPadding,
+  EdgeInsets itemPadding,
+  double labelFontSize,
+  double checkIconSize,
+  double chevronIconSize,
+  EdgeInsets groupLabelPadding,
+  double groupLabelFontSize,
+  EdgeInsets dividerPadding,
+});
+
+/// size 令牌：小/中/大 三档内边距、字号与图标大小。
+///
+/// medium 档保持原有取值，small/large 分别更紧凑/更宽松。
+_ParkDropdownMenuSizeTokens _dropdownMenuSizeTokens(
+    ParkDropdownMenuSize size, ParkThemeData park) {
+  return switch (size) {
+    ParkDropdownMenuSize.small => (
+        listPadding: EdgeInsets.symmetric(vertical: park.spacing.xxs),
+        itemPadding: EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.xs,
+        ),
+        labelFontSize: park.typography.sizeCaption,
+        checkIconSize: 16.0,
+        chevronIconSize: 14.0,
+        groupLabelPadding: EdgeInsets.fromLTRB(
+          park.spacing.sm,
+          park.spacing.xs,
+          park.spacing.sm,
+          park.spacing.xxs,
+        ),
+        groupLabelFontSize: park.typography.sizeCaption,
+        dividerPadding: EdgeInsets.symmetric(
+          vertical: park.spacing.xxs,
+          horizontal: park.spacing.xs,
+        ),
+      ),
+    ParkDropdownMenuSize.medium => (
+        listPadding: EdgeInsets.symmetric(vertical: park.spacing.xs),
+        itemPadding: EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.sm,
+        ),
+        labelFontSize: park.typography.sizeBody,
+        checkIconSize: 18.0,
+        chevronIconSize: 16.0,
+        groupLabelPadding: EdgeInsets.fromLTRB(
+          park.spacing.base,
+          park.spacing.sm,
+          park.spacing.base,
+          park.spacing.xs,
+        ),
+        groupLabelFontSize: park.typography.sizeBodySmall,
+        dividerPadding: EdgeInsets.symmetric(
+          vertical: park.spacing.xs,
+          horizontal: park.spacing.sm,
+        ),
+      ),
+    ParkDropdownMenuSize.large => (
+        listPadding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+        itemPadding: EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.md,
+        ),
+        labelFontSize: park.typography.sizeBody,
+        checkIconSize: 20.0,
+        chevronIconSize: 18.0,
+        groupLabelPadding: EdgeInsets.fromLTRB(
+          park.spacing.md,
+          park.spacing.sm,
+          park.spacing.md,
+          park.spacing.sm,
+        ),
+        groupLabelFontSize: park.typography.sizeBody,
+        dividerPadding: EdgeInsets.symmetric(
+          vertical: park.spacing.sm,
+          horizontal: park.spacing.md,
+        ),
+      ),
+  };
+}
+
 class _ParkDropdownOverlay extends StatelessWidget {
   final LayerLink layerLink;
   final List<ParkDropdownMenuItem> items;
@@ -359,6 +460,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
   final ParkDropdownPlacement? placement;
   final Widget Function(ParkDropdownMenuItem item, bool isSelected)? itemBuilder;
   final double maxHeight;
+  final ParkDropdownMenuSize size;
 
   const _ParkDropdownOverlay({
     required this.layerLink,
@@ -380,12 +482,14 @@ class _ParkDropdownOverlay extends StatelessWidget {
     this.placement,
     this.itemBuilder,
     this.maxHeight = 300,
+    this.size = ParkDropdownMenuSize.medium,
   });
 
   @override
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final tokens = _dropdownMenuSizeTokens(size, park);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final double maxWidth = math.min<double>(
       screenWidth - 16,
@@ -415,10 +519,10 @@ class _ParkDropdownOverlay extends StatelessWidget {
     // Build the children list: grouped or flat
     List<Widget> children;
     if (groups != null && groups!.isNotEmpty) {
-      children = _buildGroupedChildren(park, context);
+      children = _buildGroupedChildren(park, context, tokens);
     } else {
       children = items
-          .map((item) => _buildItem(item, park, context))
+          .map((item) => _buildItem(item, park, context, tokens))
           .toList();
     }
 
@@ -463,7 +567,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
                     boxShadow: park.shadows.lg,
                   ),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(vertical: park.spacing.xs),
+                    padding: tokens.listPadding,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -480,7 +584,8 @@ class _ParkDropdownOverlay extends StatelessWidget {
   }
 
   List<Widget> _buildGroupedChildren(
-      ParkThemeData park, BuildContext context) {
+      ParkThemeData park, BuildContext context,
+      _ParkDropdownMenuSizeTokens tokens) {
     final List<Widget> result = [];
     for (int i = 0; i < groups!.length; i++) {
       final group = groups![i];
@@ -488,16 +593,11 @@ class _ParkDropdownOverlay extends StatelessWidget {
       // Group label
       result.add(
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            park.spacing.base,
-            park.spacing.sm,
-            park.spacing.base,
-            park.spacing.xs,
-          ),
+          padding: tokens.groupLabelPadding,
           child: Text(
             group.label,
             style: park.typography.body.copyWith(
-              fontSize: park.typography.sizeBodySmall,
+              fontSize: tokens.groupLabelFontSize,
               fontWeight: park.typography.weightBold,
               color: park.colors.textSecondary,
             ),
@@ -507,15 +607,14 @@ class _ParkDropdownOverlay extends StatelessWidget {
 
       // Group items
       for (final item in group.items) {
-        result.add(_buildItem(item, park, context));
+        result.add(_buildItem(item, park, context, tokens));
       }
 
       // Divider between groups (not after last group)
       if (dividers && i < groups!.length - 1) {
         result.add(
           Padding(
-            padding:
-                EdgeInsets.symmetric(vertical: park.spacing.xs, horizontal: park.spacing.sm),
+            padding: tokens.dividerPadding,
             child: Divider(height: 1, color: park.colors.border),
           ),
         );
@@ -525,7 +624,8 @@ class _ParkDropdownOverlay extends StatelessWidget {
   }
 
   Widget _buildItem(
-      ParkDropdownMenuItem item, ParkThemeData park, BuildContext context) {
+      ParkDropdownMenuItem item, ParkThemeData park, BuildContext context,
+      _ParkDropdownMenuSizeTokens tokens) {
     // If item has children, render as submenu parent item
     if (item.children != null && item.children!.isNotEmpty) {
       return _ParkDropdownSubmenuItem(
@@ -537,6 +637,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
         onSelected: onSelected,
         itemBuilder: itemBuilder,
         maxHeight: maxHeight,
+        size: size,
       );
     }
 
@@ -564,10 +665,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
       child: GestureDetector(
         onTap: item.disabled ? null : () => onSelected(item),
         child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        padding: tokens.itemPadding,
         color: isSelected && !multiple
             ? park.colors.brand.withValues(alpha: 0.08)
             : Colors.transparent,
@@ -578,7 +676,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
                 isSelected
                     ? Icons.check_box
                     : Icons.check_box_outline_blank,
-                size: 18,
+                size: tokens.checkIconSize,
                 color: item.disabled
                     ? park.colors.textSecondary.withValues(alpha: 0.4)
                     : (isSelected ? park.colors.brand : park.colors.textSecondary),
@@ -593,7 +691,7 @@ class _ParkDropdownOverlay extends StatelessWidget {
               child: Text(
                 item.label,
                 style: park.typography.body.copyWith(
-                  fontSize: park.typography.sizeBody,
+                  fontSize: tokens.labelFontSize,
                   color: textColor,
                 ),
               ),
@@ -656,6 +754,7 @@ class _ParkDropdownSubmenuItem extends StatefulWidget {
   final ValueChanged<ParkDropdownMenuItem> onSelected;
   final Widget Function(ParkDropdownMenuItem item, bool isSelected)? itemBuilder;
   final double maxHeight;
+  final ParkDropdownMenuSize size;
 
   const _ParkDropdownSubmenuItem({
     required this.item,
@@ -666,6 +765,7 @@ class _ParkDropdownSubmenuItem extends StatefulWidget {
     required this.onSelected,
     this.itemBuilder,
     this.maxHeight = 300,
+    this.size = ParkDropdownMenuSize.medium,
   });
 
   @override
@@ -749,9 +849,10 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
   }
 
   Widget _buildSubmenuOverlay(BuildContext context) {
+    final tokens = _dropdownMenuSizeTokens(widget.size, widget.park);
     // Build submenu items recursively
     final subItems = widget.item.children!
-        .map((child) => _buildSubmenuItem(child, context))
+        .map((child) => _buildSubmenuItem(child, context, tokens))
         .toList();
 
     return Stack(
@@ -783,7 +884,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
                 boxShadow: widget.park.shadows.lg,
               ),
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(vertical: widget.park.spacing.xs),
+                padding: tokens.listPadding,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -797,7 +898,9 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
     );
   }
 
-  Widget _buildSubmenuItem(ParkDropdownMenuItem item, BuildContext context) {
+  Widget _buildSubmenuItem(
+      ParkDropdownMenuItem item, BuildContext context,
+      _ParkDropdownMenuSizeTokens tokens) {
     // Recursive: if child has children, create nested submenu item
     if (item.children != null && item.children!.isNotEmpty) {
       return _ParkDropdownSubmenuItem(
@@ -809,6 +912,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
         onSelected: widget.onSelected,
         itemBuilder: widget.itemBuilder,
         maxHeight: widget.maxHeight,
+        size: widget.size,
       );
     }
 
@@ -842,10 +946,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
           widget.onSelected(item);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.park.spacing.base,
-            vertical: widget.park.spacing.sm,
-          ),
+          padding: tokens.itemPadding,
           color: isSelected && !widget.multiple
               ? widget.park.colors.brand.withValues(alpha: 0.08)
               : Colors.transparent,
@@ -856,7 +957,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
                   isSelected
                       ? Icons.check_box
                       : Icons.check_box_outline_blank,
-                  size: 18,
+                  size: tokens.checkIconSize,
                   color: item.disabled
                       ? widget.park.colors.textSecondary.withValues(alpha: 0.4)
                       : (isSelected ? widget.park.colors.brand : widget.park.colors.textSecondary),
@@ -871,7 +972,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
                 child: Text(
                   item.label,
                   style: widget.park.typography.body.copyWith(
-                    fontSize: widget.park.typography.sizeBody,
+                    fontSize: tokens.labelFontSize,
                     color: textColor,
                   ),
                 ),
@@ -886,6 +987,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final tokens = _dropdownMenuSizeTokens(widget.size, widget.park);
     final bool isSelected = widget.selectedValues.contains(item.value);
     final textColor = item.disabled
         ? widget.park.colors.textSecondary.withValues(alpha: 0.4)
@@ -907,10 +1009,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
             // Open submenu on tap-down for hover-like feel
           },
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.park.spacing.base,
-              vertical: widget.park.spacing.sm,
-            ),
+            padding: tokens.itemPadding,
             color: isSelected && !widget.multiple
                 ? widget.park.colors.brand.withValues(alpha: 0.08)
                 : Colors.transparent,
@@ -924,7 +1023,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
                   child: Text(
                     item.label,
                     style: widget.park.typography.body.copyWith(
-                      fontSize: widget.park.typography.sizeBody,
+                      fontSize: tokens.labelFontSize,
                       color: textColor,
                     ),
                   ),
@@ -936,7 +1035,7 @@ class _ParkDropdownSubmenuItemState extends State<_ParkDropdownSubmenuItem>
                     padding: EdgeInsets.only(left: widget.park.spacing.sm),
                     child: Icon(
                       Icons.chevron_right,
-                      size: 16,
+                      size: tokens.chevronIconSize,
                       color: widget.park.colors.textSecondary,
                     ),
                   ),

@@ -32,6 +32,18 @@ enum ParkBottomNavType {
   shifting,
 }
 
+/// Park 底部导航尺寸。
+enum ParkBottomNavSize {
+  /// 小尺寸（图标 20，字号 10）
+  small,
+
+  /// 默认尺寸（图标 24，字号 12）
+  medium,
+
+  /// 大尺寸（图标 28，字号 14）
+  large,
+}
+
 /// Park 底部导航栏。
 ///
 /// 对齐 Flutter 原生 [BottomNavigationBar]，使用 park_ui 主题令牌。
@@ -73,8 +85,12 @@ class ParkBottomNav extends StatelessWidget {
   /// 未选中项字号。
   final double? unselectedFontSize;
 
-  /// 图标尺寸（默认 24）。
-  final double iconSize;
+  /// 图标尺寸（null 时由 [size] 预设决定）。
+  final double? iconSize;
+
+  /// 导航尺寸（small/medium/large），作为 iconSize/fontSize 的快捷预设；
+  /// 显式传入的 iconSize/selectedFontSize/unselectedFontSize 优先。
+  final ParkBottomNavSize size;
 
   /// 导航类型（默认 fixed）。
   final ParkBottomNavType type;
@@ -94,7 +110,8 @@ class ParkBottomNav extends StatelessWidget {
     this.unselectedItemColor,
     this.selectedFontSize,
     this.unselectedFontSize,
-    this.iconSize = 24,
+    this.iconSize,
+    this.size = ParkBottomNavSize.medium,
     this.type = ParkBottomNavType.fixed,
     this.backgroundColor,
     this.elevation = 0,
@@ -102,7 +119,7 @@ class ParkBottomNav extends StatelessWidget {
             'ParkBottomNav requires 2 to 5 items');
 
   /// 计算 Badge 背景色，使用主题 error 令牌。
-  Color _badgeBackgroundColor(Color error, bool isDark) {
+  Color _badgeBackgroundColor(Color error) {
     return error;
   }
 
@@ -117,9 +134,20 @@ class ParkBottomNav extends StatelessWidget {
     final effectiveUnselectedColor =
         unselectedItemColor ?? colors.textSecondary;
 
-    // 判断是否为暗色主题，用于 Badge 对比度修正
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final badgeBg = _badgeBackgroundColor(colors.error, isDark);
+    // size 预设：图标与字号（显式参数优先）
+    final double presetIconSize = switch (size) {
+      ParkBottomNavSize.small => 20.0,
+      ParkBottomNavSize.medium => 24.0,
+      ParkBottomNavSize.large => 28.0,
+    };
+    final double presetFontSize = switch (size) {
+      ParkBottomNavSize.small => 10.0,
+      ParkBottomNavSize.medium => 12.0,
+      ParkBottomNavSize.large => 14.0,
+    };
+
+    // Badge 背景色使用主题 error 令牌。
+    final badgeBg = _badgeBackgroundColor(colors.error);
 
     return Container(
       decoration: BoxDecoration(
@@ -144,9 +172,9 @@ class ParkBottomNav extends StatelessWidget {
             : BottomNavigationBarType.shifting,
         selectedItemColor: effectiveSelectedColor,
         unselectedItemColor: effectiveUnselectedColor,
-        selectedFontSize: selectedFontSize ?? 12,
-        unselectedFontSize: unselectedFontSize ?? 12,
-        iconSize: iconSize,
+        selectedFontSize: selectedFontSize ?? presetFontSize,
+        unselectedFontSize: unselectedFontSize ?? presetFontSize,
+        iconSize: iconSize ?? presetIconSize,
         selectedLabelStyle: TextStyle(
           fontWeight: park.typography.weightMedium,
         ),

@@ -531,6 +531,12 @@ final ParkComponentSpec _parkDropdownSheetSpec = ParkComponentSpec(
       type: 'Widget Function(ParkDropdownSheetItem item, bool isSelected)?',
       description: '自定义选项构建器（仅 items 模式），完全控制每个选项渲染。',
     ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkDropdownSheetSize',
+      defaultVal: 'ParkDropdownSheetSize.medium',
+      description: '面板尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小。',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(

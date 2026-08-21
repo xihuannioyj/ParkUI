@@ -47,6 +47,7 @@ class ParkNotification {
     VoidCallback? onClose,
     Widget? icon,
     bool closable = true,
+    ParkNotificationSize size = ParkNotificationSize.medium,
   }) {
     // Enforce maxCount: dismiss oldest notifications when limit reached.
     while (_activeNotifications.length >= _maxCount) {
@@ -103,6 +104,7 @@ class ParkNotification {
           icon: icon,
           park: park,
           topOffset: topOffset,
+          size: size,
         ),
       );
 
@@ -121,6 +123,18 @@ class ParkNotification {
 /// 通知类型
 enum ParkNotificationType { success, error, warning, info }
 
+/// 通知尺寸
+enum ParkNotificationSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 class _NotificationController {
   final VoidCallback dismiss;
 
@@ -138,6 +152,9 @@ class _NotificationOverlay extends StatefulWidget {
   final ParkThemeData park;
   final double topOffset;
 
+  /// 通知尺寸（small/medium/large）。
+  final ParkNotificationSize size;
+
   const _NotificationOverlay({
     super.key,
     required this.title,
@@ -149,6 +166,7 @@ class _NotificationOverlay extends StatefulWidget {
     this.icon,
     required this.park,
     this.topOffset = 0.0,
+    this.size = ParkNotificationSize.medium,
   });
 
   @override
@@ -220,6 +238,33 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
     final (Color accent, IconData defaultIcon) = _getTypeStyle(widget.park);
     final ParkThemeData park = widget.park;
 
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets padding = switch (widget.size) {
+      ParkNotificationSize.small => EdgeInsets.all(park.spacing.sm),
+      ParkNotificationSize.medium => EdgeInsets.all(park.spacing.base),
+      ParkNotificationSize.large => EdgeInsets.all(park.spacing.lg),
+    };
+    final double iconSize = switch (widget.size) {
+      ParkNotificationSize.small => 16.0,
+      ParkNotificationSize.medium => park.spacing.lg,
+      ParkNotificationSize.large => 24.0,
+    };
+    final double titleFontSize = switch (widget.size) {
+      ParkNotificationSize.small => park.typography.sizeCaption,
+      ParkNotificationSize.medium => park.typography.sizeBodySmall,
+      ParkNotificationSize.large => park.typography.sizeBody,
+    };
+    final double descFontSize = switch (widget.size) {
+      ParkNotificationSize.small => park.typography.sizeCaption,
+      ParkNotificationSize.medium => park.typography.sizeCaption,
+      ParkNotificationSize.large => park.typography.sizeBodySmall,
+    };
+    final double closeIconSize = switch (widget.size) {
+      ParkNotificationSize.small => 14.0,
+      ParkNotificationSize.medium => park.spacing.base,
+      ParkNotificationSize.large => 18.0,
+    };
+
     return Positioned(
       top: MediaQuery.of(context).padding.top +
           park.spacing.base +
@@ -235,7 +280,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
             hint: widget.description,
             child: Container(
               width: ParkNotification._kNotificationWidth,
-              padding: EdgeInsets.all(park.spacing.base),
+              padding: padding,
               decoration: BoxDecoration(
                 color: park.colors.surface,
                 borderRadius: park.radius.brMd,
@@ -247,7 +292,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                 children: [
                   widget.icon ??
                       Icon(defaultIcon,
-                          size: park.spacing.lg, color: accent),
+                          size: iconSize, color: accent),
                   SizedBox(width: park.spacing.md),
                   Expanded(
                     child: Column(
@@ -257,7 +302,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                         Text(
                           widget.title,
                           style: TextStyle(
-                            fontSize: park.typography.sizeBodySmall,
+                            fontSize: titleFontSize,
                             fontWeight: park.typography.weightBold,
                             color: park.colors.textPrimary,
                             // Overlay 无 Material → fallback style 黄色下划线，
@@ -270,7 +315,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                           Text(
                             widget.description!,
                             style: TextStyle(
-                              fontSize: park.typography.sizeCaption,
+                              fontSize: descFontSize,
                               color: park.colors.textSecondary,
                               decoration: TextDecoration.none,
                             ),
@@ -287,7 +332,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
                         onTap: close,
                         child: Icon(
                           Icons.close,
-                          size: park.spacing.base,
+                          size: closeIconSize,
                           color: park.colors.textSecondary,
                         ),
                       ),

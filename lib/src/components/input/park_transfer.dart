@@ -260,135 +260,146 @@ class _ParkTransferState extends State<ParkTransfer> {
     final allSelected = items.isNotEmpty && items.every((i) => selected.contains(i.key));
     final hasTitle = title != null;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Title header
-        if (hasTitle)
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: park.spacing.base, vertical: park.spacing.sm),
-            decoration: BoxDecoration(
-              color: park.colors.surface,
-              border: Border.all(color: park.colors.border),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(park.radius.sm)),
-            ),
-            child: Row(
-              children: [
-                Flexible(
-                  child: DefaultTextStyle(
-                    style: TextStyle(
-                      fontSize: park.typography.sizeBody,
-                      fontWeight: FontWeight.w600,
-                      color: park.colors.textPrimary,
-                    ),
-                    child: title,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Semantics(
-                  label: l10n.totalItemsCount(items.length),
-                  child: Text(
-                    '${items.length}',
-                    style: TextStyle(
-                      fontSize: park.typography.sizeCaption,
-                      color: park.colors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    // 高度自适应：容器有界时主体 Expanded 填满剩余高度（不再固定 240 导致
+    // 小容器下 Column 垂直溢出）；无界时回退固定高度。
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+      final bool bounded = constraints.maxHeight.isFinite;
+
+      Widget buildBody() {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(color: park.colors.border),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(park.radius.sm)),
           ),
-        // Search
-        if (widget.showSearch)
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: park.spacing.xs),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(color: park.colors.border),
-                right: BorderSide(color: park.colors.border),
-                top: hasTitle ? BorderSide.none : BorderSide(color: park.colors.border),
-              ),
-            ),
-            child: Semantics(
-              label: l10n.searchPlaceholder,
-              child: TextField(
-                controller: searchCtrl,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: l10n.searchPlaceholder,
-                  hintStyle: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder),
-                  border: InputBorder.none,
-                  isDense: true,
-                  prefixIconConstraints: const BoxConstraints(maxWidth: 24),
-                  prefixIcon: Icon(Icons.search, size: 16, color: park.colors.textSecondary),
-                ),
-                style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPrimary),
-              ),
-            ),
-          ),
-        // Body
-        SizedBox(
-          height: 240,
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: park.colors.border),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(park.radius.sm)),
-            ),
-            child: items.isEmpty
-                ? Center(
-                    child: Semantics(
-                      label: l10n.noData,
-                      child: Text(l10n.noData, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder)),
-                    ),
-                  )
-                : Column(
-                    children: [
-                      // Select all
-                      Semantics(
-                        label: l10n.selectAllText,
-                        child: InkWell(
-                          onTap: () {
-                            if (widget.disabled) return;
-                            setState(() {
-                              if (allSelected) {
-                                selected.clear();
-                              } else {
-                                for (final i in items) {
-                                  selected.add(i.key);
-                                }
+          child: items.isEmpty
+              ? Center(
+                  child: Semantics(
+                    label: l10n.noData,
+                    child: Text(l10n.noData, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder)),
+                  ),
+                )
+              : Column(
+                  children: [
+                    // Select all
+                    Semantics(
+                      label: l10n.selectAllText,
+                      child: InkWell(
+                        onTap: () {
+                          if (widget.disabled) return;
+                          setState(() {
+                            if (allSelected) {
+                              selected.clear();
+                            } else {
+                              for (final i in items) {
+                                selected.add(i.key);
                               }
-                            });
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm),
-                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: park.colors.borderLight))),
-                            child: Row(
-                              children: [
-                                Icon(allSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: park.colors.brand),
-                                SizedBox(width: park.spacing.sm),
-                                Text(l10n.selectAllText, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textSecondary)),
-                              ],
-                            ),
+                            }
+                          });
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(horizontal: park.spacing.md, vertical: park.spacing.sm),
+                          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: park.colors.borderLight))),
+                          child: Row(
+                            children: [
+                              Icon(allSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: park.colors.brand),
+                              SizedBox(width: park.spacing.sm),
+                              Text(l10n.selectAllText, style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textSecondary)),
+                            ],
                           ),
                         ),
                       ),
-                      // List
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: items.length,
-                          itemBuilder: (_, i) => _buildItem(items[i], selected, park, l10n),
-                        ),
+                    ),
+                    // List
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: items.length,
+                        itemBuilder: (_, i) => _buildItem(items[i], selected, park, l10n),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+        );
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Title header
+          if (hasTitle)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: park.spacing.base, vertical: park.spacing.sm),
+              decoration: BoxDecoration(
+                color: park.colors.surface,
+                border: Border.all(color: park.colors.border),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(park.radius.sm)),
+              ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: DefaultTextStyle(
+                      style: TextStyle(
+                        fontSize: park.typography.sizeBody,
+                        fontWeight: FontWeight.w600,
+                        color: park.colors.textPrimary,
+                      ),
+                      child: title,
+                    ),
                   ),
-          ),
-        ),
-      ],
-    );
+                  const SizedBox(width: 8),
+                  Semantics(
+                    label: l10n.totalItemsCount(items.length),
+                    child: Text(
+                      '${items.length}',
+                      style: TextStyle(
+                        fontSize: park.typography.sizeCaption,
+                        color: park.colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Search
+          if (widget.showSearch)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: park.spacing.sm, vertical: park.spacing.xs),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: park.colors.border),
+                  right: BorderSide(color: park.colors.border),
+                  top: hasTitle ? BorderSide.none : BorderSide(color: park.colors.border),
+                ),
+              ),
+              child: Semantics(
+                label: l10n.searchPlaceholder,
+                child: TextField(
+                  controller: searchCtrl,
+                  enabled: !widget.disabled,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: l10n.searchPlaceholder,
+                    hintStyle: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPlaceholder),
+                    border: InputBorder.none,
+                    isDense: true,
+                    prefixIconConstraints: const BoxConstraints(maxWidth: 24),
+                    prefixIcon: Icon(Icons.search, size: 16, color: park.colors.textSecondary),
+                  ),
+                  style: TextStyle(fontSize: park.typography.sizeCaption, color: park.colors.textPrimary),
+                ),
+              ),
+            ),
+          // Body：有界高度填满剩余空间，无界回退固定 240
+          if (bounded)
+            Expanded(child: buildBody())
+          else
+            SizedBox(height: 240, child: buildBody()),
+        ],
+      );
+    });
   }
 
   Widget _buildItem(ParkTransferItem item, Set<String> selected, ParkThemeData park, ParkLocalizations l10n) {

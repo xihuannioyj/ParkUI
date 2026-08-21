@@ -307,31 +307,36 @@ ParkMasonry<String>(
   columns: 3,
   spacing: 12,
 )''',
-      builder: (BuildContext context) => ParkMasonry<String>(
-        items: const <String>[
-          '短内容',
-          '中等长度内容展示',
-          '较长一些的内容卡片',
-          '短',
-          '更长的内容展示区域',
-          '中等',
-        ],
-        itemBuilder: (BuildContext ctx, String item, int index) => Container(
-          height: 60.0 + (index % 3) * 40.0,
-          decoration: BoxDecoration(
-            color: _kColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _kColors.border, width: 0.5),
+      // ParkMasonry 是滚动容器：demo 必须给有界高度，
+      // 否则 CustomScrollView 收到无界高度约束直接布局崩溃。
+      builder: (BuildContext context) => SizedBox(
+        height: 360,
+        child: ParkMasonry<String>(
+          items: const <String>[
+            '短内容',
+            '中等长度内容展示',
+            '较长一些的内容卡片',
+            '短',
+            '更长的内容展示区域',
+            '中等',
+          ],
+          itemBuilder: (BuildContext ctx, String item, int index) => Container(
+            height: 60.0 + (index % 3) * 40.0,
+            decoration: BoxDecoration(
+              color: _kColors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _kColors.border, width: 0.5),
+            ),
+            padding: const EdgeInsets.all(12),
+            alignment: Alignment.center,
+            child: Text(
+              item,
+              style: TextStyle(fontSize: 14, color: _kColors.textPrimary),
+            ),
           ),
-          padding: const EdgeInsets.all(12),
-          alignment: Alignment.center,
-          child: Text(
-            item,
-            style: TextStyle(fontSize: 14, color: _kColors.textPrimary),
-          ),
+          columns: 3,
+          spacing: 12,
         ),
-        columns: 3,
-        spacing: 12,
       ),
     ),
     ParkDemoScenario(

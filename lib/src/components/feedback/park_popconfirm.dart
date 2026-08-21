@@ -103,11 +103,13 @@ class _ParkPopconfirmState extends State<ParkPopconfirm>
 
   void _showPopconfirm() {
     if (_isVisible) return;
-    _isVisible = true;
 
     final renderBox =
         _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    // 边界防御：trigger 首帧未布局/无尺寸时直接 return 会把 _isVisible 留在 true，
+    // 之后所有点击被 `if (_isVisible) return` 吞掉 → 弹窗永远无法再打开。
     if (renderBox == null || !renderBox.hasSize) return;
+    _isVisible = true;
 
     final overlay = Overlay.of(context);
     final childPosition = renderBox.localToGlobal(Offset.zero);
@@ -268,7 +270,7 @@ class _ParkPopconfirmState extends State<ParkPopconfirm>
                                   child: Text(
                                     widget.title!,
                                     style: TextStyle(
-                                      fontSize: 15,
+                                      fontSize: park.typography.sizeBody,
                                       fontWeight: FontWeight.w600,
                                       color: park.colors.textPrimary,
                                     ),
@@ -286,7 +288,7 @@ class _ParkPopconfirmState extends State<ParkPopconfirm>
                             Text(
                               widget.description!,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: park.typography.sizeCaption,
                                 color: park.colors.textSecondary,
                               ),
                             ),

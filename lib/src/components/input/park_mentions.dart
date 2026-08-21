@@ -186,6 +186,11 @@ class _ParkMentionsState extends State<ParkMentions> {
     // 受控模式：外部 value 变化时同步文本（仅在确有差异时，避免光标跳动）。
     if (widget.value != null && widget.value != _controller.text) {
       _controller.text = widget.value!;
+      // P1-4：文本被外部缩短/替换后，面板内容与触发上下文会脱节
+      // （这也是 caret 越界崩溃的温床）——同步后刷新面板或直接关闭。
+      if (_overlayEntry != null) {
+        _refreshPanel();
+      }
     }
     // bindKey / bindingService 变化时重新绑定
     if (widget.bindKey != oldWidget.bindKey ||
@@ -352,12 +357,19 @@ class _ParkMentionsState extends State<ParkMentions> {
 
   void _insertMention(ParkMentionItem item) {
     if (item.disabled) return;
-    final String trigger = _activeTrigger ?? widget.triggerChars.first;
+    // 边界防御：triggerChars 为空时 .first 抛 StateError。
+    final String trigger = _activeTrigger ??
+        (widget.triggerChars.isNotEmpty ? widget.triggerChars.first : '@');
     final _MentionContext? ctx = _detectContext();
-    final int triggerIndex = ctx?.triggerIndex ?? 0;
-    final int caret = _controller.selection.isValid
-        ? _controller.selection.baseOffset
-        : _controller.text.length;
+    final int triggerIndex =
+        (ctx?.triggerIndex ?? 0).clamp(0, _controller.text.length).toInt();
+    // 边界防御：受控更新把文本变短后面板仍开，caret 可能超出 text.length，
+    // replaceRange 会抛 RangeError，这里钳制到文本长度。
+    final int caret = (_controller.selection.isValid
+            ? _controller.selection.baseOffset
+            : _controller.text.length)
+        .clamp(triggerIndex, _controller.text.length)
+        .toInt();
 
     final String inserted =
         widget.mentionBuilder?.call(item, trigger) ?? '$trigger${item.value} ';

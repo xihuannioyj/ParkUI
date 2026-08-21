@@ -12,6 +12,9 @@ enum ParkPaginationSize {
 
   /// 中尺寸（按钮 32px，字号 14，默认）
   medium,
+
+  /// 大尺寸（按钮 40px，字号 16）
+  large,
 }
 
 /// Park 分页器
@@ -145,7 +148,12 @@ class _ParkPaginationState extends State<ParkPagination>
     if (initialValue != null && initialValue != widget.current) {
       final int clamped = initialValue.clamp(1, _totalPages);
       if (clamped != widget.current) {
-        widget._effectiveOnChanged?.call(clamped, widget.pageSize);
+        // 延迟到帧末再回调：initState 处于父组件 build 期间，
+        // 同步回调若执行 setState 会抛 "setState during build"。
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          widget._effectiveOnChanged?.call(clamped, widget.pageSize);
+        });
       }
     }
   }
@@ -166,15 +174,27 @@ class _ParkPaginationState extends State<ParkPagination>
   }
 
   double get _buttonSize {
-    return widget.size == ParkPaginationSize.small ? 24.0 : 32.0;
+    return switch (widget.size) {
+      ParkPaginationSize.small => 24.0,
+      ParkPaginationSize.medium => 32.0,
+      ParkPaginationSize.large => 40.0,
+    };
   }
 
   double get _fontSize {
-    return widget.size == ParkPaginationSize.small ? 12.0 : 14.0;
+    return switch (widget.size) {
+      ParkPaginationSize.small => 12.0,
+      ParkPaginationSize.medium => 14.0,
+      ParkPaginationSize.large => 16.0,
+    };
   }
 
   double get _iconSize {
-    return widget.size == ParkPaginationSize.small ? 14.0 : 16.0;
+    return switch (widget.size) {
+      ParkPaginationSize.small => 14.0,
+      ParkPaginationSize.medium => 16.0,
+      ParkPaginationSize.large => 20.0,
+    };
   }
 
   // ==========================================================================

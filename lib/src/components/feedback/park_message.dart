@@ -8,6 +8,18 @@ import '../../theme/park_theme_data.dart';
 /// 消息弹出位置
 enum ParkMessagePosition { top, bottom }
 
+/// 消息尺寸
+enum ParkMessageSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// ParkMessageConfig — global configuration for ParkMessage behaviour.
 class ParkMessageConfig {
   /// Maximum number of messages visible at the same time.
@@ -39,6 +51,9 @@ class ParkMessage extends StatefulWidget {
   /// When true, hovering over the message pauses its auto-dismiss timer.
   final bool pauseOnHover;
 
+  /// 消息尺寸（small/medium/large），控制内边距、字号与图标大小。
+  final ParkMessageSize size;
+
   const ParkMessage({
     super.key,
     required this.title,
@@ -53,6 +68,7 @@ class ParkMessage extends StatefulWidget {
     this.onClick,
     this.onClose,
     this.pauseOnHover = false,
+    this.size = ParkMessageSize.medium,
   });
 
   // ---- Global state ----
@@ -73,8 +89,10 @@ class ParkMessage extends StatefulWidget {
 
   /// Update global message configuration.
   static void config({int? maxCount}) {
+    // 边界防御：maxCount <= 0 时空 Map 淘汰循环取 keys.first 抛 StateError。
+    final int rawMax = maxCount ?? _config.maxCount;
     _config = ParkMessageConfig(
-      maxCount: maxCount ?? _config.maxCount,
+      maxCount: rawMax < 1 ? 1 : rawMax,
     );
   }
 
@@ -82,6 +100,13 @@ class ParkMessage extends StatefulWidget {
   static void resetConfig() {
     _config = const ParkMessageConfig();
   }
+
+  /// 按尺寸返回类型图标大小（info/success/warning/error）。
+  static double _iconSizeFor(ParkMessageSize size) => switch (size) {
+        ParkMessageSize.small => 16.0,
+        ParkMessageSize.medium => 20.0,
+        ParkMessageSize.large => 24.0,
+      };
 
   /// info 消息
   static void info(
@@ -96,6 +121,7 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -107,13 +133,14 @@ class ParkMessage extends StatefulWidget {
       closable: closable,
       position: position,
       onTap: onTap,
-      icon: Icon(Icons.info_outline, color: park.colors.info, size: 20),
+      icon: Icon(Icons.info_outline, color: park.colors.info, size: _iconSizeFor(size)),
       accentColor: park.colors.info,
       backgroundColor: park.colors.infoLight,
       messageKey: key,
       onClick: onClick,
       onClose: onClose,
       pauseOnHover: pauseOnHover,
+      size: size,
     );
   }
 
@@ -130,6 +157,7 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -144,7 +172,7 @@ class ParkMessage extends StatefulWidget {
       icon: Icon(
         Icons.check_circle_outline,
         color: park.colors.success,
-        size: 20,
+        size: _iconSizeFor(size),
       ),
       accentColor: park.colors.success,
       backgroundColor: park.colors.successLight,
@@ -152,6 +180,7 @@ class ParkMessage extends StatefulWidget {
       onClick: onClick,
       onClose: onClose,
       pauseOnHover: pauseOnHover,
+      size: size,
     );
   }
 
@@ -168,6 +197,7 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -182,7 +212,7 @@ class ParkMessage extends StatefulWidget {
       icon: Icon(
         Icons.warning_amber_outlined,
         color: park.colors.warning,
-        size: 20,
+        size: _iconSizeFor(size),
       ),
       accentColor: park.colors.warning,
       backgroundColor: park.colors.warningLight,
@@ -190,6 +220,7 @@ class ParkMessage extends StatefulWidget {
       onClick: onClick,
       onClose: onClose,
       pauseOnHover: pauseOnHover,
+      size: size,
     );
   }
 
@@ -206,6 +237,7 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
@@ -217,13 +249,14 @@ class ParkMessage extends StatefulWidget {
       closable: closable,
       position: position,
       onTap: onTap,
-      icon: Icon(Icons.error_outline, color: park.colors.error, size: 20),
+      icon: Icon(Icons.error_outline, color: park.colors.error, size: _iconSizeFor(size)),
       accentColor: park.colors.error,
       backgroundColor: park.colors.errorLight,
       messageKey: key,
       onClick: onClick,
       onClose: onClose,
       pauseOnHover: pauseOnHover,
+      size: size,
     );
   }
 
@@ -240,9 +273,15 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final double loadingSize = switch (size) {
+      ParkMessageSize.small => 14.0,
+      ParkMessageSize.medium => 18.0,
+      ParkMessageSize.large => 22.0,
+    };
     _show(
       context,
       title: title,
@@ -252,8 +291,8 @@ class ParkMessage extends StatefulWidget {
       position: position,
       onTap: onTap,
       icon: SizedBox(
-        width: 18,
-        height: 18,
+        width: loadingSize,
+        height: loadingSize,
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor:
@@ -266,6 +305,7 @@ class ParkMessage extends StatefulWidget {
       onClick: onClick,
       onClose: onClose,
       pauseOnHover: pauseOnHover,
+      size: size,
     );
   }
 
@@ -284,6 +324,7 @@ class ParkMessage extends StatefulWidget {
     VoidCallback? onClick,
     VoidCallback? onClose,
     bool pauseOnHover = false,
+    ParkMessageSize size = ParkMessageSize.medium,
   }) {
     // If a message with the same key exists, dismiss it first (update pattern).
     if (messageKey != null && _activeMessages.containsKey(messageKey)) {
@@ -292,7 +333,9 @@ class ParkMessage extends StatefulWidget {
     }
 
     // Enforce maxCount: dismiss oldest messages when limit reached.
-    while (_activeMessages.length >= _config.maxCount) {
+    // 边界防御：即使 maxCount 被外部构造为 0，也绝不从空 Map 取 first。
+    while (_activeMessages.isNotEmpty &&
+        _activeMessages.length >= _config.maxCount) {
       final oldestKey = _activeMessages.keys.first;
       _activeMessages[oldestKey]?.dismiss();
       _activeMessages.remove(oldestKey);
@@ -367,6 +410,7 @@ class ParkMessage extends StatefulWidget {
             onDismiss: remove,
             onClick: onClick,
             pauseOnHover: pauseOnHover,
+            size: size,
           );
         },
       );
@@ -400,6 +444,38 @@ class _ParkMessageState extends State<ParkMessage> {
   Widget _buildBar(ParkThemeData park) {
     final l10n = ParkLocalizations.of(context);
     final bg = widget.backgroundColor ?? park.colors.infoLight;
+
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets padding = switch (widget.size) {
+      ParkMessageSize.small => EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.xs,
+        ),
+      ParkMessageSize.medium => EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.md,
+        ),
+      ParkMessageSize.large => EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.lg,
+        ),
+    };
+    final double titleFontSize = switch (widget.size) {
+      ParkMessageSize.small => park.typography.sizeCaption,
+      ParkMessageSize.medium => park.typography.sizeBody,
+      ParkMessageSize.large => park.typography.sizeBody,
+    };
+    final double contentFontSize = switch (widget.size) {
+      ParkMessageSize.small => park.typography.sizeCaption,
+      ParkMessageSize.medium => park.typography.sizeBodySmall,
+      ParkMessageSize.large => park.typography.sizeBody,
+    };
+    final double closeIconSize = switch (widget.size) {
+      ParkMessageSize.small => 14.0,
+      ParkMessageSize.medium => 18.0,
+      ParkMessageSize.large => 20.0,
+    };
+
     return Semantics(
       liveRegion: true,
       label: widget.title,
@@ -411,10 +487,7 @@ class _ParkMessageState extends State<ParkMessage> {
           widget.onClick?.call();
         },
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: park.spacing.base,
-            vertical: park.spacing.md,
-          ),
+          padding: padding,
           decoration: BoxDecoration(
             color: bg,
             borderRadius: park.radius.brMd,
@@ -433,7 +506,7 @@ class _ParkMessageState extends State<ParkMessage> {
                     Text(
                       widget.title,
                       style: park.typography.body.copyWith(
-                        fontSize: park.typography.sizeBody,
+                        fontSize: titleFontSize,
                         fontWeight: park.typography.weightMedium,
                         color: park.colors.textPrimary,
                         // Overlay 无 Material → fallback style 黄色下划线，
@@ -446,7 +519,7 @@ class _ParkMessageState extends State<ParkMessage> {
                       Text(
                         widget.content!,
                         style: park.typography.body.copyWith(
-                          fontSize: park.typography.sizeBodySmall,
+                          fontSize: contentFontSize,
                           color: park.colors.textSecondary,
                           decoration: TextDecoration.none,
                         ),
@@ -459,7 +532,7 @@ class _ParkMessageState extends State<ParkMessage> {
                 Semantics(
                   button: true,
                   label: l10n.closeText,
-                  child: Icon(Icons.close, size: 18, color: park.colors.textSecondary),
+                  child: Icon(Icons.close, size: closeIconSize, color: park.colors.textSecondary),
                 ),
             ],
           ),
@@ -483,6 +556,9 @@ class _ParkMessageOverlay extends StatefulWidget {
   final VoidCallback? onClick;
   final bool pauseOnHover;
 
+  /// 消息尺寸（small/medium/large）。
+  final ParkMessageSize size;
+
   const _ParkMessageOverlay({
     super.key,
     required this.title,
@@ -497,6 +573,7 @@ class _ParkMessageOverlay extends StatefulWidget {
     required this.onDismiss,
     this.onClick,
     this.pauseOnHover = false,
+    this.size = ParkMessageSize.medium,
   });
 
   @override
@@ -598,6 +675,37 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
         ? Alignment.topCenter
         : Alignment.bottomCenter;
 
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets padding = switch (widget.size) {
+      ParkMessageSize.small => EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.xs,
+        ),
+      ParkMessageSize.medium => EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.md,
+        ),
+      ParkMessageSize.large => EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.lg,
+        ),
+    };
+    final double titleFontSize = switch (widget.size) {
+      ParkMessageSize.small => park.typography.sizeCaption,
+      ParkMessageSize.medium => park.typography.sizeBody,
+      ParkMessageSize.large => park.typography.sizeBody,
+    };
+    final double contentFontSize = switch (widget.size) {
+      ParkMessageSize.small => park.typography.sizeCaption,
+      ParkMessageSize.medium => park.typography.sizeBodySmall,
+      ParkMessageSize.large => park.typography.sizeBody,
+    };
+    final double closeIconSize = switch (widget.size) {
+      ParkMessageSize.small => 14.0,
+      ParkMessageSize.medium => 18.0,
+      ParkMessageSize.large => 20.0,
+    };
+
     final safeArea = widget.position == ParkMessagePosition.top
         ? EdgeInsets.only(
             top: MediaQuery.of(context).padding.top + park.spacing.sm)
@@ -642,10 +750,7 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                   child: Stack(
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: park.spacing.base,
-                          vertical: park.spacing.md,
-                        ),
+                        padding: padding,
                         decoration: BoxDecoration(
                           color: bg,
                           borderRadius: park.radius.brMd,
@@ -665,7 +770,7 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                                   Text(
                                     widget.title,
                                     style: park.typography.body.copyWith(
-                                      fontSize: park.typography.sizeBody,
+                                      fontSize: titleFontSize,
                                       fontWeight: park.typography.weightMedium,
                                       color: park.colors.textPrimary,
                                     ),
@@ -675,7 +780,7 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                                     Text(
                                       widget.content!,
                                       style: park.typography.body.copyWith(
-                                        fontSize: park.typography.sizeBodySmall,
+                                        fontSize: contentFontSize,
                                         color: park.colors.textSecondary,
                                       ),
                                     ),
@@ -691,7 +796,7 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                                   onTap: close,
                                   child: Icon(
                                     Icons.close,
-                                    size: 18,
+                                    size: closeIconSize,
                                     color: park.colors.textSecondary,
                                   ),
                                 ),

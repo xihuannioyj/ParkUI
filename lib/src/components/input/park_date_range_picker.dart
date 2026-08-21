@@ -439,7 +439,37 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        // 边界防御：initial 超出 [firstDate, lastDate] 时 CupertinoDatePicker
+        // debug 断言失败，先钳制到允许范围。
         DateTime temp = initial ?? DateTime.now();
+        if (widget.firstDate != null && temp.isBefore(widget.firstDate!)) {
+          temp = widget.firstDate!;
+        }
+        if (widget.lastDate != null && temp.isAfter(widget.lastDate!)) {
+          temp = widget.lastDate!;
+        }
+        // P1-9：结束日期不允许早于开始日期、开始日期不允许晚于结束日期——
+        // 双向钳制初始值与可选范围（CupertinoDatePicker 的 min/max 可为 null）。
+        final DateTime? effectiveMin;
+        final DateTime? effectiveMax;
+        if (!isStart && _startDate != null) {
+          temp = temp.isBefore(_startDate!) ? _startDate! : temp;
+          effectiveMin = (widget.firstDate != null &&
+                  widget.firstDate!.isAfter(_startDate!))
+              ? widget.firstDate
+              : _startDate;
+          effectiveMax = widget.lastDate;
+        } else if (isStart && _endDate != null) {
+          temp = temp.isAfter(_endDate!) ? _endDate! : temp;
+          effectiveMax = (widget.lastDate != null &&
+                  widget.lastDate!.isBefore(_endDate!))
+              ? widget.lastDate
+              : _endDate;
+          effectiveMin = widget.firstDate;
+        } else {
+          effectiveMin = widget.firstDate;
+          effectiveMax = widget.lastDate;
+        }
         return Container(
           decoration: BoxDecoration(
             color: park.colors.surface,
@@ -509,8 +539,8 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: temp,
-                    minimumDate: widget.firstDate,
-                    maximumDate: widget.lastDate,
+                    minimumDate: effectiveMin,
+                    maximumDate: effectiveMax,
                     minimumYear: (widget.firstDate?.year) ??
                         (DateTime.now().year - 100),
                     maximumYear: (widget.lastDate?.year) ??
@@ -528,8 +558,15 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
         setState(() {
           if (isStart) {
             _startDate = result;
+            // 防御：若外部逻辑绕过钳制导致 start > end，交换保证区间合法。
+            if (_endDate != null && result.isAfter(_endDate!)) {
+              _endDate = result;
+            }
           } else {
             _endDate = result;
+            if (_startDate != null && result.isBefore(_startDate!)) {
+              _startDate = result;
+            }
           }
         });
       }

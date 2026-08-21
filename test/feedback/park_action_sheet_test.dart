@@ -59,6 +59,22 @@ void main() {
 
       expect(find.text('关闭面板'), findsOneWidget);
     });
+
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      for (final size in ParkActionSheetSize.values) {
+        await tester.pumpWidget(_wrap(ParkActionSheet(
+          size: size,
+          actions: const [
+            ParkAction(label: '编辑'),
+            ParkAction(label: '删除'),
+          ],
+        )));
+
+        expect(find.text('编辑'), findsOneWidget);
+        expect(find.text('删除'), findsOneWidget);
+        expect(find.text('取消'), findsOneWidget);
+      }
+    });
   });
 
   // ===========================================================================

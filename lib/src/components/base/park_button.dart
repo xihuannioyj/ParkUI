@@ -253,7 +253,7 @@ class _ParkButtonState extends State<ParkButton> {
     final sizing = park.sizing;
 
     // 解析尺寸参数
-    final sizeConfig = _resolveSize(widget.size, sizing);
+    final sizeConfig = _resolveSize(widget.size, park);
 
     // 解析变体样式（ghost 修饰符优先，其次 danger 修饰符）
     final effectiveVariant = widget.ghost
@@ -489,7 +489,7 @@ class _ParkButtonState extends State<ParkButton> {
                           : '${badge ?? 0}',
                       style: TextStyle(
                         color: colors.textOnBrand,
-                        fontSize: 10,
+                        fontSize: park.typography.sizeOverline,
                         fontWeight: FontWeight.w600,
                         height: 1.4,
                       ),
@@ -653,26 +653,27 @@ class _ParkButtonState extends State<ParkButton> {
         text.codeUnitAt(1) <= 0x9FFF;
   }
 
-  _SizeConfig _resolveSize(ParkButtonSize size, ParkSizing sizing) {
+  _SizeConfig _resolveSize(ParkButtonSize size, ParkThemeData park) {
+    final ParkSizing sizing = park.sizing;
     switch (size) {
       case ParkButtonSize.small:
         return _SizeConfig(
           height: sizing.buttonHeightSm,
-          fontSize: 12,
+          fontSize: park.typography.sizeCaption,
           minWidth: 56,
           hPadding: 16,
         );
       case ParkButtonSize.medium:
         return _SizeConfig(
           height: sizing.buttonHeightMd,
-          fontSize: 14,
+          fontSize: park.typography.sizeBodySmall,
           minWidth: 64,
           hPadding: sizing.buttonHorizontalPaddingMd,
         );
       case ParkButtonSize.large:
         return _SizeConfig(
           height: sizing.buttonHeightLg,
-          fontSize: 16,
+          fontSize: park.typography.sizeBody,
           minWidth: 80,
           hPadding: 32,
         );

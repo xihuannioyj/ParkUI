@@ -34,6 +34,9 @@ enum ParkStepsSize {
 
   /// 默认尺寸（图标 28px）
   defaultSize,
+
+  /// 大尺寸（图标 34px）
+  large,
 }
 
 /// Park 步骤标签排列方式
@@ -155,17 +158,29 @@ class ParkSteps extends StatelessWidget {
   /// 是否可交互（clickable 且提供了回调）
   bool get _isInteractive => clickable && onStepTap != null;
 
-  double get _circleSize =>
-      size == ParkStepsSize.small ? 22.0 : 28.0;
+  double get _circleSize => switch (size) {
+        ParkStepsSize.small => 22.0,
+        ParkStepsSize.defaultSize => 28.0,
+        ParkStepsSize.large => 34.0,
+      };
 
-  double get _iconSize =>
-      size == ParkStepsSize.small ? 13.0 : 16.0;
+  double get _iconSize => switch (size) {
+        ParkStepsSize.small => 13.0,
+        ParkStepsSize.defaultSize => 16.0,
+        ParkStepsSize.large => 20.0,
+      };
 
-  double get _titleFontSize =>
-      size == ParkStepsSize.small ? 12.0 : 14.0;
+  double get _titleFontSize => switch (size) {
+        ParkStepsSize.small => 12.0,
+        ParkStepsSize.defaultSize => 14.0,
+        ParkStepsSize.large => 16.0,
+      };
 
-  double get _descFontSize =>
-      size == ParkStepsSize.small ? 10.0 : 12.0;
+  double get _descFontSize => switch (size) {
+        ParkStepsSize.small => 10.0,
+        ParkStepsSize.defaultSize => 12.0,
+        ParkStepsSize.large => 14.0,
+      };
 
   @override
   Widget build(BuildContext context) {

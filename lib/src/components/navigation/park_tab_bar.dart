@@ -24,6 +24,18 @@ enum ParkTabBarShape {
   notch,
 }
 
+/// Park 底部导航栏尺寸
+enum ParkTabBarSize {
+  /// 小尺寸（更矮的栏高、小图标、小字号）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（更高的栏高、大图标、大字号）
+  large,
+}
+
 /// Park 底部导航项数据
 class ParkTabBarItem {
   /// 默认图标
@@ -116,6 +128,9 @@ class ParkTabBar extends StatefulWidget {
   /// 绑定服务实例
   final ParkBindingService? bindingService;
 
+  /// 导航栏尺寸（small / medium / large），控制栏高、字号与图标大小。
+  final ParkTabBarSize size;
+
   const ParkTabBar({
     super.key,
     required this.items,
@@ -131,6 +146,7 @@ class ParkTabBar extends StatefulWidget {
     this.shape = ParkTabBarShape.normal,
     this.bindKey,
     this.bindingService,
+    this.size = ParkTabBarSize.medium,
   });
 
   @override
@@ -191,7 +207,37 @@ class _ParkTabBarState extends State<ParkTabBar>
     final isFloating = widget.type == ParkTabBarType.floating;
     final selectedIndex = _effectiveIndex;
 
-    const barHeight = 56.0;
+    // size 令牌：小/中/大 三档栏高、字号与图标大小
+    final double barHeight = switch (widget.size) {
+      ParkTabBarSize.small => 48.0,
+      ParkTabBarSize.medium => 56.0,
+      ParkTabBarSize.large => 64.0,
+    };
+    final double iconSize = switch (widget.size) {
+      ParkTabBarSize.small => 20.0,
+      ParkTabBarSize.medium => 24.0,
+      ParkTabBarSize.large => 28.0,
+    };
+    final double labelFontSize = switch (widget.size) {
+      ParkTabBarSize.small => 10.0,
+      ParkTabBarSize.medium => park.typography.sizeOverline,
+      ParkTabBarSize.large => park.typography.sizeBody,
+    };
+    // 悬浮式导航栏外层内边距
+    final EdgeInsets floatingPadding = switch (widget.size) {
+      ParkTabBarSize.small => EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.xs,
+        ),
+      ParkTabBarSize.medium => EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.sm,
+        ),
+      ParkTabBarSize.large => EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.md,
+        ),
+    };
 
     final content = Container(
       height: barHeight,
@@ -228,6 +274,8 @@ class _ParkTabBarState extends State<ParkTabBar>
                   isSelected: index == selectedIndex,
                   index: index,
                   park: park,
+                  iconSize: iconSize,
+                  labelFontSize: labelFontSize,
                 ),
               );
             }),
@@ -245,10 +293,7 @@ class _ParkTabBarState extends State<ParkTabBar>
     if (!widget.fixed) {
       if (!isFloating) return content;
       return Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        padding: floatingPadding,
         child: content,
       );
     }
@@ -256,10 +301,7 @@ class _ParkTabBarState extends State<ParkTabBar>
     if (!widget.useSafeArea) {
       if (!isFloating) return content;
       return Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        padding: floatingPadding,
         child: content,
       );
     }
@@ -269,10 +311,7 @@ class _ParkTabBarState extends State<ParkTabBar>
         top: false,
         left: false,
         right: false,
-        minimum: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        minimum: floatingPadding,
         child: content,
       );
     }
@@ -285,6 +324,8 @@ class _ParkTabBarState extends State<ParkTabBar>
     required bool isSelected,
     required int index,
     required ParkThemeData park,
+    required double iconSize,
+    required double labelFontSize,
   }) {
     final colors = park.colors;
     final activeColor = colors.brand;
@@ -317,13 +358,13 @@ class _ParkTabBarState extends State<ParkTabBar>
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(iconData, size: 24, color: color),
+                  Icon(iconData, size: iconSize, color: color),
                   SizedBox(height: park.spacing.xxs),
                   Text(
                     item.label,
                     style: TextStyle(
                       color: color,
-                      fontSize: park.typography.sizeOverline,
+                      fontSize: labelFontSize,
                       fontWeight: isSelected
                           ? park.typography.weightMedium
                           : park.typography.weightRegular,
@@ -377,7 +418,7 @@ class _ParkTabBarState extends State<ParkTabBar>
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: colors.textOnBrand,
-                        fontSize: 10,
+                        fontSize: park.typography.sizeOverline,
                         fontWeight: park.typography.weightMedium,
                         height: 1.3,
                       ),

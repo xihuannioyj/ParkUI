@@ -70,6 +70,8 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
   late final AnimationController _controller;
   late Animation<double> _animation;
   double _dragOffset = 0.0;
+  /// 手势开始前是否处于打开状态（onOpen/onClose 判定用）。
+  bool _wasOpenBeforeGesture = false;
   int? _pendingConfirmIndex; // For confirmMode: index awaiting second tap
 
   static const double _defaultActionButtonWidth = 72.0;
@@ -107,6 +109,9 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
 
   void _onHorizontalDragStart(DragStartDetails details) {
     if (widget.disabled) return;
+    // 记录手势开始前的打开状态，供 drag-end 判定 onOpen/onClose
+    // （拖拽中 _dragOffset 已非 0，直接比较会误判）。
+    _wasOpenBeforeGesture = _dragOffset != 0;
     _controller.stop();
   }
 
@@ -158,11 +163,14 @@ class _ParkSwipeCellState extends State<ParkSwipeCell>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward(from: 0.0);
 
-    if (target != 0 && _dragOffset == 0) {
+    // 以手势开始前的状态判定回调：拖拽中 _dragOffset 已非 0，
+    // 原实现 `_dragOffset == 0` 的判断在拖拽打开时恒不成立 → onOpen 永不触发。
+    if (target != 0 && !_wasOpenBeforeGesture) {
       widget.onOpen?.call();
-    } else if (target == 0 && _dragOffset != 0) {
+    } else if (target == 0 && _wasOpenBeforeGesture) {
       widget.onClose?.call();
     }
+    _wasOpenBeforeGesture = target != 0;
   }
 
   void _close() {

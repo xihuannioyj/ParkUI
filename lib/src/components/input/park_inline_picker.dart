@@ -107,6 +107,9 @@ class _ParkInlinePickerState extends State<ParkInlinePicker>
   @override
   void didUpdateWidget(covariant ParkInlinePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 边界防御：columns 运行时增长（异步加载）时补齐 controllers/选中索引，
+    // 否则 build 中 _selectedIndexes[colIdx] / _controllers[colIdx] 越界崩溃。
+    _syncColumnCount();
     // 当外部 values 变化时同步内部状态
     if (widget.values != oldWidget.values && widget.values != null) {
       final newIndexes = List<int>.generate(
@@ -134,6 +137,29 @@ class _ParkInlinePickerState extends State<ParkInlinePicker>
     }
   }
 
+  /// 将 controllers / selectedIndexes 与 widget.columns 对齐（增长补齐）。
+  void _syncColumnCount() {
+    if (widget.columns.length == _controllers.length) return;
+    final List<FixedExtentScrollController> newControllers =
+        List<FixedExtentScrollController>.from(_controllers);
+    final List<int> newIndexes = List<int>.from(_selectedIndexes);
+    for (int i = _controllers.length; i < widget.columns.length; i++) {
+      final idx = _findColumnIndex(i, widget.values);
+      newIndexes.add(idx);
+      newControllers.add(
+        FixedExtentScrollController(initialItem: idx),
+      );
+    }
+    // 列数减少时销毁多余 controller
+    if (widget.columns.length < _controllers.length) {
+      for (int i = widget.columns.length; i < _controllers.length; i++) {
+        _controllers[i].dispose();
+      }
+    }
+    _controllers = newControllers;
+    _selectedIndexes = newIndexes;
+  }
+
   int _findColumnIndex(int col, List<String>? values) {
     if (values == null || col >= values.length) return 0;
     if (col >= widget.columns.length) return 0;
@@ -156,8 +182,12 @@ class _ParkInlinePickerState extends State<ParkInlinePicker>
   }
 
   void _onColumnChanged(int colIdx, int index) {
+    // 边界防御：异步加载导致列数变化时兜底补齐，避免 _selectedIndexes 越界。
+    _syncColumnCount();
     setState(() {
-      _selectedIndexes[colIdx] = index;
+      if (colIdx < _selectedIndexes.length) {
+        _selectedIndexes[colIdx] = index;
+      }
     });
     final values = _currentValues();
     widget.onChanged?.call(values);
@@ -209,11 +239,13 @@ class _ParkInlinePickerState extends State<ParkInlinePicker>
                   )
                 : Row(
                     children: List.generate(widget.columns.length, (colIdx) {
+                      // build 内不再新建 controller（会泄漏且位置重置），
+                      // 由 _syncColumnCount 保证 _controllers 与列数一致。
                       return Expanded(
                         child: CupertinoPicker(
                           scrollController: colIdx < _controllers.length
                               ? _controllers[colIdx]
-                              : FixedExtentScrollController(),
+                              : null,
                           itemExtent: widget.itemHeight,
                           onSelectedItemChanged: (index) =>
                               _onColumnChanged(colIdx, index),

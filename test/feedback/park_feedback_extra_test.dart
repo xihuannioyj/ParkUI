@@ -177,6 +177,32 @@ void main() {
       await tester.pump();
       expect(find.byType(ParkDropdownSheet), findsOneWidget);
     });
+
+    testWidgets('panel renders with all three sizes', (tester) async {
+      for (final size in ParkDropdownSheetSize.values) {
+        await tester.pumpWidget(
+          _wrap(
+            ParkDropdownSheet(
+              title: 'Select',
+              items: const [
+                ParkDropdownSheetItem(label: 'A', value: 'a'),
+                ParkDropdownSheetItem(label: 'B', value: 'b'),
+              ],
+              trigger: const Text('Open Sheet'),
+              size: size,
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open Sheet'));
+        await tester.pumpAndSettle();
+        expect(find.text('A'), findsOneWidget);
+        expect(find.text('B'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        // 点击遮罩关闭面板，进入下一档尺寸
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+      }
+    });
   });
 
   // ===========================================================================

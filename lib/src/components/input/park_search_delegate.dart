@@ -84,8 +84,8 @@ Future<T?> showParkSearch<T>({
   Widget Function(BuildContext context, String keyword)? emptyBuilder,
   String? title,
   bool autofocus = true,
-}) {
-  return Navigator.of(context).push<T>(
+}) async {
+  final result = await Navigator.of(context).push<T>(
     PageRouteBuilder<T>(
       fullscreenDialog: true,
       pageBuilder: (ctx, animation, secondaryAnimation) {
@@ -116,6 +116,11 @@ Future<T?> showParkSearch<T>({
       transitionDuration: const Duration(milliseconds: 250),
     ),
   );
+  // 搜索关键字统一去除输入框两侧空格，避免「 张三 」等带空格的查询打到后端。
+  if (result is String) {
+    return result.trim() as T;
+  }
+  return result;
 }
 
 class _ParkSearchPage<T> extends StatefulWidget {
@@ -185,15 +190,40 @@ class _ParkSearchPageState<T> extends State<_ParkSearchPage<T>> {
   }
 
   Future<void> _doSearch(String keyword) async {
-    if (keyword.isEmpty) return;
+    final String trimmed = keyword.trim();
+    if (trimmed.isEmpty) {
+      // 空输入（含纯空格/全角空格）：给出明确反馈（问题3 修复）。
+      // 纯取词模式下视为「清除过滤」：关闭搜索页并返回空串，
+      // 由调用方恢复完整列表，避免空白关键字污染下游过滤条件
+      // （ylzj 房间搜索：空格被 ObjectUtil.isNotEmpty 误判为有效词导致列表永久为空）。
+      final String msg = ParkLocalizations.of(context).searchKeywordEmpty;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(msg),
+          duration: const Duration(milliseconds: 1200),
+          behavior: SnackBarBehavior.floating,
+        ));
+      if (widget.onSearch == null && mounted) {
+        Navigator.of(context).pop('');
+      }
+      return;
+    }
 
-    widget.history.addHistory(widget.historyScope, keyword);
+    widget.history.addHistory(widget.historyScope, trimmed);
 
-    if (widget.onSearch == null) return;
+    // 纯“取关键词”模式（未配置页内搜索）：把关键词带回上一页，
+    // 由调用方根据返回值过滤列表。
+    if (widget.onSearch == null) {
+      if (mounted) {
+        Navigator.of(context).pop(trimmed);
+      }
+      return;
+    }
 
     setState(() => _isSearching = true);
     try {
-      final results = await widget.onSearch!(keyword);
+      final results = await widget.onSearch!(trimmed);
       if (mounted) {
         setState(() {
           _results = results;
@@ -222,8 +252,15 @@ class _ParkSearchPageState<T> extends State<_ParkSearchPage<T>> {
     final l10n = ParkLocalizations.of(context);
 
     final historyItems = widget.history.getHistory(widget.historyScope);
-    final suggestions = _keyword.isNotEmpty && widget.suggestionBuilder != null
-        ? widget.suggestionBuilder!(_keyword)
+    // 未配置 suggestionBuilder 时，从历史记录中按输入做包含匹配，实现自动补全。
+    final suggestions = _keyword.isNotEmpty
+        ? (widget.suggestionBuilder != null
+              ? widget.suggestionBuilder!(_keyword)
+              : historyItems
+                    .where(
+                      (item) => item.toLowerCase().contains(_keyword.toLowerCase()),
+                    )
+                    .toList())
         : <String>[];
 
     return Scaffold(
@@ -260,7 +297,8 @@ class _ParkSearchPageState<T> extends State<_ParkSearchPage<T>> {
                   Expanded(
                     child: Container(
                       height: 40,
-                      padding: EdgeInsets.symmetric(horizontal: spacing.md),
+                      // 收窄内边距，消除「大边框套小边框」的视觉层次（ylzj 反馈）
+                      padding: EdgeInsets.symmetric(horizontal: spacing.sm),
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(park.radius.full),
@@ -289,6 +327,11 @@ class _ParkSearchPageState<T> extends State<_ParkSearchPage<T>> {
                                   color: colors.textPlaceholder,
                                 ),
                                 border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                errorBorder: InputBorder.none,
+                                focusedErrorBorder: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
                               ),

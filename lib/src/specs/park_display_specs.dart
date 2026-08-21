@@ -1184,6 +1184,13 @@ StatefulBuilder(
         defaultVal: 'null',
         description: '绑定服务实例；在 ParkForm 内可省略（自动获取）/ Binding service',
       ),
+      ParkPropertyDef(
+        name: 'size',
+        type: 'ParkCollapseSize',
+        defaultVal: 'ParkCollapseSize.medium',
+        description: '折叠面板尺寸：small（紧凑）/ medium（默认）/ large（宽松），'
+            '控制头部与内容内边距、标题字号与图标大小 / Panel size',
+      ),
     ],
     events: const <ParkEventDef>[
       ParkEventDef(
@@ -1653,6 +1660,65 @@ StatefulBuilder(
         type: 'bool',
         defaultVal: 'false',
         description: '为 true 时懒加载（进入视口才加载）/ Lazy load in viewport',
+      ),
+      ParkPropertyDef(
+        name: 'retry',
+        type: 'int',
+        defaultVal: '0',
+        description: '加载失败后的重试次数 / Retry count on error',
+      ),
+      ParkPropertyDef(
+        name: 'memoryCache',
+        type: 'bool',
+        defaultVal: 'true',
+        description: '是否使用内存缓存；false 时加载后立即 evict / Use memory cache',
+      ),
+      ParkPropertyDef(
+        name: 'allowedSchemes',
+        type: 'List<String>',
+        defaultVal: "['http', 'https']",
+        description: '允许的 URL scheme 白名单（空列表 = 仅 http/https）/ Allowed schemes',
+      ),
+      ParkPropertyDef(
+        name: 'onLoad',
+        type: 'ValueChanged<NetworkImage>?',
+        defaultVal: 'null',
+        description: '图片加载成功回调 / Called on successful load',
+      ),
+      ParkPropertyDef(
+        name: 'onError',
+        type: 'ValueChanged<Object>?',
+        defaultVal: 'null',
+        description: '图片加载失败回调（重试耗尽后触发）/ Called on error',
+      ),
+    ],
+    events: const <ParkEventDef>[
+      ParkEventDef(
+        name: 'onLoad',
+        signature: 'ValueChanged<NetworkImage>?',
+        description: '图片加载成功回调 / Called on successful load',
+      ),
+      ParkEventDef(
+        name: 'onError',
+        signature: 'ValueChanged<Object>?',
+        description: '图片加载失败回调 / Called on error',
+      ),
+    ],
+    methods: const <ParkMethodDef>[
+      ParkMethodDef(
+        name: 'preloadImage',
+        signature: 'static Future<void> preloadImage(BuildContext, String)',
+        description: '预加载图片到缓存 / Preload image into cache',
+      ),
+      ParkMethodDef(
+        name: 'evictImage',
+        signature: 'static void evictImage(String)',
+        description: '按 URL 逐出缓存 / Evict image by URL',
+      ),
+      ParkMethodDef(
+        name: 'clearCache',
+        signature: 'static void clearCache()',
+        description: '清空整个图片缓存 / Clear the entire image cache',
       ),
     ],
     demos: <ParkDemoScenario>[

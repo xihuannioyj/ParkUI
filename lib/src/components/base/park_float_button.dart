@@ -26,6 +26,9 @@ enum ParkFloatButtonSize {
 
   /// 默认尺寸 — 56px
   normal,
+
+  /// 大尺寸 — 72px
+  large,
 }
 
 /// ParkFloatButton 形状
@@ -163,11 +166,17 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
 
   bool get _isMenuMode => widget.items != null && widget.items!.isNotEmpty;
 
-  double get _buttonSize =>
-      widget.size == ParkFloatButtonSize.small ? 40.0 : 56.0;
+  double get _buttonSize => switch (widget.size) {
+        ParkFloatButtonSize.small => 40.0,
+        ParkFloatButtonSize.normal => 56.0,
+        ParkFloatButtonSize.large => 72.0,
+      };
 
-  double get _menuButtonSize =>
-      widget.size == ParkFloatButtonSize.small ? 32.0 : 40.0;
+  double get _menuButtonSize => switch (widget.size) {
+        ParkFloatButtonSize.small => 32.0,
+        ParkFloatButtonSize.normal => 40.0,
+        ParkFloatButtonSize.large => 48.0,
+      };
 
   @override
   void initState() {
@@ -260,12 +269,21 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
           ),
         ],
       ),
+      // 边界防御：icon 可空，Icon(null) 会触发断言崩溃，回退默认图标。
       child: Icon(
-        _isMenuOpen && isTrigger ? Icons.close : widget.icon,
+        _isMenuOpen && isTrigger ? Icons.close : (widget.icon ?? Icons.add),
         color: iColor,
         size: isTrigger
-            ? (widget.size == ParkFloatButtonSize.small ? 18 : 22)
-            : (widget.size == ParkFloatButtonSize.small ? 16 : 18),
+            ? switch (widget.size) {
+                ParkFloatButtonSize.small => 18,
+                ParkFloatButtonSize.normal => 22,
+                ParkFloatButtonSize.large => 28,
+              }
+            : switch (widget.size) {
+                ParkFloatButtonSize.small => 16,
+                ParkFloatButtonSize.normal => 18,
+                ParkFloatButtonSize.large => 22,
+              },
       ),
     );
 
@@ -287,7 +305,8 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
                   ? const BoxConstraints(minWidth: 8, minHeight: 8)
                   : const BoxConstraints(minWidth: 16, minHeight: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF4D4F),
+                // 主题统一：角标背景走 error 令牌（原硬编码 0xFFFF4D4F 不随主题）
+                color: park.colors.error,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: widget.badgeDot
@@ -296,7 +315,7 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
                       '${widget.badge! > 99 ? 99 : widget.badge!}',
                       style: TextStyle(
                         color: park.colors.textOnBrand,
-                        fontSize: 10,
+                        fontSize: park.typography.sizeOverline,
                         height: 1.2,
                       ),
                       textAlign: TextAlign.center,
@@ -341,7 +360,11 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
       child: Icon(
         item.icon,
         color: iColor,
-        size: widget.size == ParkFloatButtonSize.small ? 16 : 18,
+        size: switch (widget.size) {
+          ParkFloatButtonSize.small => 16,
+          ParkFloatButtonSize.normal => 18,
+          ParkFloatButtonSize.large => 22,
+        },
       ),
     );
 
@@ -397,6 +420,15 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
     }
 
     // Menu mode: main trigger + expandable items.
+    // 性能：菜单项 Widget 只在 build 时构建一次（静态），动画帧仅重建
+    // Transform/Opacity 包装，避免 AnimatedBuilder 每帧重建全部菜单项。
+    final items = widget.items!;
+    final List<Widget> menuItemWidgets = List.generate(items.length, (index) {
+      // Reverse order so first item is on top.
+      final reverseIndex = items.length - 1 - index;
+      return _buildMenuItem(items[reverseIndex], park);
+    });
+
     return Positioned(
       bottom: bottomOffset,
       right: isRight ? sideOffset : null,
@@ -409,13 +441,9 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
           AnimatedBuilder(
             animation: _expandAnimation,
             builder: (BuildContext context, Widget? child) {
-              final items = widget.items!;
               return Column(
                 mainAxisSize: MainAxisSize.min,
-                children: List.generate(items.length, (index) {
-                  // Reverse order so first item is on top.
-                  final reverseIndex = items.length - 1 - index;
-                  final item = items[reverseIndex];
+                children: List.generate(menuItemWidgets.length, (index) {
                   final itemOffset = (index + 1) * (_menuButtonSize + 12.0);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -426,7 +454,7 @@ class _ParkFloatButtonState extends State<ParkFloatButton>
                       ),
                       child: Opacity(
                         opacity: _expandAnimation.value,
-                        child: _buildMenuItem(item, park),
+                        child: menuItemWidgets[index],
                       ),
                     ),
                   );

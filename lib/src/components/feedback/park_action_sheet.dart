@@ -5,6 +5,18 @@ import '../../theme/park_theme_data.dart';
 /// 操作项样式
 enum ParkActionStyle { defaultStyle, destructive, disabled }
 
+/// 操作面板尺寸
+enum ParkActionSheetSize {
+  /// 小尺寸（紧凑内边距与字号）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距与字号）
+  large,
+}
+
 /// 操作项数据模型
 class ParkAction {
   final String label;
@@ -51,6 +63,9 @@ class ParkActionSheet extends StatefulWidget {
   /// Custom close icon widget (replaces default close button).
   final Widget? closeIcon;
 
+  /// 操作面板尺寸（small / medium / large），控制操作项内边距与字号。
+  final ParkActionSheetSize size;
+
   const ParkActionSheet({
     super.key,
     this.title,
@@ -67,6 +82,7 @@ class ParkActionSheet extends StatefulWidget {
     this.onCancel,
     this.round = true,
     this.closeIcon,
+    this.size = ParkActionSheetSize.medium,
   });
 
   /// 弹出操作面板
@@ -84,6 +100,7 @@ class ParkActionSheet extends StatefulWidget {
     bool gridMode = false,
     int gridColumns = 4,
     VoidCallback? onCancel,
+    ParkActionSheetSize size = ParkActionSheetSize.medium,
   }) async {
     final result = await showModalBottomSheet<ParkAction>(
       context: context,
@@ -91,6 +108,8 @@ class ParkActionSheet extends StatefulWidget {
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       isScrollControlled: true,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (context) {
         return _ParkActionSheetContent(
           title: title,
@@ -103,6 +122,7 @@ class ParkActionSheet extends StatefulWidget {
           gridMode: gridMode,
           gridColumns: gridColumns,
           onCancel: onCancel,
+          size: size,
         );
       },
     );
@@ -127,6 +147,7 @@ class _ParkActionSheetState extends State<ParkActionSheet> {
       gridMode: widget.gridMode,
       gridColumns: widget.gridColumns,
       onCancel: widget.onCancel,
+      size: widget.size,
     );
   }
 }
@@ -142,6 +163,7 @@ class _ParkActionSheetContent extends StatelessWidget {
   final bool gridMode;
   final int gridColumns;
   final VoidCallback? onCancel;
+  final ParkActionSheetSize size;
 
   const _ParkActionSheetContent({
     this.title,
@@ -154,6 +176,7 @@ class _ParkActionSheetContent extends StatelessWidget {
     this.gridMode = false,
     this.gridColumns = 4,
     this.onCancel,
+    this.size = ParkActionSheetSize.medium,
   });
 
   @override
@@ -162,6 +185,30 @@ class _ParkActionSheetContent extends StatelessWidget {
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final l10n = ParkLocalizations.of(context);
     final effectiveCancelText = cancelText ?? l10n.cancelText;
+
+    // size 令牌：小/中/大 三档内边距与字号
+    final double actionVPadding = switch (size) {
+      ParkActionSheetSize.small => park.spacing.sm,
+      ParkActionSheetSize.medium => park.spacing.base,
+      ParkActionSheetSize.large => park.spacing.lg,
+    };
+    final double gridVPadding = switch (size) {
+      ParkActionSheetSize.small => park.spacing.xs,
+      ParkActionSheetSize.medium => park.spacing.sm,
+      ParkActionSheetSize.large => park.spacing.md,
+    };
+    final double actionLabelFontSize = switch (size) {
+      ParkActionSheetSize.small => park.typography.sizeCaption,
+      ParkActionSheetSize.medium => park.typography.sizeBody,
+      ParkActionSheetSize.large => park.typography.sizeBody,
+    };
+    final double gridLabelFontSize = switch (size) {
+      ParkActionSheetSize.small => park.typography.sizeOverline,
+      ParkActionSheetSize.medium => park.typography.sizeCaption,
+      ParkActionSheetSize.large => park.typography.sizeBodySmall,
+    };
+    // gridColumns <= 0 时钳制为 1，避免除零产生 Infinity 宽度。
+    final int safeColumns = gridColumns > 0 ? gridColumns : 1;
 
     return SafeArea(
       child: Padding(
@@ -215,16 +262,21 @@ class _ParkActionSheetContent extends StatelessWidget {
                         children: [
                           for (int i = 0; i < actions.length; i++)
                             SizedBox(
-                              width: MediaQuery.sizeOf(context).width / gridColumns
-                                  - park.spacing.sm * 2 / gridColumns,
-                              child: _buildGridActionItem(context, actions[i], park, i),
+                              width: MediaQuery.sizeOf(context).width / safeColumns
+                                  - park.spacing.sm * 2 / safeColumns,
+                              child: _buildGridActionItem(
+                                  context, actions[i], park, i,
+                                  vPadding: gridVPadding,
+                                  labelFontSize: gridLabelFontSize),
                             ),
                         ],
                       ),
                     )
                   else
                     for (int i = 0; i < actions.length; i++)
-                      _buildActionItem(context, actions[i], park, i),
+                      _buildActionItem(context, actions[i], park, i,
+                          vPadding: actionVPadding,
+                          labelFontSize: actionLabelFontSize),
                 ],
               ),
             ),
@@ -240,7 +292,8 @@ class _ParkActionSheetContent extends StatelessWidget {
                   color: park.colors.surface,
                   borderRadius: park.radius.brLg,
                 ),
-                child: _buildCancelItem(context, park, effectiveCancelText),
+                child: _buildCancelItem(context, park, effectiveCancelText,
+                    vPadding: actionVPadding),
               ),
               SizedBox(height: park.spacing.sm),
             ],
@@ -250,7 +303,14 @@ class _ParkActionSheetContent extends StatelessWidget {
     );
   }
 
-  Widget _buildActionItem(BuildContext context, ParkAction action, ParkThemeData park, int index) {
+  Widget _buildActionItem(
+    BuildContext context,
+    ParkAction action,
+    ParkThemeData park,
+    int index, {
+    required double vPadding,
+    required double labelFontSize,
+  }) {
     final isDisabled = action.style == ParkActionStyle.disabled;
     final isDestructive = action.style == ParkActionStyle.destructive ||
         (destructiveIndex != null && destructiveIndex == index);
@@ -279,7 +339,7 @@ class _ParkActionSheetContent extends StatelessWidget {
               },
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: park.spacing.base),
+          padding: EdgeInsets.symmetric(vertical: vPadding),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: park.colors.divider, width: 0.5),
@@ -295,7 +355,7 @@ class _ParkActionSheetContent extends StatelessWidget {
               Text(
                 action.label,
                 style: park.typography.body.copyWith(
-                  fontSize: park.typography.sizeBody,
+                  fontSize: labelFontSize,
                   fontWeight: park.typography.weightMedium,
                   color: textColor,
                 ),
@@ -307,7 +367,12 @@ class _ParkActionSheetContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCancelItem(BuildContext context, ParkThemeData park, String text) {
+  Widget _buildCancelItem(
+    BuildContext context,
+    ParkThemeData park,
+    String text, {
+    required double vPadding,
+  }) {
     return Semantics(
       button: true,
       label: text,
@@ -318,7 +383,7 @@ class _ParkActionSheetContent extends StatelessWidget {
         },
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: park.spacing.base),
+          padding: EdgeInsets.symmetric(vertical: vPadding),
           child: Center(
             child: Text(
               text,
@@ -334,7 +399,14 @@ class _ParkActionSheetContent extends StatelessWidget {
     );
   }
 
-  Widget _buildGridActionItem(BuildContext context, ParkAction action, ParkThemeData park, int index) {
+  Widget _buildGridActionItem(
+    BuildContext context,
+    ParkAction action,
+    ParkThemeData park,
+    int index, {
+    required double vPadding,
+    required double labelFontSize,
+  }) {
     final isDisabled = action.style == ParkActionStyle.disabled;
     final isDestructive = action.style == ParkActionStyle.destructive ||
         (destructiveIndex != null && destructiveIndex == index);
@@ -362,7 +434,7 @@ class _ParkActionSheetContent extends StatelessWidget {
                 }
               },
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+          padding: EdgeInsets.symmetric(vertical: vPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -373,7 +445,7 @@ class _ParkActionSheetContent extends StatelessWidget {
               Text(
                 action.label,
                 style: park.typography.body.copyWith(
-                  fontSize: park.typography.sizeCaption,
+                  fontSize: labelFontSize,
                   fontWeight: park.typography.weightMedium,
                   color: textColor,
                 ),

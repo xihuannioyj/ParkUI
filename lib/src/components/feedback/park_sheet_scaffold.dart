@@ -91,6 +91,8 @@ class ParkSheetScaffold extends StatelessWidget {
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
       backgroundColor: Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (ctx) => ParkSheetScaffold(
         title: title,
         onCancel: onCancel ?? () => Navigator.of(ctx).pop(false),

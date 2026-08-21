@@ -172,6 +172,9 @@ class ParkTour extends StatefulWidget {
   final bool closeOnMaskTap;
 
   /// 是否启用键盘快捷键（Esc 关闭，默认 true）。
+  ///
+  /// 保留向后兼容：当前未实现键盘交互（无 KeyboardListener/FocusNode），
+  /// 关闭需通过遮罩点击或 [onClose] 回调触发。
   final bool keyboard;
 
   /// 上一步按钮文字。
@@ -204,6 +207,8 @@ class ParkTour extends StatefulWidget {
   final Color? maskColor;
 
   /// Tour 的 z-index 层级。
+  ///
+  /// 保留向后兼容：当前 overlay 由 [Overlay] 默认层级管理，未消费此值。
   final int zIndex;
 
   /// 创建 ParkTour 引导组件。
@@ -393,7 +398,10 @@ class _ParkTourState extends State<ParkTour> with TickerProviderStateMixin {
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final l10n = ParkLocalizations.of(context);
 
-    if (widget.steps.isEmpty || _currentIndex >= widget.steps.length) {
+    // 边界防御：受控模式 current 传负数时也会越界（原守卫只查 >= length）。
+    if (widget.steps.isEmpty ||
+        _currentIndex < 0 ||
+        _currentIndex >= widget.steps.length) {
       return const SizedBox.shrink();
     }
 

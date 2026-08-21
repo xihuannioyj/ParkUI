@@ -40,7 +40,7 @@ void main() {
         tone: ParkActionTone.danger,
       )));
       final icon = tester.widget<ParkIcon>(find.byType(ParkIcon));
-      expect(icon.color, const Color(0xFFD9485F));
+      expect(icon.color, ParkThemeData.light().colors.error);
     });
 
     testWidgets('primary tone uses brand color', (tester) async {
@@ -99,7 +99,7 @@ void main() {
         tone: ParkActionTone.danger,
       )));
       final icon = tester.widget<ParkIcon>(find.byType(ParkIcon).first);
-      expect(icon.color, const Color(0xFFD9485F));
+      expect(icon.color, ParkThemeData.light().colors.error);
     });
 
     testWidgets('hides subtitle and trailing when empty', (tester) async {

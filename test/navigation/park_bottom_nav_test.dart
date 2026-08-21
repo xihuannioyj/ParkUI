@@ -185,4 +185,39 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
   });
+
+  group('ParkBottomNav - 尺寸', () {
+    testWidgets('三档尺寸均可渲染且 size 预设生效', (tester) async {
+      for (final size in ParkBottomNavSize.values) {
+        await tester.pumpWidget(_wrap(
+          ParkBottomNav(
+            currentIndex: 0,
+            onTap: (_) {},
+            items: _navItems(3),
+            size: size,
+          ),
+        ));
+        await tester.pump();
+        expect(find.byType(ParkBottomNav), findsOneWidget,
+            reason: 'size=$size 应正常渲染');
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('显式 iconSize 覆盖 size 预设', (tester) async {
+      await tester.pumpWidget(_wrap(
+        ParkBottomNav(
+          currentIndex: 0,
+          onTap: (_) {},
+          items: _navItems(3),
+          size: ParkBottomNavSize.small,
+          iconSize: 30,
+        ),
+      ));
+      final navBar = tester.widget<BottomNavigationBar>(
+        find.byType(BottomNavigationBar),
+      );
+      expect(navBar.iconSize, 30, reason: '显式 iconSize 应覆盖 small 预设 20');
+    });
+  });
 }

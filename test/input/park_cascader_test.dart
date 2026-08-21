@@ -61,6 +61,42 @@ void main() {
       }
       expect(find.byType(ParkCascader), findsOneWidget);
     });
+
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      await tester.pumpWidget(_wrap(Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ParkCascader(
+            size: ParkCascaderSize.small,
+            options: const [ParkCascaderOption(label: '浙江省', value: 'zj')],
+          ),
+          ParkCascader(
+            size: ParkCascaderSize.medium,
+            options: const [ParkCascaderOption(label: '江苏省', value: 'js')],
+          ),
+          ParkCascader(
+            size: ParkCascaderSize.large,
+            options: const [ParkCascaderOption(label: '广东省', value: 'gd')],
+          ),
+        ],
+      )));
+
+      expect(find.byType(ParkCascader), findsNWidgets(3));
+      final cascaders = tester
+          .widgetList<ParkCascader>(find.byType(ParkCascader))
+          .toList();
+      expect(
+        cascaders.map((c) => c.size),
+        [ParkCascaderSize.small, ParkCascaderSize.medium, ParkCascaderSize.large],
+      );
+      expect(tester.takeException(), isNull);
+
+      // 打开面板（large 尺寸），面板选项列表可正常渲染。
+      await tester.tap(find.byType(ParkCascader).last);
+      await tester.pumpAndSettle();
+      expect(find.text('广东省'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('ParkCascaderOption', () {

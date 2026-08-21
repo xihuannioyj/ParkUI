@@ -161,7 +161,7 @@ class ParkSwiper extends StatefulWidget {
 // Removing this mixin would break the bindKey/bindingService API contract.
 class _ParkSwiperState extends State<ParkSwiper>
     with BindableWidgetMixin<int, ParkSwiper> {
-  late final PageController _pageController;
+  late PageController _pageController;
   Timer? _autoPlayTimer;
   int _currentIndex = 0;
 
@@ -175,7 +175,9 @@ class _ParkSwiperState extends State<ParkSwiper>
     bindKey = widget.bindKey;
     bindingService = widget.bindingService;
     super.initState();
-    final initialPage = boundValue ?? widget.initialIndex;
+    // 边界防御：initialIndex/boundValue 越界时 PageController 初始化会抛
+    // RangeError（initialPage 超出 children 范围）。
+    final int initialPage = _clampIndex(boundValue ?? widget.initialIndex);
     _pageController = PageController(
       initialPage: initialPage,
       viewportFraction: widget.viewportFraction ?? 1.0,
@@ -200,6 +202,30 @@ class _ParkSwiperState extends State<ParkSwiper>
       _stopAutoPlay();
       _startAutoPlay();
     }
+    // viewportFraction 或 children 数量变化时重建控制器（原实现完全未处理），
+    // 否则 PageView 按旧比例渲染或当前页越界。
+    if (widget.viewportFraction != oldWidget.viewportFraction ||
+        widget.children.length != oldWidget.children.length) {
+      final int current = _pageController.hasClients
+          ? (_pageController.page?.round() ?? _currentIndex)
+          : _currentIndex;
+      final int clamped = _clampIndex(current);
+      final PageController newController = PageController(
+        initialPage: clamped,
+        viewportFraction: widget.viewportFraction ?? 1.0,
+      );
+      _pageController.dispose();
+      _pageController = newController;
+      if (mounted) {
+        setState(() => _currentIndex = clamped);
+      }
+    }
+  }
+
+  /// 钳制索引到 [0, children.length-1]（空列表时为 0；接受 num 以兼容 bindable 值）。
+  int _clampIndex(num index) {
+    if (widget.children.isEmpty) return 0;
+    return index.clamp(0, widget.children.length - 1).toInt();
   }
 
   @override

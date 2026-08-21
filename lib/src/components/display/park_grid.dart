@@ -119,7 +119,9 @@ class ParkGrid extends StatelessWidget {
     this.itemHeight,
     this.backgroundColor,
     this.align = ParkGridAlign.start,
-  }) : assert(columnCount > 0, 'columnCount must be greater than 0');
+    // 注意：不做构造期 assert，columnCount<=0 由 build 内运行时兜底为 1 列
+    // （release 下 assert 被裁剪会导致行为不一致）。
+  });
 
   double get _rowSpacing => rowSpacing ?? spacing ?? 0.0;
   double get _columnSpacing => columnSpacing ?? spacing ?? 0.0;
@@ -132,9 +134,12 @@ class ParkGrid extends StatelessWidget {
         Theme.of(context).colorScheme.surface;
 
     // 将 items 按 columnCount 分组
+    // 边界防御：columnCount<=0 时（release 下 assert 被裁剪）会导致死循环或负索引，
+    // 这里运行时兜底为 1 列。
+    final int cols = columnCount > 0 ? columnCount : 1;
     final rows = <List<ParkGridItem>>[];
-    for (var i = 0; i < items.length; i += columnCount) {
-      final end = (i + columnCount > items.length) ? items.length : i + columnCount;
+    for (var i = 0; i < items.length; i += cols) {
+      final end = (i + cols > items.length) ? items.length : i + cols;
       rows.add(items.sublist(i, end));
     }
 
@@ -275,7 +280,8 @@ class ParkGrid extends StatelessWidget {
       return Text(
         item.label!,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: parkTheme?.typography.sizeBodySmall ??
+              ParkThemeData.light().typography.sizeBodySmall,
           color: parkTheme?.colors.textPrimary ?? Theme.of(context).textTheme.bodyMedium?.color,
         ),
         maxLines: 1,

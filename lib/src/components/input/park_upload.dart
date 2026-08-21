@@ -579,8 +579,9 @@ class _ParkUploadState extends State<ParkUpload> {
         }
 
         // 检查是否达到最大文件数
+        // P1-14：数量上限应使用数量文案（原实现误用"单文件大小"限制文案）
         if (widget.files.length + validFiles.length >= widget.maxCount) {
-          errors.add(l10n.singleFileLimitText(widget.maxSizeMB ?? 0));
+          errors.add(l10n.maxFileCountText(widget.maxCount));
           break;
         }
 
@@ -705,7 +706,9 @@ class _ParkUploadState extends State<ParkUpload> {
       // 标记为上传中
       if (!context.mounted) return;
       List<ParkUploadFile> updated = List<ParkUploadFile>.from(widget.files);
-      if (index < updated.length) {
+      // 边界防御：新文件在列表中不存在时 _findIndexByPath 返回 -1，
+      // `index < updated.length` 对 -1 恒真导致 updated[-1] RangeError。
+      if (index >= 0 && index < updated.length) {
         updated[index] = updated[index].copyWith(
           status: ParkUploadFileStatus.uploading,
         );
@@ -716,7 +719,7 @@ class _ParkUploadState extends State<ParkUpload> {
         final bool success = await widget.customRequest!(file);
         if (!context.mounted) return;
         updated = List<ParkUploadFile>.from(widget.files);
-        if (index < updated.length) {
+        if (index >= 0 && index < updated.length) {
           updated[index] = updated[index].copyWith(
             status: success
                 ? ParkUploadFileStatus.done
@@ -727,7 +730,7 @@ class _ParkUploadState extends State<ParkUpload> {
       } catch (_) {
         if (!context.mounted) return;
         updated = List<ParkUploadFile>.from(widget.files);
-        if (index < updated.length) {
+        if (index >= 0 && index < updated.length) {
           updated[index] = updated[index].copyWith(
             status: ParkUploadFileStatus.error,
           );

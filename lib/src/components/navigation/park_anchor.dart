@@ -72,6 +72,13 @@ class _ParkAnchorState extends State<ParkAnchor> {
     }
     if (oldWidget.items != widget.items) {
       _anchorRenderBoxCache.clear();
+      // items 变化后同步高亮：空列表 → null，否则默认第一项
+      // （原实现只清缓存不重置 _activeKey，新列表首项永不自动选中）。
+      final String? newActive =
+          widget.items.isNotEmpty ? widget.items.first.key : null;
+      if (newActive != _activeKey) {
+        _activeKey = newActive;
+      }
     }
   }
 
@@ -81,44 +88,72 @@ class _ParkAnchorState extends State<ParkAnchor> {
     super.dispose();
   }
 
+  /// 获取滚动视口在全局坐标系中的顶部 Y。
+  double? _getViewportOriginY() {
+    final sc = widget.scrollController;
+    if (sc == null || !sc.hasClients) return null;
+    final BuildContext? scrollCtx = sc.position.context.notificationContext;
+    if (scrollCtx == null || !scrollCtx.mounted) return null;
+    final RenderBox? box = scrollCtx.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return null;
+    return box.localToGlobal(Offset.zero).dy;
+  }
+
   /// 滚动监听：根据当前滚动位置更新高亮项。
   void _onScroll() {
     if (!mounted || widget.scrollController == null) return;
     final sc = widget.scrollController!;
     if (!sc.hasClients || widget.items.isEmpty) return;
 
-    final scrollOffset = sc.offset + widget.offset + 1;
-    // 从后往前查找：找到第一个偏移量小于等于当前滚动位置的项
+    // 正确的高亮阈值：section 顶部越过「视口全局顶部 + offset」即激活。
+    // 原实现拿 section 的全局 Y 与 sc.offset（滚动内容偏移）比较，
+    // 化简后等效于以 2× 滚动速度提前激活，高亮严重"抢跑"。
+    final double? originY = _getViewportOriginY();
+    if (originY == null) return;
+    final double threshold = originY + widget.offset;
+
+    // 从前往后查找：最后一个越过阈值的项为当前高亮（即视口内最靠下的已激活区域）
     String? active;
     for (final item in widget.items) {
-      final sectionOffset = _getSectionOffset(item.key);
-      if (sectionOffset != null && sectionOffset <= scrollOffset) {
+      final sectionOffset = _getSectionOffset(item);
+      if (sectionOffset != null && sectionOffset <= threshold) {
         active = item.key;
-      } else if (sectionOffset == null && active == null) {
-        // 未知偏移的项，默认选中第一个
-        active ??= item.key;
       }
     }
+    // 无任何区域越过阈值（如滚动到最顶部）时保持当前高亮
+    active ??= _activeKey;
     if (active != null && active != _activeKey) {
       if (!mounted) return;
       setState(() => _activeKey = active);
     }
   }
 
-  /// 获取指定 key 对应 section 在滚动视图中的偏移量。
-  /// 优先使用缓存的 RenderBox（避免重复 element 树遍历），
-  /// 仅在缓存未命中时才执行遍历，并将结果缓存供后续使用。
-  double? _getSectionOffset(String key) {
+  /// 获取指定 item 对应 section 在全局坐标系中的顶部 Y。
+  ///
+  /// 优先使用 [ParkAnchorItem.sectionKey]（GlobalKey）定位——文档示例用法，
+  /// 原实现只按 `Key(key)` 搜索元素树，用户只挂 GlobalKey 时恒 miss、
+  /// 高亮永不更新；其次使用缓存的 RenderBox，最后回退 element 树遍历。
+  double? _getSectionOffset(ParkAnchorItem item) {
     if (!mounted) return null;
 
-    // 快速路径：使用缓存的 RenderBox（O(1)，无需树遍历）
-    final cachedBox = _anchorRenderBoxCache[key];
+    // 快速路径 1：sectionKey（GlobalKey）定位
+    final GlobalKey? sectionKey = item.sectionKey;
+    if (sectionKey != null && sectionKey.currentContext != null) {
+      final RenderBox? renderBox =
+          sectionKey.currentContext!.findRenderObject() as RenderBox?;
+      if (renderBox != null && renderBox.attached) {
+        return renderBox.localToGlobal(Offset.zero).dy;
+      }
+    }
+
+    // 快速路径 2：缓存的 RenderBox（O(1)，无需树遍历）
+    final cachedBox = _anchorRenderBoxCache[item.key];
     if (cachedBox != null && cachedBox.attached) {
       return cachedBox.localToGlobal(Offset.zero).dy;
     }
 
-    // 缓存未命中或已失效：执行 element 树遍历
-    final matchKey = Key(key);
+    // 缓存未命中或已失效：执行 element 树遍历（按 Key(key) 匹配）
+    final matchKey = Key(item.key);
     double? result;
     void visitor(Element element) {
       if (result != null) return;
@@ -126,7 +161,7 @@ class _ParkAnchorState extends State<ParkAnchor> {
         final renderBox = element.renderObject as RenderBox?;
         if (renderBox != null && renderBox.attached) {
           // 缓存 RenderBox 引用供后续快速查找
-          _anchorRenderBoxCache[key] = renderBox;
+          _anchorRenderBoxCache[item.key] = renderBox;
           result = renderBox.localToGlobal(Offset.zero).dy;
         }
         return;
@@ -149,14 +184,22 @@ class _ParkAnchorState extends State<ParkAnchor> {
       _scrollToSection(item.sectionKey!.currentContext!);
     } else if (widget.scrollController != null &&
         widget.scrollController!.hasClients) {
-      // 回退方案：通过 element 树查找偏移量
-      final sectionOffset = _getSectionOffset(key);
-      final targetOffset = (sectionOffset ?? 0) - widget.offset - widget.scrollOffset;
-      widget.scrollController!.animateTo(
-        targetOffset.clamp(0, widget.scrollController!.position.maxScrollExtent),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // 回退方案：全局 Y 换算为目标滚动偏移（与 _scrollToSection 同一套坐标数学，
+      // 原实现直接拿全局 Y 当滚动目标导致跳转位置错误）。
+      final sectionOffset = _getSectionOffset(item);
+      final originY = _getViewportOriginY();
+      if (sectionOffset != null && originY != null) {
+        final sc = widget.scrollController!;
+        final targetOffset = sc.offset +
+            (sectionOffset - originY) -
+            widget.offset -
+            widget.scrollOffset;
+        sc.animateTo(
+          targetOffset.clamp(0, sc.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 

@@ -88,37 +88,40 @@ class _ParkInkWellState extends State<ParkInkWell> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget._enabled) {
-      return widget.child;
-    }
-
+    // 结构恒定型：disabled 时也保持完整包装结构（Semantics/MouseRegion/
+    // GestureDetector/AnimatedScale/...），仅禁用交互与视觉反馈。
+    // 原实现 disabled 时直接 return 裸 child，enabled/disabled 切换会导致
+    // 元素类型变化 → 有状态子组件重建、状态丢失（P1-6）。
+    final bool enabled = widget._enabled;
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final br = widget.borderRadius ?? park.radius.brSm;
 
     return Semantics(
       button: true,
-      enabled: true,
+      enabled: enabled,
       child: MouseRegion(
-        cursor: widget.cursor ?? SystemMouseCursors.click,
-        onEnter: widget._enabled
+        cursor: enabled
+            ? (widget.cursor ?? SystemMouseCursors.click)
+            : SystemMouseCursors.basic,
+        onEnter: enabled
             ? (_) {
                 setState(() => _isHovered = true);
                 widget.onHover?.call(true);
               }
             : null,
-        onExit: widget._enabled
+        onExit: enabled
             ? (_) {
                 setState(() => _isHovered = false);
                 widget.onHover?.call(false);
               }
             : null,
         child: GestureDetector(
-          onTapDown: (_) => setState(() => _isPressed = true),
-          onTapUp: (_) => setState(() => _isPressed = false),
-          onTapCancel: () => setState(() => _isPressed = false),
-          onTap: widget.onTap,
-          onLongPress: widget.onLongPress,
+          onTapDown: enabled ? (_) => setState(() => _isPressed = true) : null,
+          onTapUp: enabled ? (_) => setState(() => _isPressed = false) : null,
+          onTapCancel: enabled ? () => setState(() => _isPressed = false) : null,
+          onTap: enabled ? widget.onTap : null,
+          onLongPress: enabled ? widget.onLongPress : null,
           child: AnimatedScale(
             scale: _isPressed ? widget.pressedScale : 1.0,
             duration: widget.duration,
@@ -127,7 +130,7 @@ class _ParkInkWellState extends State<ParkInkWell> {
               opacity: _isPressed ? widget.pressedOpacity : 1.0,
               duration: widget.duration,
               child: Container(
-                decoration: widget.showHoverHighlight && _isHovered
+                decoration: enabled && widget.showHoverHighlight && _isHovered
                     ? BoxDecoration(
                         color: park.colors.brand.withValues(alpha: 0.04),
                         borderRadius: br,

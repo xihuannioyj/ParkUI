@@ -229,6 +229,7 @@ export 'src/binding/park_binding_mixin.dart';
 // 组件规格（Spec）
 // ============================================================================
 export 'src/specs/park_component_spec.dart';
+export 'src/specs/park_app_bar_specs.dart';
 export 'src/specs/park_base_specs.dart';
 export 'src/specs/park_input_specs.dart';
 export 'src/specs/park_input_specs_p2.dart';

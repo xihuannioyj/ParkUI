@@ -56,9 +56,12 @@ class ParkTextarea extends FormField<String> implements ParkBindableWidget {
     this.textAlign = TextAlign.start,
     this.helperText,
     this.required = false,
-    this.onCompositionStart,
-    this.onCompositionEnd,
-  }) : super(
+  })  : // P1-12：minLines > maxLines 时 TextField 断言崩溃
+        assert(minLines <= maxLines, 'minLines must be <= maxLines'),
+        // P1-7：外部 controller 受控语义（对齐 ParkInput B17）——状态类直接持有
+        // 并使用调用方传入的 controller（不 dispose），后续修改/监听均生效。
+        _extController = controller,
+        super(
           initialValue: controller?.text ?? initialValue ?? '',
           builder: (FormFieldState<String> field) {
             final state = field as _ParkTextareaState;
@@ -68,6 +71,9 @@ class ParkTextarea extends FormField<String> implements ParkBindableWidget {
             return _ParkTextareaBuilder(state: state, park: park);
           },
         );
+
+  /// 外部传入的 TextEditingController（受控模式，null 表示内部自建）。
+  final TextEditingController? _extController;
 
   final String? hintText;
   final String? label;
@@ -117,12 +123,6 @@ class ParkTextarea extends FormField<String> implements ParkBindableWidget {
   /// 是否为必填项。为 true 时在标签前显示红色星号。
   final bool required;
 
-  /// 输入法组合开始回调（CJK 输入法开始组合时触发）
-  final ValueChanged<String>? onCompositionStart;
-
-  /// 输入法组合结束回调（CJK 输入法结束组合时触发）
-  final ValueChanged<String>? onCompositionEnd;
-
   @override
   FormFieldState<String> createState() => _ParkTextareaState();
 }
@@ -130,12 +130,21 @@ class ParkTextarea extends FormField<String> implements ParkBindableWidget {
 class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMixin<String> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  /// 是否由本状态类拥有 _controller（外部未传入 controller 时为 true）。
+  bool _ownsController = true;
 
   @override
   void initState() {
     super.initState();
     final widget = this.widget as ParkTextarea;
-    _controller = TextEditingController(text: widget.initialValue);
+    // P1-7：外部 controller 受控语义——直接持有并使用，不 dispose。
+    if (widget._extController != null) {
+      _controller = widget._extController;
+      _ownsController = false;
+    } else {
+      _controller = TextEditingController(text: widget.initialValue);
+      _ownsController = true;
+    }
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_onFocusChanged);
     // 如果 bindable 已有值，同步到 TextEditingController
@@ -181,7 +190,9 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
     if ((widget as ParkTextarea).focusNode == null) {
       _focusNode.dispose();
     }
-    _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -190,7 +201,19 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
     super.didUpdateWidget(oldWidget);
     final oldTextarea = oldWidget as ParkTextarea;
     final newTextarea = widget as ParkTextarea;
-    if (oldTextarea.initialValue != newTextarea.initialValue) {
+    // P1-7：外部 controller 被替换时接管新控制器
+    if (newTextarea._extController != oldTextarea._extController) {
+      if (_ownsController) {
+        _controller.dispose();
+      }
+      if (newTextarea._extController != null) {
+        _controller = newTextarea._extController;
+        _ownsController = false;
+      } else {
+        _controller = TextEditingController(text: newTextarea.initialValue);
+        _ownsController = true;
+      }
+    } else if (oldTextarea.initialValue != newTextarea.initialValue) {
       _controller.text = newTextarea.initialValue ?? '';
     }
   }
@@ -207,8 +230,9 @@ class _ParkTextareaState extends FormFieldState<String> with BindableFormFieldMi
 
   void _clear() {
     _controller.clear();
+    // 仅调用 setValue：didChange 覆写已回调一次 onChanged，
+    // 原实现额外显式调用导致回调两次（P1-11）。
     setValue('');
-    (widget as ParkTextarea).onChanged?.call('');
   }
 
   @override
@@ -314,7 +338,15 @@ class _ParkTextareaBuilderState extends State<_ParkTextareaBuilder> {
         hintText: textareaWidget.hintText,
         hintStyle: hintStyle,
         counterText: '',
-        contentPadding: EdgeInsets.all(park.spacing.md),
+        // size 参数生效：小/中/大档控制内边距（原 size 参数声明后从未使用）
+        contentPadding: EdgeInsets.all(
+          switch (textareaWidget.size) {
+            ParkInputSize.small => park.spacing.xs + 4,
+            ParkInputSize.medium => park.spacing.md,
+            ParkInputSize.large => park.spacing.lg,
+            null => park.spacing.md,
+          },
+        ),
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,

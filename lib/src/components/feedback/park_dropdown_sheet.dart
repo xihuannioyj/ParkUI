@@ -39,6 +39,18 @@ enum ParkDropdownSheetLayout {
   grid,
 }
 
+/// 下拉面板尺寸
+enum ParkDropdownSheetSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// ParkDropdownSheet — 底部弹出式下拉面板
 ///
 /// 点击 [trigger] 从底部弹出带标题栏的面板，支持两种内容模式：
@@ -130,6 +142,9 @@ class ParkDropdownSheet extends StatefulWidget {
   /// 面板打开/关闭回调
   final ValueChanged<bool>? onVisibleChanged;
 
+  /// 面板尺寸（small/medium/large），控制内边距、字号与图标大小。
+  final ParkDropdownSheetSize size;
+
   const ParkDropdownSheet({
     super.key,
     required this.trigger,
@@ -153,6 +168,7 @@ class ParkDropdownSheet extends StatefulWidget {
     this.bindingService,
     this.showHandle = true,
     this.onVisibleChanged,
+    this.size = ParkDropdownSheetSize.medium,
   });
 
   /// 以静态方法弹出选项面板
@@ -175,11 +191,14 @@ class ParkDropdownSheet extends StatefulWidget {
     ValueChanged<Set<String>>? onConfirm,
     String? bindKey,
     ParkBindingService? bindingService,
+    ParkDropdownSheetSize size = ParkDropdownSheetSize.medium,
   }) {
     return showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (ctx) => _ParkDropdownSheetContent(
         title: title,
         items: items,
@@ -197,6 +216,7 @@ class ParkDropdownSheet extends StatefulWidget {
         bindKey: bindKey,
         bindingService: bindingService,
         showHandle: true,
+        size: size,
       ),
     );
   }
@@ -213,11 +233,14 @@ class ParkDropdownSheet extends StatefulWidget {
     String? cancelText,
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
+    ParkDropdownSheetSize size = ParkDropdownSheetSize.medium,
   }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // 淡遮罩：避免默认 black54 全屏变暗（蒙层体验）
+      barrierColor: Colors.black.withValues(alpha: 0.10),
       builder: (ctx) => _ParkDropdownSheetContent(
         title: title,
         child: child,
@@ -227,6 +250,7 @@ class ParkDropdownSheet extends StatefulWidget {
         onCustomConfirm: onConfirm,
         onCustomCancel: onCancel,
         showHandle: true,
+        size: size,
       ),
     );
   }
@@ -256,6 +280,7 @@ class _ParkDropdownSheetState extends State<ParkDropdownSheet>
         height: widget.height,
         confirmText: widget.confirmText,
         cancelText: widget.cancelText,
+        size: widget.size,
         onConfirm: () {
           widget.onConfirm?.call({});
           widget.onVisibleChanged?.call(false);
@@ -281,6 +306,7 @@ class _ParkDropdownSheetState extends State<ParkDropdownSheet>
         searchable: widget.searchable,
         searchHintText: widget.searchHintText,
         itemBuilder: widget.itemBuilder,
+        size: widget.size,
         onConfirm: (values) {
           widget.onSelectionChanged?.call(values);
           widget.onConfirm?.call(values);
@@ -331,6 +357,9 @@ class _ParkDropdownSheetContent extends StatefulWidget {
   final ParkBindingService? bindingService;
   final bool showHandle;
 
+  /// 面板尺寸（small/medium/large）。
+  final ParkDropdownSheetSize size;
+
   const _ParkDropdownSheetContent({
     this.title,
     this.items,
@@ -351,6 +380,7 @@ class _ParkDropdownSheetContent extends StatefulWidget {
     this.bindKey,
     this.bindingService,
     this.showHandle = true,
+    this.size = ParkDropdownSheetSize.medium,
   });
 
   @override
@@ -404,6 +434,107 @@ class _ParkDropdownSheetContentState
     widget.onCustomCancel?.call();
   }
 
+  /// size 令牌：小/中/大 三档内边距、字号与图标大小。
+  ///
+  /// medium 档保持原有取值，small/large 分别更紧凑/更宽松。
+  ({
+    EdgeInsets headerPadding,
+    EdgeInsets buttonPadding,
+    double headerFontSize,
+    double searchIconSize,
+    EdgeInsets searchContentPadding,
+    EdgeInsets listItemPadding,
+    double labelFontSize,
+    double subtitleFontSize,
+    double checkIconSize,
+    double gridLabelFontSize,
+    double listRowHeight,
+  }) _sizeTokens(ParkThemeData park) {
+    return switch (widget.size) {
+      ParkDropdownSheetSize.small => (
+          headerPadding: EdgeInsets.fromLTRB(
+            park.spacing.xs,
+            park.spacing.xxs,
+            park.spacing.xs,
+            park.spacing.xxs,
+          ),
+          buttonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.xs,
+          ),
+          headerFontSize: park.typography.sizeCaption,
+          searchIconSize: 16.0,
+          searchContentPadding: EdgeInsets.symmetric(
+            vertical: park.spacing.xs,
+            horizontal: park.spacing.xs,
+          ),
+          listItemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.xs,
+          ),
+          labelFontSize: park.typography.sizeCaption,
+          subtitleFontSize: park.typography.sizeCaption,
+          checkIconSize: 18.0,
+          gridLabelFontSize: park.typography.sizeCaption,
+          listRowHeight: 40.0,
+        ),
+      ParkDropdownSheetSize.medium => (
+          headerPadding: EdgeInsets.fromLTRB(
+            park.spacing.sm,
+            park.spacing.xs,
+            park.spacing.sm,
+            park.spacing.xs,
+          ),
+          buttonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.base,
+            vertical: park.spacing.sm,
+          ),
+          headerFontSize: park.typography.sizeBody,
+          searchIconSize: 18.0,
+          searchContentPadding: EdgeInsets.symmetric(
+            vertical: park.spacing.sm,
+            horizontal: park.spacing.xs,
+          ),
+          listItemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.base,
+            vertical: park.spacing.sm,
+          ),
+          labelFontSize: park.typography.sizeBody,
+          subtitleFontSize: park.typography.sizeBodySmall,
+          checkIconSize: 20.0,
+          gridLabelFontSize: park.typography.sizeBodySmall,
+          listRowHeight: 48.0,
+        ),
+      ParkDropdownSheetSize.large => (
+          headerPadding: EdgeInsets.fromLTRB(
+            park.spacing.md,
+            park.spacing.sm,
+            park.spacing.md,
+            park.spacing.sm,
+          ),
+          buttonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.lg,
+            vertical: park.spacing.sm,
+          ),
+          headerFontSize: park.typography.sizeBody,
+          searchIconSize: 20.0,
+          searchContentPadding: EdgeInsets.symmetric(
+            vertical: park.spacing.md,
+            horizontal: park.spacing.sm,
+          ),
+          listItemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.lg,
+            vertical: park.spacing.md,
+          ),
+          labelFontSize: park.typography.sizeBody,
+          subtitleFontSize: park.typography.sizeBodySmall,
+          checkIconSize: 24.0,
+          gridLabelFontSize: park.typography.sizeBody,
+          listRowHeight: 56.0,
+        ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final park =
@@ -450,30 +581,23 @@ class _ParkDropdownSheetContentState
   }
 
   Widget _buildHeader(ParkThemeData park) {
+    final t = _sizeTokens(park);
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        park.spacing.sm,
-        park.spacing.xs,
-        park.spacing.sm,
-        park.spacing.xs,
-      ),
+      padding: t.headerPadding,
       child: Row(
         children: [
           // 取消按钮
           TextButton(
             onPressed: _handleCancel,
             style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: park.spacing.base,
-                vertical: park.spacing.sm,
-              ),
+              padding: t.buttonPadding,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
               widget.cancelText ?? ParkLocalizations.of(context).cancelText,
               style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
+                fontSize: t.headerFontSize,
                 color: park.colors.textSecondary,
               ),
             ),
@@ -486,7 +610,7 @@ class _ParkDropdownSheetContentState
             Text(
               widget.title!,
               style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
+                fontSize: t.headerFontSize,
                 fontWeight: park.typography.weightBold,
                 color: park.colors.textPrimary,
               ),
@@ -500,17 +624,14 @@ class _ParkDropdownSheetContentState
           TextButton(
             onPressed: _handleConfirm,
             style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: park.spacing.base,
-                vertical: park.spacing.sm,
-              ),
+              padding: t.buttonPadding,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
               widget.confirmText ?? ParkLocalizations.of(context).confirmText,
               style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
+                fontSize: t.headerFontSize,
                 fontWeight: park.typography.weightBold,
                 color: park.colors.brand,
               ),
@@ -522,6 +643,7 @@ class _ParkDropdownSheetContentState
   }
 
   Widget _buildSearchField(ParkThemeData park) {
+    final t = _sizeTokens(park);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: park.spacing.base),
       child: Container(
@@ -538,14 +660,11 @@ class _ParkDropdownSheetContentState
             ),
             prefixIcon: Icon(
               Icons.search_rounded,
-              size: 18,
+              size: t.searchIconSize,
               color: park.colors.textPlaceholder,
             ),
             border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(
-              vertical: park.spacing.sm,
-              horizontal: park.spacing.xs,
-            ),
+            contentPadding: t.searchContentPadding,
             isDense: true,
           ),
         ),
@@ -583,11 +702,14 @@ class _ParkDropdownSheetContentState
   }
 
   double _estimateContentHeight(int count, ParkThemeData park) {
+    final t = _sizeTokens(park);
     if (widget.layout == ParkDropdownSheetLayout.grid) {
-      final rows = (count / widget.gridColumns).ceil();
+      // gridColumns <= 0 时钳制为 1，避免除零产生 Infinity。
+      final int safeColumns = widget.gridColumns > 0 ? widget.gridColumns : 1;
+      final rows = (count / safeColumns).ceil();
       return rows * 56.0 + park.spacing.base * 2;
     }
-    return (count * 48.0).clamp(100.0, 360.0);
+    return (count * t.listRowHeight).clamp(100.0, 360.0);
   }
 
   Widget _buildListView(ParkThemeData park) {
@@ -620,6 +742,7 @@ class _ParkDropdownSheetContentState
       );
     }
 
+    final t = _sizeTokens(park);
     return Semantics(
       button: true,
       label: item.label,
@@ -628,10 +751,7 @@ class _ParkDropdownSheetContentState
         child: AnimatedContainer(
         duration: park.motion.quick,
         curve: park.motion.defaultEasing,
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        padding: t.listItemPadding,
         decoration: BoxDecoration(
           color: isSelected
               ? park.colors.brand.withValues(alpha: 0.08)
@@ -651,7 +771,7 @@ class _ParkDropdownSheetContentState
                   Text(
                     item.label,
                     style: park.typography.body.copyWith(
-                      fontSize: park.typography.sizeBody,
+                      fontSize: t.labelFontSize,
                       fontWeight:
                           isSelected ? park.typography.weightBold : null,
                       color: item.disabled
@@ -665,7 +785,7 @@ class _ParkDropdownSheetContentState
                     Text(
                       item.subtitle!,
                       style: park.typography.body.copyWith(
-                        fontSize: park.typography.sizeBodySmall,
+                        fontSize: t.subtitleFontSize,
                         color: park.colors.textPlaceholder,
                       ),
                     ),
@@ -678,13 +798,13 @@ class _ParkDropdownSheetContentState
                 isSelected
                     ? Icons.check_box_rounded
                     : Icons.check_box_outline_blank_rounded,
-                size: 20,
+                size: t.checkIconSize,
                 color: isSelected ? park.colors.brand : park.colors.textPlaceholder,
               )
             else if (isSelected)
               Icon(
                 Icons.check_circle_rounded,
-                size: 20,
+                size: t.checkIconSize,
                 color: park.colors.brand,
               ),
           ],
@@ -703,7 +823,8 @@ class _ParkDropdownSheetContentState
         park.spacing.base,
       ),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.gridColumns,
+        // gridColumns <= 0 时钳制为 1，避免 GridView crossAxisCount 断言崩溃。
+        crossAxisCount: widget.gridColumns > 0 ? widget.gridColumns : 1,
         crossAxisSpacing: park.spacing.sm,
         mainAxisSpacing: park.spacing.sm,
         childAspectRatio: 2.5,
@@ -744,7 +865,7 @@ class _ParkDropdownSheetContentState
             item.label,
             textAlign: TextAlign.center,
             style: park.typography.body.copyWith(
-              fontSize: park.typography.sizeBodySmall,
+              fontSize: _sizeTokens(park).gridLabelFontSize,
               fontWeight:
                   isSelected ? park.typography.weightBold : null,
               color: item.disabled

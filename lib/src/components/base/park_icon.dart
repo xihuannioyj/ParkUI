@@ -266,7 +266,7 @@ class _ParkIconState extends State<ParkIcon>
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: colors.textOnBrand,
-                            fontSize: 10,
+                            fontSize: park.typography.sizeOverline,
                             fontWeight: park.typography.weightMedium,
                             height: 1.2,
                           ),

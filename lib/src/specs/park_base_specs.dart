@@ -39,65 +39,81 @@ class TokenItem {
 }
 
 /// 令牌展示卡片构建器。
+///
+/// 修复：长令牌名（如 buttonHorizontalPaddingMd，等宽字体）在窄屏下使 Row
+/// 溢出（"right overflowed by 118 pixels"）——名称/描述改 Flexible 弹性收缩；
+/// 颜色统一改用 Park 主题令牌（原硬编码 white/grey/blue，暗色主题不可读）。
 Widget _buildTokenCard({
   required String title,
   required List<TokenItem> items,
 }) {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ParkText(title, preset: ParkTextPreset.h3),
-        const SizedBox(height: 12),
-        ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  item.name,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    color: Colors.blue.shade700,
+  return Builder(builder: (BuildContext context) {
+    final ParkThemeData park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: park.colors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: park.colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ParkText(title, preset: ParkTextPreset.h3),
+          const SizedBox(height: 12),
+          ...items.map((item) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: park.colors.brand.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: park.colors.brand,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${item.value.toInt()}px',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'monospace',
+                const SizedBox(width: 12),
+                Text(
+                  '${item.value.toInt()}px',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                item.description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: park.colors.textSecondary,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        )),
-      ],
-    ),
-  );
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------

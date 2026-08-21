@@ -10,7 +10,7 @@ import 'park_skeleton.dart';
 enum ParkCardVariant { outlined, ghost, inner, preview }
 
 /// ParkCard 尺寸预设
-enum ParkCardSize { small, defaultSize }
+enum ParkCardSize { small, defaultSize, large }
 
 /// ParkCard — 卡片容器组件
 ///
@@ -154,9 +154,11 @@ class _ParkCardState extends State<ParkCard> {
         : surface.border;
 
     final BorderRadius cardRadius = widget.borderRadius ?? radius.brMd;
-    final EdgeInsetsGeometry defaultPadding = widget.size == ParkCardSize.small
-        ? EdgeInsets.all(spacing.sm)
-        : EdgeInsets.all(spacing.base);
+    final EdgeInsetsGeometry defaultPadding = switch (widget.size) {
+      ParkCardSize.small => EdgeInsets.all(spacing.sm),
+      ParkCardSize.defaultSize => EdgeInsets.all(spacing.base),
+      ParkCardSize.large => EdgeInsets.all(spacing.lg),
+    };
     final EdgeInsetsGeometry cardPadding = widget.padding ?? defaultPadding;
 
     final bool hasHeader =
@@ -245,9 +247,10 @@ class _ParkCardState extends State<ParkCard> {
                                                     widget.titleText!,
                                                     style: park.typography.body
                                                         .copyWith(
+                                                          // 列表项名称统一 13 加粗（三档规范）
                                                           fontSize: park
                                                               .typography
-                                                              .sizeH3,
+                                                              .sizeBody,
                                                           fontWeight: park
                                                               .typography
                                                               .weightBold,

@@ -507,7 +507,15 @@ class ParkFormState extends State<ParkForm> {
           }
         }
       }
-      widget.onSubmit?.call(values);
+      // 统一提交规整：所有 String 值去掉两侧空白（trim），
+      // 覆盖 ParkInput / ParkTextarea / ParkSearch / ParkMentions / 表单字段等全部文本输入。
+      final Map<String, dynamic> trimmedValues = values.map(
+        (String key, dynamic value) => MapEntry<String, dynamic>(
+          key,
+          value is String ? value.trim() : value,
+        ),
+      );
+      widget.onSubmit?.call(trimmedValues);
       return true;
     }
 
@@ -525,11 +533,20 @@ class ParkFormState extends State<ParkForm> {
 
     _formKey.currentState?.reset();
     _values.clear();
+    // 补充 P1：重置后恢复 initialValues 与绑定模型种子，
+    // 否则 submit() 拿到的 values 丢失所有初始字段。
+    if (widget.initialValues != null) {
+      _values.addAll(widget.initialValues!);
+    }
     // 自动创建的服务一并恢复到初始 model
     if (_ownsBindingService &&
         _bindingService != null &&
         _initialModelSnapshot != null) {
       _bindingService!.updateModel(_initialModelSnapshot!);
+      // 自动创建服务时，_values 从 model 种子
+      if (_values.isEmpty) {
+        _values.addAll(_bindingService!.model);
+      }
     }
     widget.onReset?.call();
   }

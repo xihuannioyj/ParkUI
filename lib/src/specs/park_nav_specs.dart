@@ -108,13 +108,79 @@ Map<String, ParkComponentSpec> get parkNavSpecs =>
             name: 'size',
             type: 'ParkTabSize',
             defaultVal: 'ParkTabSize.medium',
-            description: '标签栏尺寸：medium / large。',
+            description: '标签栏尺寸：small / medium / large。',
           ),
           ParkPropertyDef(
             name: 'indicatorColor',
             type: 'Color?',
             defaultVal: 'null',
             description: '指示器颜色，覆盖默认品牌色。',
+          ),
+          ParkPropertyDef(
+            name: 'indicatorWidth',
+            type: 'double?',
+            defaultVal: 'null',
+            description: '指示器宽度；null 时跟随标签宽度。',
+          ),
+          ParkPropertyDef(
+            name: 'indicatorHeight',
+            type: 'double?',
+            defaultVal: '2.0',
+            description: '指示器高度。',
+          ),
+          ParkPropertyDef(
+            name: 'indicatorPadding',
+            type: 'EdgeInsetsGeometry?',
+            defaultVal: 'EdgeInsets.zero',
+            description: '指示器内边距。',
+          ),
+          ParkPropertyDef(
+            name: 'tabBarStyle',
+            type: 'BoxDecoration?',
+            defaultVal: 'null',
+            description: '标签栏自定义装饰（背景、边框、圆角等）。',
+          ),
+          ParkPropertyDef(
+            name: 'tabBarExtraContent',
+            type: 'Widget?',
+            defaultVal: 'null',
+            description: '标签栏滚动区外的右侧额外内容。',
+          ),
+          ParkPropertyDef(
+            name: 'extra',
+            type: 'Widget?',
+            defaultVal: 'null',
+            description: '标签栏右侧固定区域（在添加按钮之右）。',
+          ),
+          ParkPropertyDef(
+            name: 'tabBarGutter',
+            type: 'double?',
+            defaultVal: 'null',
+            description: '标签之间的间距。',
+          ),
+          ParkPropertyDef(
+            name: 'tabBuilder',
+            type: 'Widget Function(int index, bool isSelected)?',
+            defaultVal: 'null',
+            description: '自定义 Tab Widget 构建器，忽略 ParkTab 默认渲染。',
+          ),
+          ParkPropertyDef(
+            name: 'editable',
+            type: 'bool',
+            defaultVal: 'false',
+            description: '是否可编辑（关闭按钮），新 API，优先于 closable。',
+          ),
+          ParkPropertyDef(
+            name: 'showAddButton',
+            type: 'bool',
+            defaultVal: 'false',
+            description: '是否显示添加标签按钮（新 API，优先于 addable）。',
+          ),
+          ParkPropertyDef(
+            name: 'destroyInactiveTabPane',
+            type: 'bool',
+            defaultVal: 'false',
+            description: '是否销毁非活动标签页内容（默认保留状态）。',
           ),
           ParkPropertyDef(
             name: 'keyboard',
@@ -155,6 +221,16 @@ Map<String, ParkComponentSpec> get parkNavSpecs =>
             name: 'onAdd',
             signature: 'VoidCallback?',
             description: '点击添加标签"+"按钮时触发。',
+          ),
+          ParkEventDef(
+            name: 'onTabClose',
+            signature: 'ValueChanged<int>?',
+            description: '点击标签关闭按钮时触发（新 API，优先于 onClose）。',
+          ),
+          ParkEventDef(
+            name: 'onTabAdd',
+            signature: 'VoidCallback?',
+            description: '点击添加标签"+"按钮时触发（新 API，优先于 onAdd）。',
           ),
         ],
         demos: <ParkDemoScenario>[
@@ -431,6 +507,13 @@ Map<String, ParkComponentSpec> get parkNavSpecs =>
             description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
                 '如果组件位于 ParkForm 内且表单已注入 bindingService，'
                 '此参数可省略（自动从 ParkBindingFormScope 获取）。',
+          ),
+          ParkPropertyDef(
+            name: 'size',
+            type: 'ParkTabBarSize',
+            defaultVal: 'ParkTabBarSize.medium',
+            description: '导航栏尺寸：small（紧凑）/ medium（默认）/ large（宽松），'
+                '控制栏高、标签字号与图标大小',
           ),
         ],
         events: const <ParkEventDef>[
@@ -817,6 +900,12 @@ ParkTabBarItem(icon: Icons.notifications, label: '提醒', dotIndicator: true)''
             description: '绑定服务实例。传入后组件通过 bindKey 自动双向绑定。'
                 '如果组件位于 ParkForm 内且表单已注入 bindingService，'
                 '此参数可省略（自动从 ParkBindingFormScope 获取）。',
+          ),
+          ParkPropertyDef(
+            name: 'size',
+            type: 'ParkSideBarSize',
+            defaultVal: 'ParkSideBarSize.medium',
+            description: '侧边栏尺寸：small（紧凑内边距、小字号、小图标）/ medium（默认）/ large（宽松内边距、大字号、大图标）。',
           ),
         ],
         events: const <ParkEventDef>[

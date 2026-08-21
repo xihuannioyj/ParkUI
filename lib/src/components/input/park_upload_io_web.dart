@@ -23,3 +23,11 @@ Widget buildFileImageWidget(String path,
 String fileNameFromPath(String path) {
   return path.split('/').last;
 }
+
+/// 读取文件前 [maxBytes] 字节用于魔数校验。
+///
+/// Web 实现：无法通过本地路径访问文件字节，返回 null（调用方会跳过魔数校验，
+/// 与 web 无 dart:io 的约束一致）。
+Future<List<int>?> readMagicBytes(String path, {int maxBytes = 12}) async {
+  return null;
+}

@@ -157,6 +157,11 @@ class ParkFormEngine {
         final result = ParkFormValidators.length(value, field);
         return result.isValid ? null : result.message;
       },
+        () {
+          final result = ParkFormValidators.numberRange(value, field);
+          return result.isValid ? null : result.message;
+        },
+
       () {
         final result = ParkFormValidators.regexWithOverrides(
           value, field, effectiveRegex);
@@ -215,7 +220,7 @@ class ParkFormEngine {
   /// 标记为超时错误并继续校验其他字段。
   /// 防抖机制：校验前等待 [debounceMs] 毫秒，
   /// 避免频繁触发异步校验请求。
-  Future<Map<String, String>?> validateFormAsync(
+  Future<Map<String, String>?> validateFormAsyncLegacy(
     ParkFormSchema schema,
     Map<String, dynamic> values,
     AsyncFieldValidator? validator,
@@ -270,6 +275,57 @@ class ParkFormEngine {
     }
     return errors;
   }
+
+  /// 异步校验整个表单（并发版）。
+  ///
+  /// 与 [validateFormAsync] 协议一致，但对所有需要异步校验的字段并发执行，
+  /// 避免字段数量较多时串行等待导致的总时长线性增长。
+  Future<Map<String, String>?> validateFormAsync(
+    ParkFormSchema schema,
+    Map<String, dynamic> values,
+    AsyncFieldValidator? validator, {
+    ParkFormRuntimeOverrides? overrides,
+    int timeoutMs = 5000,
+    int debounceMs = 300,
+    ParkLocalizations? l10n,
+  }) async {
+    _validationSequence++;
+    final int seq = _validationSequence;
+
+    await Future<void>.delayed(Duration(milliseconds: debounceMs));
+    if (_validationSequence != seq) return null;
+
+    final List<ParkFormFieldSchema> asyncFields = schema.fields.where((
+      ParkFormFieldSchema field,
+    ) {
+      return isFieldVisible(field, values, overrides: overrides) &&
+          field.asyncValidatorKey != null &&
+          field.asyncValidatorKey!.isNotEmpty;
+    }).toList();
+
+    final Map<String, String> errors = <String, String>{};
+    await Future.wait(asyncFields.map((ParkFormFieldSchema field) async {
+      final AsyncFieldValidator? resolved =
+          _asyncValidatorRegistry[field.asyncValidatorKey!] ?? validator;
+      if (resolved == null) return;
+      try {
+        final String? error = await resolved(field, values[field.fieldName])
+            .timeout(Duration(milliseconds: timeoutMs));
+        if (_validationSequence != seq) return;
+        if (error != null && error.isNotEmpty) {
+          errors[field.fieldName] = error;
+        }
+      } on TimeoutException {
+        if (_validationSequence != seq) return;
+        errors[field.fieldName] = l10n?.validationTimeout ?? '校验超时，请稍后重试';
+      } catch (e) {
+        if (_validationSequence != seq) return;
+        errors[field.fieldName] = l10n?.validationFailed ?? '校验异常';
+      }
+    }));
+    return errors;
+  }
+
 
   /// 判断字段是否可见。
   ///

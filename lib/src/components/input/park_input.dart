@@ -110,8 +110,6 @@ class ParkInput extends FormField<String> implements ParkBindableWidget {
     this.borderless = false,
     this.contentPadding,
     this.style,
-    this.onCompositionStart,
-    this.onCompositionEnd,
     this.actionButton,
   }) : assert(
          searchButton == null || actionButton == null,
@@ -238,12 +236,6 @@ class ParkInput extends FormField<String> implements ParkBindableWidget {
 
   /// 输入文字样式。不设时使用主题默认排版。
   final TextStyle? style;
-
-  /// 输入法组合开始回调（CJK 输入法开始组合时触发）
-  final ValueChanged<String>? onCompositionStart;
-
-  /// 输入法组合结束回调（CJK 输入法结束组合时触发）
-  final ValueChanged<String>? onCompositionEnd;
 
   @override
   FormFieldState<String> createState() => _ParkInputState();
@@ -621,8 +613,14 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
         state.didChange(v);
       },
       onSubmitted: (v) {
-        inputWidget.onSubmitted?.call(v);
-        _triggerSearch(v);
+        // 提交时统一去掉两侧空白（trim），不污染输入过程
+        final String trimmed = v.trim();
+        if (trimmed != v) {
+          // 同步内部值：提交后 FormField.value 与回调一致
+          state.didChange(trimmed);
+        }
+        inputWidget.onSubmitted?.call(trimmed);
+        _triggerSearch(trimmed);
       },
       decoration: InputDecoration(
         hintText: inputWidget.hintText,
@@ -940,7 +938,8 @@ class _ParkInputBuilderState extends State<_ParkInputBuilder> {
               ? () {
                   final ValueChanged<String>? cb =
                       cfgOnSearch ?? inputWidget.onSearch;
-                  cb?.call(widget.state._controller.text);
+                  // 提交类回调统一 trim（与 onSubmitted 路径一致）
+                  cb?.call(widget.state._controller.text.trim());
                 }
               : null,
           child: childContent,

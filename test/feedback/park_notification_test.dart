@@ -149,4 +149,30 @@ void main() {
       expect(find.text('通知B'), findsNothing);
     });
   });
+
+  group('ParkNotification - size', () {
+    testWidgets('renders with all three sizes', (tester) async {
+      await tester.pumpWidget(_wrap(const SizedBox()));
+      final ctx = tester.element(find.byType(SizedBox));
+
+      // 三档尺寸同时弹出，均可正常渲染（不抛异常）。
+      // 注意：show 通过 post-frame callback 插入 OverlayEntry，
+      // 需在 pumpWidget 后的同一个待渲染帧内完成所有 show 调用。
+      for (final size in ParkNotificationSize.values) {
+        ParkNotification.show(
+          ctx,
+          title: '尺寸通知',
+          description: '尺寸描述',
+          duration: Duration.zero,
+          size: size,
+        );
+      }
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('尺寸通知'), findsNWidgets(3));
+      expect(find.text('尺寸描述'), findsNWidgets(3));
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

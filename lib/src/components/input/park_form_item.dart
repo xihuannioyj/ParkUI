@@ -405,6 +405,9 @@ class ParkFormItemState extends State<ParkFormItem> {
   /// 来自响应式控件的当前错误文本。
   String? _reactiveError;
 
+  /// 已同步到 FormField 的值（防抖/防循环）。
+  String? _lastSyncedValue;
+
   @override
   void initState() {
     super.initState();
@@ -492,6 +495,69 @@ class ParkFormItemState extends State<ParkFormItem> {
     return null;
   }
 
+  /// 把子组件的真实值同步进 FormField，使 Form.validate() 能拿到实际值校验。
+  ///
+  /// 修复 B30 桥接缺陷：FormField 的 initialValue 恒为 null 且从未 didChange，
+  /// 导致 `rules: [required]` 永远校验失败、类型规则（email/url 等）永不生效。
+  /// 值来源优先级：1) 响应式 control；2) 子组件自身的 FormField<String>（如 ParkInput）。
+  void _syncValue(FormFieldState<String> parent) {
+    final ParkAbstractControl? ctrl = widget.control;
+    if (ctrl != null) {
+      _syncValueTo(parent, ctrl.value == null ? null : ctrl.value.toString());
+      return;
+    }
+    final FormFieldState<String>? state =
+        _findDescendantFormFieldState(parent.context);
+    if (state == null) return;
+    _syncValueTo(parent, state.value);
+  }
+
+  /// 帧末执行值同步：visitChildElements 不能在 build 期间调用。
+  void _scheduleValueSync(FormFieldState<String> parent) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncValue(parent);
+    });
+  }
+
+  /// 校验时解析子组件真实值（FormField 内部值可能过期/为 null）。
+  String? _resolveActualValue(BuildContext context) {
+    final ParkAbstractControl? ctrl = widget.control;
+    if (ctrl != null) return ctrl.value?.toString();
+    final FormFieldState<String>? state = _findDescendantFormFieldState(context);
+    return state?.value;
+  }
+
+  /// 在子元素树中查找最近的 FormField<String> 状态（DFS）。
+  FormFieldState<String>? _findDescendantFormFieldState(BuildContext context) {
+    FormFieldState<String>? result;
+    void visit(Element element) {
+      if (result != null) return;
+      if (element is StatefulElement) {
+        final State state = element.state;
+        if (state is FormFieldState<String>) {
+          result = state;
+          return;
+        }
+      }
+      element.visitChildren(visit);
+    }
+
+    context.visitChildElements(visit);
+    return result;
+  }
+
+  void _syncValueTo(FormFieldState<String> parent, String? value) {
+    if (value == _lastSyncedValue) return;
+    _lastSyncedValue = value;
+    // 延迟到帧末再 didChange，避免在 build 期间触发 markNeedsBuild。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final p = _fieldKey.currentState as FormFieldState<String>?;
+      p?.didChange(value); if (widget.name != null) _scope?.notifyFieldChanged?.call(widget.name!, value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final park =
@@ -507,6 +573,19 @@ class ParkFormItemState extends State<ParkFormItem> {
     final formLabelWidth = widget.labelCol ?? scope?.labelWidth ?? 100;
     final showColon = widget.colon ?? scope?.colon ?? true;
     final formRequiredMark = scope?.requiredMark ?? ParkRequiredMark.asterisk;
+    // ParkForm.size 生效：标签字号随表单档位缩放（原 size 参数声明后从未消费）
+    final double labelFontSize = switch (scope?.size) {
+      ParkFormSize.small => typo.sizeCaption,
+      ParkFormSize.medium => typo.sizeBodySmall,
+      ParkFormSize.large => typo.sizeBody,
+      null => typo.sizeBodySmall,
+    };
+    final double labelTopPadding = switch (scope?.size) {
+      ParkFormSize.small => spacing.xs,
+      ParkFormSize.medium => spacing.sm,
+      ParkFormSize.large => spacing.sm,
+      null => spacing.sm,
+    };
 
     final bool hasLabel =
         widget.labelWidget != null ||
@@ -530,7 +609,7 @@ class ParkFormItemState extends State<ParkFormItem> {
       labelContent = Text(
         labelText,
         style: TextStyle(
-          fontSize: typo.sizeBodySmall,
+          fontSize: labelFontSize,
           color: colors.textSecondary,
           fontWeight: typo.weightMedium,
         ),
@@ -563,17 +642,19 @@ class ParkFormItemState extends State<ParkFormItem> {
     return FormField<String>(
       key: _fieldKey,
       initialValue: null,
-      onSaved: (_) {
-        // 由 child 自行管理值，FormField 只负责校验钩子
+      onSaved: (value) {
+                  final String? name = widget.name; if (name != null && _scope != null) { _scope!.notifyFieldChanged?.call(name, value); }
       },
       validator: (value) {
+        // 以子组件真实值为准（FormField 内部值可能为 null/过期）
+        final String? actualValue = _resolveActualValue(context);
         // 先执行 widget.validator（自定义校验）
         if (widget.validator != null) {
-          final result = widget.validator!(value);
+          final result = widget.validator!(actualValue);
           if (result != null) return result;
         }
         // 再执行 rules（规则列表）
-        final rulesResult = validateByRules(value);
+        final rulesResult = validateByRules(actualValue);
         if (rulesResult != null) return rulesResult;
         // Note: async validation via control.validate() is handled at
         // form submission time by formGroup.validate() in _handleSubmit.
@@ -582,6 +663,8 @@ class ParkFormItemState extends State<ParkFormItem> {
         return null;
       },
       builder: (FormFieldState<String> fieldState) {
+        // 值同步：让 FormField 拿到子组件的真实值，校验才不失效。
+        _scheduleValueSync(fieldState);
         // 外部 errorText（如 API 返回的错误）优先级最高
         // 其次响应式控件错误（_reactiveError），再次 FormField 校验错误
         final String? displayError = hasExternalError
@@ -617,7 +700,7 @@ class ParkFormItemState extends State<ParkFormItem> {
                         Expanded(
                           flex: effectiveLabelFlex,
                           child: Padding(
-                            padding: EdgeInsets.only(top: spacing.sm),
+                            padding: EdgeInsets.only(top: labelTopPadding),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisSize: MainAxisSize.min,
@@ -653,7 +736,7 @@ class ParkFormItemState extends State<ParkFormItem> {
                         SizedBox(
                           width: formLabelWidth,
                           child: Padding(
-                            padding: EdgeInsets.only(top: spacing.sm),
+                            padding: EdgeInsets.only(top: labelTopPadding),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisSize: MainAxisSize.min,

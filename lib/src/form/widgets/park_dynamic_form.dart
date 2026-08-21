@@ -439,6 +439,47 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
     return children;
   }
 
+
+  /// 将字段按 12 栅格 [ParkFormFieldSchema.span] 分行渲染。
+  ///
+  /// 每行总 flex 为 12，字段按 span 占宽，不足 12 时尾部补齐 Spacer。
+  List<Widget> _buildFields(
+    List<ParkFormFieldSchema> fields, [
+    layout_models.ParkFormLayout? formLayout,
+  ]) {
+    final List<Widget> rows = <Widget>[];
+    List<Widget> currentRow = <Widget>[];
+    int usedSpan = 0;
+
+    void flushRow() {
+      if (currentRow.isEmpty) return;
+      if (usedSpan < 12) {
+        currentRow.add(Spacer(flex: 12 - usedSpan));
+      }
+      rows.add(Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: currentRow,
+      ));
+      currentRow = <Widget>[];
+      usedSpan = 0;
+    }
+
+    for (final ParkFormFieldSchema field in fields) {
+      final int span = field.span <= 0 ? 12 : (field.span > 12 ? 12 : field.span);
+      if (usedSpan + span > 12) {
+        flushRow();
+      }
+      currentRow.add(Expanded(
+        flex: span,
+        child: _buildField(field, formLayout),
+      ));
+      usedSpan += span;
+    }
+    flushRow();
+
+    return rows;
+  }
+
   /// 按 groupKey 分组渲染（原有逻辑）。
   List<Widget> _buildGroupBasedLayout(
     List<ParkFormFieldSchema> visibleFields,
@@ -924,7 +965,13 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
 
       if (!mounted) return;
       if (_errors.isEmpty) {
-        widget.onSubmit(_engine.exportValues(_values));
+        // 提交统一规整：String 值去两侧空白（trim）
+        final Map<String, dynamic> exported = _engine.exportValues(_values);
+        final Map<String, dynamic> trimmed = exported.map(
+          (String key, dynamic value) =>
+              MapEntry<String, dynamic>(key, value is String ? value.trim() : value),
+        );
+        widget.onSubmit(trimmed);
       } else {
         // 滚动到首个错误字段（简易实现）。
         _scrollToFirstError(mergedErrors.keys.first);

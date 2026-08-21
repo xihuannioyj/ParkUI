@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 导航菜单主题模式。
@@ -20,6 +21,18 @@ enum ParkMenuMode {
 
   /// 水平模式
   horizontal,
+}
+
+/// 导航菜单尺寸。
+enum ParkMenuSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
 }
 
 /// 导航菜单组件
@@ -69,6 +82,9 @@ class ParkMenu extends StatefulWidget {
   /// 菜单布局模式。
   final ParkMenuMode mode;
 
+  /// 菜单尺寸（small/medium/large），控制菜单项内边距、字号与图标大小。
+  final ParkMenuSize size;
+
   /// 创建 [ParkMenu]。
   const ParkMenu({
     super.key,
@@ -80,6 +96,7 @@ class ParkMenu extends StatefulWidget {
     this.inlineCollapsed = false,
     this.collapsedWidth = 56.0,
     this.mode = ParkMenuMode.inline,
+    this.size = ParkMenuSize.medium,
   });
 
   @override
@@ -130,7 +147,7 @@ class _ParkMenuState extends State<ParkMenu> {
         (widget.mode == ParkMenuMode.vertical || widget.mode == ParkMenuMode.inline);
 
     return Semantics(
-      label: 'Navigation menu',
+      label: ParkLocalizations.of(context).navigationDrawerLabel,
       container: true,
       child: MouseRegion(
         onEnter: (_) {},
@@ -168,6 +185,43 @@ class _ParkMenuState extends State<ParkMenu> {
     final isExpanded = _expandedKeys.contains(item.key);
     final isHovered = _hoveredKeys.contains(item.key);
     final showFull = !collapsed || isHovered || isSelected || isExpanded;
+
+    // size 令牌：小/中/大 三档内边距、字号与图标大小
+    final EdgeInsets itemPadding = switch (widget.size) {
+      ParkMenuSize.small => EdgeInsets.only(
+          left: collapsed ? 16.0 : 16.0 + depth * 16,
+          right: park.spacing.sm,
+          top: park.spacing.xs,
+          bottom: park.spacing.xs,
+        ),
+      ParkMenuSize.medium => EdgeInsets.only(
+          left: collapsed ? 16.0 : 16.0 + depth * 16,
+          right: 16,
+          top: 10,
+          bottom: 10,
+        ),
+      ParkMenuSize.large => EdgeInsets.only(
+          left: collapsed ? 16.0 : 16.0 + depth * 16,
+          right: park.spacing.lg,
+          top: park.spacing.md,
+          bottom: park.spacing.md,
+        ),
+    };
+    final double itemFontSize = switch (widget.size) {
+      ParkMenuSize.small => park.typography.sizeCaption,
+      ParkMenuSize.medium => park.typography.sizeBodySmall,
+      ParkMenuSize.large => park.typography.sizeBody,
+    };
+    final double itemIconSize = switch (widget.size) {
+      ParkMenuSize.small => 16.0,
+      ParkMenuSize.medium => 18.0,
+      ParkMenuSize.large => 20.0,
+    };
+    final double expandIconSize = switch (widget.size) {
+      ParkMenuSize.small => 14.0,
+      ParkMenuSize.medium => 16.0,
+      ParkMenuSize.large => 18.0,
+    };
 
     // 暗色模式下颜色
     final Color textColor;
@@ -212,12 +266,7 @@ class _ParkMenuState extends State<ParkMenu> {
               onEnter: (_) => setState(() => _hoveredKeys.add(item.key)),
               onExit: (_) => setState(() => _hoveredKeys.remove(item.key)),
               child: Container(
-                padding: EdgeInsets.only(
-                  left: collapsed ? 16.0 : 16.0 + depth * 16,
-                  right: 16,
-                  top: 10,
-                  bottom: 10,
-                ),
+                padding: itemPadding,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? selectedBgColor
@@ -236,7 +285,7 @@ class _ParkMenuState extends State<ParkMenu> {
                     if (item.icon != null) ...[
                       Icon(
                         item.icon,
-                        size: 18,
+                        size: itemIconSize,
                         color: item.disabled
                             ? disabledTextColor
                             : iconColor,
@@ -248,7 +297,7 @@ class _ParkMenuState extends State<ParkMenu> {
                         child: Text(
                           item.label,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: itemFontSize,
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: item.disabled
@@ -260,7 +309,7 @@ class _ParkMenuState extends State<ParkMenu> {
                     if (showFull && hasChildren)
                       Icon(
                         isExpanded ? Icons.expand_less : Icons.expand_more,
-                        size: 16,
+                        size: expandIconSize,
                         color: expandIconColor,
                       ),
                   ],

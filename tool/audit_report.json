@@ -1,0 +1,5898 @@
+[
+  {
+    "name": "ParkActionSheet",
+    "title": "操作面板",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "基础操作面板",
+      "带标题",
+      "危险操作",
+      "带回调",
+      "网格模式",
+      "带描述",
+      "取消回调"
+    ],
+    "demoText": "基础操作面板 简单的底部操作面板 带标题 操作面板带标题说明 危险操作 包含 destructive 样式项 带回调 操作项带 onTap 回调 网格模式 gridMode 以宫格布局展示操作项 带描述 通过 description 在操作项上方显示说明文字 取消回调 点击取消按钮时触发 onCancel 回调",
+    "missingParams": [
+      "closeIcon",
+      "enableDrag"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 250,
+    "guideEmpty": false,
+    "guideLen": 285,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkActionSheet"
+    ],
+    "staticMethods": [
+      "show"
+    ],
+    "registeredProperties": [
+      "actions",
+      "cancelText",
+      "closeOnTapAction",
+      "description",
+      "destructiveIndex",
+      "gridColumns",
+      "gridMode",
+      "isDismissible",
+      "round",
+      "showCancel",
+      "title"
+    ],
+    "registeredEvents": [
+      "onCancel"
+    ]
+  },
+  {
+    "name": "ParkAlert",
+    "title": "警告提示",
+    "source": "park_new_component_specs",
+    "demoCount": 9,
+    "demos": [
+      "信息提示",
+      "成功提示",
+      "警告提示",
+      "错误提示",
+      "带描述",
+      "可关闭 + onClose",
+      "Banner 风格",
+      "自定义图标",
+      "隐藏图标"
+    ],
+    "demoText": "信息提示 info 类型 成功提示 success 类型 警告提示 warning 类型 错误提示 error 类型 带描述 message + description 可关闭 + onClose 点击关闭按钮触发回调 Banner 风格 无边框通栏样式 自定义图标 覆盖默认类型图标 隐藏图标 showIcon: false",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 151,
+    "guideEmpty": false,
+    "guideLen": 337,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkAlert"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "banner",
+      "closable",
+      "description",
+      "descriptionWidget",
+      "icon",
+      "message",
+      "messageWidget",
+      "showIcon",
+      "type"
+    ],
+    "registeredEvents": [
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkAnchor",
+    "title": "锚点",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础锚点",
+      "偏移量",
+      "onChanged 事件",
+      "滚动锚点"
+    ],
+    "demoText": "基础锚点 页内锚点导航 偏移量 offset: 40 onChanged 事件 点击高亮并回传 key 滚动锚点 scrollController 联动滚动跳转",
+    "missingParams": [
+      "scrollOffset"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 174,
+    "guideEmpty": false,
+    "guideLen": 79,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkAnchor"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "items",
+      "offset",
+      "scrollController"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkApp",
+    "title": "全局配置 / App Shell",
+    "source": "park_new_component_specs",
+    "demoCount": 1,
+    "demos": [
+      "基础用法 / Basic"
+    ],
+    "demoText": "基础用法 / Basic 使用 ParkApp 包裹首页 / Wrap home page with ParkApp",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 112,
+    "guideEmpty": false,
+    "guideLen": 503,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkApp"
+    ],
+    "staticMethods": [
+      "_localizationsFor"
+    ],
+    "registeredProperties": [
+      "additionalExtensions",
+      "builder",
+      "child",
+      "darkTheme",
+      "debugShowCheckedModeBanner",
+      "home",
+      "initialRoute",
+      "locale",
+      "navigatorObservers",
+      "onGenerateRoute",
+      "parkDarkTheme",
+      "parkTheme",
+      "routes",
+      "theme",
+      "themeMode",
+      "title"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkAutoComplete",
+    "title": "自动完成",
+    "source": "park_new_component_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础自动完成",
+      "onSelected 事件",
+      "onChanged 事件",
+      "限制建议数",
+      "占位文字",
+      "自定义过滤"
+    ],
+    "demoText": "基础自动完成 输入过滤建议 onSelected 事件 选中回传建议值 onChanged 事件 输入实时回传 限制建议数 maxSuggestions: 3 占位文字 hintText 自定义过滤 filterFn 前缀匹配",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 99,
+    "guideEmpty": false,
+    "guideLen": 83,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkAutoComplete"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "filterFn",
+      "hintText",
+      "maxSuggestions",
+      "options"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onSelected"
+    ]
+  },
+  {
+    "name": "ParkAvatar",
+    "title": "头像 / Avatar",
+    "source": "park_display_specs",
+    "demoCount": 8,
+    "demos": [
+      "文字头像",
+      "图标头像",
+      "不同尺寸",
+      "方形头像",
+      "图片头像",
+      "带角标头像",
+      "自定义背景色",
+      "可点击头像"
+    ],
+    "demoText": "文字头像 使用首字符作为回退显示 / Text fallback 图标头像 使用图标显示头像 / Icon avatar 不同尺寸 展示 small / medium / large / xlarge 四种尺寸 / 4 sizes 方形头像 shape: square 显示圆角方形 / Rounded-square 图片头像 image 优先级最高 / Image has highest priority 带角标头像 badge 在右下角放置任意 Widget / Badge widget at corner 自定义背景色 backgroundColor 覆盖默认回退色 / Custom background 可点击头像 点击统计次数，演示 onTap 回调 / Tap callback",
+    "missingParams": [
+      "status",
+      "statusDotSize"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 106,
+    "guideEmpty": false,
+    "guideLen": 605,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkAvatar"
+    ],
+    "staticMethods": [
+      "_resolveSrcSet"
+    ],
+    "registeredProperties": [
+      "backgroundColor",
+      "badge",
+      "customSize",
+      "draggable",
+      "gap",
+      "icon",
+      "image",
+      "onTap",
+      "shape",
+      "size",
+      "srcSet",
+      "text"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkAvatarGroup",
+    "title": "头像组 / Avatar Group",
+    "source": "park_display_specs_extra",
+    "demoCount": 3,
+    "demos": [
+      "基础头像组",
+      "超出计数",
+      "大尺寸"
+    ],
+    "demoText": "基础头像组 三个文字头像重叠展示。 / Three text avatars overlapped. 超出计数 5 个头像但 maxCount 为 3，展示 +2。 / 5 avatars with maxCount 3 shows +2. 大尺寸 size 设为 large 放大头像。 / size large enlarges avatars.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 162,
+    "guideEmpty": false,
+    "guideLen": 334,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkAvatarGroup"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "avatars",
+      "count",
+      "maxCount",
+      "overlap",
+      "size"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkBackTop",
+    "title": "回到顶部 / Back Top",
+    "source": "park_nav_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础回到顶部",
+      "自定义图标",
+      "自定义触发阈值",
+      "自定义点击行为（onPressed）"
+    ],
+    "demoText": "基础回到顶部 在长列表中滚动超过阈值后显示回到顶部按钮。 自定义图标 使用 icon 参数替换默认的向上箭头图标，并调整按钮尺寸。 自定义触发阈值 通过 visibleOffset 设置更小的滚动偏移量触发显示，并使用自定义 margin。 自定义点击行为（onPressed） 设置 onPressed 后点击不再滚动到顶部，而是执行自定义回调。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 258,
+    "guideEmpty": false,
+    "guideLen": 317,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkBackTop"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "icon",
+      "margin",
+      "onPressed",
+      "scrollController",
+      "size",
+      "target",
+      "visibilityHeight",
+      "visibleOffset"
+    ],
+    "registeredEvents": [
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkBadge",
+    "title": "徽标 / Badge",
+    "source": "park_display_specs",
+    "demoCount": 9,
+    "demos": [
+      "数字徽标",
+      "红点徽标",
+      "超出最大值",
+      "状态点",
+      "缎带",
+      "自定义颜色",
+      "角标偏移",
+      "显示零值",
+      "自定义角标内容"
+    ],
+    "demoText": "数字徽标 在图标右上角显示数字 / Numeric badge 红点徽标 dot: true 显示小红点 / Red dot 超出最大值 count 超过 maxCount 时显示 \"99+\"/ Over cap shows \"99+\" 状态点 status 渲染语义状态点（带独立文字）/ Status dot with label 缎带 ribbon: true 在角上渲染缎带 / Ribbon banner 自定义颜色 color 与 textColor 自定义配色 / Custom colors 角标偏移 offset 调整徽标相对右上角的位置 / Offset positioning 显示零值 showZero: true 时 count 为 0 也显示 / Show when zero 自定义角标内容 countWidget 渲染任意内容替代数字 / Custom badge content",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 61,
+    "guideEmpty": false,
+    "guideLen": 564,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkBadge"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "child",
+      "color",
+      "count",
+      "countWidget",
+      "dot",
+      "maxCount",
+      "offset",
+      "ribbon",
+      "ribbonPlacement",
+      "ribbonText",
+      "showZero",
+      "size",
+      "standaloneText",
+      "status",
+      "textColor",
+      "title"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkBinding",
+    "title": "双向绑定",
+    "source": "park_binding_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础字段绑定",
+      "嵌套路径绑定",
+      "多字段表单",
+      "动态表单绑定",
+      "绑定值响应式",
+      "watchEffect 自动追踪",
+      "batch 批量更新",
+      "nextTick 获取最新值"
+    ],
+    "demoText": "基础字段绑定 一个文本输入框，输入内容实时在下方 Text 显示，演示 ParkInput + bindKey 基础用法。 嵌套路径绑定 address.province / address.city / address.district 三级联动，演示嵌套路径解析。 多字段表单 ParkForm 传入 bindingService，5 个字段（姓名/年龄/城市/介绍/通知）全部绑定，提交时打印数据。 动态表单绑定 ParkForm + bindingService，schema 驱动渲染，值变化自动同步到 service。 绑定值响应式 service.bind 返回 ParkBindable，通过 value 修改后由 ValueListenableBuilder 自动刷新。 watchEffect 自动追踪 watchEffect 注册副作用，自动收集依赖路径，任意依赖变化自动重执行。 batch 批量更新 batch 作用域内多次 setValue 合并为单次通知；逐条 setValue 则各自通知。 nextTick 获取最新值 batch 更新后 await nextTick() 确保拿到最新值（类似 Vue3 nextTick）。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 329,
+    "guideEmpty": false,
+    "guideLen": 2407,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "model"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkBottomNav",
+    "title": "底部导航栏",
+    "source": "park_nav_specs_extra",
+    "demoCount": 2,
+    "demos": [
+      "基础底部导航",
+      "带角标"
+    ],
+    "demoText": "基础底部导航 fixed 类型的底部导航栏 / Fixed bottom navigation 带角标 导航项带 Badge / Items with badge",
+    "missingParams": [
+      "selectedFontSize",
+      "unselectedFontSize"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 287,
+    "guideEmpty": false,
+    "guideLen": 261,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkBottomNav"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "backgroundColor",
+      "currentIndex",
+      "elevation",
+      "iconSize",
+      "items",
+      "selectedItemColor",
+      "type",
+      "unselectedItemColor"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkBreadcrumb",
+    "title": "面包屑 / Breadcrumb",
+    "source": "park_nav_specs_extra",
+    "demoCount": 5,
+    "demos": [
+      "基础面包屑",
+      "限制最大项数",
+      "项点击（onTap）",
+      "下拉子菜单（overlay）",
+      "大号尺寸"
+    ],
+    "demoText": "基础面包屑 首页 > 列表 > 详情 三级面包屑。 限制最大项数 maxItems 超出后自动折叠为 \"...\" 按钮（点击展开隐藏项）。 项点击（onTap） 前两项可点击，点击后下方文本更新（演示 Item.onTap 回调）。 下拉子菜单（overlay） 含 overlay 子菜单的项点击展开下拉，可快速跳转到子项。 大号尺寸 size: ParkBreadcrumbSize.large 放大字号。",
+    "missingParams": [
+      "overflowDropdown"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 190,
+    "guideEmpty": false,
+    "guideLen": 284,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkBreadcrumb"
+    ],
+    "staticMethods": [
+      "_defaultSeparator"
+    ],
+    "registeredProperties": [
+      "items",
+      "maxItems",
+      "overlayClassName",
+      "separator",
+      "separatorIcon",
+      "size"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkButton",
+    "title": "按钮 / Button",
+    "source": "park_base_specs",
+    "demoCount": 10,
+    "demos": [
+      "按钮变体",
+      "按钮尺寸",
+      "图标按钮",
+      "加载与禁用",
+      "通栏与形状",
+      "危险与虚线边框",
+      "角标",
+      "渐变与后缀",
+      "交互事件（完整事件演示）",
+      "📐 尺寸令牌参考 / Sizing Token Reference"
+    ],
+    "demoText": "按钮变体 展示 6 种不同 variant 的按钮样式 / 6 variants 按钮尺寸 展示 small / medium / large 三种尺寸 / 3 sizes 图标按钮 使用 ParkButton.icon 工厂构造带图标的按钮 / icon factory 加载与禁用 展示 loading 状态和 disabled 状态（onPressed 为 null） / loading & disabled 通栏与形状 block 通栏、round 胶囊、circle 圆形 / block, round, circle 危险与虚线边框 danger 修饰符应用危险色；dashed 渲染虚线边框；ghost 幽灵按钮 / danger, dashed, ghost 角标 badge 数字角标与 badgeDot 红点角标 / badge & badgeDot 渐变与后缀 gradient 渐变背景；icon + suffix 组合并置后图标位置 / gradient & suffix 交互事件（完整事件演示） 分别演示 onPressed / asyncOnPressed / onLongPress / onHover / onFocus / onBlur 六个回调 / all 6 events 📐 尺寸令牌参考 / Sizing Token Reference ParkButton 的三档高度与水平内边距由 ParkSizing 令牌系统统一驱动，确保全局一致性 / Button sizes driven by ParkSizing tokens for global consistency.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 153,
+    "guideEmpty": false,
+    "guideLen": 2788,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkButton"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "autoInsertSpace",
+      "badge",
+      "badgeDot",
+      "block",
+      "child",
+      "cursor",
+      "danger",
+      "dashed",
+      "debounceDuration",
+      "ghost",
+      "gradient",
+      "height",
+      "hoverColor",
+      "href",
+      "htmlType",
+      "icon",
+      "iconOnly",
+      "iconPosition",
+      "loading",
+      "loadingIndicator",
+      "shape",
+      "size",
+      "style",
+      "suffix",
+      "tooltip",
+      "variant"
+    ],
+    "registeredEvents": [
+      "asyncOnPressed",
+      "onBlur",
+      "onFocus",
+      "onHover",
+      "onLongPress",
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkButtonGroup",
+    "title": "按钮组 / Button Group",
+    "source": "park_base_specs",
+    "demoCount": 3,
+    "demos": [
+      "贴合模式（默认）",
+      "均分模式",
+      "垂直排列"
+    ],
+    "demoText": "贴合模式（默认） joined 模式：按钮紧密贴合，仅首尾保留圆角。 / joined: tight, rounded ends only. 均分模式 equal 模式：三个按钮均分可用宽度。 / equal: three buttons split width evenly. 垂直排列 direction 设为 vertical，按钮垂直贴合。 / vertical direction stacks buttons.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 193,
+    "guideEmpty": false,
+    "guideLen": 403,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkButtonGroup"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "children",
+      "direction",
+      "mode"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkCalendar",
+    "title": "日历",
+    "source": "park_input_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "单日选择",
+      "区间选择",
+      "多选模式",
+      "限制范围与禁用",
+      "自定义首日",
+      "面板翻页回调"
+    ],
+    "demoText": "单日选择 默认 single 模式日历。 区间选择 range 模式可选择一个起止区间。 多选模式 multiple 模式可选择多个日期。 限制范围与禁用 minDate/maxDate 限制可选范围；disabledDates 禁用特定日期。 自定义首日 firstDayOfWeek: 0 将周日设为每周第一天。 面板翻页回调 onPanelChange 在日历翻页（切换月份）时触发，可用于加载远程数据。 / onPanelChange fires when the visible month changes (e.g. for lazy-loading remote data).",
+    "missingParams": [
+      "mode"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 99,
+    "guideEmpty": false,
+    "guideLen": 416,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkCalendar"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "cellBuilder",
+      "cellRender",
+      "disabledDate",
+      "disabledDates",
+      "firstDayOfWeek",
+      "headerBuilder",
+      "maxDate",
+      "minDate",
+      "multipleValues",
+      "rangeEnd",
+      "rangeStart",
+      "rangeValue",
+      "selectionMode",
+      "showToday",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onMultipleChanged",
+      "onPanelChange",
+      "onRangeChange",
+      "onRangeChanged"
+    ]
+  },
+  {
+    "name": "ParkCard",
+    "title": "卡片 / Card",
+    "source": "park_display_specs_extra",
+    "demoCount": 8,
+    "demos": [
+      "基础卡片",
+      "带操作区",
+      "悬浮浮起",
+      "可点击 onPressed",
+      "加载骨架屏",
+      "封面卡片",
+      "可折叠卡片",
+      "底部操作栏"
+    ],
+    "demoText": "基础卡片 带标题与内容的简单卡片 / Simple card with title and body. 带操作区 标题栏右侧放置 extra 操作按钮 / Place an extra action button at the header trailing. 悬浮浮起 hoverable 卡片在鼠标悬浮时浮起 / hoverable lifts the card on hover. 可点击 onPressed 点击卡片触发 onPressed 回调（StatefulBuilder 计数）/ Tapping fires onPressed (StatefulBuilder counter). 加载骨架屏 loading: true 时显示骨架占位 / loading shows a skeleton placeholder. 封面卡片 cover 在标题之上展示封面区域 / cover renders above the header. 可折叠卡片 collapsible + ghost 变体，点击头部展开/收起 / collapsible ghost card toggles on header tap. 底部操作栏 actions 渲染底部均匀分布的按钮操作区 / actions renders an even bottom action bar.",
+    "missingParams": [
+      "borderColor",
+      "description",
+      "icon",
+      "showIndicator"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 115,
+    "guideEmpty": false,
+    "guideLen": 731,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkCard"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "actions",
+      "borderRadius",
+      "bordered",
+      "child",
+      "collapsible",
+      "color",
+      "cover",
+      "elevation",
+      "extra",
+      "headStyle",
+      "hoverable",
+      "loading",
+      "onPressed",
+      "padding",
+      "size",
+      "title",
+      "titleText",
+      "variant"
+    ],
+    "registeredEvents": [
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkCascader",
+    "title": "级联选择器",
+    "source": "park_input_specs_p2",
+    "demoCount": 7,
+    "demos": [
+      "基础级联选择",
+      "带默认值",
+      "带表单校验",
+      "禁用状态",
+      "双向绑定（ParkBinding）",
+      "保存回调 onSaved",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础级联选择 两级级联，选择省市。 带默认值 预设选中路径，输入框显示已选值。 带表单校验 使用 validator 校验是否已选择。 禁用状态 设置 enabled: false 禁用选择器。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中值实时同步到 model。 / ParkBindingService bindKey demo: cascader selection syncs to model in real time. 保存回调 onSaved 通过 Form.save() 触发 ParkCascader 的 onSaved 回调，捕获所选路径。 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用 cascader 字段类型。 / ParkForm fieldType=cascader demo.",
+    "missingParams": [
+      "autovalidateMode"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "decodePath",
+      "encodePath",
+      "showSheet"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 519,
+    "guideEmpty": false,
+    "guideLen": 2020,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkCascader"
+    ],
+    "staticMethods": [
+      "_buildTrigger",
+      "_resolveLabels",
+      "_showSheet",
+      "decodePath",
+      "encodePath",
+      "showSheet"
+    ],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "changeOnSelect",
+      "displayRender",
+      "emptyText",
+      "enabled",
+      "expandTrigger",
+      "hintText",
+      "label",
+      "multiple",
+      "onChanged",
+      "options",
+      "searchable",
+      "showSearch",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkCell",
+    "title": "单元格 / Cell",
+    "source": "park_display_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础单元格",
+      "带图标和描述",
+      "无分隔线",
+      "必填标记",
+      "禁用状态",
+      "悬停高亮",
+      "自定义箭头与右侧组件",
+      "可点击演示"
+    ],
+    "demoText": "基础单元格 简单的标题 + 箭头 / Title + arrow 带图标和描述 左侧图标 + 标题 + 描述 + 备注 / Icon + title + description + note 无分隔线 bordered: false 隐藏底部分隔线 / No divider 必填标记 required: true 标题前显示星号 / Required asterisk 禁用状态 disabled: true 灰显不可点击 / Disabled 悬停高亮 hover: true 鼠标悬停高亮 / Hover highlight 自定义箭头与右侧组件 arrowIcon 与 extra 自定义右侧 / Custom arrow + extra 可点击演示 点击切换文本，演示 onPressed 回调 / onPressed demo",
+    "missingParams": [
+      "backgroundColor",
+      "leftIconColor",
+      "leftIconContainerColor"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 129,
+    "guideEmpty": false,
+    "guideLen": 619,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkCell"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "arrow",
+      "arrowIcon",
+      "bordered",
+      "clickable",
+      "description",
+      "descriptionText",
+      "disabled",
+      "extra",
+      "hover",
+      "labelWidth",
+      "leftIcon",
+      "note",
+      "noteWidget",
+      "onPressed",
+      "required",
+      "size",
+      "title",
+      "titleText"
+    ],
+    "registeredEvents": [
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkCheckbox",
+    "title": "复选框",
+    "source": "park_input_specs",
+    "demoCount": 10,
+    "demos": [
+      "基础复选框",
+      "半选状态",
+      "圆形外观",
+      "禁用状态",
+      "复选框组",
+      "只读模式",
+      "可交互：实时回显选中状态",
+      "表单：校验与保存",
+      "动态表单（ParkForm Schema 模式）",
+      "绑定演示"
+    ],
+    "demoText": "基础复选框 带标签文字的方形复选框 半选状态 使用 indeterminate: true 展示半选（横线图标）效果 圆形外观 使用 shape: ParkCheckboxShape.circle 切换为圆形 禁用状态 设置 disabled: true 禁止交互 复选框组 使用 ParkCheckboxGroup 组合多个选项，支持 vertical / horizontal / wrap 布局 只读模式 readOnly: true 时外观正常但不可交互 可交互：实时回显选中状态 通过 StatefulBuilder + onChanged 实时回显选中状态，演示 ParkCheckbox 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the checked state live, demonstrating ParkCheckbox.onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkCheckbox 的 validator / onSaved 回调，点击提交校验是否勾选并保存布尔值。 / Form + GlobalKey demonstrates ParkCheckbox.validator and onSaved. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示复选框表单自动渲染与提交。 / ParkForm schema usage demonstration for checkbox. 绑定演示 通过 bindKey + bindingService 实现双向绑定，复选框状态实时同步到 model。 / ParkBindingService bindKey demo: checkbox state syncs to model in real time.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 83,
+    "guideEmpty": false,
+    "guideLen": 1780,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkCheckbox"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "autoFocus",
+      "bindKey",
+      "bindingService",
+      "disabled",
+      "formValue",
+      "indeterminate",
+      "label",
+      "onBlur",
+      "onFocus",
+      "readOnly",
+      "shape",
+      "size",
+      "value"
+    ],
+    "registeredEvents": [
+      "onBlur",
+      "onChanged",
+      "onFocus",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkCheckboxGroup",
+    "title": "复选框组",
+    "source": "park_input_specs_extra",
+    "demoCount": 2,
+    "demos": [
+      "基础多选",
+      "水平布局 + 全选"
+    ],
+    "demoText": "基础多选 垂直布局的复选框组 / Vertical checkbox group 水平布局 + 全选 水平排列并开启全选 / Horizontal with select-all",
+    "missingParams": [
+      "bindKey",
+      "bindingService"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 247,
+    "guideEmpty": false,
+    "guideLen": 270,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkCheckboxGroup"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "disabled",
+      "layout",
+      "options",
+      "selectAll",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkChipGridPicker",
+    "title": "分类网格选择器",
+    "source": "park_gap_specs",
+    "demoCount": 5,
+    "demos": [
+      "多选网格",
+      "单选模式",
+      "多分类 Tab",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkDynamicForm）"
+    ],
+    "demoText": "多选网格 默认多选模式 / Default multi-select 单选模式 multiSelect: false / Single select 多分类 Tab 多个分类切换 / Multiple category tabs 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中集合实时同步到 model。 / ParkBindingService bindKey demo: selection set syncs to model in real time. 动态表单（ParkDynamicForm） 通过 ParkFormSchema.fromJson 驱动 ParkDynamicForm 渲染两级筛选字段。 / Schema-driven ParkDynamicForm rendering a chip-grid picker field.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 290,
+    "guideEmpty": false,
+    "guideLen": 496,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkChipGridPicker"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "categories",
+      "categorySpacing",
+      "columns",
+      "multiSelect",
+      "onChanged",
+      "optionRunSpacing",
+      "optionSpacing",
+      "selectedBorderColor",
+      "selectedColor",
+      "selectedValues",
+      "unselectedBorderColor",
+      "unselectedColor"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkChoiceGroup",
+    "title": "选项组",
+    "source": "park_gap_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础单选组",
+      "Join 模式",
+      "垂直排列",
+      "禁用状态",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkDynamicForm）"
+    ],
+    "demoText": "基础单选组 水平排列自动换行 / Horizontal with auto-wrap Join 模式 合并边框 SegmentControl 风格 / Merged borders 垂直排列 direction: Axis.vertical / Vertical layout 禁用状态 部分选项禁用 / Partially disabled items 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中值实时同步到 model。 / ParkBindingService bindKey demo: selected value syncs to model in real time. 动态表单（ParkDynamicForm） 通过 ParkFormSchema.fromJson 驱动 ParkDynamicForm 渲染按钮式单选字段。 / Schema-driven ParkDynamicForm rendering a choice-group field.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 193,
+    "guideEmpty": false,
+    "guideLen": 472,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkChoiceGroup"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "borderRadius",
+      "direction",
+      "enabled",
+      "items",
+      "join",
+      "onChanged",
+      "padding",
+      "readOnly",
+      "runSpacing",
+      "selectedBorderColor",
+      "selectedColor",
+      "selectedTextStyle",
+      "spacing",
+      "textStyle",
+      "unselectedBorderColor",
+      "unselectedColor",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkCollapse",
+    "title": "折叠面板 / Collapse",
+    "source": "park_display_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础折叠面板",
+      "手风琴模式",
+      "禁用项与图标",
+      "幽灵模式",
+      "展开回调",
+      "自定义头部"
+    ],
+    "demoText": "基础折叠面板 多项可同时展开 / Multi-expand 手风琴模式 accordion: true 时仅允许展开一项 / Single-expand 禁用项与图标 disabled 项不可展开；item.icon 添加头部图标 / Disabled + icon 幽灵模式 ghost: true 面板背景透明 / Ghost (transparent) 展开回调 onChanged 报告当前展开 key 集合 / onChanged demo 自定义头部 headerWidget / extra 自定义头部内容 / Custom header",
+    "missingParams": [
+      "contentPadding",
+      "expandIcon",
+      "expandIconPosition",
+      "headerPadding",
+      "shape"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 308,
+    "guideEmpty": false,
+    "guideLen": 593,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkCollapse"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "accordion",
+      "activeKeys",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "collapsible",
+      "ghost",
+      "items",
+      "onChangeIndex",
+      "onChanged"
+    ],
+    "registeredEvents": [
+      "onChangeIndex",
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkColorPicker",
+    "title": "颜色选择器",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础选择",
+      "指定当前色",
+      "自定义预设",
+      "onChanged 事件"
+    ],
+    "demoText": "基础选择 默认 20 色环 指定当前色 value: _kColors.brand 自定义预设 presetColors onChanged 事件 点击色块回传颜色",
+    "missingParams": [
+      "bindKey",
+      "bindingService",
+      "format",
+      "showFormatSwitch"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 81,
+    "guideEmpty": false,
+    "guideLen": 72,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkColorPicker"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "enableCustom",
+      "presetColors",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkCountdown",
+    "title": "倒计时数字块",
+    "source": "park_new_component_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础倒计时",
+      "小尺寸",
+      "中尺寸",
+      "大尺寸",
+      "圆形主题",
+      "直角主题",
+      "加载态",
+      "控制器"
+    ],
+    "demoText": "基础倒计时 倒计时 5 分钟 小尺寸 small 尺寸 中尺寸 medium 尺寸 大尺寸 large 尺寸 圆形主题 round 风格 直角主题 square 风格 加载态 shimmer 骨架屏 控制器 Controller start/pause/reset",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 82,
+    "guideEmpty": false,
+    "guideLen": 172,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkCountdown"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "controller",
+      "formatter",
+      "loading",
+      "remaining",
+      "size",
+      "theme"
+    ],
+    "registeredEvents": [
+      "onFinish"
+    ]
+  },
+  {
+    "name": "ParkDatePicker",
+    "title": "日期选择器",
+    "source": "park_input_specs",
+    "demoCount": 10,
+    "demos": [
+      "日期选择",
+      "时间选择",
+      "日期+时间",
+      "年月选择",
+      "限制日期范围",
+      "可清除和尺寸",
+      "可交互：实时回显选中日期",
+      "表单：校验与保存",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "日期选择 默认 date 模式，选择年月日 时间选择 使用 time 模式选择时分 日期+时间 使用 dateTime 模式同时选择日期和时间 年月选择 使用 yearMonth 模式仅选择年月 限制日期范围 通过 firstDate 和 lastDate 限制可选范围 可清除和尺寸 clearable 显示清除按钮；size 切换选择器尺寸 可交互：实时回显选中日期 通过 StatefulBuilder + onChanged 实时回显选中日期，演示 ParkDatePicker 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the selected date live, demonstrating ParkDatePicker.onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkDatePicker 的 validator / onSaved 回调，点击提交校验是否选择日期并保存 DateTime 值。 / Form + GlobalKey demonstrates ParkDatePicker.validator and onSaved. 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中日期实时同步到 model。 / ParkBindingService bindKey demo: selected date syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [
+      "allowedDateRanges"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 120,
+    "guideEmpty": false,
+    "guideLen": 1894,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkDatePicker"
+    ],
+    "staticMethods": [
+      "_buildInput",
+      "_formatDate",
+      "_iconForMode",
+      "_showPicker",
+      "show"
+    ],
+    "registeredProperties": [
+      "allowEmpty",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "clearable",
+      "disabledDate",
+      "firstDate",
+      "format",
+      "hintText",
+      "label",
+      "lastDate",
+      "locale",
+      "mode",
+      "presetItems",
+      "presets",
+      "renderExtraFooter",
+      "shortcuts",
+      "showTime",
+      "size",
+      "status",
+      "suffixIcon",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onClear",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkDatePreset",
+    "title": "日期预设 / Date Preset",
+    "source": "park_input_specs_extra",
+    "demoCount": 1,
+    "demos": [
+      "预设列表 / Preset list"
+    ],
+    "demoText": "预设列表 / Preset list 展示 ParkDatePreset 的常用工厂方法 / Show common factory methods",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 149,
+    "guideEmpty": false,
+    "guideLen": 398,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDatePreset"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "date",
+      "endDate",
+      "label",
+      "startDate"
+    ],
+    "registeredEvents": [
+      "onSelect"
+    ]
+  },
+  {
+    "name": "ParkDateRangePicker",
+    "title": "日期范围筛选",
+    "source": "park_input_specs_extra",
+    "demoCount": 7,
+    "demos": [
+      "静态弹出",
+      "内联使用",
+      "嵌入下拉面板",
+      "确认与取消回调",
+      "可交互：范围变更回显 (onChanged)",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm）"
+    ],
+    "demoText": "静态弹出 使用 show 静态方法弹出日期范围选择面板。 内联使用 实例化 ParkDateRangePicker 嵌入页面中使用。 嵌入下拉面板 ParkDateRangePicker 嵌入 ParkDropdownSheet 的 child 模式。 确认与取消回调 onConfirm 在用户确认范围时触发，onCancel 在取消时触发（show 静态方法取消返回 null）。 / onConfirm fires on confirm; onCancel fires on cancel (the show() static returns null on cancel). 可交互：范围变更回显 (onChanged) 实时回显 ParkDateRangePicker 的 onChanged 回调——选择开始/结束日期、点击快捷预设或重置按钮均会触发。 / onChanged fires on every range change (select, shortcut, reset). 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，日期范围变更实时同步到 model。 / ParkBindingService bindKey demo: date range syncs to model in real time. 动态表单（ParkForm） 在 ParkForm 中以 schema 配置 date 字段类型用作日期范围。 / ParkForm fieldType=date demo (range mode).",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "defaultShortcuts",
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 529,
+    "guideEmpty": false,
+    "guideLen": 400,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkDateRangePicker"
+    ],
+    "staticMethods": [
+      "defaultShortcuts",
+      "show"
+    ],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "endHintText",
+      "endTime",
+      "firstDate",
+      "label",
+      "lastDate",
+      "presets",
+      "renderExtraFooter",
+      "resetText",
+      "shortcuts",
+      "showReset",
+      "showShortcuts",
+      "startHintText",
+      "startTime"
+    ],
+    "registeredEvents": [
+      "onCancel",
+      "onChanged",
+      "onConfirm"
+    ]
+  },
+  {
+    "name": "ParkDescriptions",
+    "title": "描述列表 / Descriptions",
+    "source": "park_display_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "表格风格",
+      "分隔线风格",
+      "单列 + span 跨行",
+      "标题栏操作",
+      "自定义值 Widget",
+      "空值占位"
+    ],
+    "demoText": "表格风格 bordered 2列，订单详情 / Bordered 2-column order details. 分隔线风格 borderless 2列，用户信息 / Borderless 2-column user info. 单列 + span 跨行 column=1 配合 span 展示合同信息 / single column with span. 标题栏操作 action 在标题栏右侧放置编辑按钮 / action puts an edit button at the header. 自定义值 Widget valueWidget 渲染标签等自定义值 / valueWidget renders custom values like tags. 空值占位 空值使用 emptyText 占位符显示 / Empty values show the emptyText placeholder.",
+    "missingParams": [
+      "layout",
+      "size"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 264,
+    "guideEmpty": false,
+    "guideLen": 539,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDescriptions"
+    ],
+    "staticMethods": [
+      "_hPad",
+      "_labelFontSize",
+      "_vPad",
+      "_valueFontSize"
+    ],
+    "registeredProperties": [
+      "action",
+      "bordered",
+      "column",
+      "emptyText",
+      "items",
+      "labelWidth",
+      "title"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkDialog",
+    "title": "对话框",
+    "source": "park_feedback_specs",
+    "demoCount": 11,
+    "demos": [
+      "Alert 对话框",
+      "确认对话框",
+      "自定义按钮文本",
+      "带回调的对话框",
+      "Info 对话框",
+      "Success 对话框",
+      "Warning 对话框",
+      "Error 对话框",
+      "居中 + 可关闭",
+      "自定义 actions 按钮",
+      "afterClose 关闭回调"
+    ],
+    "demoText": "Alert 对话框 仅包含确认按钮的提示对话框 确认对话框 带确认和取消按钮的对话框 自定义按钮文本 自定义确认和取消按钮的文本 带回调的对话框 在确认或取消时执行回调逻辑 Info 对话框 带信息图标的提示对话框 Success 对话框 带成功图标的对话框 Warning 对话框 带警告图标的对话框 Error 对话框 带错误图标的对话框 居中 + 可关闭 垂直居中显示并带右上角关闭按钮的对话框 自定义 actions 按钮 使用 actions 参数替换默认按钮，传入自定义按钮组。各按钮的 onPressed 由调用方管理，通常调用 Navigator.pop 关闭对话框。 afterClose 关闭回调 对话框关闭后触发 afterClose / Fires afterClose after the dialog closes",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 716,
+    "guideEmpty": false,
+    "guideLen": 584,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDialog"
+    ],
+    "staticMethods": [
+      "_show",
+      "alert",
+      "confirm",
+      "error",
+      "info",
+      "success",
+      "warning"
+    ],
+    "registeredProperties": [
+      "actions",
+      "barrierDismissible",
+      "cancelText",
+      "centered",
+      "closable",
+      "closeIcon",
+      "confirmLoading",
+      "confirmText",
+      "content",
+      "contentWidget",
+      "destroyOnClose",
+      "footer",
+      "fullscreen",
+      "keyboard",
+      "mask",
+      "maskClosable",
+      "title",
+      "titleWidget",
+      "width"
+    ],
+    "registeredEvents": [
+      "afterClose",
+      "onCancel",
+      "onConfirm"
+    ]
+  },
+  {
+    "name": "ParkDivider",
+    "title": "分割线 / Divider",
+    "source": "park_base_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础分割线",
+      "自定义颜色与粗细",
+      "带缩进的分割线",
+      "带文字的分割线",
+      "垂直分割线",
+      "虚线与点线",
+      "文字对齐与图标",
+      "可交互分割线（切换虚线）"
+    ],
+    "demoText": "基础分割线 默认水平分割线 / default horizontal 自定义颜色与粗细 通过 color 和 thickness 自定义分割线外观 / color & thickness 带缩进的分割线 通过 indent 和 endIndent 设置左右缩进 / indent & endIndent 带文字的分割线 使用 ParkDivider.withText 在分割线中间插入文字 / withText 垂直分割线 使用 axis: ParkDividerAxis.vertical 在行内放置垂直分割线 / vertical 虚线与点线 dashed 虚线、dotted 点线，以及带文字的虚线分割线 / dashed & dotted 文字对齐与图标 withText 的 textAlign 控制文字对齐，icon 添加前置图标 / textAlign & icon 可交互分割线（切换虚线） 点击下方按钮切换虚线 / 实线，演示 ParkDivider.dashed 用法 / Interactive: toggle dashed",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "withText"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 68,
+    "guideEmpty": false,
+    "guideLen": 1597,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDivider"
+    ],
+    "staticMethods": [
+      "withText"
+    ],
+    "registeredProperties": [
+      "axis",
+      "color",
+      "dashGap",
+      "dashWidth",
+      "dashed",
+      "dotted",
+      "endIndent",
+      "indent",
+      "plain",
+      "thickness",
+      "verticalHeight"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkDrawer",
+    "title": "抽屉 / Drawer",
+    "source": "park_nav_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础抽屉（可重新打开）",
+      "右侧抽屉",
+      "自定义宽度",
+      "顶部抽屉",
+      "交互式菜单选择",
+      "afterClose 关闭回调"
+    ],
+    "demoText": "基础抽屉（可重新打开） 含 header、菜单列表和 footer 的标准抽屉，关闭后点击按钮可重新打开（演示 onClose）。 右侧抽屉 position: right 时从右侧弹出（演示 placement 属性）。 自定义宽度 通过 width 参数设置更宽的抽屉面板；也可改用 size 预设尺寸。 顶部抽屉 placement: ParkDrawerPlacement.top 时从顶部滑入，适合筛选 / 菜单浮层。 交互式菜单选择 抽屉内嵌可选中菜单项，点击后高亮并触发回调（onClose 可关闭抽屉）。 afterClose 关闭回调 抽屉关闭动画完成后触发 afterClose / Fires afterClose after drawer close animation",
+    "missingParams": [
+      "getContainer",
+      "onOpen",
+      "widthFactor"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onOpen"
+    ],
+    "missingMethods": [
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 308,
+    "guideEmpty": false,
+    "guideLen": 404,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDrawer"
+    ],
+    "staticMethods": [
+      "show"
+    ],
+    "registeredProperties": [
+      "child",
+      "closable",
+      "destroyOnClose",
+      "extra",
+      "footer",
+      "header",
+      "keyboard",
+      "loading",
+      "mask",
+      "maskClosable",
+      "maskColor",
+      "placement",
+      "position",
+      "size",
+      "visible",
+      "width",
+      "zIndex"
+    ],
+    "registeredEvents": [
+      "afterClose",
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkDropdownFilter",
+    "title": "筛选下拉栏",
+    "source": "park_feedback_specs_extra",
+    "demoCount": 5,
+    "demos": [
+      "基础单选筛选",
+      "多选 + 网格布局",
+      "自定义内容模式",
+      "回调事件演示",
+      "筛选应用（联动列表）"
+    ],
+    "demoText": "基础单选筛选 使用 options 模式实现单选筛选标签。每个标签点击展开底部面板，点击选项即确认关闭。 多选 + 网格布局 开启 multiple 并使用 columns 网格布局，适合标签/分类筛选。 自定义内容模式 child 模式可嵌入任意自定义 Widget，如日期范围选择器等复杂筛选控件。 回调事件演示 点击标签或选中选项时，下方实时显示触发的回调事件和参数。验证 onTab / onChange / onConfirm / onReset / onFilterChanged 的完整调用链。 筛选应用（联动列表） 选择筛选条件后，下方列表实时按选中值过滤，演示 selection change（onFilterChanged）到 filter application 的完整链路。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 632,
+    "guideEmpty": false,
+    "guideLen": 651,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDropdownFilter"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "items",
+      "labelPadding",
+      "onFilterChanged",
+      "scrollable",
+      "spacing",
+      "style"
+    ],
+    "registeredEvents": [
+      "item.onChange",
+      "item.onConfirm",
+      "item.onReset",
+      "item.onTab",
+      "onFilterChanged"
+    ]
+  },
+  {
+    "name": "ParkDropdownMenu",
+    "title": "下拉菜单",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "基础下拉",
+      "带图标",
+      "向上弹出",
+      "分组菜单",
+      "多选菜单",
+      "细粒度放置",
+      "onVisibleChanged / onOpenChange 事件"
+    ],
+    "demoText": "基础下拉 基本的下拉菜单 带图标 菜单项带前置图标 向上弹出 下拉菜单向上方展开 分组菜单 通过 groups 参数展示带分组的菜单 多选菜单 multiple: true 支持复选框多选 细粒度放置 通过 placement 控制菜单相对触发元素的对齐 onVisibleChanged / onOpenChange 事件 下拉展开/收起触发 onVisibleChanged 与 onOpenChange / visibility callbacks",
+    "missingParams": [
+      "closeOnClickOverlay",
+      "customTrigger"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 299,
+    "guideEmpty": false,
+    "guideLen": 334,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDropdownMenu"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "closeOnSelect",
+      "closeOnTapOutside",
+      "direction",
+      "dividers",
+      "groups",
+      "itemBuilder",
+      "items",
+      "matchTriggerWidth",
+      "maxHeight",
+      "multiple",
+      "offset",
+      "placement",
+      "selectedValues",
+      "trigger"
+    ],
+    "registeredEvents": [
+      "onOpenChange",
+      "onSelected",
+      "onSelectionChanged",
+      "onVisibleChanged"
+    ]
+  },
+  {
+    "name": "ParkDropdownSheet",
+    "title": "下拉面板",
+    "source": "park_feedback_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "基础选项列表",
+      "多选模式",
+      "网格布局",
+      "自定义内容",
+      "实例化组件",
+      "触发 + 回调联动"
+    ],
+    "demoText": "基础选项列表 通过 show 静态方法弹出单选选项面板。 多选模式 开启 multiple 后选项变为复选框多选，支持搜索过滤。 网格布局 设置 layout 为 grid，以宫格排列选项。 自定义内容 传入 child 在面板中展示完全自定义的组件。 实例化组件 作为 StatefulWidget 实例化使用，适合需持久化的场景。 触发 + 回调联动 实例化组件通过 trigger 点击打开面板，下方实时显示 onSelectionChanged / onConfirm / onCancel / onVisibleChanged 四个回调的触发结果。",
+    "missingParams": [
+      "bindingService"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "show",
+      "showCustom"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 631,
+    "guideEmpty": false,
+    "guideLen": 558,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkDropdownSheet"
+    ],
+    "staticMethods": [
+      "show",
+      "showCustom"
+    ],
+    "registeredProperties": [
+      "bindKey",
+      "cancelText",
+      "child",
+      "confirmText",
+      "gridColumns",
+      "height",
+      "itemBuilder",
+      "items",
+      "layout",
+      "multiple",
+      "searchHintText",
+      "searchable",
+      "selectedValues",
+      "showHandle",
+      "title",
+      "trigger"
+    ],
+    "registeredEvents": [
+      "onCancel",
+      "onConfirm",
+      "onSelectionChanged",
+      "onVisibleChanged"
+    ]
+  },
+  {
+    "name": "ParkEllipsis",
+    "title": "文本省略 / Ellipsis",
+    "source": "park_display_specs_extra",
+    "demoCount": 5,
+    "demos": [
+      "单行省略",
+      "多行省略",
+      "展开/收起",
+      "自定义后缀",
+      "自定义提示文字"
+    ],
+    "demoText": "单行省略 默认 maxLines: 1，超出显示省略号 / Single line, ellipsis when overflow. 多行省略 maxLines: 2 限制为两行 / Limit to two lines. 展开/收起 expandable: true 显示\"展开/收起\"按钮内联切换 / expandable toggles inline. 自定义后缀 suffix 在省略文本后放置\"阅读更多\"链接 / suffix places a \"read more\" link. 自定义提示文字 tooltipText 自定义悬浮提示内容 / tooltipText customizes the hover tip.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 63,
+    "guideEmpty": false,
+    "guideLen": 407,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkEllipsis"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "expandable",
+      "maxLines",
+      "style",
+      "suffix",
+      "text",
+      "textAlign",
+      "tooltip",
+      "tooltipText"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkEmpty",
+    "title": "空状态 / Empty",
+    "source": "park_display_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础空状态",
+      "带操作按钮",
+      "不同尺寸",
+      "自定义插图",
+      "页脚链接",
+      "富文本描述"
+    ],
+    "demoText": "基础空状态 仅图标和描述文字 / Icon + description 带操作按钮 空状态下方显示操作按钮 / With actions 不同尺寸 small / medium / large 尺寸对比 / Size presets 自定义插图 image 展示品牌插图（优先级高于 icon）/ Custom illustration 页脚链接 footer 在按钮下方展示附加信息 / Footer below actions 富文本描述 descriptionWidget 渲染富文本描述 / Rich description",
+    "missingParams": [
+      "type"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 135,
+    "guideEmpty": false,
+    "guideLen": 598,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkEmpty"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "actions",
+      "description",
+      "descriptionWidget",
+      "footer",
+      "icon",
+      "image",
+      "size"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkFab",
+    "title": "悬浮按钮 / Fab",
+    "source": "park_base_specs",
+    "demoCount": 9,
+    "demos": [
+      "基础悬浮按钮",
+      "Extended FAB",
+      "迷你尺寸",
+      "自定义颜色",
+      "尺寸全览",
+      "主题变体",
+      "加载、禁用与提示",
+      "可交互悬浮按钮（计数触发）",
+      "长按回调"
+    ],
+    "demoText": "基础悬浮按钮 默认圆形 56px 的悬浮按钮 / default 56px circle Extended FAB 带文字标签的扩展悬浮按钮 / extended with label 迷你尺寸 使用 ParkFabSize.mini（等价于 mini: true）展示 40px 小号悬浮按钮 / mini size 自定义颜色 通过 backgroundColor 和 foregroundColor 自定义外观 / backgroundColor & foregroundColor 尺寸全览 展示 xsmall / small / mini / normal 四种尺寸 / all 4 sizes 主题变体 通过 themeVariant 切换 defaultTheme / light / danger 外观 / theme variants 加载、禁用与提示 loading 显示转圈；disabled 禁用；tooltip 提供提示 / loading/disabled/tooltip 可交互悬浮按钮（计数触发） 点击 FAB 触发动作（计数器 +1），演示 ParkFab.onPressed 用法 / Interactive: onPressed increments 长按回调 onLongPress 长按触发动作（需同时提供 onPressed 以启用交互） / onLongPress",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 104,
+    "guideEmpty": false,
+    "guideLen": 1582,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFab"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "backgroundColor",
+      "disabled",
+      "elevation",
+      "foregroundColor",
+      "icon",
+      "label",
+      "loading",
+      "mini",
+      "shape",
+      "size",
+      "themeVariant",
+      "tooltip"
+    ],
+    "registeredEvents": [
+      "onLongPress",
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkFlex",
+    "title": "弹性布局 / Flex",
+    "source": "park_display_specs_extra",
+    "demoCount": 2,
+    "demos": [
+      "水平布局 + gap",
+      "Flex 比例分配"
+    ],
+    "demoText": "水平布局 + gap row 方向，子组件间 16px 间距。 Flex 比例分配 flexValues [1, 2, 1] 按比例分配宽度。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 321,
+    "guideEmpty": false,
+    "guideLen": 320,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFlex"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "align",
+      "children",
+      "direction",
+      "flexValues",
+      "gap",
+      "justify",
+      "runGap",
+      "wrap"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkFloatButton",
+    "title": "悬浮按钮 / Float Button",
+    "source": "park_base_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础悬浮按钮 / Basic",
+      "主要类型 / Primary",
+      "菜单模式 / Menu mode",
+      "角标 / Badge"
+    ],
+    "demoText": "基础悬浮按钮 / Basic 单按钮模式，默认白底圆形 / Single button, default white circle 主要类型 / Primary 品牌色背景 / Brand color background 菜单模式 / Menu mode 传入 items 展开子菜单 / Pass items to expand sub-menu 角标 / Badge 显示数字角标和红点角标 / Number badge and dot badge",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 57,
+    "guideEmpty": false,
+    "guideLen": 535,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFloatButton"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "backgroundColor",
+      "badge",
+      "badgeDot",
+      "bottom",
+      "icon",
+      "iconColor",
+      "items",
+      "label",
+      "position",
+      "shape",
+      "side",
+      "size",
+      "tooltip",
+      "type"
+    ],
+    "registeredEvents": [
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkFooter",
+    "title": "页脚 / Footer",
+    "source": "park_display_specs",
+    "demoCount": 5,
+    "demos": [
+      "基础页脚",
+      "带 Logo",
+      "仅文字",
+      "无分割线",
+      "链接点击"
+    ],
+    "demoText": "基础页脚 品牌名称 + 链接 + 版权信息 / Brand + links + copyright 带 Logo 在文字左侧显示 Logo 图标 / Logo on the left 仅文字 最简配置：仅品牌名称 / Minimal: brand only 无分割线 divider: false 隐藏顶部分割线 / No top divider 链接点击 onTap 报告最后点击的链接 / onTap demo",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 300,
+    "guideEmpty": false,
+    "guideLen": 553,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFooter"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "copyright",
+      "divider",
+      "links",
+      "logo",
+      "text"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkForm",
+    "title": "表单容器（统一入口）",
+    "source": "park_input_specs_p2",
+    "demoCount": 11,
+    "demos": [
+      "基础表单",
+      "带校验的表单",
+      "方法：校验 / 提交 / 重置",
+      "值变更回调 onValuesChange",
+      "水平布局",
+      "重置回调 onReset",
+      "方法：setValue",
+      "方法：removeValue",
+      "双向绑定（ParkBinding）",
+      "Schema 驱动模式（统一入口）",
+      "绑定演示（ParkForm + 全局 model）"
+    ],
+    "demoText": "基础表单 包含姓名和邮箱的简单表单，带提交和重置按钮。 带校验的表单 使用 validator 做必填校验和格式校验。 方法：校验 / 提交 / 重置 通过 GlobalKey<ParkFormState> 调用 validate() / submit() / reset() 方法，并展示结果。 值变更回调 onValuesChange 任意字段值变化时触发 onValuesChange，实时回传全部字段值。 水平布局 layout: ParkFormLayout.horizontal 标签在左、字段在右。 重置回调 onReset 点击重置按钮后触发 onReset 回调，回显提示 / onReset fires on reset 方法：setValue 通过 GlobalKey<ParkFormState> 调用 setValue 以编程方式写入字段值 / setValue via key 方法：removeValue 通过 GlobalKey<ParkFormState> 调用 removeValue 移除字段值 / removeValue via key 双向绑定（ParkBinding） 通过 model / bindingService 实现表单字段的双向绑定，值变化自动同步到 model。 / ParkBindingService bindKey demo: form values sync to model in real time. Schema 驱动模式（统一入口） 使用 ParkForm 的 schema 参数，以配置方式渲染表单字段。效果等同于原 ParkForm，现在统一使用 ParkForm。 / ParkForm schema-driven mode: same as former ParkForm. 绑定演示（ParkForm + 全局 model） 通过 ParkForm + ParkBindingService 实现全局 model 双向绑定，下方实时回显 model JSON。使用 ParkFormItem 包裹表单项，ElevatedButton 触发提交。 / ParkForm + ParkBindingService global model demo.",
+    "missingParams": [
+      "formGroup",
+      "formKey",
+      "labelCol",
+      "wrapperCol"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 271,
+    "guideEmpty": false,
+    "guideLen": 396,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkForm"
+    ],
+    "staticMethods": [
+      "of"
+    ],
+    "registeredProperties": [
+      "asyncValidator",
+      "asyncValidatorRegistry",
+      "bindingService",
+      "children",
+      "colon",
+      "configureEngine",
+      "footer",
+      "initialValues",
+      "labelWidth",
+      "layout",
+      "loading",
+      "model",
+      "onReset",
+      "onSchemaSubmit",
+      "onSubmit",
+      "onValuesChange",
+      "padding",
+      "requiredMark",
+      "resetLabel",
+      "schema",
+      "scrollToFirstError",
+      "showDefaultActions",
+      "showReset",
+      "size",
+      "spacing",
+      "submitLabel",
+      "submitting"
+    ],
+    "registeredEvents": [
+      "onReset",
+      "onSubmit",
+      "onValuesChange"
+    ]
+  },
+  {
+    "name": "ParkFormItem",
+    "title": "表单项",
+    "source": "park_input_specs_extra",
+    "demoCount": 4,
+    "demos": [
+      "基础表单项",
+      "错误态",
+      "横向布局 + 提示",
+      "内联校验规则 (rules)"
+    ],
+    "demoText": "基础表单项 label + 必填星号 + 输入控件，演示最常见的字段外壳。 错误态 errorText 配合 required 展示校验失败提示。 横向布局 + 提示 layout 设为 horizontal，配合 tooltip 与 extra 右侧扩展。 内联校验规则 (rules) rules 配置必填与邮箱格式，ParkFormItem.validateByRules 按规则链返回首个错误。 表单级统一校验需配合 ParkForm.validate / ParkForm 运行时生效（B30）。 / rules enforce required + email format; evaluated via validateByRules.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 89,
+    "guideEmpty": false,
+    "guideLen": 283,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFormItem"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "child",
+      "colon",
+      "contentTopSpacing",
+      "control",
+      "errorText",
+      "extra",
+      "helpText",
+      "label",
+      "labelCol",
+      "labelWidget",
+      "layout",
+      "margin",
+      "name",
+      "required",
+      "rules",
+      "showError",
+      "showRequiredMark",
+      "tooltip",
+      "validator",
+      "wrapperCol"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkFormRow",
+    "title": "表单行",
+    "source": "park_gap_specs",
+    "demoCount": 5,
+    "demos": [
+      "基础表单行",
+      "带后缀单位",
+      "帮助文本",
+      "可点击触发",
+      "无背景模式"
+    ],
+    "demoText": "基础表单行 标签 + 输入框 / Label + input field 带后缀单位 suffixText 显示单位 / Suffix unit text 帮助文本 helperText 显示提示 / Helper text below field 可点击触发 onTap 触发选择器 / onTap picker trigger 无背景模式 showFieldBackground: false / Transparent field area",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 89,
+    "guideEmpty": false,
+    "guideLen": 388,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFormRow"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "child",
+      "crossAxisAlignment",
+      "fieldBorderRadius",
+      "fieldColor",
+      "fieldPadding",
+      "helperStyle",
+      "helperText",
+      "label",
+      "labelGap",
+      "labelStyle",
+      "labelWidth",
+      "readOnly",
+      "required",
+      "showColon",
+      "showFieldBackground",
+      "suffixStyle",
+      "suffixText",
+      "suffixWidth",
+      "verticalMargin"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkFormSection",
+    "title": "表单分区",
+    "source": "park_form_specs",
+    "demoCount": 1,
+    "demos": [
+      "可折叠表单分区"
+    ],
+    "demoText": "可折叠表单分区 点击标题区域可展开/收起子内容，展示 collapsible 与 defaultCollapsed 效果。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 258,
+    "guideEmpty": false,
+    "guideLen": 170,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkFormSection"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "children",
+      "collapsible",
+      "defaultCollapsed",
+      "description",
+      "divider",
+      "onCollapseChanged",
+      "padding",
+      "showHeader",
+      "spacing",
+      "title",
+      "trailing"
+    ],
+    "registeredEvents": [
+      "onCollapseChanged"
+    ]
+  },
+  {
+    "name": "ParkGrid",
+    "title": "宫格 / Grid",
+    "source": "park_display_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "等分宫格",
+      "带边框与分割线",
+      "点击 onTap",
+      "自适应 + flex",
+      "角标与禁用",
+      "居中对齐"
+    ],
+    "demoText": "等分宫格 4 列等分宫格，每项带图标与文字 / 4-column equal grid with icon + label. 带边框与分割线 bordered + divider 的八宫格 / 8-cell grid with border + dividers. 点击 onTap 点击宫格触发 onTap，回显所选索引（StatefulBuilder）/ Tapping fires onTap, echoes selected index. 自适应 + flex auto 模式按每项 flex 分配宽度 / auto mode shares width by flex. 角标与禁用 badge 显示角标，disabled 置灰不可点 / badge shows a mark; disabled grays out. 居中对齐 align: center 让格内图标文字垂直居中 / align center vertically centers cell content.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 145,
+    "guideEmpty": false,
+    "guideLen": 454,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkGrid"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "align",
+      "backgroundColor",
+      "bordered",
+      "columnCount",
+      "columnSpacing",
+      "divider",
+      "itemHeight",
+      "items",
+      "mode",
+      "onTap",
+      "rowSpacing",
+      "spacing"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkGridCol",
+    "title": "栅格列 / Grid Col",
+    "source": "park_display_specs_extra",
+    "demoCount": 1,
+    "demos": [
+      "响应式列"
+    ],
+    "demoText": "响应式列 默认满行，sm 半行，md 三分之一，lg 四分之一。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 177,
+    "guideEmpty": false,
+    "guideLen": 181,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkGridCol"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "child",
+      "offset",
+      "order",
+      "responsive",
+      "span"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkGridRow",
+    "title": "栅格行 / Grid Row",
+    "source": "park_display_specs_extra",
+    "demoCount": 1,
+    "demos": [
+      "基础三列"
+    ],
+    "demoText": "基础三列 三等分栅格布局，gutter 16px。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 179,
+    "guideEmpty": false,
+    "guideLen": 280,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkGridRow"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "align",
+      "children",
+      "gutter",
+      "justify",
+      "vGutter"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkIcon",
+    "title": "图标 / Icon",
+    "source": "park_base_specs",
+    "demoCount": 9,
+    "demos": [
+      "图标尺寸",
+      "自定义颜色",
+      "圆形容器",
+      "圆角方形容器",
+      "旋转与角标",
+      "可点击与提示",
+      "旋转角度与翻转",
+      "可交互图标（旋转开关）",
+      "点击与长按回调"
+    ],
+    "demoText": "图标尺寸 展示 small / medium / large / xlarge 四种预设尺寸 / 4 size presets 自定义颜色 通过 color 参数设置图标颜色 / color 圆形容器 使用 container: ParkIconContainer.circle 添加圆形背景 / circle container 圆角方形容器 使用 container: ParkIconContainer.rounded 添加圆角方形背景 / rounded container 旋转与角标 spin 持续旋转；badge 数字角标与 badgeDot 红点角标 / spin & badge 可点击与提示 onClick 提供点击反馈；tooltip 提供长按提示 / onClick & tooltip 旋转角度与翻转 rotate 按度数静态旋转；mirror 水平翻转 / rotate & mirror 可交互图标（旋转开关） 点击下方按钮切换旋转动画，演示 ParkIcon.spin 用法的交互式 demo / Interactive: toggle spin 点击与长按回调 onClick 点击计数；onLongPress 长按触发动作 / onClick & onLongPress",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 75,
+    "guideEmpty": false,
+    "guideLen": 1607,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkIcon"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "badge",
+      "badgeDot",
+      "color",
+      "container",
+      "containerColor",
+      "containerPadding",
+      "hoverColor",
+      "icon",
+      "mirror",
+      "pixelSize",
+      "rotate",
+      "semanticLabel",
+      "size",
+      "spin",
+      "spinDuration",
+      "tooltip"
+    ],
+    "registeredEvents": [
+      "onClick",
+      "onLongPress"
+    ]
+  },
+  {
+    "name": "ParkImage",
+    "title": "图片 / Image",
+    "source": "park_display_specs",
+    "demoCount": 7,
+    "demos": [
+      "圆角图片",
+      "圆形图片",
+      "直角矩形",
+      "图片说明",
+      "点击预览",
+      "淡入动画",
+      "加载失败处理"
+    ],
+    "demoText": "圆角图片 默认 rounded 形状的网络图片 / Rounded (default) 圆形图片 shape: circle 显示圆形裁剪 / Circle crop 直角矩形 shape: rectangle 直角图片 / Rectangle 图片说明 caption 在底部叠加说明文字 / Caption overlay 点击预览 previewable: true 点击打开全屏查看器 / Tap to preview 淡入动画 fadeInDuration 控制加载完成后的淡入 / Fade-in 加载失败处理 无效 URL 时显示 errorWidget 或默认错误图标 / Error fallback",
+    "missingParams": [
+      "allowedSchemes",
+      "memoryCache",
+      "onError",
+      "onLoad",
+      "retry"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onError",
+      "onLoad"
+    ],
+    "missingMethods": [
+      "clearCache",
+      "evictImage",
+      "preloadImage"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 131,
+    "guideEmpty": false,
+    "guideLen": 676,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkImage"
+    ],
+    "staticMethods": [
+      "clearCache",
+      "evictImage",
+      "preloadImage"
+    ],
+    "registeredProperties": [
+      "borderRadius",
+      "caption",
+      "errorWidget",
+      "fadeInDuration",
+      "fallback",
+      "fit",
+      "height",
+      "lazy",
+      "placeholder",
+      "previewable",
+      "shape",
+      "src",
+      "width"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkImageViewer",
+    "title": "图片查看器 / Image Viewer",
+    "source": "park_display_specs",
+    "demoCount": 5,
+    "demos": [
+      "打开图片查看器",
+      "指定初始索引",
+      "含无效图片",
+      "关闭页码指示器",
+      "禁用下滑关闭"
+    ],
+    "demoText": "打开图片查看器 点击按钮以全屏方式浏览图片列表 / Open viewer 指定初始索引 通过 initialIndex 参数从第二张图片开始浏览 / Start at index 1 含无效图片 图片 URL 无效时查看器内置错误占位 / Broken image fallback 关闭页码指示器 showIndex: false 隐藏 \"1/N\" 指示器 / Hide index 禁用下滑关闭 swipeToDismiss: false 关闭垂直下滑关闭 / Disable swipe-dismiss",
+    "missingParams": [
+      "errorBuilder",
+      "onTap",
+      "showToolbar"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onTap"
+    ],
+    "missingMethods": [
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 110,
+    "guideEmpty": false,
+    "guideLen": 644,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkImageViewer"
+    ],
+    "staticMethods": [
+      "show"
+    ],
+    "registeredProperties": [
+      "doubleTapZoom",
+      "images",
+      "initialIndex",
+      "onLongPress",
+      "showIndex",
+      "swipeToDismiss"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkIndexes",
+    "title": "字母索引条 / Index Bar",
+    "source": "park_nav_specs",
+    "demoCount": 5,
+    "demos": [
+      "基础字母索引",
+      "受控高亮（onIndexSelected / onChange）",
+      "含特殊字符",
+      "关闭浮层指示器",
+      "自定义样式"
+    ],
+    "demoText": "基础字母索引 显示 A-Z 字母条，点击触发回调。 受控高亮（onIndexSelected / onChange） 点击字母条更新外部状态，演示 onIndexSelected 与 onChange 回调。 含特殊字符 索引列表可包含 # 等特殊字符。 关闭浮层指示器 设置 showOverlay: false 关闭选中时的中央大字浮层提示。 自定义样式 通过 activeColor、fontSize、itemHeight 自定义索引条外观（使用品牌色令牌）。",
+    "missingParams": [
+      "onChanged"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onChanged"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 136,
+    "guideEmpty": false,
+    "guideLen": 350,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkIndexes"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "activeColor",
+      "anchorScrollController",
+      "currentIndex",
+      "fontSize",
+      "indexes",
+      "itemHeight",
+      "showOverlay",
+      "sticky"
+    ],
+    "registeredEvents": [
+      "onChange",
+      "onIndexSelected"
+    ]
+  },
+  {
+    "name": "ParkInkWell",
+    "title": "交互容器",
+    "source": "park_base_specs",
+    "demoCount": 3,
+    "demos": [
+      "基础点击",
+      "禁用状态",
+      "三个事件回调演示"
+    ],
+    "demoText": "基础点击 包裹任意 Widget，点击有 scale + opacity 反馈 禁用状态 disabled 为 true 时无交互反馈 三个事件回调演示 分别演示 onTap / onLongPress / onHover 三个回调的实时触发",
+    "missingParams": [
+      "cursor",
+      "curve",
+      "duration"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 117,
+    "guideEmpty": false,
+    "guideLen": 110,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkInkWell"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "borderRadius",
+      "child",
+      "disabled",
+      "onTap",
+      "pressedOpacity",
+      "pressedScale",
+      "showHoverHighlight"
+    ],
+    "registeredEvents": [
+      "onHover",
+      "onLongPress",
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkInput",
+    "title": "输入框",
+    "source": "park_input_specs",
+    "demoCount": 23,
+    "demos": [
+      "基础输入框",
+      "可清除与前置图标",
+      "可交互：清除与搜索图标",
+      "密码输入",
+      "密码框组合：clearable + 前缀图标 + 显隐切换",
+      "字数限制",
+      "禁用与只读",
+      "后置图标与后置组件",
+      "搜索按钮",
+      "状态样式",
+      "字数统计",
+      "前后置附件",
+      "输入框尺寸",
+      "前置文本与前置组件",
+      "必填标识与辅助文字",
+      "自定义搜索按钮配置",
+      "可交互：实时回显输入",
+      "📐 尺寸令牌参考 / Sizing Token Reference",
+      "可交互：完整事件演示",
+      "可交互：实时回显输入",
+      "表单：校验与保存",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础输入框 带标签和占位提示的基础文本输入 可清除与前置图标 使用 clearable 显示清除按钮，prefixIcon 添加前置图标 可交互：清除与搜索图标 通过 StatefulBuilder 演示 clearable + prefixIcon 真实交互：输入文本后显示清除按钮，点击清除按钮清空内容。 / StatefulBuilder demonstrates clearable + prefixIcon: clear button appears on input; tapping clears the field. 密码输入 设置 obscureText: true 启用密码模式，自动附带显隐切换 密码框组合：clearable + 前缀图标 + 显隐切换 演示 clearable、prefixIcon（锁图标）、obscureText 与右侧眼睛图标的组合使用，通过 StatefulBuilder 实现密码显隐切换。 / Combines clearable, prefixIcon (lock), obscureText and visibility toggle via StatefulBuilder. 字数限制 使用 maxLength 限制输入字符数并显示字数统计 禁用与只读 通过 enabled: false 或 readOnly: true 限制交互 后置图标与后置组件 suffixIcon 显示后置图标，suffix 可放置任意组件（如单位文字） 搜索按钮 searchButton: true 在右侧渲染搜索按钮，点击或回车触发 onSearch 状态样式 通过 status 手动指定 error / warning / success 边框样式 字数统计 maxLength 配合 showCount 实时显示「已输入 / 上限」 前后置附件 addonBefore / addonAfter 在边框之外放置标签或按钮 输入框尺寸 通过 size 切换 small / medium / large 三种高度 前置文本与前置组件 prefixText 显示灰色前置文字；prefix 放置前置 Widget 必填标识与辅助文字 required 显示红色星号；helperText 显示辅助说明 自定义搜索按钮配置 通过 ParkInputSearchButtonConfig 自定义搜索按钮文案与变体 可交互：实时回显输入 通过 StatefulBuilder + onChanged 实时回显输入内容，演示 ParkInput 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the typed text live, demonstrating ParkInput.onChanged. 📐 尺寸令牌参考 / Sizing Token Reference ParkInput 的三档高度由 ParkSizing 令牌系统统一驱动 / Input sizes driven by ParkSizing tokens. 可交互：完整事件演示 通过 StatefulBuilder 实时回显 ParkInput 的 onFocus / onBlur / onSubmitted / onEditingComplete / onTap / onTapOutside 六个回调。 / StatefulBuilder echoes all six callbacks: onFocus, onBlur, onSubmitted, onEditingComplete, onTap, onTapOutside. 可交互：实时回显输入 通过 StatefulBuilder 实时回显 ParkInput 的 onChanged 回调。 / StatefulBuilder echoes onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkInput 的 validator / onSaved 回调，点击提交触发校验并保存输入值。 / Form + GlobalKey demonstrates ParkInput.validator and onSaved. 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，输入内容实时同步到 model。 / ParkBindingService bindKey demo: input syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示表单自动渲染与提交。 / ParkForm schema usage demonstration.",
+    "missingParams": [
+      "actionButton"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 133,
+    "guideEmpty": false,
+    "guideLen": 3221,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkInput"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "addonAfter",
+      "addonBefore",
+      "autofocus",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "borderless",
+      "clearable",
+      "contentPadding",
+      "controller",
+      "enabled",
+      "focusNode",
+      "helperText",
+      "hintText",
+      "initialValue",
+      "inputFormatters",
+      "keyboardType",
+      "label",
+      "labelWidget",
+      "maxLength",
+      "maxLines",
+      "obscureText",
+      "prefix",
+      "prefixIcon",
+      "prefixText",
+      "readOnly",
+      "readonly",
+      "required",
+      "searchButton",
+      "showCount",
+      "size",
+      "status",
+      "style",
+      "suffix",
+      "suffixIcon",
+      "suffixText",
+      "textAlign",
+      "textInputAction"
+    ],
+    "registeredEvents": [
+      "onBlur",
+      "onChanged",
+      "onEditingComplete",
+      "onFocus",
+      "onSaved",
+      "onSearch",
+      "onSubmitted",
+      "onTap",
+      "onTapOutside",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkInputGroup",
+    "title": "组合输入",
+    "source": "park_input_specs_group",
+    "demoCount": 11,
+    "demos": [
+      "基础组合",
+      "输入框 + 选择器",
+      "输入框 + 选择器 + 按钮",
+      "尺寸",
+      "非紧凑模式",
+      "禁用状态",
+      "组合输入 + onChanged",
+      "可交互：InputGroup 组合",
+      "绑定模式：绑定引擎 + 手动 onChanged",
+      "交互式组合输入 + 双向绑定",
+      "动态表单（ParkForm）"
+    ],
+    "demoText": "基础组合 两个输入框组合成一体，中间以 1px 分隔线隔开。 输入框 + 选择器 输入框与下拉选择器组合，二者均设 bordered: false 去中间边框。 输入框 + 选择器 + 按钮 标准搜索栏：输入框 + 选择器 + 按钮，按钮通过 height 与组高严格对齐。 尺寸 通过 size 切换 small(32) / medium(48) / large(56) 组高。 非紧凑模式 compact: false 时子项各自保留边框，按间距排列。 禁用状态 disabled: true 整体禁用，所有子项置灰。 组合输入 + onChanged ParkInputGroup 自身无回调，事件由子组件负责。下方输入框的 onChanged 通过 StatefulBuilder 实时回显到外部文本，演示「组合输入 + 子组件 onChanged」用法。 / ParkInputGroup has no callback of its own; the inner ParkInput.onChanged is wired via StatefulBuilder to echo the typed text live. 可交互：InputGroup 组合 通过 StatefulBuilder 管理三个子项的控制器：前缀（区号）+ 主输入（手机号）+ 后缀按钮（发送验证码），演示 ParkInputGroup 在真实场景下的完整实时交互。下方回显输入内容和按钮点击状态。 / StatefulBuilder manages three controllers: prefix (area code) + main (phone) + suffix button (send code), demonstrating real-world ParkInputGroup interaction. 绑定模式：绑定引擎 + 手动 onChanged ParkInputGroup 是纯布局容器，无 bindKey 支持。本 demo 展示手动绑定模式：使用 ParkBindingService + ParkBindingFormScope，通过子输入框的 onChanged 手动将值写入绑定引擎，下方 model 实时回显当前模型数据。 / ParkInputGroup is a pure layout container without bindKey. This demo shows manual binding: ParkBindingService + ParkBindingFormScope, manually pushing values via onChanged, with live model echo below. 交互式组合输入 + 双向绑定 在 ParkInputGroup 中使用绑定的 ParkInput，输入内容实时同步到模型。/ Using ParkInput with bindKey inside ParkInputGroup for live two-way binding. 动态表单（ParkForm） ParkInputGroup 组合内的字段可通过 ParkForm schema 等效表达。 / ParkForm demo: equivalent schema for grouped fields.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 256,
+    "guideEmpty": false,
+    "guideLen": 757,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkInputGroup"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "children",
+      "compact",
+      "disabled",
+      "divider",
+      "mainAxisAlignment",
+      "size",
+      "spacing"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkInputNumber",
+    "title": "数字输入框",
+    "source": "park_new_component_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础数字输入",
+      "onChanged 事件",
+      "小数精度",
+      "带标签",
+      "禁用",
+      "只读",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm）"
+    ],
+    "demoText": "基础数字输入 0-100 步进 5 onChanged 事件 步进/输入回传值 小数精度 precision: 2 带标签 label 禁用 disabled: true 只读 readOnly: true 双向绑定（ParkBinding） bindKey + bindingService 双向绑定，值变化实时同步到 model。 动态表单（ParkForm） 在 ParkForm 中以 schema 配置使用 number 字段类型。 / ParkForm fieldType=number demo.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 94,
+    "guideEmpty": false,
+    "guideLen": 111,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkInputNumber"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "disabled",
+      "label",
+      "max",
+      "min",
+      "precision",
+      "readOnly",
+      "step",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkLayout",
+    "title": "页面布局",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "标准布局",
+      "侧边栏在右",
+      "隐藏分割线",
+      "仅顶栏+内容"
+    ],
+    "demoText": "标准布局 顶栏+侧边栏+内容+页脚 侧边栏在右 sidebarLeft: false 隐藏分割线 showSidebarDivider: false 仅顶栏+内容 不含侧边栏与页脚",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 120,
+    "guideEmpty": false,
+    "guideLen": 81,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkLayout"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "body",
+      "footer",
+      "header",
+      "showSidebarDivider",
+      "sidebar",
+      "sidebarLeft",
+      "sidebarWidth"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkLink",
+    "title": "链接 / Link",
+    "source": "park_base_specs",
+    "demoCount": 9,
+    "demos": [
+      "基础链接",
+      "禁用状态",
+      "带图标的链接",
+      "自定义颜色与字号",
+      "语义样式",
+      "链接尺寸",
+      "加载与已访问",
+      "前置后置组合",
+      "可交互链接（点击反馈）"
+    ],
+    "demoText": "基础链接 默认链接和带下划线的链接 / default & underline 禁用状态 设置 disabled: true 禁用链接交互 / disabled 带图标的链接 使用 icon 和 trailingIcon 在文字前后添加图标 / leading & trailing icons 自定义颜色与字号 通过 color 和 fontSize 自定义链接外观 / color & fontSize 语义样式 通过 linkStyle 表达 danger / warning / success 语义 / semantic styles 链接尺寸 通过 linkSize 切换 small / medium / large / sizes 加载与已访问 loading 显示转圈；visited 表示已访问状态（默认紫色） / loading & visited 前置后置组合 icon + trailingIcon 组合，hoverColor 自定义悬停色 / icon combo & hoverColor 可交互链接（点击反馈） 点击链接触发动作并更新状态文本，演示 ParkLink.onTap 用法 / Interactive: onTap updates state",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 92,
+    "guideEmpty": false,
+    "guideLen": 1663,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkLink"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "color",
+      "disabled",
+      "download",
+      "fontSize",
+      "hoverColor",
+      "href",
+      "icon",
+      "linkSize",
+      "linkStyle",
+      "loading",
+      "rel",
+      "style",
+      "target",
+      "text",
+      "trailingIcon",
+      "variant",
+      "visited",
+      "visitedColor"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkList",
+    "title": "列表 / List",
+    "source": "park_display_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "基础列表",
+      "带分割线",
+      "加载更多 onLoadMore",
+      "加载骨架屏",
+      "空状态",
+      "头部与底部"
+    ],
+    "demoText": "基础列表 字符串列表配合 ListTile 渲染 / String list rendered with ListTile. 带分割线 divided: true 显示列表项分割线 / divided shows item dividers. 加载更多 onLoadMore 滚动或到底部触发 onLoadMore 追加数据（StatefulBuilder，最多 6 条）/ onLoadMore appends data (capped at 6). 加载骨架屏 loading: true 显示骨架占位项 / loading shows skeleton placeholders. 空状态 items 为空时显示 emptyWidget / Empty items show emptyWidget. 头部与底部 header / footer 渲染列表头尾 / header / footer render at list ends.",
+    "missingParams": [
+      "controller"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 113,
+    "guideEmpty": false,
+    "guideLen": 455,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkList"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "divided",
+      "emptyWidget",
+      "footer",
+      "header",
+      "itemBuilder",
+      "itemExtent",
+      "itemLayout",
+      "items",
+      "loadMore",
+      "loading",
+      "loadingItemCount",
+      "loadingMore",
+      "noMore",
+      "onLoadMore",
+      "padding",
+      "reverse",
+      "scrollDirection",
+      "split"
+    ],
+    "registeredEvents": [
+      "onLoadMore"
+    ]
+  },
+  {
+    "name": "ParkLoading",
+    "title": "加载",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "环形加载",
+      "点阵加载",
+      "带文字",
+      "全屏加载",
+      "尺寸预设",
+      "带遮罩",
+      "局部加载"
+    ],
+    "demoText": "环形加载 默认的 circular 加载指示器 点阵加载 dots 类型的加载动画 带文字 加载指示器附带提示文字 全屏加载 通过静态方法展示全屏 loading 遮罩 尺寸预设 通过 loadingSize 切换 small / large 尺寸 带遮罩 mask: true 时显示半透明遮罩背景 局部加载 包裹 child 并配合 loading 显示局部加载遮罩",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 158,
+    "guideEmpty": false,
+    "guideLen": 284,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkLoading"
+    ],
+    "staticMethods": [
+      "dismiss",
+      "hide",
+      "show"
+    ],
+    "registeredProperties": [
+      "child",
+      "color",
+      "delay",
+      "indicator",
+      "loading",
+      "loadingSize",
+      "mask",
+      "size",
+      "text",
+      "type"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkMasonry",
+    "title": "瀑布流 / Masonry",
+    "source": "park_display_specs_extra",
+    "demoCount": 2,
+    "demos": [
+      "基础瀑布流",
+      "响应式列数 + 无限滚动"
+    ],
+    "demoText": "基础瀑布流 3 列固定列数，每项不同高度展示瀑布流效果 / 3 columns with varying item heights. 响应式列数 + 无限滚动 minColumnWidth=180 自动计算列数，onLoadMore 懒加载模拟 / Responsive columns via minColumnWidth=180, onLoadMore lazy load demo.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 261,
+    "guideEmpty": false,
+    "guideLen": 682,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkMasonry"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "columnSpacing",
+      "columns",
+      "emptyBuilder",
+      "itemBuilder",
+      "itemCount",
+      "items",
+      "loadingMore",
+      "minColumnWidth",
+      "noMore",
+      "onLoadMore",
+      "spacing"
+    ],
+    "registeredEvents": [
+      "onLoadMore"
+    ]
+  },
+  {
+    "name": "ParkMentions",
+    "title": "提及输入",
+    "source": "park_input_specs_extra",
+    "demoCount": 3,
+    "demos": [
+      "基础 @ 提及",
+      "# 标签",
+      "受控 + onSelect 回显"
+    ],
+    "demoText": "基础 @ 提及 输入 @ 触发用户名建议，选中后插入 @value。下方实时回显 onChanged 文本。 # 标签 配置 triggerChars 为 ['#']，输入 # 触发标签建议；支持异步数据源风格的自定义过滤。 受控 + onSelect 回显 受控模式配合 onSelect，选中条目后在下方回显其 label 与触发符。",
+    "missingParams": [
+      "bindKey",
+      "bindingService"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 169,
+    "guideEmpty": false,
+    "guideLen": 418,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkMentions"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "enabled",
+      "filterOption",
+      "items",
+      "maxLines",
+      "mentionBuilder",
+      "minLines",
+      "onChanged",
+      "onSearch",
+      "onSelect",
+      "placeholder",
+      "popupMaxHeight",
+      "triggerChars",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onSearch",
+      "onSelect"
+    ]
+  },
+  {
+    "name": "ParkMenu",
+    "title": "导航菜单",
+    "source": "park_new_component_specs",
+    "demoCount": 5,
+    "demos": [
+      "多级菜单",
+      "默认选中",
+      "默认展开",
+      "浅色模式",
+      "onSelect 事件"
+    ],
+    "demoText": "多级菜单 两级导航菜单 默认选中 selectedKey: dashboard 默认展开 defaultExpandedKeys 浅色模式 light: true onSelect 事件 点击回传选中 key",
+    "missingParams": [
+      "collapsedWidth",
+      "inlineCollapsed",
+      "mode",
+      "themeMode"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 258,
+    "guideEmpty": false,
+    "guideLen": 93,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkMenu"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "defaultExpandedKeys",
+      "items",
+      "light",
+      "selectedKey"
+    ],
+    "registeredEvents": [
+      "onSelect"
+    ]
+  },
+  {
+    "name": "ParkMessage",
+    "title": "全局消息",
+    "source": "park_feedback_specs",
+    "demoCount": 8,
+    "demos": [
+      "Info 消息",
+      "Success 消息",
+      "Warning 消息",
+      "Error 消息（可关闭）",
+      "底部弹出",
+      "加载消息",
+      "可点击消息",
+      "onTap / onClose 事件"
+    ],
+    "demoText": "Info 消息 信息类型的全局消息 Success 消息 成功类型的全局消息 Warning 消息 警告类型的全局消息 Error 消息（可关闭） 错误类型的消息，带手动关闭按钮 底部弹出 从底部滑入的消息 加载消息 带加载指示器的全局消息 可点击消息 点击消息触发 onClick 回调 onTap / onClose 事件 点击消息触发 onTap，手动关闭触发 onClose / onTap on tap, onClose on dismiss",
+    "missingParams": [
+      "pauseOnHover"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "config",
+      "resetConfig"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 335,
+    "guideEmpty": false,
+    "guideLen": 328,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkMessage"
+    ],
+    "staticMethods": [
+      "_show",
+      "config",
+      "error",
+      "info",
+      "loading",
+      "resetConfig",
+      "success",
+      "warning"
+    ],
+    "registeredProperties": [
+      "accentColor",
+      "backgroundColor",
+      "closable",
+      "content",
+      "duration",
+      "icon",
+      "position",
+      "title"
+    ],
+    "registeredEvents": [
+      "onClick",
+      "onClose",
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkNavBar",
+    "title": "顶部导航栏 / App Bar",
+    "source": "park_nav_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础标题栏",
+      "带返回按钮和操作",
+      "透明模式",
+      "副标题与返回确认"
+    ],
+    "demoText": "基础标题栏 仅显示居中标题。 带返回按钮和操作 左侧返回箭头 + 右侧搜索按钮，点击返回触发 onBack。 透明模式 transparent: true 时导航栏无底色无边框，适合覆盖在内容之上。 副标题与返回确认 subTitle 显示副标题；onBackConfirm 异步确认返回。",
+    "missingParams": [
+      "bottomHeight"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 175,
+    "guideEmpty": false,
+    "guideLen": 356,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkNavBar"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "backgroundColor",
+      "bordered",
+      "bottom",
+      "centerTitle",
+      "elevation",
+      "height",
+      "leading",
+      "leftArrow",
+      "rightActions",
+      "safeAreaTop",
+      "subTitle",
+      "title",
+      "titleColor",
+      "titleWidget",
+      "transparent"
+    ],
+    "registeredEvents": [
+      "onBack",
+      "onBackConfirm"
+    ]
+  },
+  {
+    "name": "ParkNoticeBar",
+    "title": "通知栏",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "信息通知",
+      "警告通知",
+      "可关闭",
+      "跑马灯",
+      "错误通知",
+      "链接模式",
+      "操作模式"
+    ],
+    "demoText": "信息通知 默认的 info 通知栏 警告通知 warning 变体的通知栏 可关闭 带关闭按钮的通知栏 跑马灯 长文本滚动展示 错误通知 error 变体的通知栏 链接模式 mode: link 显示箭头并支持点击跳转 操作模式 通过 extra 在右侧放置自定义操作按钮",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 251,
+    "guideEmpty": false,
+    "guideLen": 299,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkNoticeBar"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "closable",
+      "extra",
+      "icon",
+      "mode",
+      "prefixWidget",
+      "scrollable",
+      "speed",
+      "text",
+      "variant",
+      "wrap"
+    ],
+    "registeredEvents": [
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkNotification",
+    "title": "通知提醒框",
+    "source": "park_new_component_specs",
+    "demoCount": 6,
+    "demos": [
+      "成功通知",
+      "错误通知",
+      "警告通知",
+      "信息通知",
+      "关闭回调",
+      "手动隐藏"
+    ],
+    "demoText": "成功通知 右上角弹出 success / Success 错误通知 error 类型 / Error 警告通知 warning 类型 / Warning 信息通知 info 类型 / Info 关闭回调 onClose 触发 / onClose 手动隐藏 hide() 关闭 / hide()",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "hide",
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 111,
+    "guideEmpty": false,
+    "guideLen": 89,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkNotification"
+    ],
+    "staticMethods": [
+      "hide",
+      "show"
+    ],
+    "registeredProperties": [
+      "closable",
+      "description",
+      "duration",
+      "icon",
+      "onClose",
+      "title",
+      "type"
+    ],
+    "registeredEvents": [
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkOverlay",
+    "title": "遮罩层",
+    "source": "park_feedback_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "声明式遮罩",
+      "命令式弹出",
+      "声明式显隐 + 生命周期",
+      "命令式显隐控制",
+      "背景模糊",
+      "自动关闭"
+    ],
+    "demoText": "声明式遮罩 ParkOverlay 为声明式全屏遮罩，由 visible 控制显隐（此处为占位示意，运行时设 visible: true 即弹出）。 命令式弹出 使用 ParkOverlay.show 在命令式场景中弹出遮罩。 声明式显隐 + 生命周期 用 StatefulBuilder 维护 visible 状态，ParkOverlay(visible:) 声明式控制显隐；点击遮罩触发 onTap 关闭，afterClose 在关闭动画结束后回调。 命令式显隐控制 调用 ParkOverlay.show 获取句柄 ParkOverlayHandle，再次点击按钮调用 handle.close() 关闭遮罩，演示 show / hide 完整生命周期。 背景模糊 blur 参数大于 0 时启用毛玻璃背景遮罩，适合突出前景内容。 自动关闭 show 的 autoClose 支持设置定时自动关闭遮罩。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 134,
+    "guideEmpty": false,
+    "guideLen": 196,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkOverlay"
+    ],
+    "staticMethods": [
+      "show"
+    ],
+    "registeredProperties": [
+      "barrierColor",
+      "blocking",
+      "blur",
+      "child",
+      "color",
+      "custom",
+      "duration",
+      "lockScroll",
+      "onTap",
+      "transitionName",
+      "visible"
+    ],
+    "registeredEvents": [
+      "afterClose",
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkPagination",
+    "title": "分页器 / Pagination",
+    "source": "park_nav_specs_extra",
+    "demoCount": 5,
+    "demos": [
+      "基础分页",
+      "受控切换（onChange）",
+      "带每页条数与跳转",
+      "显示总条数",
+      "简洁模式"
+    ],
+    "demoText": "基础分页 共 100 条，每页 10 条的分页器。 受控切换（onChange） 通过 current + onChange 受控管理页码，下方文本同步当前页。 带每页条数与跳转 开启 showSizeChanger 与 showQuickJumper。 显示总条数 showTotal: true 在左侧展示\"共 X 条\"。 简洁模式 simple: true 仅保留上 / 下翻页与 当前/总页。",
+    "missingParams": [
+      "onChanged",
+      "onShowSizeChange"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onChanged",
+      "onShowSizeChange"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 82,
+    "guideEmpty": false,
+    "guideLen": 271,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkPagination"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "current",
+      "defaultPageSize",
+      "disabled",
+      "pageSize",
+      "pageSizeOptions",
+      "responsive",
+      "showQuickJumper",
+      "showSizeChanger",
+      "showTotal",
+      "simple",
+      "size",
+      "total"
+    ],
+    "registeredEvents": [
+      "onChange"
+    ]
+  },
+  {
+    "name": "ParkParagraph",
+    "title": "段落 / Paragraph",
+    "source": "park_base_specs",
+    "demoCount": 3,
+    "demos": [
+      "基础段落 / Basic",
+      "省略展开 / Expandable",
+      "可复制 / Copyable"
+    ],
+    "demoText": "基础段落 / Basic 普通段落文本 / Plain paragraph text 省略展开 / Expandable maxLines 省略 + 展开/收起 / maxLines truncation with expand/collapse 可复制 / Copyable 显示复制图标 / Shows copy icon",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 32,
+    "guideEmpty": false,
+    "guideLen": 431,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkParagraph"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "collapseText",
+      "copyable",
+      "editable",
+      "expandText",
+      "expandable",
+      "maxLines",
+      "text",
+      "textAlign"
+    ],
+    "registeredEvents": [
+      "onEdit"
+    ]
+  },
+  {
+    "name": "ParkPicker",
+    "title": "滚轮选择器",
+    "source": "park_input_specs_p2",
+    "demoCount": 7,
+    "demos": [
+      "基础选择器",
+      "带默认值",
+      "通过 show 静态方法弹出",
+      "多列选择器",
+      "内联模式与 ParkCell 搭配",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础选择器 弹出底部滚轮选择器，选择城市。 带默认值 预设选中值，滚轮自动定位到对应选项。 通过 show 静态方法弹出 点击按钮通过 ParkPicker.show() 弹出选择面板。 多列选择器 multiColumn 模式使用 columns 配置多列并排滚轮，onMultiConfirm 回传各列值。 内联模式与 ParkCell 搭配 ParkCell 作为触发器展示当前选择值，点击展开内联 ParkPicker，选中后不 pop 宿主页面。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中值实时同步到 model。 / ParkBindingService bindKey demo: picker selection syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 369,
+    "guideEmpty": false,
+    "guideLen": 2175,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkPicker"
+    ],
+    "staticMethods": [
+      "show",
+      "showMultiColumn"
+    ],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "cancelText",
+      "columns",
+      "confirmText",
+      "itemBuilder",
+      "items",
+      "multiColumn",
+      "onConfirm",
+      "onMultiConfirm",
+      "searchHintText",
+      "searchable",
+      "title",
+      "value",
+      "values"
+    ],
+    "registeredEvents": [
+      "onConfirm",
+      "onMultiConfirm"
+    ]
+  },
+  {
+    "name": "ParkPopconfirm",
+    "title": "气泡确认框",
+    "source": "park_new_component_specs",
+    "demoCount": 5,
+    "demos": [
+      "基础确认",
+      "确认/取消回调",
+      "危险操作",
+      "加载状态",
+      "自定义按钮文字"
+    ],
+    "demoText": "基础确认 删除确认 / Basic confirm 确认/取消回调 onConfirm + onCancel 回显 / Callbacks 危险操作 danger 红色确认 / Danger 加载状态 confirmLoading / Loading 自定义按钮文字 confirmText / cancelText / Custom labels",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 108,
+    "guideEmpty": false,
+    "guideLen": 74,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkPopconfirm"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "autoCloseAfterConfirm",
+      "cancelText",
+      "child",
+      "confirmLoading",
+      "confirmText",
+      "danger",
+      "description",
+      "descriptionWidget",
+      "icon",
+      "onCancel",
+      "onConfirm",
+      "title",
+      "titleWidget"
+    ],
+    "registeredEvents": [
+      "onCancel",
+      "onConfirm"
+    ]
+  },
+  {
+    "name": "ParkPopover",
+    "title": "气泡弹框",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "下方弹出",
+      "上方弹出",
+      "自定义内容",
+      "左侧弹出",
+      "右侧弹出",
+      "悬停触发",
+      "onVisibleChange / afterClose 事件"
+    ],
+    "demoText": "下方弹出 气泡从下方弹出（默认） 上方弹出 气泡从上方弹出 自定义内容 气泡框中放置自定义 Widget 左侧弹出 气泡从触发元素左侧弹出 右侧弹出 气泡从触发元素右侧弹出 悬停触发 triggerMode: hover 鼠标悬停时弹出气泡 onVisibleChange / afterClose 事件 气泡显隐切换触发 onVisibleChange，关闭后触发 afterClose / visibility & afterClose",
+    "missingParams": [
+      "zIndex"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 217,
+    "guideEmpty": false,
+    "guideLen": 308,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkPopover"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "arrow",
+      "arrowPointAtCenter",
+      "autoFlip",
+      "closeOnTapOutside",
+      "content",
+      "direction",
+      "maxWidth",
+      "offset",
+      "overlayStyle",
+      "showArrow",
+      "trigger",
+      "triggerMode"
+    ],
+    "registeredEvents": [
+      "afterClose",
+      "onVisibleChange"
+    ]
+  },
+  {
+    "name": "ParkPopup",
+    "title": "弹出面板",
+    "source": "park_feedback_specs",
+    "demoCount": 7,
+    "demos": [
+      "中心弹出",
+      "底部弹出",
+      "无遮罩",
+      "顶部弹出",
+      "缩放动画",
+      "带箭头",
+      "afterClose / beforeClose 关闭守卫"
+    ],
+    "demoText": "中心弹出 从中心弹出的面板 底部弹出 从底部滑入的面板 无遮罩 不显示遮罩层的弹出面板 顶部弹出 从顶部滑入的面板 缩放动画 使用 scale 动画类型弹出面板 带箭头 arrow: true 显示指向触发元素的箭头 afterClose / beforeClose 关闭守卫 演示 beforeClose 守卫（返回 false 拦截关闭）与 afterClose（关闭后触发）/ beforeClose guard & afterClose",
+    "missingParams": [
+      "zIndex"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "showModal"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 778,
+    "guideEmpty": false,
+    "guideLen": 305,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkPopup"
+    ],
+    "staticMethods": [
+      "showModal"
+    ],
+    "registeredProperties": [
+      "animation",
+      "arrow",
+      "barrier",
+      "borderRadius",
+      "child",
+      "destroyOnClose",
+      "dismissOnBarrierTap",
+      "mask",
+      "maskClosable",
+      "position",
+      "safeArea",
+      "visible"
+    ],
+    "registeredEvents": [
+      "afterClose",
+      "beforeClose",
+      "onDismiss"
+    ]
+  },
+  {
+    "name": "ParkProgress",
+    "title": "进度条 / Progress",
+    "source": "park_display_specs",
+    "demoCount": 8,
+    "demos": [
+      "线性进度条",
+      "带百分比标签",
+      "环形进度条",
+      "步骤进度",
+      "自定义颜色",
+      "状态色",
+      "渐变填充与活动动画",
+      "自定义格式"
+    ],
+    "demoText": "线性进度条 基础线性进度条 / Basic line 带百分比标签 label: true 显示百分比文字 / Percentage label 环形进度条 type: circle 显示环形进度 / Circle ring 步骤进度 type: steps 显示分段步骤进度 / Steps style 自定义颜色 color 与 trackColor 自定义配色 / Custom colors 状态色 status 控制成功/错误配色与末端图标 / Status colors 渐变填充与活动动画 gradient 渐变 + active 条纹动画 / Gradient + active shimmer 自定义格式 format 自定义标签文本 / Custom label formatter",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 75,
+    "guideEmpty": false,
+    "guideLen": 630,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkProgress"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "active",
+      "color",
+      "formatLabel",
+      "gradient",
+      "label",
+      "size",
+      "status",
+      "stepWidth",
+      "steps",
+      "strokeLinecap",
+      "strokeWidth",
+      "trackColor",
+      "trailColor",
+      "type",
+      "value"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkQRCode",
+    "title": "二维码",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础二维码",
+      "自定义颜色",
+      "嵌入 Logo",
+      "高纠错等级"
+    ],
+    "demoText": "基础二维码 生成 URL 二维码 / Basic QR 自定义颜色 前景色 + 背景色 / Custom colors 嵌入 Logo 中心 Logo 嵌入 / Center logo 高纠错等级 H 级纠错 / High EC level",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 50,
+    "guideEmpty": false,
+    "guideLen": 47,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkQRCode"
+    ],
+    "staticMethods": [
+      "_toQrErrorLevel"
+    ],
+    "registeredProperties": [
+      "backgroundColor",
+      "data",
+      "errorCorrectionLevel",
+      "foregroundColor",
+      "logo",
+      "logoSize",
+      "size"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkRadio",
+    "title": "单选框",
+    "source": "park_input_specs",
+    "demoCount": 10,
+    "demos": [
+      "基础单选框",
+      "水平布局",
+      "自动换行布局",
+      "单项禁用",
+      "单选框尺寸",
+      "按钮式风格",
+      "可交互：实时回显选中值",
+      "表单：校验与保存",
+      "动态表单（ParkForm Schema 模式）",
+      "绑定演示"
+    ],
+    "demoText": "基础单选框 垂直排列的单选框组 水平布局 使用 layout: ParkRadioLayout.horizontal 水平排列 自动换行布局 使用 layout: ParkRadioLayout.wrap 自动换行 单项禁用 通过 ParkRadioOption.disabled 禁用特定选项 单选框尺寸 展示 small / medium / large 三种尺寸 按钮式风格 radioStyle: ParkRadioStyle.button 切换为分段器风格 可交互：实时回显选中值 通过 StatefulBuilder + onChanged 实时回显选中值，演示 ParkRadio 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the selected value live, demonstrating ParkRadio.onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkRadio 的 validator / onSaved 回调，点击提交校验是否选择并保存选中的字符串值。 / Form + GlobalKey demonstrates ParkRadio.validator and onSaved. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示单选框表单自动渲染与提交。 / ParkForm schema usage demonstration for radio. 绑定演示 通过 bindKey + bindingService 实现双向绑定，选择选项实时同步到 model。 / ParkBindingService bindKey demo: radio selection syncs to model in real time.",
+    "missingParams": [
+      "autovalidateMode"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 177,
+    "guideEmpty": false,
+    "guideLen": 1838,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkRadio"
+    ],
+    "staticMethods": [
+      "_buildButtonStyle",
+      "_buildOptions"
+    ],
+    "registeredProperties": [
+      "autoFocus",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "buttonJoin",
+      "card",
+      "disabled",
+      "layout",
+      "onBlur",
+      "onFocus",
+      "optionBuilder",
+      "options",
+      "radioSize",
+      "radioStyle",
+      "readOnly",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkRate",
+    "title": "评分",
+    "source": "park_input_specs_p2",
+    "demoCount": 8,
+    "demos": [
+      "基础评分",
+      "半星评分",
+      "只读模式",
+      "自定义星星数量和尺寸",
+      "自定义图标",
+      "显示评分文字与提示",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础评分 默认 5 颗星，整星评分。 半星评分 开启 allowHalf，支持 0.5 步进。 只读模式 设置 readOnly 为 true，仅展示不可交互。 自定义星星数量和尺寸 设置 count 和 size 自定义外观。 自定义图标 使用 icon 参数替换默认星形为心形图标。 显示评分文字与提示 showText 显示 \"value / count\" 文字，tooltips 设置每项提示。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，下方实时回显绑定模型值。 / bindKey + bindingService for two-way binding, model values shown below. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 93,
+    "guideEmpty": false,
+    "guideLen": 329,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkRate"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "activeColor",
+      "allowClear",
+      "allowHalf",
+      "bindKey",
+      "bindingService",
+      "character",
+      "characters",
+      "count",
+      "disabled",
+      "gap",
+      "icon",
+      "inactiveColor",
+      "onChanged",
+      "readOnly",
+      "showText",
+      "size",
+      "textBuilder",
+      "tooltips",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkRefresh",
+    "title": "下拉刷新",
+    "source": "park_feedback_specs",
+    "demoCount": 5,
+    "demos": [
+      "基础下拉刷新",
+      "自定义阈值",
+      "带列表头部",
+      "加载更多",
+      "上拉加载更多"
+    ],
+    "demoText": "基础下拉刷新 包裹 ListView 的下拉刷新 自定义阈值 设置不同的刷新触发距离 带列表头部 在 ParkRefresh 包裹的 ListView 中嵌入自定义头部区域，展示刷新与复杂列表布局的集成。 加载更多 在刷新列表底部集成\"加载更多\"按钮，实现刷新与分页加载的组合。 上拉加载更多 开启 pullUpLoadMore 后，上拉到底部自动触发 onLoadMore 加载更多数据。",
+    "missingParams": [
+      "footerBuilder"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 255,
+    "guideEmpty": false,
+    "guideLen": 299,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkRefresh"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "child",
+      "enableHapticFeedback",
+      "headerBuilder",
+      "headerHeight",
+      "noMore",
+      "onLoadMore",
+      "onRefresh",
+      "pullUpLoadMore",
+      "refreshThreshold"
+    ],
+    "registeredEvents": [
+      "onLoadMore",
+      "onRefresh"
+    ]
+  },
+  {
+    "name": "ParkResult",
+    "title": "结果页 / Result",
+    "source": "park_display_specs",
+    "demoCount": 7,
+    "demos": [
+      "成功结果",
+      "错误结果",
+      "带操作按钮",
+      "警告和信息",
+      "403 禁止访问",
+      "404 未找到",
+      "500 服务器错误"
+    ],
+    "demoText": "成功结果 操作成功的反馈页面 / Success 错误结果 操作失败的反馈页面 / Error 带操作按钮 结果页可包含操作按钮 / With actions 警告和信息 warning 和 info 状态 / Warning & info 403 禁止访问 forbidden 工厂构造（warning + 锁图标）/ forbidden() 404 未找到 notFound 工厂构造（info + 搜索图标）/ notFound() 500 服务器错误 serverError 工厂构造（error + 云图标）/ serverError()",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 175,
+    "guideEmpty": false,
+    "guideLen": 610,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkResult"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "actions",
+      "description",
+      "descriptionWidget",
+      "extra",
+      "icon",
+      "status",
+      "title"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkSearch",
+    "title": "搜索框",
+    "source": "park_input_specs",
+    "demoCount": 12,
+    "demos": [
+      "基础搜索框",
+      "带取消按钮",
+      "加载与禁用",
+      "搜索框尺寸",
+      "方形搜索框",
+      "右侧操作按钮",
+      "可交互：实时搜索回显",
+      "ParkSearch — cacheService 搜索历史缓存",
+      "可交互：清除与搜索事件演示",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）",
+      "验证码按钮"
+    ],
+    "demoText": "基础搜索框 默认胶囊形搜索框，自带搜索图标 带取消按钮 设置 showCancel: true，聚焦时右侧出现取消按钮 加载与禁用 loading 显示加载指示器；disabled 禁用交互 搜索框尺寸 通过 size 切换 small / medium / large 高度 方形搜索框 设置 shape: ParkSearchShape.square 切换为方形圆角 右侧操作按钮 通过 actionText 在右侧显示文字按钮 可交互：实时搜索回显 通过 StatefulBuilder + onChanged 实时回显搜索词，演示 ParkSearch 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the query live, demonstrating ParkSearch.onChanged. ParkSearch — cacheService 搜索历史缓存 实现 ParkSearchCache 接口，用 SharedPreferences 存储搜索历史，\n注入 cacheService 后自动显示历史建议面板。 可交互：清除与搜索事件演示 通过 StatefulBuilder 实时回显 ParkSearch 的 onClear / onSearch 回调。 / StatefulBuilder echoes onClear and onSearch. 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，搜索词实时同步到 model。 / ParkBindingService bindKey demo: search text syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示搜索框表单自动渲染与提交。 / ParkForm schema usage demonstration for search. 验证码按钮 通过 actionText 实现「获取验证码」功能：点击后加载 3s，随后进入 60s 倒计时，结束后可重新获取。 / SMS verification code button with 60s countdown.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 61,
+    "guideEmpty": false,
+    "guideLen": 1689,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkSearch"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "actionText",
+      "autofocus",
+      "bindKey",
+      "bindingService",
+      "cacheScope",
+      "cacheService",
+      "clearable",
+      "controller",
+      "disabled",
+      "hintText",
+      "loading",
+      "maxLength",
+      "shape",
+      "showCancel",
+      "size",
+      "suggestionBuilder"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onClear",
+      "onSearch",
+      "onSubmitted"
+    ]
+  },
+  {
+    "name": "ParkSearchDelegate",
+    "title": "全屏搜索",
+    "source": "park_gap_specs",
+    "demoCount": 2,
+    "demos": [
+      "基础搜索",
+      "带联想建议"
+    ],
+    "demoText": "基础搜索 点击按钮打开搜索页 / Tap to open search page 带联想建议 suggestionBuilder 联想 / With suggestions",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 341,
+    "guideEmpty": false,
+    "guideLen": 532,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [],
+    "staticMethods": [],
+    "registeredProperties": [
+      "autofocus",
+      "context",
+      "emptyBuilder",
+      "hint",
+      "history",
+      "historyScope",
+      "onSearch",
+      "resultBuilder",
+      "suggestionBuilder",
+      "title"
+    ],
+    "registeredEvents": [
+      "onSearch"
+    ]
+  },
+  {
+    "name": "ParkSegmented",
+    "title": "分段控制器",
+    "source": "park_input_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "基础分段",
+      "通栏与图标",
+      "多选模式",
+      "受控模式",
+      "非受控模式",
+      "禁用与单选项禁用"
+    ],
+    "demoText": "基础分段 日 / 周 / 月 三个选项的单选分段控制器。 通栏与图标 block 撑满宽度，选项带图标与角标。 多选模式 multiSelect 开启后支持多选，监听 onMultiChanged。 受控模式 外部通过 StatefulBuilder 维护 value，点击同步刷新选中态与滑块位置。 非受控模式 不传 value 且 onChanged 为空，点击仍即时选中（内部维护选中态，无需父组件维护）。 禁用与单选项禁用 整体禁用或通过 item.disabled 禁用单个选项。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 210,
+    "guideEmpty": false,
+    "guideLen": 318,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSegmented"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "block",
+      "disabled",
+      "items",
+      "multiSelect",
+      "multiValues",
+      "onChanged",
+      "onMultiChanged",
+      "optionBuilder",
+      "size",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onMultiChanged"
+    ]
+  },
+  {
+    "name": "ParkSelect",
+    "title": "下拉选择器",
+    "source": "park_input_specs",
+    "demoCount": 12,
+    "demos": [
+      "基础单选",
+      "多选模式",
+      "可清除",
+      "单项禁用",
+      "搜索过滤",
+      "分组选项",
+      "可交互：实时回显选中值",
+      "可交互：远程搜索回显",
+      "可交互：清除与搜索事件演示",
+      "表单：校验与保存",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础单选 点击弹出底部面板选择单个选项 多选模式 设置 multiple: true，选中值以 Chips 形式展示 可清除 设置 clearable: true 显示清除按钮 单项禁用 通过 ParkSelectOption.disabled 禁用特定选项 搜索过滤 searchable: true 开启搜索过滤，快速定位选项 分组选项 通过 ParkSelectOption.group 对选项进行分组展示 可交互：实时回显选中值 通过 StatefulBuilder + onChanged 实时回显选中值，演示 ParkSelect 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the selected value live, demonstrating ParkSelect.onChanged. 可交互：远程搜索回显 searchable 配合 onSearchChanged 监听搜索词（远程搜索模式），演示 ParkSelect 的 onSearchChanged 事件。 / searchable + onSearchChanged listens to the query (remote-search pattern), demonstrating ParkSelect.onSearchChanged. 可交互：清除与搜索事件演示 searchable + onSearch 监听搜索词，clearable + onClear 监听清除，演示 ParkSelect 的 onSearch / onClear 回调。 / searchable + onSearch + clearable + onClear (onSearch is the AntD alias of onSearchChanged). 表单：校验与保存 通过 Form + GlobalKey 演示 ParkSelect 的 validator / onSaved 回调，点击提交校验是否选择并保存选中的字符串值。 / Form + GlobalKey demonstrates ParkSelect.validator and onSaved. 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中值实时同步到 model。 / ParkBindingService bindKey demo: selection syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 201,
+    "guideEmpty": false,
+    "guideLen": 2218,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkSelect"
+    ],
+    "staticMethods": [
+      "_borderColor",
+      "_buildChip",
+      "_buildTrigger",
+      "_findOption",
+      "_fontSize",
+      "_minHeight",
+      "_parseValues",
+      "_showOverflowSheet",
+      "_showSheet"
+    ],
+    "registeredProperties": [
+      "allowCreate",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "clearable",
+      "dropdownRender",
+      "emptyText",
+      "enabled",
+      "filterOption",
+      "grouped",
+      "groupedOptions",
+      "hintText",
+      "items",
+      "label",
+      "loading",
+      "loadingText",
+      "maxSelection",
+      "maxTagCount",
+      "multiple",
+      "notFoundContent",
+      "onChanged",
+      "onSearchAsync",
+      "optionRender",
+      "popupMatchSelectWidth",
+      "prefixIcon",
+      "readOnly",
+      "searchDebounce",
+      "searchErrorText",
+      "searchLoadingText",
+      "searchable",
+      "searching",
+      "showArrow",
+      "size",
+      "status",
+      "suffixIcon",
+      "value",
+      "virtual",
+      "virtualize"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onClear",
+      "onSaved",
+      "onSearch",
+      "onSearchChanged",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkSheetScaffold",
+    "title": "底部弹出脚手架",
+    "source": "park_gap_specs",
+    "demoCount": 3,
+    "demos": [
+      "基础弹出面板",
+      "禁用确认",
+      "自定义按钮文本"
+    ],
+    "demoText": "基础弹出面板 点击按钮弹出 Sheet / Tap to show sheet 禁用确认 confirmEnabled: false / Disabled confirm 自定义按钮文本 cancelText / confirmText / Custom button texts",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "show"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 133,
+    "guideEmpty": false,
+    "guideLen": 299,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSheetScaffold"
+    ],
+    "staticMethods": [
+      "show"
+    ],
+    "registeredProperties": [
+      "backgroundColor",
+      "bodyHeight",
+      "cancelText",
+      "child",
+      "confirmEnabled",
+      "confirmText",
+      "header",
+      "isScrollControlled",
+      "onCancel",
+      "onConfirm",
+      "showDragHandle",
+      "title",
+      "useSafeArea"
+    ],
+    "registeredEvents": [
+      "onCancel",
+      "onConfirm"
+    ]
+  },
+  {
+    "name": "ParkSideBar",
+    "title": "侧边导航栏 / Sidebar",
+    "source": "park_nav_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础侧边栏",
+      "受控选中与子菜单",
+      "带角标和子菜单",
+      "折叠模式"
+    ],
+    "demoText": "基础侧边栏 三个菜单项，选中项高亮。 受控选中与子菜单 onChanged 受控顶层选中，onChildChanged 响应子菜单点击，并显示折叠按钮（onCollapseToggle / onCollapse）。 带角标和子菜单 菜单项可显示角标，含子菜单的项可展开。 折叠模式 collapsed: true 时只显示图标。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 427,
+    "guideEmpty": false,
+    "guideLen": 332,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSideBar"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "collapsed",
+      "collapsedWidth",
+      "footer",
+      "header",
+      "items",
+      "logo",
+      "selectedChildIndex",
+      "selectedIndex",
+      "showCollapseButton",
+      "theme",
+      "width"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onChildChanged",
+      "onCollapse",
+      "onCollapseToggle"
+    ]
+  },
+  {
+    "name": "ParkSkeleton",
+    "title": "骨架屏 / Skeleton",
+    "source": "park_display_specs",
+    "demoCount": 8,
+    "demos": [
+      "基础矩形骨架",
+      "文本骨架",
+      "头像骨架",
+      "卡片骨架",
+      "段落骨架",
+      "按钮骨架",
+      "圆形骨架",
+      "加载包装"
+    ],
+    "demoText": "基础矩形骨架 指定宽高的矩形占位 / Rect placeholder 文本骨架 ParkSkeleton.text() 生成多行文本占位 / text() 头像骨架 ParkSkeleton.avatar() 生成圆形占位 / avatar() 卡片骨架 ParkSkeleton.card() 生成完整卡片布局 / card() 段落骨架 paragraph 渲染头像 + 多行文本复合骨架 / Paragraph 按钮骨架 button: true 渲染按钮形状占位 / Button shape 圆形骨架 round: true 渲染药丸形骨架 / Pill shape 加载包装 loading + children 在内容上叠加骨架遮罩 / Loading overlay",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "card",
+      "text"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 267,
+    "guideEmpty": false,
+    "guideLen": 678,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSkeleton"
+    ],
+    "staticMethods": [
+      "card",
+      "text"
+    ],
+    "registeredProperties": [
+      "active",
+      "animated",
+      "avatar",
+      "borderRadius",
+      "button",
+      "children",
+      "height",
+      "loading",
+      "paragraph",
+      "round",
+      "width"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkSlider",
+    "title": "滑块",
+    "source": "park_input_specs_p2",
+    "demoCount": 9,
+    "demos": [
+      "基础滑块",
+      "离散分段",
+      "自定义颜色",
+      "音量控制",
+      "范围选择（双滑块）",
+      "滑动起止回调",
+      "刻度与自定义提示",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础滑块 连续滑动，显示当前值。 离散分段 设置 divisions 实现离散分段滑动。 自定义颜色 通过 activeColor 设置激活色。 音量控制 模拟音量控制场景，0-100 范围。 范围选择（双滑块） range 模式启用双滑块，onRangeChanged 回传起止值。 滑动起止回调 onChangeStart 在按下时、onChangeEnd 在松手时触发。 刻度与自定义提示 marks 显示刻度文字，tooltipBuilder 自定义 Tooltip 内容。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，滑块值实时同步到 model。 / ParkBindingService bindKey demo: slider value syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 122,
+    "guideEmpty": false,
+    "guideLen": 325,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkSlider"
+    ],
+    "staticMethods": [
+      "_safeMax",
+      "_safeMin"
+    ],
+    "registeredProperties": [
+      "activeColor",
+      "bindKey",
+      "bindingService",
+      "disabled",
+      "divisions",
+      "dots",
+      "inactiveColor",
+      "included",
+      "marks",
+      "max",
+      "min",
+      "onChangeEnd",
+      "onChangeStart",
+      "onChanged",
+      "onRangeChanged",
+      "range",
+      "rangeEnd",
+      "rangeStart",
+      "readOnly",
+      "reverse",
+      "showTooltip",
+      "showValue",
+      "step",
+      "thumbIcon",
+      "tooltipBuilder",
+      "value",
+      "vertical"
+    ],
+    "registeredEvents": [
+      "onChangeEnd",
+      "onChangeStart",
+      "onChanged",
+      "onRangeChanged"
+    ]
+  },
+  {
+    "name": "ParkSpace",
+    "title": "间距组件",
+    "source": "park_new_component_specs",
+    "demoCount": 5,
+    "demos": [
+      "水平间距",
+      "垂直间距",
+      "自动换行",
+      "预设间距工厂",
+      "主轴对齐"
+    ],
+    "demoText": "水平间距 默认水平 8px 间距 / Default 8px horizontal 垂直间距 垂直排列 / Vertical layout 自动换行 水平自动换行 / Auto wrap 预设间距工厂 xs/sm/md/lg/xl 五级预设 / xs–xl presets 主轴对齐 spaceBetween 两端对齐 / Justify content",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 71,
+    "guideEmpty": false,
+    "guideLen": 83,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSpace"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "children",
+      "crossAxisAlignment",
+      "direction",
+      "mainAxisAlignment",
+      "size",
+      "wrap"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkSplitter",
+    "title": "分隔面板 / Splitter",
+    "source": "park_display_specs_extra",
+    "demoCount": 4,
+    "demos": [
+      "基础左右分割",
+      "上下分割",
+      "嵌套分割 + 折叠按钮",
+      "受控比例"
+    ],
+    "demoText": "基础左右分割 水平方向、默认比例 0.5 的左右分栏 / Horizontal split with default 0.5 ratio. 上下分割 垂直方向、顶部/底部面板 / Vertical split with top/bottom panels. 嵌套分割 + 折叠按钮 水平嵌套垂直分割，开启折叠按钮 / Horizontal wrapping a vertical split, both with collapsible buttons. 受控比例 通过按钮切换比例，展示受控模式 / Controlled ratio via external button (StatefulBuilder).",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 257,
+    "guideEmpty": false,
+    "guideLen": 656,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSplitter"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "axis",
+      "collapsible",
+      "defaultRatio",
+      "dividerColor",
+      "dividerDragColor",
+      "dividerThickness",
+      "first",
+      "maxRatio",
+      "minRatio",
+      "onRatioChanged",
+      "ratio",
+      "second"
+    ],
+    "registeredEvents": [
+      "onRatioChanged"
+    ]
+  },
+  {
+    "name": "ParkStatistic",
+    "title": "统计数值 / Statistic",
+    "source": "park_display_specs_extra",
+    "demoCount": 5,
+    "demos": [
+      "基础统计",
+      "千分位分组",
+      "精度与后缀",
+      "前缀图标",
+      "关闭动画"
+    ],
+    "demoText": "基础统计 标题 + 数值，从 0 动画增长 / Title + value with count-up 千分位分组 groupSeparator 默认按千分位分组 / Thousands grouping 精度与后缀 precision 固定小数位，suffix 展示单位 / Precision + suffix unit 前缀图标 prefix 放置图标装饰 / Icon prefix 关闭动画 animate: false 直接展示目标值 / No animation",
+    "missingParams": [
+      "crossAxisAlignment"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 101,
+    "guideEmpty": false,
+    "guideLen": 295,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkStatistic"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "animate",
+      "curve",
+      "decimalSeparator",
+      "duration",
+      "groupSeparator",
+      "precision",
+      "prefix",
+      "suffix",
+      "textAlign",
+      "title",
+      "titleStyle",
+      "value",
+      "valueStyle"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkStepper",
+    "title": "步进器",
+    "source": "park_input_specs_p2",
+    "demoCount": 10,
+    "demos": [
+      "基础步进器",
+      "带范围限制",
+      "自定义步长",
+      "禁用状态",
+      "带单位后缀",
+      "超出限制回调",
+      "小数精度与格式化",
+      "描边风格",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础步进器 默认步长为 1，无限制范围。 带范围限制 设置 min 和 max，到达边界时按钮自动禁用。 自定义步长 设置 step 为 5，每次增减 5。 禁用状态 设置 disabled 为 true，整个控件不可操作。 带单位后缀 通过 suffix 添加单位文字。 超出限制回调 到达 min/max 边界时触发 onOverLimit 回调。 小数精度与格式化 precision 控制小数位数，formatter 自定义显示文字。 描边风格 theme: ParkStepperTheme.outline 切换描边风格。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，下方实时回显绑定模型值。 / bindKey + bindingService for two-way binding, model values shown below. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用。 / ParkForm schema usage.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 95,
+    "guideEmpty": false,
+    "guideLen": 348,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkStepper"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "disabled",
+      "formatter",
+      "inputMode",
+      "inputReadOnly",
+      "longPressIncrement",
+      "max",
+      "min",
+      "onChanged",
+      "onOverLimit",
+      "placeholder",
+      "precision",
+      "prefix",
+      "readOnly",
+      "size",
+      "step",
+      "stringMode",
+      "suffix",
+      "theme",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onOverLimit"
+    ]
+  },
+  {
+    "name": "ParkSteps",
+    "title": "步骤条 / Steps",
+    "source": "park_nav_specs",
+    "demoCount": 5,
+    "demos": [
+      "水平步骤条",
+      "垂直步骤条",
+      "含错误状态",
+      "可点击步骤（onStepTap）",
+      "圆形进度与小圆点"
+    ],
+    "demoText": "水平步骤条 三步流程，当前在第 2 步。 垂直步骤条 垂直排列并带描述文字。 含错误状态 某个步骤可手动设为 error 状态。 可点击步骤（onStepTap） clickable: true 时步骤可点击，点击触发 onStepTap 切换当前步。 圆形进度与小圆点 percent 显示当前步圆形进度；progressDot 用圆点替代编号。",
+    "missingParams": [
+      "sticky"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 198,
+    "guideEmpty": false,
+    "guideLen": 338,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSteps"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "clickable",
+      "currentStep",
+      "direction",
+      "labelPlacement",
+      "percent",
+      "progressDot",
+      "responsive",
+      "size",
+      "steps",
+      "successIcon"
+    ],
+    "registeredEvents": [
+      "onStepTap"
+    ]
+  },
+  {
+    "name": "ParkSticky",
+    "title": "吸顶 / Sticky",
+    "source": "park_display_specs_extra",
+    "demoCount": 4,
+    "demos": [
+      "吸顶内容",
+      "吸顶状态回调",
+      "吸顶偏移与样式",
+      "综合变更回调 onChange"
+    ],
+    "demoText": "吸顶内容 滚动时该区域会吸顶固定（需在滚动容器内）/ Pins while scrolling (needs a scroll container). 吸顶状态回调 onStickyChanged 回显当前吸顶状态（StatefulBuilder，需滚动）/ onStickyChanged echoes state (scroll to see). 吸顶偏移与样式 stickyOffset 控制吸顶后距顶偏移，backgroundColor 与 showShadow 自定义外观（按钮切换偏移演示）/ stickyOffset + backgroundColor + showShadow (toggle offset). 综合变更回调 onChange onChange 与 onStickyChanged 等效，回显吸顶状态（StatefulBuilder，需滚动）/ onChange mirrors onStickyChanged (scroll to see).",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 168,
+    "guideEmpty": false,
+    "guideLen": 477,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSticky"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "backgroundColor",
+      "child",
+      "offset",
+      "onChange",
+      "onStickyChanged",
+      "showShadow",
+      "stickyOffset"
+    ],
+    "registeredEvents": [
+      "onChange",
+      "onStickyChanged"
+    ]
+  },
+  {
+    "name": "ParkSwipeCell",
+    "title": "滑动操作",
+    "source": "park_feedback_specs",
+    "demoCount": 8,
+    "demos": [
+      "右滑操作",
+      "左滑删除",
+      "双向滑动",
+      "带图标的自定义操作",
+      "二次确认模式",
+      "禁用滑动",
+      "打开/关闭回调",
+      "beforeClose 关闭守卫"
+    ],
+    "demoText": "右滑操作 向右滑动揭示左侧操作 左滑删除 向左滑动揭示删除按钮 双向滑动 同时支持左右滑动操作 带图标的自定义操作 通过 ParkSwipeAction 的 icon 参数为操作按钮添加图标，并使用不同颜色区分操作类型。 二次确认模式 设置 confirmMode 为 true，点击操作按钮后需再次点击确认才会真正执行，适用于删除等危险操作。 禁用滑动 设置 disabled 为 true 可完全禁用滑动手势，操作按钮不会被揭示，适用于只读或锁定场景。 打开/关闭回调 通过 onOpen 与 onClose 监听滑动状态变化，可用于埋点或在外层滚动交互时做出响应。 beforeClose 关闭守卫 滑动展开前触发 beforeClose，返回 false 拦截展开 / beforeClose guard",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 400,
+    "guideEmpty": false,
+    "guideLen": 289,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSwipeCell"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "actionWidth",
+      "child",
+      "confirmMode",
+      "disabled",
+      "leftActions",
+      "rightActions"
+    ],
+    "registeredEvents": [
+      "beforeClose",
+      "onClose",
+      "onOpen"
+    ]
+  },
+  {
+    "name": "ParkSwiper",
+    "title": "轮播 / Swiper",
+    "source": "park_display_specs",
+    "demoCount": 9,
+    "demos": [
+      "基础轮播",
+      "自动播放",
+      "数字指示器",
+      "顶部指示器",
+      "淡入淡出",
+      "垂直方向",
+      "卡片堆叠",
+      "自定义指示器",
+      "页面切换回调"
+    ],
+    "demoText": "基础轮播 手动滑动切换，圆点指示器 / Basic dot indicator 自动播放 autoPlay: true 每 3 秒自动切换 / Auto play 数字指示器 indicatorType: number 显示 \"1 / 3\" 格式 / Number indicator 顶部指示器 indicatorPosition: top 指示器置于顶部 / Top indicator 淡入淡出 effect: fade 淡入淡出切换 / Fade effect 垂直方向 direction: vertical 垂直滑动 / Vertical 卡片堆叠 viewportFraction + scale 卡片堆叠效果 / Card stack 自定义指示器 indicatorBuilder 自定义页码指示器 / Custom indicator 页面切换回调 onPageChanged 报告当前页索引 / onPageChanged demo",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 252,
+    "guideEmpty": false,
+    "guideLen": 644,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkSwiper"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "animationDuration",
+      "autoPlay",
+      "autoplayDelay",
+      "bindKey",
+      "bindingService",
+      "children",
+      "curve",
+      "direction",
+      "dragEndRatio",
+      "dragStartRatio",
+      "effect",
+      "height",
+      "indicatorBuilder",
+      "indicatorPosition",
+      "indicatorType",
+      "initialIndex",
+      "interval",
+      "loop",
+      "onPageChanged",
+      "scale",
+      "viewportFraction"
+    ],
+    "registeredEvents": [
+      "onPageChanged"
+    ]
+  },
+  {
+    "name": "ParkSwitch",
+    "title": "开关",
+    "source": "park_input_specs",
+    "demoCount": 10,
+    "demos": [
+      "基础开关",
+      "开关尺寸",
+      "自定义颜色",
+      "加载与禁用",
+      "带内容的开关",
+      "带标签的开关",
+      "可交互：实时回显开关状态",
+      "表单：校验与保存",
+      "绑定演示",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础开关 默认 medium 尺寸的拨动开关 开关尺寸 展示 small / medium / large 三种尺寸 自定义颜色 通过 activeColor 和 inactiveColor 自定义外观 加载与禁用 展示 loading 和 disabled 状态 带内容的开关 checkedContent 和 uncheckedContent 在拇指上显示图标 带标签的开关 通过 label 参数在开关旁边显示文字标签 可交互：实时回显开关状态 通过 StatefulBuilder + onChanged 实时回显开关状态，演示 ParkSwitch 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the toggle state live, demonstrating ParkSwitch.onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkSwitch 的 validator / onSaved 回调，点击提交校验开关是否开启并保存布尔值。 / Form + GlobalKey demonstrates ParkSwitch.validator and onSaved. 绑定演示 通过 bindKey + bindingService 实现双向绑定，开关状态实时同步到模型。 / bindKey + bindingService for two-way binding, toggle state synced to model. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示开关表单自动渲染与提交。 / ParkForm schema usage demonstration for switch/toggle.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 58,
+    "guideEmpty": false,
+    "guideLen": 1867,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkSwitch"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "activeColor",
+      "beforeChange",
+      "bindKey",
+      "bindingService",
+      "checkedChild",
+      "checkedContent",
+      "checkedLabel",
+      "checkedValue",
+      "disabled",
+      "inactiveColor",
+      "label",
+      "loading",
+      "readOnly",
+      "size",
+      "thumbIcon",
+      "tooltip",
+      "uncheckedChild",
+      "uncheckedContent",
+      "uncheckedLabel",
+      "uncheckedValue",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkTabBar",
+    "title": "标签栏 / Tab Bar",
+    "source": "park_nav_specs",
+    "demoCount": 4,
+    "demos": [
+      "固定式底部导航",
+      "悬浮式底部导航",
+      "带角标的导航项",
+      "中心凸起按钮"
+    ],
+    "demoText": "固定式底部导航 最常见的三栏底部导航，贴底有顶部边线。 悬浮式底部导航 圆角卡片悬浮于底部，带阴影效果。 带角标的导航项 导航项可显示未读消息角标或红点。 中心凸起按钮 通过 centerAction 在底部导航中央放置 FAB。",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 262,
+    "guideEmpty": false,
+    "guideLen": 327,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTabBar"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "centerAction",
+      "currentIndex",
+      "elevation",
+      "fixed",
+      "initialIndex",
+      "items",
+      "shape",
+      "type",
+      "useSafeArea"
+    ],
+    "registeredEvents": [
+      "onTap"
+    ]
+  },
+  {
+    "name": "ParkTable",
+    "title": "表格 / Table",
+    "source": "park_display_specs",
+    "demoCount": 10,
+    "demos": [
+      "基础表格",
+      "可排序 + 斑马纹 + 边框",
+      "排序回调",
+      "行点击",
+      "固定列",
+      "吸顶表头",
+      "行选择",
+      "分页",
+      "可展开行",
+      "加载与空状态"
+    ],
+    "demoText": "基础表格 两列三行的简单数据表格 / Basic table 可排序 + 斑马纹 + 边框 sortable 列可点击排序，striped 斑马纹，bordered 边框 / Sort + zebra + border 排序回调 onSort 报告点击列索引与升序状态 / onSort demo 行点击 onRow 返回 onTap 处理单行点击 / onRow tap demo 固定列 fixed: left/right 让首末列在横向滚动时保持可见 / Fixed columns 吸顶表头 sticky: true 表头在垂直滚动时吸顶 / Sticky header 行选择 rowSelection 启用 checkbox 多选（含 onChanged）/ Row selection 分页 pagination 在底部展示分页栏（含 onPageChanged）/ Pagination 可展开行 expandable + expandedRowBuilder 展开详情行 / Expandable rows 加载与空状态 loading 显示遮罩，data 为空显示提示 / Loading & empty",
+    "missingParams": [
+      "onChanged"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onChanged"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 357,
+    "guideEmpty": false,
+    "guideLen": 735,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTable"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bordered",
+      "columns",
+      "data",
+      "empty",
+      "emptyText",
+      "expandable",
+      "expandedRowBuilder",
+      "expandedRowRender",
+      "loading",
+      "onChange",
+      "onColumnWidthChanged",
+      "onRow",
+      "onSort",
+      "pagination",
+      "rowKey",
+      "rowSelection",
+      "scroll",
+      "showSorterTooltip",
+      "size",
+      "sticky",
+      "striped",
+      "treeConfig",
+      "virtualScroll"
+    ],
+    "registeredEvents": [
+      "onChange",
+      "onRow",
+      "onSort"
+    ]
+  },
+  {
+    "name": "ParkTabs",
+    "title": "标签页 / Tabs",
+    "source": "park_nav_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础标签页",
+      "受控切换（onChanged）",
+      "带角标和图标",
+      "可滚动标签页",
+      "卡片式指示器",
+      "可关闭与可添加（onClose / onAdd）"
+    ],
+    "demoText": "基础标签页 三个固定标签页，带下划线指示器。 受控切换（onChanged） 通过 currentIndex + onChanged 受控管理选中项。 带角标和图标 标签页可显示角标数字或前置图标。 可滚动标签页 标签数量较多时启用 scrollable 模式。 卡片式指示器 使用 indicatorType: card 显示卡片背景指示器。 可关闭与可添加（onClose / onAdd） closable 显示关闭按钮触发 onClose，addable 显示\"+\"触发 onAdd。",
+    "missingParams": [
+      "destroyInactiveTabPane",
+      "editable",
+      "extra",
+      "indicatorHeight",
+      "indicatorPadding",
+      "indicatorWidth",
+      "onTabAdd",
+      "onTabClose",
+      "showAddButton",
+      "tabBarExtraContent",
+      "tabBarGutter",
+      "tabBarStyle",
+      "tabBuilder"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onTabAdd",
+      "onTabClose"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 305,
+    "guideEmpty": false,
+    "guideLen": 464,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTabs"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "addable",
+      "animated",
+      "bindKey",
+      "bindingService",
+      "centered",
+      "children",
+      "closable",
+      "currentIndex",
+      "indicatorColor",
+      "indicatorType",
+      "initialIndex",
+      "keyboard",
+      "scrollable",
+      "size",
+      "tabPosition",
+      "tabs",
+      "type"
+    ],
+    "registeredEvents": [
+      "onAdd",
+      "onChanged",
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkTag",
+    "title": "标签 / Tag",
+    "source": "park_display_specs",
+    "demoCount": 7,
+    "demos": [
+      "基础标签",
+      "颜色主题",
+      "变体对比",
+      "可关闭标签",
+      "圆角药丸形",
+      "可勾选标签",
+      "带图标与链接"
+    ],
+    "demoText": "基础标签 默认浅色标签 / Default light tag 颜色主题 展示 primary / success / warning / danger 主题 / Color themes 变体对比 dark / light / outline 三种变体 / Variants 可关闭标签 closable: true 显示关闭按钮，演示 onClose / onClose demo 圆角药丸形 shape: round 显示药丸形状标签 / Round pill shape 可勾选标签 checkable + onChecked 切换勾选态 / Checkable + onChecked 带图标与链接 icon 前置图标；href 渲染为链接 / Icon + link",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 274,
+    "guideEmpty": false,
+    "guideLen": 564,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTag"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bordered",
+      "checkable",
+      "checked",
+      "closable",
+      "customColor",
+      "href",
+      "icon",
+      "light",
+      "maxWidth",
+      "onChecked",
+      "onClose",
+      "onPressed",
+      "outline",
+      "shape",
+      "size",
+      "text",
+      "theme",
+      "variant"
+    ],
+    "registeredEvents": [
+      "onChecked",
+      "onClose",
+      "onPressed"
+    ]
+  },
+  {
+    "name": "ParkText",
+    "title": "文本 / Text",
+    "source": "park_base_specs",
+    "demoCount": 11,
+    "demos": [
+      "文字预设",
+      "自定义颜色与字重",
+      "文本截断",
+      "可选中文字",
+      "删除线与下划线",
+      "高亮与代码块",
+      "语义类型",
+      "可复制与可展开",
+      "富文本与强调",
+      "可交互文本（用法演示）",
+      "点击与复制回调"
+    ],
+    "demoText": "文字预设 展示所有预设样式：display / h1 / h2 / h3 / body / bodySmall / caption / overline / All presets 自定义颜色与字重 通过 color 和 fontWeight 覆盖预设默认值 / color & fontWeight 文本截断 使用 maxLines 限制行数，超出自动显示省略号 / maxLines + ellipsis 可选中文字 设置 selectable: true 允许用户长按选中并复制文本 / selectable 删除线与下划线 strikethrough 添加删除线；underline 添加下划线 / strikethrough & underline 高亮与代码块 highlight 黄色高亮背景；code 等宽字体 + 代码块背景 / highlight & code 语义类型 通过 type 自动应用 secondary / success / warning / danger 颜色 / semantic type 可复制与可展开 copyable 一键复制；expandable 展开 / 收起长文本 / copyable & expandable 富文本与强调 strong / italic 快捷强调；richSpans 富文本混排 / strong/italic & richSpans 可交互文本（用法演示） 点击下方按钮切换加粗状态，演示 ParkText 的运行时用法（非纯预览） / Interactive: toggle bold at runtime 点击与复制回调 onClick 点击回调更新状态；onCopy 复制成功后回调 / onClick & onCopy",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 98,
+    "guideEmpty": false,
+    "guideLen": 1838,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkText"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "code",
+      "collapseText",
+      "color",
+      "copyable",
+      "data",
+      "disabled",
+      "ellipsis",
+      "expandText",
+      "expandable",
+      "fontSize",
+      "fontWeight",
+      "highlight",
+      "italic",
+      "markColor",
+      "maxLines",
+      "maxLinesCollapsed",
+      "overflow",
+      "preset",
+      "richSpans",
+      "selectable",
+      "semanticsLabel",
+      "strikethrough",
+      "strong",
+      "style",
+      "textAlign",
+      "textDirection",
+      "type",
+      "underline",
+      "wordBreak"
+    ],
+    "registeredEvents": [
+      "onClick",
+      "onCopy"
+    ]
+  },
+  {
+    "name": "ParkTextarea",
+    "title": "多行输入框",
+    "source": "park_input_specs",
+    "demoCount": 14,
+    "demos": [
+      "基础多行输入",
+      "字数限制",
+      "自定义行数",
+      "禁用状态",
+      "自适应高度",
+      "可清除与字数统计",
+      "状态样式",
+      "必填与辅助文字",
+      "可交互：实时回显多行输入",
+      "可交互：焦点事件演示",
+      "可交互：实时回显输入",
+      "表单：校验与保存",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "基础多行输入 带标签和占位提示的多行文本输入 字数限制 使用 maxLength 限制字符数并显示字数统计 自定义行数 通过 minLines 和 maxLines 控制高度范围 禁用状态 设置 enabled: false 禁用输入 自适应高度 autoSize: true 时文本框随内容自动扩展高度 可清除与字数统计 clearable 显示清除按钮；showCount 显示字数统计 状态样式 通过 status 手动指定 error / warning / success 边框样式 必填与辅助文字 required 必填标识；helperText 辅助说明 可交互：实时回显多行输入 通过 StatefulBuilder + onChanged 实时回显多行输入内容，演示 ParkTextarea 的 onChanged 事件。 / StatefulBuilder + onChanged echoes the typed text live, demonstrating ParkTextarea.onChanged. 可交互：焦点事件演示 通过 StatefulBuilder 实时回显 ParkTextarea 的 onFocus / onBlur 回调。 / StatefulBuilder echoes onFocus and onBlur. 可交互：实时回显输入 通过 StatefulBuilder 实时回显 ParkTextarea 的 onChanged 回调。 / StatefulBuilder echoes onChanged. 表单：校验与保存 通过 Form + GlobalKey 演示 ParkTextarea 的 validator / onSaved 回调，点击提交触发校验并保存多行文本。 / Form + GlobalKey demonstrates ParkTextarea.validator and onSaved. 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，输入内容实时同步到 model。 / ParkBindingService bindKey demo: textarea content syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用，展示多行文本表单自动渲染与提交。 / ParkForm schema usage demonstration for textarea.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 84,
+    "guideEmpty": false,
+    "guideLen": 1687,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkTextarea"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "autoSize",
+      "autofocus",
+      "bindKey",
+      "bindingService",
+      "bordered",
+      "clearable",
+      "controller",
+      "enabled",
+      "focusNode",
+      "helperText",
+      "hintText",
+      "initialValue",
+      "label",
+      "maxLength",
+      "maxLines",
+      "minLines",
+      "readOnly",
+      "required",
+      "showCount",
+      "size",
+      "status",
+      "textAlign"
+    ],
+    "registeredEvents": [
+      "onBlur",
+      "onChanged",
+      "onFocus",
+      "onSaved",
+      "validator"
+    ]
+  },
+  {
+    "name": "ParkTimePicker",
+    "title": "时间选择器",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "基础时间选择",
+      "选中回调",
+      "带标签",
+      "禁用状态"
+    ],
+    "demoText": "基础时间选择 选择时分 / Pick HH:mm 选中回调 onChanged 实时回显 / onChanged 带标签 label 标签 + 秒 / With label 禁用状态 disabled 禁用 / Disabled",
+    "missingParams": [
+      "bindKey",
+      "bindingService"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 110,
+    "guideEmpty": false,
+    "guideLen": 57,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkTimePicker"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "disabled",
+      "label",
+      "onChanged",
+      "placeholder",
+      "showSeconds",
+      "value"
+    ],
+    "registeredEvents": [
+      "onChanged"
+    ]
+  },
+  {
+    "name": "ParkTimeline",
+    "title": "时间轴 / Timeline",
+    "source": "park_display_specs_extra",
+    "demoCount": 6,
+    "demos": [
+      "基础时间轴",
+      "带图标节点",
+      "加载态",
+      "交替布局",
+      "倒序排列",
+      "自定义节点"
+    ],
+    "demoText": "基础时间轴 右侧内容布局的订单流转时间轴 / Right-aligned order timeline. 带图标节点 为节点配置 icon 与自定义颜色（使用设计令牌）/ icon + token colors per node. 加载态 pending: true 在末尾显示加载指示器 / pending shows a loader at the end. 交替布局 mode: alternate 在宽屏左右交替排布 / alternate layout on wide screens. 倒序排列 reverse: true 让第一项显示在底部 / reverse puts the first item at the bottom. 自定义节点 dotWidget 替换默认圆点为自定义 Widget / dotWidget replaces the default dot.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 205,
+    "guideEmpty": false,
+    "guideLen": 432,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTimeline"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "animationDelay",
+      "animationDuration",
+      "dotSize",
+      "itemSpacing",
+      "items",
+      "labelPlacement",
+      "lineWidth",
+      "mode",
+      "pending",
+      "pendingDot",
+      "pendingLabel",
+      "reverse"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkTitle",
+    "title": "标题 / Title",
+    "source": "park_base_specs",
+    "demoCount": 3,
+    "demos": [
+      "标题级别 / Levels",
+      "副标题 / Subtitle",
+      "可复制 / Copyable"
+    ],
+    "demoText": "标题级别 / Levels level 1-5 不同字号 / Different font sizes for level 1-5 副标题 / Subtitle 标题 + 副标题组合 / Title with subtitle 可复制 / Copyable 点击复制图标复制到剪贴板 / Click copy icon to clipboard",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 33,
+    "guideEmpty": false,
+    "guideLen": 416,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTitle"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "copyable",
+      "level",
+      "subtitle",
+      "text",
+      "textAlign"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkToast",
+    "title": "轻提示",
+    "source": "park_feedback_specs",
+    "demoCount": 8,
+    "demos": [
+      "普通提示",
+      "成功提示",
+      "错误提示",
+      "顶部弹出",
+      "加载提示",
+      "超长文本",
+      "超长文本 + 图标",
+      "可点击关闭"
+    ],
+    "demoText": "普通提示 最基础的 Toast 弹出 成功提示 带成功图标的 Toast 错误提示 带错误图标的 Toast 顶部弹出 指定 Toast 从顶部弹出 加载提示 带加载指示器的 Toast，需手动关闭 超长文本 超长文本自动换行、4 行截断省略，不越界 超长文本 + 图标 带图标 + 超长文本：图标固定、文本收缩换行 可点击关闭 点击 Toast 触发 onClick，并监听 onClose",
+    "missingParams": [
+      "afterClose",
+      "destroyOnHide"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "config",
+      "resetConfig"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 217,
+    "guideEmpty": false,
+    "guideLen": 287,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkToast"
+    ],
+    "staticMethods": [
+      "_showToast",
+      "config",
+      "error",
+      "loading",
+      "resetConfig",
+      "show",
+      "success",
+      "warning"
+    ],
+    "registeredProperties": [
+      "bgColor",
+      "icon",
+      "message",
+      "position"
+    ],
+    "registeredEvents": [
+      "onClick",
+      "onClose"
+    ]
+  },
+  {
+    "name": "ParkTooltip",
+    "title": "文字提示 / Tooltip",
+    "source": "park_display_specs_extra",
+    "demoCount": 7,
+    "demos": [
+      "基础提示",
+      "图标提示",
+      "显隐回调",
+      "点击触发",
+      "富文本提示",
+      "受控显隐",
+      "自定义颜色"
+    ],
+    "demoText": "基础提示 hover 触发、顶部出现的文字提示 / Hover-triggered top tooltip. 图标提示 为图标按钮添加底部提示 / Bottom tooltip on an icon. 显隐回调 onOpenChange 回显当前显隐状态（StatefulBuilder）/ onOpenChange echoes visibility. 点击触发 trigger: tap 适合移动端 / tap trigger suits mobile. 富文本提示 richMessage 支持多行/多组件内容 / richMessage supports multi-line content. 受控显隐 visible + 按钮控制提示显隐 / visible + button controls the tip. 自定义颜色 color / textColor 自定义气泡配色 / color / textColor customize the bubble.",
+    "missingParams": [
+      "arrowPadding",
+      "open",
+      "showArrow"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 62,
+    "guideEmpty": false,
+    "guideLen": 418,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTooltip"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "arrow",
+      "borderRadius",
+      "child",
+      "color",
+      "delay",
+      "destroyTooltipOnHide",
+      "duration",
+      "gap",
+      "maxWidth",
+      "message",
+      "mouseEnterDelay",
+      "mouseLeaveDelay",
+      "onOpenChange",
+      "padding",
+      "placement",
+      "richMessage",
+      "textColor",
+      "trigger",
+      "visible"
+    ],
+    "registeredEvents": [
+      "onOpenChange"
+    ]
+  },
+  {
+    "name": "ParkTour",
+    "title": "漫游式引导",
+    "source": "park_feedback_specs_extra",
+    "demoCount": 2,
+    "demos": [
+      "基础步骤引导",
+      "嵌套目标 + 自定义 placement"
+    ],
+    "demoText": "基础步骤引导 演示三步骤基础引导流程：点击按钮打开 Tour，按步骤依次引导用户关注三个目标区域，最后点「完成」关闭。 嵌套目标 + 自定义 placement 各步骤使用不同的 placement 方向，演示气泡从不同方向锚定目标。第一步 bottom、第二步 right、第三步 left（如果空间允许），展示 Tour 灵活的定位能力。",
+    "missingParams": [
+      "keyboard",
+      "onChanged"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onChanged"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 456,
+    "guideEmpty": false,
+    "guideLen": 578,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTour"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "arrow",
+      "closeOnMaskTap",
+      "current",
+      "doneButtonText",
+      "gap",
+      "highlightRadius",
+      "mask",
+      "maskColor",
+      "nextButtonText",
+      "onChange",
+      "onClose",
+      "onFinish",
+      "open",
+      "prevButtonText",
+      "skipButtonText",
+      "stepIndicatorBuilder",
+      "steps",
+      "zIndex"
+    ],
+    "registeredEvents": [
+      "onChange",
+      "onClose",
+      "onFinish"
+    ]
+  },
+  {
+    "name": "ParkTransfer",
+    "title": "穿梭框",
+    "source": "park_new_component_specs",
+    "demoCount": 3,
+    "demos": [
+      "穿梭框",
+      "变更回调",
+      "带搜索"
+    ],
+    "demoText": "穿梭框 双栏选择 / Dual list 变更回调 onChange 回显方向 / onChange 带搜索 showSearch 过滤 / Searchable",
+    "missingParams": [
+      "bindKey",
+      "bindingService",
+      "onChanged",
+      "oneWay"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [
+      "onChanged"
+    ],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 189,
+    "guideEmpty": false,
+    "guideLen": 52,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkTransfer"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "dataSource",
+      "disabled",
+      "leftTitle",
+      "onChange",
+      "renderItem",
+      "rightTitle",
+      "showSearch",
+      "targetKeys"
+    ],
+    "registeredEvents": [
+      "onChange"
+    ]
+  },
+  {
+    "name": "ParkTree",
+    "title": "树形控件",
+    "source": "park_new_component_specs",
+    "demoCount": 6,
+    "demos": [
+      "基础树",
+      "多选树",
+      "选中回调",
+      "显示连线",
+      "节点图标",
+      "多选回调 onMultiSelect"
+    ],
+    "demoText": "基础树 两级目录结构 / Basic tree 多选树 带 checkbox 的多选 / Multi-select 选中回调 onSelect 实时回显 / onSelect callback 显示连线 showLine 引导线 / Guide lines 节点图标 nodeIcon 统一图标 / Node icons 多选回调 onMultiSelect multiSelect 模式下 onMultiSelect 实时回显已选 key 列表 / onMultiSelect callback",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 133,
+    "guideEmpty": false,
+    "guideLen": 82,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkTree"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "checkStrictly",
+      "data",
+      "defaultExpandedKeys",
+      "draggable",
+      "expandIcon",
+      "expandRotate",
+      "loadChildren",
+      "multiSelect",
+      "nodeIcon",
+      "onDragReorder",
+      "onMultiSelect",
+      "onSelect",
+      "searchQuery",
+      "selectedKeys",
+      "showLine"
+    ],
+    "registeredEvents": [
+      "onMultiSelect",
+      "onSelect"
+    ]
+  },
+  {
+    "name": "ParkTreeSelect",
+    "title": "树选择器",
+    "source": "park_input_specs_p2",
+    "demoCount": 9,
+    "demos": [
+      "单选模式",
+      "多选模式",
+      "含禁用节点",
+      "搜索过滤",
+      "连接线",
+      "默认展开全部",
+      "限制标签数量",
+      "双向绑定（ParkBinding）",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "单选模式 单选树，不带复选框，点击叶子节点选中。 多选模式 多选树，带复选框，支持父子联动。 含禁用节点 部分节点设置 disabled，不可选中。 搜索过滤 searchable: true 启用搜索过滤。 连接线 treeLine: true 显示树形连接线。 默认展开全部 treeDefaultExpandAll: true 初始化时展开所有节点。 限制标签数量 maxTagCount 控制多选模式下可见标签数量，超出以 +N 显示。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，选中节点实时同步到 model。 / ParkBindingService bindKey demo: tree selection syncs to model in real time. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用 treeSelect 字段类型。 / ParkForm fieldType=treeSelect demo.",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 526,
+    "guideEmpty": false,
+    "guideLen": 393,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkTreeSelect"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "bindKey",
+      "bindingService",
+      "checkStrictly",
+      "checkable",
+      "checkedKeys",
+      "defaultCheckedKeys",
+      "maxTagCount",
+      "multiple",
+      "nodes",
+      "onChanged",
+      "searchHintText",
+      "searchable",
+      "selectedKeys",
+      "showSearch",
+      "switcherIcon",
+      "treeCheckStrictly",
+      "treeCheckable",
+      "treeDefaultExpandAll",
+      "treeLine"
+    ],
+    "registeredEvents": [
+      "onChanged",
+      "onCheck"
+    ]
+  },
+  {
+    "name": "ParkTypography",
+    "title": "排版体系 / Typography",
+    "source": "park_base_specs",
+    "demoCount": 1,
+    "demos": [
+      "字号预设 / Preset sizes"
+    ],
+    "demoText": "字号预设 / Preset sizes display 到 overline 全字阶预览 / Full size scale preview",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 235,
+    "guideEmpty": false,
+    "guideLen": 261,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [],
+    "staticMethods": [],
+    "registeredProperties": [
+      "sizeBody",
+      "sizeBodySmall",
+      "sizeCaption",
+      "sizeDisplay",
+      "sizeH1",
+      "sizeH2",
+      "sizeH3",
+      "weightBold",
+      "weightMedium",
+      "weightRegular"
+    ],
+    "registeredEvents": []
+  },
+  {
+    "name": "ParkUpload",
+    "title": "文件上传",
+    "source": "park_input_specs_p2",
+    "demoCount": 10,
+    "demos": [
+      "网格布局上传",
+      "列表布局上传",
+      "含上传进度",
+      "失败与重试",
+      "拖拽上传",
+      "预览回调 (onPreview)",
+      "上传 + 绑定示例",
+      "双向绑定（ParkBinding）",
+      "绑定演示",
+      "动态表单（ParkForm Schema 模式）"
+    ],
+    "demoText": "网格布局上传 默认网格布局，展示文件缩略图和添加按钮。 列表布局上传 设置 mode 为 fileList，使用列表布局。 含上传进度 展示上传中和失败状态的文件。 失败与重试 失败状态的文件显示重试按钮，点击触发 onRetry 回调。 拖拽上传 draggable: true 允许拖入文件，触发 onDropFiles 回调。 预览回调 (onPreview) 点击已上传文件缩略图触发 onPreview 回调，参数为被预览的文件。 / Tapping a file thumbnail fires onPreview with the file. 上传 + 绑定示例 通过 ParkBindingService 管理文件选择状态，演示上传前（空列表）和上传后（文件名回显）两种状态。使用 StatefulBuilder 管理文件列表，移除文件时同步更新绑定服务。 双向绑定（ParkBinding） 通过 bindKey + bindingService 实现双向绑定，文件列表与绑定模型实时同步。 / ParkBindingService bindKey demo: upload files list syncs to model in real time. 绑定演示 ParkBindingService 持有文件列表模型，ParkUpload 通过 bindKey 自动绑定，文件变化实时同步到 model。 / ParkBindingService bindKey auto-binding demo: upload model syncs automatically via bindKey. 动态表单（ParkForm Schema 模式） 在 ParkForm 中以 schema 配置使用 upload 字段类型。 / ParkForm fieldType=upload demo.",
+    "missingParams": [
+      "avatarShape",
+      "avatarSize",
+      "enableBuiltInPreview",
+      "uploadType"
+    ],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [
+      "validateFileWithMagicBytes"
+    ],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 243,
+    "guideEmpty": false,
+    "guideLen": 389,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": false,
+    "componentClasses": [
+      "ParkUpload"
+    ],
+    "staticMethods": [
+      "_fileExtension",
+      "_fileIconForPath",
+      "_formatFileSize",
+      "_hasImageMagicBytes",
+      "_isImagePath",
+      "validateFileWithMagicBytes"
+    ],
+    "registeredProperties": [
+      "accept",
+      "beforeAddValidator",
+      "chunkSize",
+      "chunked",
+      "cropAspectRatio",
+      "cropMaxHeight",
+      "cropMaxWidth",
+      "croppable",
+      "customRequest",
+      "dragEnabled",
+      "draggable",
+      "files",
+      "imageOnly",
+      "listType",
+      "maxCount",
+      "maxSizeMB",
+      "mode",
+      "multiple",
+      "onAdd",
+      "onChanged",
+      "onChunkUpload",
+      "onDropFiles",
+      "onFileDrop",
+      "onPreview",
+      "onRemove",
+      "onRetry",
+      "previewable",
+      "removable"
+    ],
+    "registeredEvents": [
+      "onAdd",
+      "onDropFiles",
+      "onPreview",
+      "onRemove",
+      "onRetry"
+    ]
+  },
+  {
+    "name": "ParkWatermark",
+    "title": "水印",
+    "source": "park_new_component_specs",
+    "demoCount": 4,
+    "demos": [
+      "文字水印",
+      "图片水印",
+      "自定义颜色",
+      "间距与旋转"
+    ],
+    "demoText": "文字水印 叠加「机密」水印 / Text watermark 图片水印 Icon 作为水印 / Image watermark 自定义颜色 品牌色半透明水印 / Brand color 间距与旋转 调整 gap / rotate / Spacing & rotation",
+    "missingParams": [],
+    "missingKeyOnly": [],
+    "missingEvents": [],
+    "missingMethods": [],
+    "basicUsageEmpty": false,
+    "basicUsageLen": 45,
+    "guideEmpty": false,
+    "guideLen": 58,
+    "schemaDocEmpty": true,
+    "schemaDocLen": 0,
+    "dynDocEmpty": true,
+    "componentClasses": [
+      "ParkWatermark"
+    ],
+    "staticMethods": [],
+    "registeredProperties": [
+      "child",
+      "color",
+      "fontSize",
+      "gapX",
+      "gapY",
+      "image",
+      "rotate",
+      "text"
+    ],
+    "registeredEvents": []
+  }
+]

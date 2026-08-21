@@ -25,5 +25,19 @@ void main() {
       await tester.pumpWidget(_wrap(const ParkNoticeBar(text: '警告', variant: ParkNoticeBarVariant.warning)));
       expect(find.text('警告'), findsOneWidget);
     });
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      await tester.pumpWidget(_wrap(const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ParkNoticeBar(text: '小', size: ParkNoticeBarSize.small),
+          ParkNoticeBar(text: '中', size: ParkNoticeBarSize.medium),
+          ParkNoticeBar(text: '大', size: ParkNoticeBarSize.large),
+        ],
+      )));
+      expect(find.text('小'), findsOneWidget);
+      expect(find.text('中'), findsOneWidget);
+      expect(find.text('大'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

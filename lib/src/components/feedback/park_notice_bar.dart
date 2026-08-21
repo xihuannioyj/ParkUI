@@ -1,8 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
 
 /// 通知栏变体
 enum ParkNoticeBarVariant { info, success, warning, error }
+
+/// 通知栏尺寸
+enum ParkNoticeBarSize {
+  /// 小尺寸（紧凑内边距、小字号）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号）
+  large,
+}
 
 /// 通知栏模式
 enum ParkNoticeBarMode {
@@ -41,6 +56,9 @@ class ParkNoticeBar extends StatefulWidget {
   /// Notice bar mode (closable/link/action). When set, overrides [closable].
   final ParkNoticeBarMode? mode;
 
+  /// Notice bar size (small/medium/large).
+  final ParkNoticeBarSize size;
+
   const ParkNoticeBar({
     super.key,
     required this.text,
@@ -54,6 +72,7 @@ class ParkNoticeBar extends StatefulWidget {
     this.speed,
     this.prefixWidget,
     this.mode,
+    this.size = ParkNoticeBarSize.medium,
   });
 
   @override
@@ -68,6 +87,11 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
   late final ScrollController _scrollController;
+
+  /// 跑马灯停顿定时器（可取消）。
+  Timer? _marqueeTimer;
+  /// 跑马灯代数令牌：dispose/停止后使所有在途回调失效。
+  int _marqueeGeneration = 0;
 
   @override
   void initState() {
@@ -128,6 +152,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     if (!mounted || _closed || _userInteracting) return;
     if (!_scrollController.hasClients) return;
 
+    final int generation = ++_marqueeGeneration;
     _scrollController
         .animateTo(
       _scrollController.position.maxScrollExtent,
@@ -136,9 +161,14 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     )
         .then((_) {
       if (!mounted || _closed || _userInteracting) return;
+      if (generation != _marqueeGeneration) return;
       // Pause briefly before restarting.
-      Future<void>.delayed(const Duration(milliseconds: 400), () {
+      // 用可取消 Timer 替代 Future.delayed：dispose 后不残留 pending Timer，
+      // 代数令牌让在途回调全部失效。
+      _marqueeTimer?.cancel();
+      _marqueeTimer = Timer(const Duration(milliseconds: 400), () {
         if (!mounted || _closed || _userInteracting) return;
+        if (generation != _marqueeGeneration) return;
         if (!_scrollController.hasClients) return;
         _scrollController.jumpTo(0);
         _animateMarquee(duration);
@@ -147,6 +177,9 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
   }
 
   void _stopMarquee({bool resetPosition = false}) {
+    _marqueeGeneration++;
+    _marqueeTimer?.cancel();
+    _marqueeTimer = null;
     if (resetPosition && _scrollController.hasClients) {
       _scrollController.jumpTo(0);
     }
@@ -224,7 +257,12 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
         iconData = Icons.error_outline;
         break;
     }
-    return Icon(iconData, size: 18, color: _textColor(park));
+    final double iconSize = switch (widget.size) {
+      ParkNoticeBarSize.small => 16.0,
+      ParkNoticeBarSize.medium => 18.0,
+      ParkNoticeBarSize.large => 20.0,
+    };
+    return Icon(iconData, size: iconSize, color: _textColor(park));
   }
 
   @override
@@ -236,16 +274,34 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
     final bg = _bgColor(park);
     final fg = _textColor(park);
 
+    // size 令牌：小/中/大 三档内边距与字号
+    final EdgeInsets padding = switch (widget.size) {
+      ParkNoticeBarSize.small => EdgeInsets.symmetric(
+          horizontal: park.spacing.sm,
+          vertical: park.spacing.xs,
+        ),
+      ParkNoticeBarSize.medium => EdgeInsets.symmetric(
+          horizontal: park.spacing.base,
+          vertical: park.spacing.sm,
+        ),
+      ParkNoticeBarSize.large => EdgeInsets.symmetric(
+          horizontal: park.spacing.lg,
+          vertical: park.spacing.md,
+        ),
+    };
+    final double fontSize = switch (widget.size) {
+      ParkNoticeBarSize.small => park.typography.sizeCaption,
+      ParkNoticeBarSize.medium => park.typography.sizeBodySmall,
+      ParkNoticeBarSize.large => park.typography.sizeBody,
+    };
+
     return Semantics(
       liveRegion: true,
       label: widget.text,
       child: FadeTransition(
       opacity: _fadeAnim,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
+        padding: padding,
         decoration: BoxDecoration(
           color: bg,
           borderRadius: park.radius.brSm,
@@ -270,7 +326,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
                         child: Text(
                           widget.text,
                           style: park.typography.body.copyWith(
-                            fontSize: park.typography.sizeBodySmall,
+                            fontSize: fontSize,
                             color: fg,
                           ),
                           maxLines: 1,
@@ -280,7 +336,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
                   : Text(
                       widget.text,
                       style: park.typography.body.copyWith(
-                        fontSize: park.typography.sizeBodySmall,
+                        fontSize: fontSize,
                         color: fg,
                       ),
                       maxLines: widget.wrap ? null : 2,
@@ -291,7 +347,7 @@ class _ParkNoticeBarState extends State<ParkNoticeBar>
               SizedBox(width: park.spacing.sm),
               Semantics(
                 button: true,
-                label: 'Close',
+                label: ParkLocalizations.of(context).closeText,
                 child: GestureDetector(
                   onTap: _close,
                   child: Icon(Icons.close, size: 16, color: fg),

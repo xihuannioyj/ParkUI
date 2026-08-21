@@ -47,7 +47,8 @@ class ParkActionIconButton extends StatelessWidget {
   Color _foregroundColor(ParkThemeData park) {
     switch (tone) {
       case ParkActionTone.danger:
-        return const Color(0xFFD9485F);
+        // 主题统一：danger 走 error 令牌（原硬编码 0xFFD9485F 不随主题）
+        return park.colors.error;
       case ParkActionTone.neutral:
         return park.colors.textSecondary;
       case ParkActionTone.primary:
@@ -102,6 +103,8 @@ class ParkActionIconButton extends StatelessWidget {
 /// 通用操作平铺入口：平铺式操作项。
 ///
 /// 带图标、标题、可选副标题与角标文字的操作卡片，右侧带箭头指示。
+/// 默认带边框与圆角；可通过 [showBorder]/[borderRadius] 调整为无边框直角
+/// 的列表项样式（如房间底部弹窗中的菜单项）。
 class ParkActionTile extends StatelessWidget {
   /// 图标。
   final IconData icon;
@@ -121,6 +124,12 @@ class ParkActionTile extends StatelessWidget {
   /// 色调。
   final ParkActionTone tone;
 
+  /// 是否显示边框（默认 true；false 时同时去掉阴影）。
+  final bool showBorder;
+
+  /// 圆角（默认 18；传 [BorderRadius.zero] 即直角）。
+  final BorderRadius borderRadius;
+
   const ParkActionTile({
     super.key,
     required this.icon,
@@ -129,12 +138,15 @@ class ParkActionTile extends StatelessWidget {
     this.trailingText,
     required this.onTap,
     this.tone = ParkActionTone.primary,
+    this.showBorder = true,
+    this.borderRadius = const BorderRadius.all(Radius.circular(18)),
   });
 
   Color _foregroundColor(ParkThemeData park) {
     switch (tone) {
       case ParkActionTone.danger:
-        return const Color(0xFFD9485F);
+        // 主题统一：danger 走 error 令牌（原硬编码 0xFFD9485F 不随主题）
+        return park.colors.error;
       case ParkActionTone.neutral:
         return park.colors.textSecondary;
       case ParkActionTone.primary:
@@ -153,7 +165,7 @@ class ParkActionTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: ParkInkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: borderRadius,
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -164,11 +176,13 @@ class ParkActionTile extends StatelessWidget {
               ),
               park.colors.surface,
             ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: park.colors.border.withValues(alpha: 0.85),
-            ),
-            boxShadow: theme.brightness == Brightness.dark
+            borderRadius: borderRadius,
+            border: showBorder
+                ? Border.all(
+                    color: park.colors.border.withValues(alpha: 0.85),
+                  )
+                : null,
+            boxShadow: !showBorder || theme.brightness == Brightness.dark
                 ? const []
                 : [
                     BoxShadow(

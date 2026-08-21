@@ -148,7 +148,9 @@ class _ParkStatisticState extends State<ParkStatistic>
     final String intStr;
     final String decStr;
     if (widget.precision != null) {
-      final String fixed = abs.toStringAsFixed(widget.precision!);
+      // 边界防御：precision<0 时 toStringAsFixed 抛 RangeError。
+      final int p = widget.precision! < 0 ? 0 : widget.precision!;
+      final String fixed = abs.toStringAsFixed(p);
       final List<String> parts = fixed.split('.');
       intStr = parts[0];
       decStr = parts.length > 1 ? parts[1] : '';
@@ -157,15 +159,29 @@ class _ParkStatisticState extends State<ParkStatistic>
       decStr = '';
     } else {
       final String s = abs.toString();
-      final List<String> parts = s.split('.');
-      intStr = parts[0];
-      decStr = parts.length > 1 ? parts[1] : '';
+      // 小数值（如 1e-7）会显示科学计数法 "1e-7"：转固定精度并去尾零。
+      if (s.contains('e') || s.contains('E')) {
+        final List<String> parts = abs.toStringAsFixed(10).split('.');
+        intStr = parts[0];
+        decStr = _trimTrailingZeros(parts.length > 1 ? parts[1] : '');
+      } else {
+        final List<String> parts = s.split('.');
+        intStr = parts[0];
+        decStr = parts.length > 1 ? parts[1] : '';
+      }
     }
 
     final String grouped = _groupDigits(intStr, widget.groupSeparator ?? ',');
     final String decimal =
         decStr.isEmpty ? '' : '${widget.decimalSeparator}$decStr';
     return '${isNegative ? '-' : ''}$grouped$decimal';
+  }
+
+  /// 去除小数尾零（如 "1000000000" → "1"）。
+  String _trimTrailingZeros(String s) {
+    var end = s.length;
+    while (end > 0 && s[end - 1] == '0') end--;
+    return s.substring(0, end);
   }
 
   /// 从右往左每 3 位插入分组符。

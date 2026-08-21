@@ -129,6 +129,14 @@ class ParkChipGridPicker extends StatefulWidget {
 class _ParkChipGridPickerState extends State<ParkChipGridPicker> {
   int _activeCategory = 0;
 
+  /// 计算单个选项宽度（columns <= 0 时兜底 1 列，避免除零）。
+  double _itemWidth(double maxWidth) {
+    final int cols = widget.columns > 0 ? widget.columns : 1;
+    final double width =
+        (maxWidth - widget.optionSpacing * (cols - 1)) / cols;
+    return width < 0 ? 0.0 : width;
+  }
+
   @override
   Widget build(BuildContext context) {
     // 双向绑定模式（零侵入）：bindKey 解析到绑定服务后，选中集合改由
@@ -263,9 +271,8 @@ class _ParkChipGridPickerState extends State<ParkChipGridPicker> {
                           },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
-                      width: (constraints.maxWidth -
-                              widget.optionSpacing * (widget.columns - 1)) /
-                          widget.columns,
+                      // 边界防御：columns <= 0 时除零得 Infinity/负数宽度，布局异常。
+                      width: _itemWidth(constraints.maxWidth),
                       padding: EdgeInsets.symmetric(
                         horizontal: spacing.sm,
                         vertical: spacing.sm,

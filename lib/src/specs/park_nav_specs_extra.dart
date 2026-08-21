@@ -297,7 +297,19 @@ final ParkComponentSpec _parkPaginationSpec = ParkComponentSpec(
       name: 'size',
       type: 'ParkPaginationSize',
       defaultVal: 'ParkPaginationSize.medium',
-      description: '分页器尺寸：small（按钮 24px）/ medium（按钮 32px）。',
+      description: '分页器尺寸：small（按钮 24px）/ medium（按钮 32px）/ large（按钮 40px）。',
+    ),
+    ParkPropertyDef(
+      name: 'onChanged',
+      type: 'void Function(int page, int pageSize)?',
+      defaultVal: 'null',
+      description: '页码或每页条数变化回调。',
+    ),
+    ParkPropertyDef(
+      name: 'onShowSizeChange',
+      type: 'void Function(int page, int pageSize)?',
+      defaultVal: 'null',
+      description: '每页条数变化回调。',
     ),
     ParkPropertyDef(
       name: 'responsive',
@@ -334,6 +346,16 @@ final ParkComponentSpec _parkPaginationSpec = ParkComponentSpec(
       name: 'onChange',
       signature: 'void Function(int page, int pageSize)?',
       description: '页码或每页条数变化时的回调。',
+    ),
+    ParkEventDef(
+      name: 'onChanged',
+      signature: 'void Function(int page, int pageSize)?',
+      description: '页码或每页条数变化时的回调（别名）。',
+    ),
+    ParkEventDef(
+      name: 'onShowSizeChange',
+      signature: 'void Function(int page, int pageSize)?',
+      description: '每页条数变化时的回调。',
     ),
   ],
   methods: const <ParkMethodDef>[],
@@ -570,10 +592,17 @@ final ParkComponentSpec _parkBottomNavSpec = ParkComponentSpec(
       required: false,
     ),
     ParkPropertyDef(
+      name: 'size',
+      type: 'ParkBottomNavSize',
+      defaultVal: 'ParkBottomNavSize.medium',
+      description: '导航尺寸：small（图标20/字号10）/ medium（24/12）/ large（28/14），作为 iconSize 与字号的快捷预设 / Navigation size preset',
+      required: false,
+    ),
+    ParkPropertyDef(
       name: 'iconSize',
-      type: 'double',
-      defaultVal: '24',
-      description: '图标尺寸 / Icon size',
+      type: 'double?',
+      defaultVal: 'null（由 size 预设决定）',
+      description: '图标尺寸（显式传入时覆盖 size 预设）/ Icon size (overrides size preset)',
       required: false,
     ),
     ParkPropertyDef(

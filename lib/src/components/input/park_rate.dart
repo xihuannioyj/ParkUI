@@ -75,7 +75,8 @@ class ParkRate extends FormField<double> implements ParkBindableWidget {
     super.autovalidateMode,
     super.onSaved,
   }) : super(
-          initialValue: value.clamp(0, count.toDouble()),
+          // 边界防御：count < 0 时 clamp(0, 负数) 抛 ArgumentError，运行时兜底。
+          initialValue: value.clamp(0, count > 0 ? count.toDouble() : 5.0),
           builder: (FormFieldState<double> field) {
             final state = field as _ParkRateState;
             final park =
@@ -155,7 +156,9 @@ class _ParkRateBuilder extends StatelessWidget {
         : (widget.inactiveColor ?? park.colors.border);
     final effectiveGap = widget.gap ?? 0.0;
 
-    final stars = List.generate(widget.count, (index) {
+    // 边界防御：release 下 assert 被裁剪，count <= 0 时 List.generate 抛 RangeError。
+    final int effectiveCount = widget.count > 0 ? widget.count : 1;
+    final stars = List.generate(effectiveCount, (index) {
       // 字符优先级：characters[index] > character > 默认星星
       final bool useCharacters = widget.characters != null &&
           index < widget.characters!.length;

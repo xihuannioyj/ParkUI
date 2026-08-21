@@ -125,6 +125,9 @@ class _ParkSegmentedState extends State<ParkSegmented>
   /// 内部选中值（非受控模式下的真实数据源）。
   late String _selectedValue;
 
+  /// 内部多选集合（非受控多选模式，P1-13）。
+  final Set<String> _multiSelected = <String>{};
+
   /// 每个 item 的 GlobalKey，用于首帧测量真实宽度（非 block 模式）。
   late List<GlobalKey> _itemKeys;
 
@@ -156,24 +159,40 @@ class _ParkSegmentedState extends State<ParkSegmented>
   /// Check if an item is selected (supports both single and multi mode)
   bool _isSelected(ParkSegmentedItem item) {
     if (widget.multiSelect) {
-      return widget.multiValues != null &&
-          widget.multiValues!.contains(item.value);
+      // 受控模式读 multiValues；非受控模式读内部 _multiSelected（P1-13）
+      if (widget.multiValues != null) {
+        return widget.multiValues!.contains(item.value);
+      }
+      return _multiSelected.contains(item.value);
     }
     return item.value == _resolveSelected();
   }
 
   void _onItemTap(ParkSegmentedItem item) {
     if (widget.multiSelect) {
-      final current = widget.multiValues != null
-          ? List<String>.from(widget.multiValues!)
-          : <String>[];
-      if (current.contains(item.value)) {
-        current.remove(item.value);
+      if (widget.multiValues != null) {
+        // 受控模式：回传新列表，由父组件驱动 UI
+        final current = List<String>.from(widget.multiValues!);
+        if (current.contains(item.value)) {
+          current.remove(item.value);
+        } else {
+          current.add(item.value);
+        }
+        widget.onMultiChanged?.call(current);
+        boundValue = current;
       } else {
-        current.add(item.value);
+        // 非受控模式：内部维护选中集合并即时刷新视觉（原实现无任何反馈）
+        setState(() {
+          if (_multiSelected.contains(item.value)) {
+            _multiSelected.remove(item.value);
+          } else {
+            _multiSelected.add(item.value);
+          }
+        });
+        final List<String> result = _multiSelected.toList();
+        widget.onMultiChanged?.call(result);
+        boundValue = result;
       }
-      widget.onMultiChanged?.call(current);
-      boundValue = current;
     } else {
       // 先更新内部状态（无论父组件是否维护 value，视觉即时更新）
       setState(() => _selectedValue = item.value);
@@ -227,6 +246,13 @@ class _ParkSegmentedState extends State<ParkSegmented>
     } else {
       _selectedValue = widget.value ??
           (widget.items.isNotEmpty ? widget.items.first.value : '');
+      // 非受控多选：从 multiValues / bindable 种子内部集合
+      final dynamic multiSeed = widget.multiValues ?? boundValue;
+      if (multiSeed is List) {
+        _multiSelected
+          ..clear()
+          ..addAll(multiSeed.whereType<String>());
+      }
     }
     _initKeys();
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureItemWidths());
@@ -499,7 +525,7 @@ class _ParkSegmentedState extends State<ParkSegmented>
       child: Text(
         item.badge! > 99 ? '99+' : '${item.badge!}',
         style: TextStyle(
-          fontSize: 10,
+          fontSize: park.typography.sizeOverline,
           color: park.colors.textOnBrand,
           fontWeight: park.typography.weightMedium,
         ),

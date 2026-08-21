@@ -10,10 +10,10 @@ enum ParkSearchSize {
   /// 小尺寸 — 高度 32px
   small,
 
-  /// 中尺寸（默认）— 高度 40px
+  /// 中尺寸（默认）— 高度 48px（对齐 ParkSizing.inputHeightMd）
   medium,
 
-  /// 大尺寸 — 高度 48px
+  /// 大尺寸 — 高度 56px（对齐 ParkSizing.inputHeightLg）
   large,
 }
 
@@ -444,8 +444,10 @@ class _ParkSearchState extends State<ParkSearch>
       widget.cacheService!.saveHistory(widget.cacheScope, value);
     }
     widget.onChanged?.call(value);
-    widget.onSubmitted?.call(value);
-    widget.onSearch?.call(value);
+    // 提交回调统一 trim（不污染输入过程）
+    final String trimmed = value.trim();
+    widget.onSubmitted?.call(trimmed);
+    widget.onSearch?.call(trimmed);
     _hideSuggestionOverlay();
   }
 
@@ -465,9 +467,11 @@ class _ParkSearchState extends State<ParkSearch>
 
   void _onActionTap() {
     if (widget.disabled || widget.loading) return;
-    widget.onSubmitted?.call(_controller.text);
-    widget.onSearch?.call(_controller.text);
-    boundValue = _controller.text;
+    // 提交回调统一 trim
+    final String trimmed = _controller.text.trim();
+    widget.onSubmitted?.call(trimmed);
+    widget.onSearch?.call(trimmed);
+    boundValue = trimmed;
   }
 
   double get _height {
@@ -477,9 +481,11 @@ class _ParkSearchState extends State<ParkSearch>
       case ParkSearchSize.small:
         return park.sizing.inputHeightSm;
       case ParkSearchSize.medium:
-        return 40;
-      case ParkSearchSize.large:
+        // 对齐 ParkSizing 令牌（原硬编码 40，与 ParkInput 中档 48 不一致）
         return park.sizing.inputHeightMd;
+      case ParkSearchSize.large:
+        // 对齐令牌（原误用 inputHeightMd 作为大档）
+        return park.sizing.inputHeightLg;
     }
   }
 
@@ -572,8 +578,10 @@ class _ParkSearchState extends State<ParkSearch>
                           boundValue = v;
                         },
                         onSubmitted: (v) {
-                          widget.onSubmitted?.call(v);
-                          widget.onSearch?.call(v);
+                          // 提交统一 trim
+                          final String trimmed = v.trim();
+                          widget.onSubmitted?.call(trimmed);
+                          widget.onSearch?.call(trimmed);
                           boundValue = v;
                         },
                         decoration: InputDecoration(

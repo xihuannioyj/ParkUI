@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../binding/park_binding_form_scope.dart';
 import '../../binding/park_binding_service.dart';
@@ -339,13 +341,21 @@ class ParkChoiceGroup extends StatelessWidget {
     }
 
     if (item.label != null) {
+      // 用常规与选中（加粗）两种样式分别测量，取较宽者——
+      // 原实现只用非选中样式测量，选中项加粗后行宽被低估 → Row 溢出。
       final painter = TextPainter(
         text: TextSpan(text: item.label, style: txtStyle),
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )..layout();
-      width += painter.width;
+      final painterSelected = TextPainter(
+        text: TextSpan(text: item.label, style: selTxtStyle),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      width += math.max(painter.width, painterSelected.width);
       painter.dispose();
+      painterSelected.dispose();
     }
 
     if (!join) width += 2; // border
@@ -375,35 +385,28 @@ class ParkChoiceGroup extends StatelessWidget {
     BorderRadiusGeometry br;
 
     if (join) {
+      // Join 模式：四边都画同色边框（相邻项通过 Transform 平移重叠，
+      // 视觉上合并成一段），保证颜色均匀 + 非零宽 + solid，
+      // 这样 borderRadius 与 AnimatedContainer 的边框动画都不会触发
+      // paint 断言（原实现用 BorderSide.none，颜色不均匀 → 断言崩溃；
+      // lerp 期间 none 边变透明 → 动画帧同样崩溃）。
+      final Color borderColor = isSelected ? selBorder : unselBorder;
+      final double borderWidth =
+          isSelected ? _kBorderWidthSelected : _kBorderWidthDefault;
+      border = Border.all(color: borderColor, width: borderWidth);
       if (direction == Axis.horizontal) {
-        border = Border(
-          top: BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault),
-          bottom: BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault),
-          left: isFirst
-              ? BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault)
-              : BorderSide.none,
-          right: isLast
-              ? BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault)
-              : BorderSide.none,
-        );
-        br = BorderRadius.horizontal(
-          left: isFirst ? Radius.circular(borderRadius) : Radius.zero,
-          right: isLast ? Radius.circular(borderRadius) : Radius.zero,
+        br = BorderRadius.only(
+          topLeft: isFirst ? Radius.circular(borderRadius) : Radius.zero,
+          bottomLeft: isFirst ? Radius.circular(borderRadius) : Radius.zero,
+          topRight: isLast ? Radius.circular(borderRadius) : Radius.zero,
+          bottomRight: isLast ? Radius.circular(borderRadius) : Radius.zero,
         );
       } else {
-        border = Border(
-          left: BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault),
-          right: BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault),
-          top: isFirst
-              ? BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault)
-              : BorderSide.none,
-          bottom: isLast
-              ? BorderSide(color: isSelected ? selBorder : unselBorder, width: isSelected ? _kBorderWidthSelected : _kBorderWidthDefault)
-              : BorderSide.none,
-        );
-        br = BorderRadius.vertical(
-          top: isFirst ? Radius.circular(borderRadius) : Radius.zero,
-          bottom: isLast ? Radius.circular(borderRadius) : Radius.zero,
+        br = BorderRadius.only(
+          topLeft: isFirst ? Radius.circular(borderRadius) : Radius.zero,
+          topRight: isFirst ? Radius.circular(borderRadius) : Radius.zero,
+          bottomLeft: isLast ? Radius.circular(borderRadius) : Radius.zero,
+          bottomRight: isLast ? Radius.circular(borderRadius) : Radius.zero,
         );
       }
     } else {

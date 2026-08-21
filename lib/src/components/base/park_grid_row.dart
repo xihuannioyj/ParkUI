@@ -370,9 +370,76 @@ class ParkGridRow extends StatelessWidget {
       );
     }
 
-    // justify 非 start 时，剩余空间用 Spacer 占位
+    // justify 处理：Row 内含 flex 子节点时 mainAxisAlignment 不生效，
+    // 需显式插入 Spacer 分配剩余格数。
+    // 原实现统一在末尾追加 Spacer（吃光剩余空间），导致 end/center/
+    // spaceBetween 等全部渲染成 start（修复 P1-4）。
     if (mainAxis != MainAxisAlignment.start && remainingSpan > 0) {
-      colWidgets.add(Spacer(flex: remainingSpan));
+      final int n = rowCols.length;
+      switch (mainAxis) {
+        case MainAxisAlignment.end:
+          // 内容推到右侧：Spacer 在前
+          colWidgets.insert(0, Spacer(flex: remainingSpan));
+          break;
+        case MainAxisAlignment.center:
+          // 居中：两侧各分一半（奇数余数给右侧）
+          final int left = remainingSpan ~/ 2;
+          final int right = remainingSpan - left;
+          colWidgets.insert(0, Spacer(flex: left));
+          colWidgets.add(Spacer(flex: right));
+          break;
+        case MainAxisAlignment.spaceBetween:
+          // 两端对齐：剩余格数均分到列之间
+          if (n > 1) {
+            final List<Widget> spaced = <Widget>[];
+            final int baseGap = remainingSpan ~/ (n - 1);
+            final int extra = remainingSpan % (n - 1);
+            for (var i = 0; i < n; i++) {
+              if (i > 0) {
+                spaced.add(Spacer(flex: baseGap + (i == n - 1 ? extra : 0)));
+              }
+              spaced.add(colWidgets[i]);
+            }
+            colWidgets
+              ..clear()
+              ..addAll(spaced);
+          }
+          break;
+        case MainAxisAlignment.spaceAround:
+          // 等间距（两端各半份）
+          if (n > 0) {
+            final List<Widget> spaced = <Widget>[];
+            final int baseGap = remainingSpan ~/ (n * 2);
+            final int extra = remainingSpan % (n * 2);
+            for (var i = 0; i < n; i++) {
+              spaced.add(Spacer(flex: baseGap + (i == 0 ? extra : 0)));
+              spaced.add(colWidgets[i]);
+              spaced.add(Spacer(flex: baseGap));
+            }
+            colWidgets
+              ..clear()
+              ..addAll(spaced);
+          }
+          break;
+        case MainAxisAlignment.spaceEvenly:
+          // 等间距（含两端，n+1 份）
+          if (n > 0) {
+            final List<Widget> spaced = <Widget>[];
+            final int baseGap = remainingSpan ~/ (n + 1);
+            final int extra = remainingSpan % (n + 1);
+            for (var i = 0; i < n; i++) {
+              spaced.add(Spacer(flex: baseGap + (i == 0 ? extra : 0)));
+              spaced.add(colWidgets[i]);
+            }
+            spaced.add(Spacer(flex: baseGap));
+            colWidgets
+              ..clear()
+              ..addAll(spaced);
+          }
+          break;
+        case MainAxisAlignment.start:
+          break;
+      }
     }
 
     return Row(

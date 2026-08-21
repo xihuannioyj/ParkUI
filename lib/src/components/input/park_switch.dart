@@ -247,7 +247,7 @@ class _ParkSwitchBuilder extends StatelessWidget {
                             child: Center(
                               child: DefaultTextStyle(
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: park.typography.sizeOverline,
                                   color: park.colors.textOnBrand,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -266,7 +266,7 @@ class _ParkSwitchBuilder extends StatelessWidget {
                             child: Center(
                               child: DefaultTextStyle(
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: park.typography.sizeOverline,
                                   color: park.colors.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),

@@ -531,6 +531,18 @@ final ParkComponentSpec _parkToast = ParkComponentSpec(
       defaultVal: 'ParkToastPosition.center',
       description: '弹出位置：top / center / bottom',
     ),
+    ParkPropertyDef(
+      name: 'afterClose',
+      type: 'VoidCallback?',
+      defaultVal: 'null',
+      description: '关闭动画完成后的回调',
+    ),
+    ParkPropertyDef(
+      name: 'destroyOnHide',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '隐藏时是否销毁 overlay（节省内存）',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -574,6 +586,16 @@ final ParkComponentSpec _parkToast = ParkComponentSpec(
       signature:
           'static VoidCallback loading(BuildContext context, String message, {ParkToastPosition position, String? key})',
       description: '显示带加载指示器的 Toast，返回一个关闭函数用于手动关闭',
+    ),
+    ParkMethodDef(
+      name: 'config',
+      signature: 'static void config({int? maxCount})',
+      description: '更新全局配置（如同屏最多显示条数）',
+    ),
+    ParkMethodDef(
+      name: 'resetConfig',
+      signature: 'static void resetConfig()',
+      description: '重置全局配置为默认值',
     ),
   ],
   demos: <ParkDemoScenario>[
@@ -970,6 +992,13 @@ final ParkComponentSpec _parkActionSheet = ParkComponentSpec(
       defaultVal: 'true',
       description: '面板是否带有顶部圆角',
     ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkActionSheetSize',
+      defaultVal: 'ParkActionSheetSize.medium',
+      description: '面板尺寸：small（紧凑）/ medium（默认）/ large（宽松），'
+          '控制操作项与取消按钮的内边距和字号',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -982,7 +1011,7 @@ final ParkComponentSpec _parkActionSheet = ParkComponentSpec(
     ParkMethodDef(
       name: 'show',
       signature:
-          'static Future<ParkAction?> show(BuildContext context, {String? title, required List<ParkAction> actions, String cancelText, bool showCancel, bool closeOnTapAction, bool isDismissible, bool enableDrag, String? description, int? destructiveIndex, bool gridMode, int gridColumns, VoidCallback? onCancel})',
+          'static Future<ParkAction?> show(BuildContext context, {String? title, required List<ParkAction> actions, String cancelText, bool showCancel, bool closeOnTapAction, bool isDismissible, bool enableDrag, String? description, int? destructiveIndex, bool gridMode, int gridColumns, VoidCallback? onCancel, ParkActionSheetSize size})',
       description: '弹出操作面板，返回用户选中的 ParkAction，取消时返回 null',
     ),
   ],
@@ -1609,6 +1638,12 @@ final ParkComponentSpec _parkDropdownMenu = ParkComponentSpec(
           '如果组件位于 ParkForm 内且表单已注入 bindingService，'
           '此参数可省略（自动从 ParkBindingFormScope 获取）。',
     ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkDropdownMenuSize',
+      defaultVal: 'ParkDropdownMenuSize.medium',
+      description: '下拉菜单尺寸：small（紧凑内边距、小字号、小图标）/ medium（默认）/ large（宽松内边距、大字号、大图标）。',
+    ),
   ],
   events: const <ParkEventDef>[
     ParkEventDef(
@@ -1985,6 +2020,12 @@ final ParkComponentSpec _parkNoticeBar = ParkComponentSpec(
       description: '模式：closable（关闭）/ link（链接箭头）/ action（自定义操作），设置后覆盖 closable',
     ),
     ParkPropertyDef(
+      name: 'size',
+      type: 'ParkNoticeBarSize',
+      defaultVal: 'ParkNoticeBarSize.medium',
+      description: '通知栏尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小',
+    ),
+    ParkPropertyDef(
       name: 'wrap',
       type: 'bool',
       defaultVal: 'false',
@@ -2189,6 +2230,12 @@ final ParkComponentSpec _parkMessage = ParkComponentSpec(
       type: 'Color?',
       defaultVal: 'null',
       description: '背景颜色',
+    ),
+    ParkPropertyDef(
+      name: 'size',
+      type: 'ParkMessageSize',
+      defaultVal: 'ParkMessageSize.medium',
+      description: '消息尺寸：small（紧凑）/ medium（默认）/ large（宽松），控制内边距、字号与图标大小',
     ),
   ],
   events: const <ParkEventDef>[
@@ -2895,7 +2942,10 @@ final ParkComponentSpec _parkRefresh = ParkComponentSpec(
                   children: <Widget>[
                     Icon(Icons.campaign, size: 20),
                     SizedBox(width: 8),
-                    Text('公告: 系统将于今晚 22:00 维护'),
+                    // Expanded：窄屏下长文案不再溢出
+                    Expanded(
+                      child: Text('公告: 系统将于今晚 22:00 维护'),
+                    ),
                   ],
                 ),
               ),

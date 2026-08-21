@@ -59,6 +59,29 @@ void main() {
       expect(msg.closable, isTrue);
       expect(msg.title, '可关闭');
     });
+
+    testWidgets('三档尺寸均可渲染', (tester) async {
+      await tester.pumpWidget(_wrap(const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ParkMessage(title: '小', size: ParkMessageSize.small),
+          ParkMessage(title: '中', size: ParkMessageSize.medium),
+          ParkMessage(title: '大', size: ParkMessageSize.large),
+        ],
+      )));
+
+      expect(find.text('小'), findsOneWidget);
+      expect(find.text('中'), findsOneWidget);
+      expect(find.text('大'), findsOneWidget);
+      final msgs = tester
+          .widgetList<ParkMessage>(find.byType(ParkMessage))
+          .toList();
+      expect(
+        msgs.map((m) => m.size),
+        [ParkMessageSize.small, ParkMessageSize.medium, ParkMessageSize.large],
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 
   // ===========================================================================
@@ -163,6 +186,34 @@ void main() {
       expect(clicked, isTrue);
       // _handleTap closes the message after invoking the callback.
       expect(find.text('点我'), findsNothing);
+    });
+
+    testWidgets('info() 支持三档尺寸同时弹出', (tester) async {
+      ParkMessage.config(maxCount: 3);
+      await tester.pumpWidget(_wrap(const SizedBox()));
+      final ctx = tester.element(find.byType(SizedBox));
+
+      // 三档尺寸同时弹出，均可正常渲染（不抛异常）。
+      for (final size in ParkMessageSize.values) {
+        ParkMessage.info(
+          ctx,
+          '尺寸消息',
+          content: '尺寸内容',
+          duration: const Duration(seconds: 2),
+          size: size,
+        );
+      }
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('尺寸消息'), findsNWidgets(3));
+      expect(find.text('尺寸内容'), findsNWidgets(3));
+      expect(tester.takeException(), isNull);
+
+      // 清理：推进过 duration，让自动关闭定时器触发并完成退出动画。
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('尺寸消息'), findsNothing);
     });
   });
 }

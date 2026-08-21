@@ -189,6 +189,7 @@ class ParkFormFieldWidget extends StatelessWidget {
     // stacked 模式：使用 ParkFormItem 标准布局。
     return ParkFormItem(
       label: field.labelName,
+      colon: false,
       required: required,
       helpText: field.helpText,
       errorText: errorText,
@@ -288,7 +289,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       input = SizedBox(height: effectiveHeight, child: input);
     }
 
-    return input;
+    return _wrapWithFieldContainer(context, input);
   }
 
   // --------------------------------------------------------------------------
@@ -384,7 +385,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       enabled: !disabled,
       readOnly: field.isReadonly || disabled,
       searchable: isSearchable,
-      grouped: isGrouped,
+      grouped: isGrouped, validator: (String? _) => errorText,
       onChanged: (String? v) => onChanged(v),
     );
   }
@@ -484,7 +485,7 @@ class ParkFormFieldWidget extends StatelessWidget {
         value: value?.toString(),
         layout: ParkRadioLayout.wrap,
         disabled: disabled || field.isReadonly,
-        onChanged: (String? v) => onChanged(v),
+        validator: (String? _) => errorText, onChanged: (String? v) => onChanged(v),
       ),
     );
   }
@@ -630,7 +631,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       mode: fc == 'datetime'
           ? ParkDatePickerMode.dateTime
           : ParkDatePickerMode.date,
-      onChanged: disabled ? null : (DateTime? dt) => onChanged(dt),
+      validator: (DateTime? _) => errorText, onChanged: disabled ? null : (DateTime? dt) => onChanged(dt),
     );
   }
 
@@ -742,7 +743,7 @@ class ParkFormFieldWidget extends StatelessWidget {
       hintText: field.fieldPrompt.isNotEmpty
           ? field.fieldPrompt
           : l10n.selectField(field.labelName),
-      onChanged: (List<String>? path) => onChanged(path),
+      validator: (List<String>? _) => errorText, onChanged: (List<String>? path) => onChanged(path),
     );
   }
 
@@ -1868,7 +1869,7 @@ class _TextFieldAdapterState extends State<_TextFieldAdapter> {
       prefixIcon: widget.prefixIcon,
       suffixIcon: widget.suffixIcon,
       hintText: widget.hintText,
-      label: widget.label,
+      label: null,
       onChanged: (String v) => widget.onChanged(v),
     );
   }

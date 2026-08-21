@@ -13,6 +13,18 @@ enum ParkSideBarTheme {
   dark,
 }
 
+/// 侧边栏尺寸
+enum ParkSideBarSize {
+  /// 小尺寸（紧凑内边距、小字号、小图标）
+  small,
+
+  /// 默认尺寸
+  medium,
+
+  /// 大尺寸（宽松内边距、大字号、大图标）
+  large,
+}
+
 /// 子菜单项点击回调
 typedef ParkSideBarChildChanged =
     void Function(int parentIndex, int childIndex);
@@ -124,6 +136,9 @@ class ParkSideBar extends StatefulWidget {
   /// 绑定服务实例
   final ParkBindingService? bindingService;
 
+  /// 侧边栏尺寸（small / medium / large），控制菜单项内边距、字号与图标大小。
+  final ParkSideBarSize size;
+
   const ParkSideBar({
     super.key,
     required this.items,
@@ -143,6 +158,7 @@ class ParkSideBar extends StatefulWidget {
     this.footer,
     this.bindKey,
     this.bindingService,
+    this.size = ParkSideBarSize.medium,
   });
 
   @override
@@ -167,7 +183,12 @@ class _ParkSideBarState extends State<ParkSideBar>
         initialValue >= 0 &&
         initialValue < widget.items.length &&
         initialValue != widget.selectedIndex) {
-      widget.onChanged?.call(initialValue);
+      // 延迟到帧末再回调：initState 处于父组件 build 期间，
+      // 同步回调若执行 setState 会抛 "setState during build"。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onChanged?.call(initialValue);
+      });
     }
   }
 
@@ -201,12 +222,131 @@ class _ParkSideBarState extends State<ParkSideBar>
     _expandedIndexes.add(selectedIndex);
   }
 
+  /// size 令牌：小/中/大 三档内边距、字号与图标大小。
+  ///
+  /// medium 档保持原有取值，small/large 分别更紧凑/更宽松。
+  ({
+    EdgeInsets itemMargin,
+    EdgeInsets itemPadding,
+    double leadingIconSize,
+    double labelFontSize,
+    double expandIconSize,
+    EdgeInsets childMargin,
+    EdgeInsets childPadding,
+    double childIconSize,
+    double childLabelFontSize,
+    EdgeInsets listPadding,
+    EdgeInsets collapseButtonPadding,
+    double collapseIconSize,
+    double collapseTextFontSize,
+  }) _sizeTokens(ParkThemeData park) {
+    return switch (widget.size) {
+      ParkSideBarSize.small => (
+          itemMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.xs,
+            vertical: park.spacing.xxs,
+          ),
+          itemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.xs,
+            vertical: park.spacing.xs,
+          ),
+          leadingIconSize: 18.0,
+          labelFontSize: park.typography.sizeCaption,
+          expandIconSize: 16.0,
+          childMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.xs,
+            vertical: park.spacing.xxs,
+          ),
+          childPadding: EdgeInsets.only(
+            left: park.spacing.xl + park.spacing.xs,
+            right: park.spacing.xs,
+            top: park.spacing.xxs,
+            bottom: park.spacing.xxs,
+          ),
+          childIconSize: 14.0,
+          childLabelFontSize: park.typography.sizeCaption,
+          listPadding: EdgeInsets.symmetric(vertical: park.spacing.xs),
+          collapseButtonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.xs,
+            vertical: park.spacing.xs,
+          ),
+          collapseIconSize: 18.0,
+          collapseTextFontSize: park.typography.sizeCaption,
+        ),
+      ParkSideBarSize.medium => (
+          itemMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.xxs,
+          ),
+          itemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.sm,
+          ),
+          leadingIconSize: 20.0,
+          labelFontSize: park.typography.sizeBody,
+          expandIconSize: 18.0,
+          childMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.xxs,
+          ),
+          childPadding: EdgeInsets.only(
+            left: park.spacing.xl + park.spacing.sm,
+            right: park.spacing.sm,
+            top: park.spacing.xs,
+            bottom: park.spacing.xs,
+          ),
+          childIconSize: 16.0,
+          childLabelFontSize: park.typography.sizeBodySmall,
+          listPadding: EdgeInsets.symmetric(vertical: park.spacing.sm),
+          collapseButtonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.sm,
+            vertical: park.spacing.sm,
+          ),
+          collapseIconSize: 20.0,
+          collapseTextFontSize: park.typography.sizeBodySmall,
+        ),
+      ParkSideBarSize.large => (
+          itemMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.md,
+            vertical: park.spacing.xs,
+          ),
+          itemPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.md,
+            vertical: park.spacing.md,
+          ),
+          leadingIconSize: 24.0,
+          labelFontSize: park.typography.sizeBody,
+          expandIconSize: 22.0,
+          childMargin: EdgeInsets.symmetric(
+            horizontal: park.spacing.md,
+            vertical: park.spacing.xs,
+          ),
+          childPadding: EdgeInsets.only(
+            left: park.spacing.xl + park.spacing.md,
+            right: park.spacing.md,
+            top: park.spacing.sm,
+            bottom: park.spacing.sm,
+          ),
+          childIconSize: 18.0,
+          childLabelFontSize: park.typography.sizeBody,
+          listPadding: EdgeInsets.symmetric(vertical: park.spacing.md),
+          collapseButtonPadding: EdgeInsets.symmetric(
+            horizontal: park.spacing.md,
+            vertical: park.spacing.md,
+          ),
+          collapseIconSize: 24.0,
+          collapseTextFontSize: park.typography.sizeBody,
+        ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
     final colors = park.colors;
     final l10n = ParkLocalizations.of(context);
+    final tokens = _sizeTokens(park);
 
     final currentWidth = widget.collapsed
         ? widget.collapsedWidth
@@ -261,9 +401,10 @@ class _ParkSideBarState extends State<ParkSideBar>
 
           // Menu items
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(vertical: park.spacing.sm),
-              children: List.generate(widget.items.length, (index) {
+            child: ListView.builder(
+              padding: tokens.listPadding,
+              itemCount: widget.items.length,
+              itemBuilder: (BuildContext context, int index) {
                 final item = widget.items[index];
                 final isSelected = index == widget.selectedIndex;
                 final hasChildren =
@@ -297,7 +438,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                       }),
                   ],
                 );
-              }),
+              },
             ),
           ),
 
@@ -336,10 +477,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                   widget.onCollapse?.call(!widget.collapsed);
                 },
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: park.spacing.sm,
-                    vertical: park.spacing.sm,
-                  ),
+                  padding: tokens.collapseButtonPadding,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -348,7 +486,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                         duration: const Duration(milliseconds: 200),
                         child: Icon(
                           Icons.first_page,
-                          size: 20,
+                          size: tokens.collapseIconSize,
                           color: colors.textSecondary,
                         ),
                       ),
@@ -358,7 +496,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                           l10n.collapseText,
                           style: TextStyle(
                             color: colors.textSecondary,
-                            fontSize: park.typography.sizeBodySmall,
+                            fontSize: tokens.collapseTextFontSize,
                           ),
                         ),
                       ],
@@ -421,6 +559,7 @@ class _ParkSideBarState extends State<ParkSideBar>
     required ParkThemeData park,
   }) {
     final colors = park.colors;
+    final tokens = _sizeTokens(park);
     final activeColor = colors.brand;
     final inactiveColor = colors.textSecondary;
     final color = item.disabled
@@ -449,13 +588,10 @@ class _ParkSideBarState extends State<ParkSideBar>
             },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        margin: EdgeInsets.symmetric(
-          horizontal: park.spacing.sm,
-          vertical: park.spacing.xxs,
-        ),
+        margin: tokens.itemMargin,
         padding: EdgeInsets.symmetric(
-          horizontal: widget.collapsed ? 0 : park.spacing.sm,
-          vertical: park.spacing.sm,
+          horizontal: widget.collapsed ? 0 : tokens.itemPadding.horizontal,
+          vertical: tokens.itemPadding.vertical,
         ),
         decoration: BoxDecoration(
           color: bgColor,
@@ -476,7 +612,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: color,
-                    fontSize: park.typography.sizeBody,
+                    fontSize: tokens.labelFontSize,
                     fontWeight: isSelected
                         ? park.typography.weightMedium
                         : park.typography.weightRegular,
@@ -518,7 +654,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
                     Icons.keyboard_arrow_down,
-                    size: 18,
+                    size: tokens.expandIconSize,
                     color: color,
                   ),
                 ),
@@ -542,7 +678,7 @@ class _ParkSideBarState extends State<ParkSideBar>
     required ParkThemeData park,
   }) {
     final colors = park.colors;
-    final icon = Icon(item.icon, size: 20, color: color);
+    final icon = Icon(item.icon, size: _sizeTokens(park).leadingIconSize, color: color);
 
     if (!widget.collapsed || (item.badge == null && !item.dotBadge)) {
       return icon;
@@ -580,40 +716,42 @@ class _ParkSideBarState extends State<ParkSideBar>
     required ParkThemeData park,
   }) {
     final colors = park.colors;
+    final tokens = _sizeTokens(park);
+    final bool disabled = child.disabled;
     final textColor = isSelected ? colors.brand : colors.textSecondary;
     final bgColor = isSelected
         ? colors.brand.withValues(alpha: 0.08)
         : Colors.transparent;
+    // 禁用子项：灰显且不可交互（原实现完全忽略 disabled）
+    final Color effectiveTextColor =
+        disabled ? colors.textDisabled : textColor;
+    final Color effectiveBgColor =
+        disabled ? Colors.transparent : bgColor;
 
     return Semantics(
       label: child.label,
       button: true,
       selected: isSelected,
+      enabled: !disabled,
       child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        widget.onChildChanged?.call(parentIndex, childIndex);
-        widget.onChanged?.call(parentIndex);
-        boundValue = parentIndex;
-      },
+      onTap: disabled
+          ? null
+          : () {
+              widget.onChildChanged?.call(parentIndex, childIndex);
+              widget.onChanged?.call(parentIndex);
+              boundValue = parentIndex;
+            },
       child: Container(
-        margin: EdgeInsets.symmetric(
-          horizontal: park.spacing.sm,
-          vertical: park.spacing.xxs,
-        ),
-        padding: EdgeInsets.only(
-          left: park.spacing.xl + park.spacing.sm,
-          right: park.spacing.sm,
-          top: park.spacing.xs,
-          bottom: park.spacing.xs,
-        ),
+        margin: tokens.childMargin,
+        padding: tokens.childPadding,
         decoration: BoxDecoration(
-          color: bgColor,
+          color: effectiveBgColor,
           borderRadius: park.radius.brSm,
         ),
         child: Row(
           children: [
-            Icon(child.icon, size: 16, color: textColor),
+            Icon(child.icon, size: tokens.childIconSize, color: effectiveTextColor),
             SizedBox(width: park.spacing.sm),
             Expanded(
               child: Text(
@@ -621,8 +759,8 @@ class _ParkSideBarState extends State<ParkSideBar>
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: textColor,
-                  fontSize: park.typography.sizeBodySmall,
+                  color: effectiveTextColor,
+                  fontSize: tokens.childLabelFontSize,
                   fontWeight: isSelected
                       ? park.typography.weightMedium
                       : park.typography.weightRegular,
@@ -639,7 +777,7 @@ class _ParkSideBarState extends State<ParkSideBar>
                 child: Text(
                   child.badge!,
                   style: TextStyle(
-                    color: textColor,
+                    color: effectiveTextColor,
                     fontSize: park.typography.sizeOverline,
                     height: 1.2,
                   ),

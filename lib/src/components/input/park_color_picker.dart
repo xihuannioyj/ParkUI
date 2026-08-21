@@ -661,7 +661,7 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
                       child: Text(
                         _formatLabel(format),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: park.typography.sizeCaption,
                           fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                           color: isActive
                               ? park.colors.textOnBrand
