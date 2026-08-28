@@ -297,34 +297,68 @@ class ParkChoiceGroup extends StatelessWidget {
           children: [
             for (int r = 0; r < rows.length; r++) ...[
               if (r > 0) SizedBox(height: runSpacing),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (int c = 0; c < rows[r].length; c++) ...[
-                    if (c > 0 && !join) SizedBox(width: spacing),
-                    _buildButton(
-                      item: items[rows[r][c]],
-                      index: rows[r][c],
-                      isSelected: items[rows[r][c]].value == effectiveValue,
-                      colors: colors,
-                      selColor: selColor,
-                      selBorder: selBorder,
-                      unselColor: unselColor,
-                      unselBorder: unselBorder,
-                      txtStyle: txtStyle,
-                      selTxtStyle: selTxtStyle,
-                      isFirst: c == 0,
-                      isLast: c == rows[r].length - 1,
-                      onChanged: effectiveOnChanged,
-                    ),
-                  ],
-                ],
+              _buildRow(
+                row: rows[r],
+                colors: colors,
+                selColor: selColor,
+                selBorder: selBorder,
+                unselColor: unselColor,
+                unselBorder: unselBorder,
+                txtStyle: txtStyle,
+                selTxtStyle: selTxtStyle,
+                effectiveValue: effectiveValue,
+                effectiveOnChanged: effectiveOnChanged,
               ),
             ],
           ],
         );
       },
     );
+  }
+
+  /// Builds one wrapped row of choice buttons.
+  ///
+  /// The last button in each row is wrapped in a loose [Flexible]: when the
+  /// measured widths underestimate the real rendered widths (font rendering,
+  /// text scale, etc.), the last button shrinks and its label ellipsizes
+  /// instead of the row overflowing.
+  Widget _buildRow({
+    required List<int> row,
+    required ParkColors colors,
+    required Color selColor,
+    required Color selBorder,
+    required Color unselColor,
+    required Color unselBorder,
+    required TextStyle txtStyle,
+    required TextStyle selTxtStyle,
+    required String? effectiveValue,
+    required ValueChanged<String> effectiveOnChanged,
+  }) {
+    final children = <Widget>[];
+    for (int c = 0; c < row.length; c++) {
+      if (c > 0 && !join) children.add(SizedBox(width: spacing));
+      final Widget button = _buildButton(
+        item: items[row[c]],
+        index: row[c],
+        isSelected: items[row[c]].value == effectiveValue,
+        colors: colors,
+        selColor: selColor,
+        selBorder: selBorder,
+        unselColor: unselColor,
+        unselBorder: unselBorder,
+        txtStyle: txtStyle,
+        selTxtStyle: selTxtStyle,
+        isFirst: c == 0,
+        isLast: c == row.length - 1,
+        onChanged: effectiveOnChanged,
+      );
+      children.add(
+        c == row.length - 1
+            ? Flexible(fit: FlexFit.loose, child: button)
+            : button,
+      );
+    }
+    return Row(mainAxisSize: MainAxisSize.min, children: children);
   }
 
   double _measureItemWidth(

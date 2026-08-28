@@ -153,6 +153,7 @@ export 'src/components/display/park_countdown.dart';
 export 'src/components/display/park_qrcode.dart';
 export 'src/components/display/park_list.dart';
 export 'src/components/display/park_masonry.dart';
+export 'src/components/display/park_map.dart';
 export 'src/components/display/park_ellipsis.dart';
 export 'src/components/display/park_timeline.dart';
 export 'src/components/display/park_statistic.dart';

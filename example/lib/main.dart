@@ -36,6 +36,7 @@ import 'demos/input_extra3_demos.dart';
 import 'demos/display_extra3_demos.dart';
 import 'demos/feedback_extra3_demos.dart';
 import 'demos/navigation_extra3_demos.dart';
+import 'demos/park_map_demo.dart';
 
 void main() {
   runApp(const ParkExampleApp());
@@ -172,6 +173,7 @@ const List<_ComponentCategory> _categories = [
       _ComponentEntry(title: 'ImageViewer 图片查看器', builder: _buildImageViewerDemo),
       _ComponentEntry(title: 'Sticky 粘性定位', builder: _buildStickyDemo),
       _ComponentEntry(title: 'AvatarGroup 头像组', builder: _buildAvatarGroupDemo),
+      _ComponentEntry(title: 'Map 地图', builder: _buildMapDemo),
     ],
   ),
   _ComponentCategory(
@@ -333,6 +335,7 @@ Widget _buildInkWellDemo(BuildContext context) => const InkWellDemo();
 Widget _buildButtonGroupDemo(BuildContext context) => const ButtonGroupDemo();
 Widget _buildAvatarGroupDemo(BuildContext context) => const AvatarGroupDemo();
 Widget _buildBottomNavDemo(BuildContext context) => const BottomNavDemo();
+Widget _buildMapDemo(BuildContext context) => const MapDemo();
 
 // =============================================================================
 // 本地化标题辅助

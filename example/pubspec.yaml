@@ -9,6 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   equatable: ^2.0.5
+  latlong2: ^0.9.1
   park_ui:
     path: ..
 

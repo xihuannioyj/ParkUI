@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:park_ui/park_ui.dart';
 import 'park_component_spec.dart';
 
@@ -270,6 +271,7 @@ Map<String, ParkComponentSpec> get parkNewComponentSpecs =>
       'ParkTransfer': _parkTransferSpec,
       'ParkTree': _parkTreeSpec,
       'ParkApp': _parkAppSpec,
+      'ParkMap': _parkMapSpec,
     };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -3839,3 +3841,266 @@ ParkApp(
     ),
   ],
 );
+
+// ────────────────────────────────────────────────────────────────────────────
+// ParkMap — 地图（flutter_map + 天地图 WMTS）
+// ────────────────────────────────────────────────────────────────────────────
+
+final ParkComponentSpec _parkMapSpec = ParkComponentSpec(
+  name: 'ParkMap',
+  title: '地图',
+  category: 'display',
+  description:
+      '基于 flutter_map 的跨平台地图组件（Android/iOS 纯 Dart 渲染），内置天地图 WMTS 底图，'
+      '支持标记点、标记聚合、地图选点、距离圈与列表联动。天地图 key 通过构造参数注入，组件库不内置业务凭据。',
+  icon: Icons.map,
+  properties: const <ParkPropertyDef>[
+    ParkPropertyDef(
+      name: 'tiandituKey',
+      type: 'String',
+      defaultVal: '—',
+      description: '天地图服务 key（必填，官网申请）/ Tianditu service key (required)',
+      required: true,
+    ),
+    ParkPropertyDef(
+      name: 'initialCenter',
+      type: 'LatLng',
+      defaultVal: 'LatLng(39.9042, 116.4074)',
+      description: '初始中心点 / Initial center',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'initialZoom',
+      type: 'double',
+      defaultVal: '11',
+      description: '初始缩放级别 / Initial zoom level',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'markers',
+      type: 'List<ParkMapMarker>',
+      defaultVal: '[]',
+      description: '标记点列表 / Markers',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'selectedMarkerId',
+      type: 'String?',
+      defaultVal: 'null',
+      description: '受控选中的标记点 id（外部联动高亮）/ Controlled selected marker id',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'selectionEnabled',
+      type: 'bool',
+      defaultVal: 'false',
+      description: '是否开启选点模式（点击地图回调 onMapTap）/ Enable pick-point mode',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'circleCenter',
+      type: 'LatLng?',
+      defaultVal: 'null',
+      description: '距离圈中心（为空不绘制）/ Circle center',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'circleRadiusMeters',
+      type: 'double',
+      defaultVal: '1000',
+      description: '距离圈半径（米，如 1000/3000）/ Circle radius in meters',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'enableClustering',
+      type: 'bool',
+      defaultVal: 'true',
+      description: '是否启用标记聚合（标记数 >1 时生效）/ Enable marker clustering',
+      required: false,
+    ),
+    ParkPropertyDef(
+      name: 'clusterBuilder',
+      type: 'ParkMapClusterBuilder?',
+      defaultVal: 'null',
+      description: '聚合节点构建器（默认数量徽标，可定制如「12 套」）/ Cluster widget builder',
+      required: false,
+    ),
+  ],
+  events: const <ParkEventDef>[
+    ParkEventDef(
+      name: 'onMarkerTap',
+      signature: 'ValueChanged<ParkMapMarker>?',
+      description: '标记点点击回调（供列表联动）/ Marker tap callback',
+    ),
+    ParkEventDef(
+      name: 'onMapTap',
+      signature: 'ValueChanged<LatLng>?',
+      description: '选点模式开启时点击地图回调坐标 / Map tap callback (pick-point mode)',
+    ),
+  ],
+  demos: <ParkDemoScenario>[
+    ParkDemoScenario(
+      title: '基础地图与标记',
+      description: '天地图底图 + 自定义标记点 / Base map with markers',
+      code: '''
+ParkMap(
+  tiandituKey: 'your_key',
+  initialCenter: const LatLng(39.9042, 116.4074),
+  initialZoom: 11,
+  markers: [
+    ParkMapMarker(id: '1', point: const LatLng(39.9042, 116.4074), child: Icon(Icons.home)),
+  ],
+  onMarkerTap: (m) => print('选中: \${m.id}'),
+)''',
+      builder: _buildMapDemoBase,
+    ),
+    ParkDemoScenario(
+      title: '标记聚合',
+      description: '启用聚合，自定义「N 套」聚合节点 / Clustering with custom label',
+      code: '''
+ParkMap(
+  tiandituKey: 'your_key',
+  initialCenter: const LatLng(39.9042, 116.4074),
+  markers: [/* 多个标记点 */],
+  clusterBuilder: (context, count) => Text('\$count 套'),
+)''',
+      builder: _buildMapDemoCluster,
+    ),
+    ParkDemoScenario(
+      title: '选点与距离圈',
+      description: '选点模式回调坐标 + 1km 距离圈 / Pick-point & radius circle',
+      code: '''
+ParkMap(
+  tiandituKey: 'your_key',
+  selectionEnabled: true,
+  circleCenter: const LatLng(39.9042, 116.4074),
+  circleRadiusMeters: 1000,
+  onMapTap: (latLng) => print('选点: \${latLng.latitude}, \${latLng.longitude}'),
+)''',
+      builder: _buildMapDemoPick,
+    ),
+  ],
+  basicUsageCode: '''ParkMap(
+  tiandituKey: 'your_tianditu_key',
+  initialCenter: const LatLng(39.9042, 116.4074),
+  initialZoom: 12,
+  markers: [
+    ParkMapMarker(
+      id: '1',
+      point: const LatLng(39.9042, 116.4074),
+      child: Icon(Icons.location_on, color: Colors.red),
+    ),
+  ],
+  onMarkerTap: (marker) => print('选中标记: \${marker.id}'),
+)''',
+  guide: '''
+## 何时使用 / When to use
+- 「地图找房 / 找租客 / 发布选点」等需要地图底图 + 业务标记点联动的场景（livehome 地图能力 B 方案）/ Map-based browsing, listing, and point-picking scenarios (livehome Map Plan B)
+- 需要按区域聚合展示大量标记点（如「12 套」房源聚合），避免标记重叠 / Aggregating dense markers (e.g. "12 listings") to avoid overlap
+- 需要地图选点获取经纬度（如发布房源时选择位置）、或按距离圈筛选周边资源 / Picking coordinates on the map (listing location) or filtering nearby resources by radius
+- 需要地图与外部列表双向联动：点击标记高亮列表项、点击列表项高亮标记 / Two-way map↔list linkage: tapping a marker highlights a list row, and vice versa
+
+## 使用建议 / Usage tips
+- tiandituKey 为必填参数，请到天地图官网申请；组件库不内置任何业务凭据，key 应由调用方注入 / tiandituKey is required; obtain one from Tianditu; the library never embeds credentials
+- 标记点通过 markers 传入 [ParkMapMarker]（id + point + 自定义 child）；点击回调 onMarkerTap 返回对应标记，供列表联动 / Pass [ParkMapMarker]s (id + point + custom child); onMarkerTap returns the tapped marker for list linkage
+- 列表 → 地图联动：外部维护 selectedMarkerId，匹配的标记会渲染其 selectedChild（未提供时复用 child）/ External selectedMarkerId drives the highlighted marker's selectedChild
+- 选点：selectionEnabled 为 true 时点击地图触发 onMapTap 并回传 LatLng；关闭时点击仅用于平移 / Turn on selectionEnabled to receive LatLng on map taps; keep it off for pure panning
+- 距离圈：传 circleCenter + circleRadiusMeters（米）即可绘制 CircleLayer 半径圈（如 1000=1km、3000=3km）/ Set circleCenter and circleRadiusMeters (meters) to draw a radius circle
+- 聚合：enableClustering 默认开启（标记数 >1 时生效），clusterBuilder 可自定义聚合节点文案（如「12 套」）；聚合点击默认放大到聚合范围 / Clustering is on by default; customize the cluster label via clusterBuilder; tapping a cluster zooms to its bounds
+- 平台：flutter_map 纯 Dart 渲染，Android / iOS 开箱即用，无需原生地图 SDK / Pure-Dart rendering: works on Android and iOS without native map SDKs
+
+## 搭配推荐 / Compose with
+- 与 ParkCard / ParkList 组合：地图在上、结果列表在下，onMarkerTap 与 selectedMarkerId 双向联动 / Pair with ParkCard or ParkList for a map-above, list-below layout with two-way linkage
+- 与 ParkTag 组合展示距离圈内的统计信息（如「3km 内 12 套」）/ Use ParkTag to summarize radius stats (e.g. "12 listings within 3km")
+- 与 ParkSearch 组合实现「搜索 → 地图定位 + 标记」的找房流程 / Combine with ParkSearch for a search → map-locate flow
+
+## 设计令牌参考 / Design Token Reference
+| 令牌类别 | 调用方式 | 说明 |
+|---------|---------|------|
+| 色彩 | colors.brand | 默认聚合节点背景、距离圈边框与填充色（brand 8% 透明度）|
+| 色彩 | colors.surface | 聚合节点描边（白色描边提升可读性）|
+| 色彩 | colors.textOnBrand | 聚合节点数量文字颜色 |
+| 字体 | typography.sizeBodySmall / weightBold | 聚合节点数量字号与字重 |
+| 间距 | — | 地图为容器组件，内边距由外层（如 ParkCard）控制 |
+''',
+);
+
+Widget _buildMapDemoBase(BuildContext context) {
+  return SizedBox(
+    height: 260,
+    child: ParkMap(
+      tiandituKey: 'demo_key_placeholder',
+      initialCenter: const LatLng(39.9042, 116.4074),
+      initialZoom: 11,
+      markers: <ParkMapMarker>[
+        ParkMapMarker(
+          id: '1',
+          point: const LatLng(39.9042, 116.4074),
+          child: const Icon(Icons.location_on, color: Colors.red, size: 30),
+        ),
+        ParkMapMarker(
+          id: '2',
+          point: const LatLng(39.9142, 116.4174),
+          child: const Icon(Icons.home, color: Colors.blue, size: 30),
+        ),
+      ],
+      onMarkerTap: (m) {},
+    ),
+  );
+}
+
+Widget _buildMapDemoCluster(BuildContext context) {
+  final park = Theme.of(context).extension<ParkThemeData>() ??
+      ParkThemeData.light();
+  return SizedBox(
+    height: 260,
+    child: ParkMap(
+      tiandituKey: 'demo_key_placeholder',
+      initialCenter: const LatLng(39.9042, 116.4074),
+      initialZoom: 11,
+      markers: List<ParkMapMarker>.generate(12, (int i) {
+        final double dLat = (i % 4) * 0.008 - 0.012;
+        final double dLng = (i ~/ 4) * 0.008 - 0.012;
+        return ParkMapMarker(
+          id: '$i',
+          point: LatLng(39.9042 + dLat, 116.4074 + dLng),
+          child: Icon(Icons.location_on, color: park.colors.brand, size: 30),
+        );
+      }),
+      clusterBuilder: (BuildContext ctx, int count) => Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: park.colors.brand,
+          shape: BoxShape.circle,
+          border: Border.all(color: park.colors.surface, width: 2),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$count 套',
+          style: TextStyle(
+            color: park.colors.textOnBrand,
+            fontSize: park.typography.sizeCaption,
+            fontWeight: park.typography.weightBold,
+          ),
+        ),
+      ),
+      onMarkerTap: (m) {},
+    ),
+  );
+}
+
+Widget _buildMapDemoPick(BuildContext context) {
+  return SizedBox(
+    height: 260,
+    child: ParkMap(
+      tiandituKey: 'demo_key_placeholder',
+      initialCenter: const LatLng(39.9042, 116.4074),
+      initialZoom: 11,
+      selectionEnabled: true,
+      circleCenter: const LatLng(39.9042, 116.4074),
+      circleRadiusMeters: 1000,
+      onMapTap: (LatLng latLng) {},
+    ),
+  );
+}

@@ -1,11 +1,11 @@
 # Park UI
 
-**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 105 个开箱即用的高质量组件。
+**Park UI** 是一套面向 Flutter 的企业级中后台组件库，遵循 **Stripe 设计语言**，提供 210 个开箱即用的高质量组件。
 
 ## 特性
 
 - 📐 **完整 Design System** — 详见 [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)，包含完整色彩体系、字体层级、间距规则、阴影/圆角体系和 10+ 基础组件设计规范
-- 🧩 **105 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
+- 🧩 **210 组件** — 覆盖基础、输入、展示、反馈、导航五大类别
 - 🎨 **Stripe 设计语言** — 品牌紫 blurple `#635BFF`、文字 navy `#0A2540`、浅灰底色 `#F6F9FC`
 - 🌓 **浅色/深色主题** — 全局 `ParkThemeData` 驱动，一键切换明暗
 - 🌐 **国际化友好** — 全局 `ParkLocalizations` 系统 + 组件级参数覆盖，支持 6 种语言（zh/en/ja/ko/es/fr）
@@ -21,7 +21,7 @@
 - 🧪 **1395 测试** — 全量测试通过，覆盖表单引擎、组件、联动、格式化等核心模块
 - 🎬 **Golden Test 基础设施** — 组件截图对比测试支持
 - 📦 **Spec 文件已迁移** — 14 个 spec 文件统一迁移到 park_ui 包
-- 🎭 **105+ 个 Demo** — 组件示例覆盖率 100%+（105/105 组件）
+- 🎭 **105+ 个 Demo** — 组件示例覆盖率 100%+（743/210 组件）
 
 ## 架构概览
 
@@ -617,6 +617,7 @@ class HomePage extends StatelessWidget {
 | `ParkSwiper` | 轮播 | `items`, `autoPlay`, `duration` |
 | `ParkWatermark` | 水印 | `text`, `opacity` |
 | `ParkSplitter` | 可拖拽分隔面板 — 水平/垂直、折叠按钮、受控比例、双击复位 | `axis`, `first`, `second`, `defaultRatio`, `minRatio`, `maxRatio`, `collapsible` |
+| `ParkMap` | 地图 — flutter_map + 天地图 WMTS 底图，标记/聚合/选点/距离圈/列表联动 | `tiandituKey`, `markers`, `onMarkerTap`, `selectedMarkerId`, `selectionEnabled`, `circleCenter`, `circleRadiusMeters`, `clusterBuilder` |
 
 ## 输入（Input / Form）
 

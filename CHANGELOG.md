@@ -1,6 +1,8 @@
 ## Unreleased
 
 ### Added
+- ParkMap 地图组件：flutter_map + 天地图 WMTS 底图，支持标记点（自定义 widget + 点击回调）、标记聚合（flutter_map_marker_cluster，可定制「N 套」聚合节点）、地图选点（可开关）、距离圈（CircleLayer，半径可配）、列表联动（onMarkerTap + 受控 selectedMarkerId 高亮）。天地图 key 通过构造参数注入，组件库不内置业务凭据。
+- ParkMap 组件 spec（ParkComponentSpec）、最小单测、example MapDemo。
 - ParkSteps 新增 sticky 属性：true 时以 SliverPersistentHeader 渲染，可在 CustomScrollView 中固定头部；false（默认）随列表滚动。仅水平方向支持。
 - ParkSteps sticky 回归测试（默认模式 + 固定头部模式）。
 
