@@ -878,6 +878,119 @@ void main() {
       }
     });
 
+    // --------------------------------------------------------------
+    // 🔴 反向锁：gradientBorder 默认 true，但**非 neon 风格的实色边框
+    // 必须仍然存在**（若被渐变描边顶掉，stripe/flat/glass 会同时丢边框）。
+    //
+    // 这条是"gradientBorder 只在 neon 生效"的**决定性证据**：
+    // 它断言的不是"没有 DecoratedBox"（那可能只是没渲染），
+    // 而是"AnimatedContainer.decoration.border 仍然非 null 且等于
+    // 表面令牌给出的边框"。
+    // --------------------------------------------------------------
+    testWidgets('🔴 gradientBorder 默认 true 时，非 neon 风格边框不得消失', (
+      tester,
+    ) async {
+      for (final ParkSurfaceStyle style in <ParkSurfaceStyle>[
+        ParkSurfaceStyle.stripe,
+        ParkSurfaceStyle.flat,
+        ParkSurfaceStyle.glass,
+        ParkSurfaceStyle.neo,
+      ]) {
+        for (final Brightness b in Brightness.values) {
+          final ParkThemeData park = _theme(style, b);
+          await tester.pumpWidget(
+            _wrap(
+              park,
+              const ParkCard(titleText: '边框', child: Text('内容')),
+            ),
+          );
+
+          // 取真实渲染的 AnimatedContainer 装饰。
+          final AnimatedContainer container = tester.widget<AnimatedContainer>(
+            find
+                .descendant(
+                  of: find.byType(ParkCard),
+                  matching: find.byType(AnimatedContainer),
+                )
+                .last,
+          );
+          final BoxDecoration decoration =
+              container.decoration! as BoxDecoration;
+
+          final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+            style: style,
+            colors: park.colors,
+            radius: park.radius,
+            blur: park.blur,
+          );
+
+          if (t.border != null) {
+            // 该风格本应有边框 → 必须真的画出来了。
+            expect(
+              decoration.border,
+              isNotNull,
+              reason: '$style / $b：材质令牌给了边框（${t.border}），'
+                  '但渲染层没有 —— 说明 gradientBorder 误伤了非 neon 风格',
+            );
+            expect(
+              decoration.border!.top.color,
+              t.border!.top.color,
+              reason: '$style / $b：边框颜色必须与表面令牌一致',
+            );
+            expect(decoration.border!.top.width, t.border!.top.width);
+          } else {
+            // neo 令牌本就无边框（靠双柔光表达体积感）→ 也不该凭空有。
+            expect(
+              decoration.border,
+              isNull,
+              reason: '$style / $b：材质令牌无边框，渲染层也不应有',
+            );
+          }
+        }
+      }
+    });
+
+    testWidgets('🔴 neon：默认 gradientBorder=true 才有渐变描边壳', (
+      tester,
+    ) async {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      // 默认值（不传 gradientBorder）→ 应有描边壳。
+      await tester.pumpWidget(
+        _wrap(park, const ParkCard(titleText: '默认', child: Text('x'))),
+      );
+      expect(
+        find.byType(DecoratedBox),
+        findsWidgets,
+        reason: 'neon 默认应启用渐变描边',
+      );
+
+      // 显式关闭 → 无描边壳，但实色边框回来。
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkCard(
+            titleText: '关闭',
+            gradientBorder: false,
+            child: Text('x'),
+          ),
+        ),
+      );
+      expect(find.byType(DecoratedBox), findsNothing);
+      final AnimatedContainer c = tester.widget<AnimatedContainer>(
+        find
+            .descendant(
+              of: find.byType(ParkCard),
+              matching: find.byType(AnimatedContainer),
+            )
+            .last,
+      );
+      expect(
+        (c.decoration! as BoxDecoration).border,
+        isNotNull,
+        reason: 'gradientBorder=false 时 neon 应恢复实色边框',
+      );
+    });
+
     testWidgets('neon：渐变描边生效（额外 DecoratedBox 层）', (tester) async {
       final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
       await tester.pumpWidget(
