@@ -678,7 +678,10 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
       // 浮层圆角比卡片大（brLg vs brMd）：对话框是"更大的表面"。
       // 🔴 不可用 tokens.radius —— 那是卡片语义（brMd），会让圆角缩小 4px。
       radius: park.radius.brLg,
-      shadows: tokens.shadows ?? park.shadows.lg,
+      shadows: ParkSurfaceTokens.overlayShadows(
+        tokens: tokens,
+        floor: park.shadows.lg,
+      ),
       useBlur: tokens.useBackdropFilter,
       blurSigma: tokens.glassBlur,
       // 标题/正文色必须来自 tokens：neon 在深色底上 fill 会翻转成亮色，
@@ -822,7 +825,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
     // 复用 ParkSurfaceBlurDepth 做嵌套降级：对话框已覆盖大片区域，内层再采样
     // 同一 backdrop 的成本呈平方级增长，因此 depth > 1 时不重复渲染模糊。
     if (surface.useBlur &&
-        ParkSurfaceBlurDepth.of(context) <= 1 &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
         surface.blurSigma > 0) {
       dialogContent = ClipRRect(
         borderRadius: surface.radius,

@@ -72,11 +72,18 @@ class ParkSurface extends StatelessWidget {
 
   /// 当前上下文中是否允许渲染 [BackdropFilter]。
   ///
-  /// 玻璃嵌套深度 > 1 时返回 false（内层不再重复采样）。
+  /// [ParkSurfaceBlurDepth] 记录的是**祖先中已启用模糊的层数**，因此：
+  /// - `depth == 0`：自己是最外层玻璃，允许采样；
+  /// - `depth >= 1`：祖先已采样过同一区域，重复采样成本呈平方级增长，
+  ///   降级为半透明纯色填充。
+  ///
+  /// 🔴 判定必须是 `< 1` 而非 `<= 1`：`<= 1` 会让第 2 层也采样，
+  /// 3 层嵌套将渲染出 2 层 BackdropFilter（与 `ParkGlassPanel` 的
+  /// `canRenderBlur` 语义不一致，且违背设计文档 D-1 的缓解措施）。
   /// 显式传入 [blurDisabled] 亦可强制关闭。
   static bool canBlur(BuildContext context, {bool disabled = false}) {
     if (disabled) return false;
-    return ParkSurfaceBlurDepth.of(context) <= 1;
+    return ParkSurfaceBlurDepth.of(context) < 1;
   }
 
   @override
@@ -108,7 +115,7 @@ class ParkSurface extends StatelessWidget {
     final double sigma = tokens.useBackdropFilter
         ? tokens.glassBlur * i
         : 0.0;
-    final bool useBlur = tokens.useBackdropFilter && sigma > 0 && depth <= 1;
+    final bool useBlur = tokens.useBackdropFilter && sigma > 0 && depth < 1;
 
     final Color fill = tokens.useBackdropFilter
         ? tokens.fill.withValues(alpha: 0.15 + 0.40 * i)

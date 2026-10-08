@@ -194,6 +194,38 @@ class ParkSurfaceTokens {
     );
   }
 
+  /// 浮层类组件（Dialog / Popover / Sheet / 导航栏 …）的阴影取值。
+  ///
+  /// ## 为什么需要这个入口
+  ///
+  /// [resolve] 的阴影是**卡片语义** —— stripe / flat 在 `elevation == 0`
+  /// 时返回 null。但浮层是**恒定抬起**的（对话框永远有投影），阴影不可为
+  /// null。若浮层直接消费 `tokens.shadows`，stripe / flat 风格的浮层会
+  /// **凭空丢失阴影**，观感明显退化。
+  ///
+  /// 规则：**风格接管优先，浮层下限兜底**。
+  /// - stripe / flat → `tokens.shadows` 为 null → 回落到 [floor]（零回归）；
+  /// - glass / neo / neon → 风格自带阴影 → 材质性格生效。
+  ///
+  /// ## 用法
+  ///
+  /// ```dart
+  /// shadows: ParkSurfaceTokens.overlayShadows(
+  ///   tokens: tokens,
+  ///   floor: park.shadows.lg,   // 浮层默认用 lg（Dialog / Sheet）
+  /// ),
+  /// ```
+  ///
+  /// 圆角**不**由本方法决定：各浮层有自己的尺寸语义（Dialog 是更大的表面
+  /// 用 `brLg`，Popover 是卡片尺寸用 `brMd`），应保留组件原值而非消费
+  /// `tokens.radius`（那是卡片语义）。
+  static List<BoxShadow>? overlayShadows({
+    required ParkSurfaceTokens tokens,
+    required List<BoxShadow> floor,
+  }) {
+    return tokens.shadows ?? floor;
+  }
+
   /// 按风格解析边框的颜色与宽度。
   ///
   /// 5 种风格全部有显式分支，新增风格时编译器会强制补齐。

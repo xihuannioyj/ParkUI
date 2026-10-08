@@ -266,11 +266,25 @@ class ParkPopoverSurface {
   });
 }
 
-/// 解析气泡表面材质（浮层类统一规范的唯一实现点）。
+/// 解析气泡表面材质（浮层类统一规范在 Popover 上的实现）。
 ///
-/// 抽成顶层公开函数而非私有方法，是为了让它**可被单元测试直接调用**——
-/// 箭头与主体的同色性无法从 widget 树反推（箭头是 CustomPaint，
-/// 颜色是 painter 的私有字段）。
+/// ## 定位：这是 **Popover 专属** 的解析器，不是通用入口
+///
+/// 通用入口在主题层：[ParkSurfaceTokens.overlayShadows]（浮层阴影下限兜底）
+/// 与 [ParkSurfaceTokens.resolve]（材质派生）。本函数只是在两者之上叠加
+/// 了 Popover 特有的两件事：
+/// 1. `overlayStyle` 逃生舱（用户完全接管气泡体）；
+/// 2. 箭头与主体的同色保证（[ParkPopoverSurface.arrowColor]）。
+///
+/// 其他组件（Empty / Result / GlassPanel）**不需要**用本函数 —— 它们没有
+/// 箭头，只要消费 [ParkSurfaceTokens] 即可；真需要浮层阴影兜底时调
+/// [ParkSurfaceTokens.overlayShadows]。
+///
+/// ## 可测试性
+///
+/// 抽成顶层函数而非私有方法，是为了让它**可被单元测试直接调用** ——
+/// 箭头是 CustomPaint，其颜色是 painter 的私有字段，无法从 widget 树反推，
+/// 只有在源头才能断言"箭头与气泡体同色"这条不变量。
 ///
 /// 规范（与 `ParkDialog` 一致）：
 /// 1. 阴影 `tokens.shadows ?? park.shadows.lg`（风格接管 + 浮层下限兜底）；
@@ -308,7 +322,10 @@ ParkPopoverSurface resolveParkPopoverSurface({
   return ParkPopoverSurface(
     fill: tokens.fill,
     radius: park.radius.brMd,
-    shadows: tokens.shadows ?? park.shadows.lg,
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: park.shadows.lg,
+    ),
     useBlur: tokens.useBackdropFilter,
     blurSigma: tokens.glassBlur,
     // 文字色来自 tokens：neon 深色底下 fill 翻转为近白，此时
@@ -652,7 +669,7 @@ class _ParkPopoverOverlayState extends State<_ParkPopoverOverlay> {
     );
 
     if (surface.useBlur &&
-        ParkSurfaceBlurDepth.of(context) <= 1 &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
         surface.blurSigma > 0) {
       column = ClipRRect(
         borderRadius: surface.radius,

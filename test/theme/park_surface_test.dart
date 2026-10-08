@@ -139,8 +139,76 @@ void main() {
         ),
       );
 
-      // 外层已采样，内层再采样同一区域成本平方级增长 → 只允许最外层模糊。
+      // 🔴 回归锁定：曾用 `depth <= 1`，导致第 2 层也采样，3 层嵌套渲染出
+      // 2 层 BackdropFilter。`ParkSurfaceBlurDepth` 记录的是**祖先已采样层数**，
+      // 故判定必须是 `depth < 1`。
       expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('嵌套 2 层玻璃时同样只有最外层采样', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          const ParkSurface(
+            style: ParkSurfaceStyle.glass,
+            child: ParkSurface(
+              style: ParkSurfaceStyle.glass,
+              child: Text('两层'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('嵌套 4 层玻璃仍只有 1 层采样（深度增加不改变判定）', (
+      WidgetTester tester,
+    ) async {
+      Widget nest(int n) => n == 0
+          ? const Text('四层')
+          : ParkSurface(
+              style: ParkSurfaceStyle.glass,
+              child: nest(n - 1),
+            );
+
+      await tester.pumpWidget(wrap(nest(3)));
+
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
+    testWidgets('canBlur 与 build 的判定一致（不会出现两套规则）', (
+      WidgetTester tester,
+    ) async {
+      // ParkGlassPanel.canRenderBlur / ParkTag / ParkDialog / ParkPopover
+      // 都用 `depth < 1`；这里锁定 ParkSurface.canBlur 同为该语义。
+      await tester.pumpWidget(
+        wrap(
+          Builder(
+            builder: (BuildContext outer) {
+              expect(
+                ParkSurface.canBlur(outer),
+                isTrue,
+                reason: '最外层应允许模糊',
+              );
+              return ParkSurface(
+                style: ParkSurfaceStyle.glass,
+                child: Builder(
+                  builder: (BuildContext inner) {
+                    expect(
+                      ParkSurface.canBlur(inner),
+                      isFalse,
+                      reason: '内层应被拒绝（祖先已采样）',
+                    );
+                    return const SizedBox.shrink();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
     });
 
     testWidgets('非玻璃嵌套不受影响（各自独立渲染）', (
