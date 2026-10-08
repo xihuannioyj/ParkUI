@@ -542,7 +542,12 @@ void main() {
       expect(find.text('零强度'), findsOneWidget);
     });
 
-    test('🔴 5 风格 × 明/暗：面板文字与填充对比度（成对取值整体断言）', () {
+    test('🔴 5 风格 × 明/暗：玻璃面板的 fill 必可承载 tokens.titleColor', () {
+      // 🔴 注意断言对象：ParkGlassPanel 内部**不渲染任何文字**，
+      // 文字色由调用方从 ParkSurfaceTokens.titleColor 取。因此这里断言的是
+      // "面板提供的 fill"与"调用方应取的 titleColor"这对成对取值 ——
+      // 消费者正是 ParkEmpty / ParkResult / ParkTag，它们已在
+      // 「回归 · 玻璃容器内元素与 fill 的成对取值」里做 widget 级实测。
       for (final ParkSurfaceStyle style in _styles) {
         for (final Brightness b in Brightness.values) {
           final ParkThemeData park = _theme(style, b);
@@ -552,14 +557,15 @@ void main() {
             radius: park.radius,
             blur: park.blur,
           );
-          final Color fg = _titleOf(t);
-          final Color bg = t.fill;
-          final double ratio = ParkColors.contrastRatio(fg, bg);
+          final double ratio = ParkColors.contrastRatio(
+            _titleOf(t),
+            t.fill,
+          );
           expect(
             ratio,
             greaterThanOrEqualTo(4.5),
-            reason: '$style / $b：面板标题对比度仅 '
-                '${ratio.toStringAsFixed(2)}:1（前景 ${_hex(fg)} / 背景 ${_hex(bg)}）',
+            reason: '$style / $b：面板 fill 与 titleColor 对比度仅 '
+                '${ratio.toStringAsFixed(2)}:1',
           );
         }
       }
@@ -1343,6 +1349,181 @@ void main() {
     test('🔴 hairlineAlpha 是唯一的 0.35 描边透明度来源', () {
       expect(ParkGlassPanel.hairlineAlpha, 0.35);
     });
+
+    // --------------------------------------------------------------
+    // 🔴 断言穿透到 widget 树（补 ce93e86 前"只断言 tokens 层"的漏洞）
+    //
+    // 上一轮教训：断言停在 ParkSurfaceTokens 层，只能证明"令牌算对了"，
+    // 证明不了"组件真的把那个值用在了实际渲染的元素上"。
+    // 以下用例改为**从 widget 树取出真实样式**再判对比度。
+    // --------------------------------------------------------------
+
+    testWidgets('🔴 ParkEmpty 玻璃容器：真实渲染的 Icon 颜色可读', (
+      tester,
+    ) async {
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            const ParkEmpty(
+              description: '容器',
+              gradientPlaceholder: true,
+              glassContainer: true,
+            ),
+          ),
+        );
+
+        // 从 widget 树取真实渲染的容器装饰与图标，而不是重算令牌。
+        final Container container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(ParkEmpty),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        final Color fill =
+            (container.decoration! as BoxDecoration).color!;
+        final Icon icon = tester.widget<Icon>(find.byType(Icon).first);
+
+        final double ratio = ParkColors.contrastRatio(
+          icon.color ?? park.colors.textPrimary,
+          fill,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '$b：真实渲染的 Icon/fill 对比度仅 '
+              '${ratio.toStringAsFixed(2)}:1 —— 断言必须穿透到 widget 树',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkResult 玻璃容器：真实渲染的 Icon 颜色可读', (
+      tester,
+    ) async {
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            const ParkResult(
+              title: '容器',
+              status: ParkResultStatus.warning,
+              gradientPlaceholder: true,
+              glassContainer: true,
+            ),
+          ),
+        );
+
+        final Container container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(ParkResult),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        final Color fill =
+            (container.decoration! as BoxDecoration).color!;
+        final Icon icon = tester.widget<Icon>(find.byType(Icon).first);
+
+        final double ratio = ParkColors.contrastRatio(
+          icon.color ?? park.colors.textPrimary,
+          fill,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '$b：warning 状态下真实 Icon/fill 仅 '
+              '${ratio.toStringAsFixed(2)}:1',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkTag gradient：真实渲染的文字色可读（不是判 accent）', (
+      tester,
+    ) async {
+      // 关键：theme=warning 时旧实现拿 warning 橙去判对比度，
+      // 但真正绘制的是 brand 紫渐变 —— 断言必须对着"实际画的东西"。
+      for (final ParkTagTheme t in ParkTagTheme.values) {
+        for (final Brightness b in Brightness.values) {
+          final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+          await tester.pumpWidget(
+            _wrap(
+              park,
+              ParkTag(
+                text: '渐变',
+                theme: t,
+                effect: ParkTagEffect.gradient,
+              ),
+            ),
+          );
+
+          final Text text = tester.widget<Text>(find.text('渐变'));
+          final Color fg = text.style!.color!;
+
+          // 背景是 brand 渐变，取最亮色标作为最坏落点。
+          Color lightest = park.gradients.brand.colors.first;
+          for (final Color c in park.gradients.brand.colors) {
+            if (c.computeLuminance() > lightest.computeLuminance()) {
+              lightest = c;
+            }
+          }
+
+          final double ratio = ParkColors.contrastRatio(fg, lightest);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: 'theme=$t / $b：真实文字色在渐变最亮色标上仅 '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+        }
+      }
+    });
+
+    test('🔴 gradient 前景判据：对着渐变最亮色标而非 theme 色', () {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.light);
+      // 渐变最亮色标
+      Color lightest = park.gradients.brand.colors.first;
+      for (final Color c in park.gradients.brand.colors) {
+        if (c.computeLuminance() > lightest.computeLuminance()) {
+          lightest = c;
+        }
+      }
+      // 前景应等于两个候选令牌中"实测更优"的那个。
+      final double onBrand = ParkColors.contrastRatio(
+        park.colors.textOnBrand,
+        lightest,
+      );
+      final double onPrimary = ParkColors.contrastRatio(
+        park.colors.textPrimary,
+        lightest,
+      );
+      final Color expected =
+          onBrand >= onPrimary ? park.colors.textOnBrand : park.colors.textPrimary;
+      expect(onBrand, greaterThanOrEqualTo(4.5));
+      expect(expected, park.colors.textOnBrand);
+    });
+
+    test('🔴 ParkGlassPanel 本身不设文字色 —— 契约由调用方履行', () {
+      // ParkGlassPanel 是纯容器：它只提供 fill / 描边 / 模糊，
+      // 内部文字色必须由调用方从 surface.titleColor 取。
+      // 这条测试把该契约写死，防止有人误以为面板会兜底文字色。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.glass, Brightness.dark);
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.glass,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+      // 容器提供 fill，文字色由调用方消费 titleColor —— 二者必须成对可读。
+      expect(
+        ParkColors.contrastRatio(t.titleColor, t.fill),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
   });
 
   group('红线 · 品牌色未被任何风格污染', () {
@@ -1375,10 +1556,3 @@ void main() {
     });
   });
 }
-
-/// 把颜色格式化为 0xAARRGGBB，供断言 reason 输出。
-String _hex(Color c) =>
-    '0x${c.a.toStringAsFixed(2).substring(2)}${_pad(c.r)}${_pad(c.g)}${_pad(c.b)}';
-
-String _pad(double v) =>
-    (v * 255).round().toRadixString(16).padLeft(2, '0').toUpperCase();

@@ -79,6 +79,22 @@ enum ParkTagShape { square, round }
 /// 🔴 向后兼容保证：`effect == null` 且主题为 stripe（默认）时，
 /// 推断结果为 [ParkTagEffect.none]，渲染路径与改造前**完全一致**。
 class ParkTag extends StatelessWidget {
+  /// 返回色标列表中**亮度最高**的颜色。
+  ///
+  /// 浅色背景最难承载浅色文字，因此渐变的对比度校验必须以最亮色标为准，
+  /// 而不是列表首项或平均色 —— 首项只代表"起点"，中间某段可能更亮。
+  /// 空列表返回黑色兜底（调用方均传入非空渐变，此处仅防御）。
+  static Color _lightestColor(List<Color> colors) {
+    Color lightest = colors.isEmpty
+        ? const Color(0xFF000000)
+        : colors.first;
+    for (final Color c in colors) {
+      if (c.computeLuminance() > lightest.computeLuminance()) {
+        lightest = c;
+      }
+    }
+    return lightest;
+  }
   /// Creates a ParkTag.
   const ParkTag({
     super.key,
@@ -353,23 +369,35 @@ class ParkTag extends StatelessWidget {
         return null;
 
       case ParkTagEffect.gradient:
-        // 文字色必须由前景令牌决定：反色面色（明底白字/暗底黑字），
-        // 禁止把 brand 当前景 —— brand 与 brand 的渐变叠加后不可读。
-        final Color foreground = ParkColors.contrastRatio(
+        // 渐变色标：显式传入优先，否则用主题品牌渐变。
+        final ParkGradient paint = gradient ?? park.gradients.brand;
+
+        // 🔴 **对比度必须对着"真正被绘制的那层渐变"判，不能对着 theme 色。**
+        //
+        // 背景由 ShaderMask 铺 [paint]，而文字压在渐变之上：
+        // 最坏情况取渐变中**亮度最高**的那个色标（文字最难读的落点）。
+        // 若改用 `_themeColor`（accent）来判，会出现"判的是 warning 橙、
+        // 画的是 brand 紫"的错位 —— 例如 theme=warning 时白字/橙底
+        // 1.78:1 会判定为不可读并切深色，但实际背景是紫渐变，
+        // 深色文字落在紫底上只有 3.31:1，反而更差。
+        final Color worst = _lightestColor(paint.colors);
+
+        // 前景同样从"反色面 / 主文字色"两个令牌里挑**实测更优**的那个，
+        // 而不是靠猜 —— 令牌是候选集，实测才是判据。
+        final double onBrand = ParkColors.contrastRatio(
           park.colors.textOnBrand,
-          accent,
-        ) >= 4.5
+          worst,
+        );
+        final double onPrimary = ParkColors.contrastRatio(
+          park.colors.textPrimary,
+          worst,
+        );
+        final Color foreground = onBrand >= onPrimary
             ? park.colors.textOnBrand
-            // 回退到"与主题底色反差更大的那个"，保证渐变上的文字可读。
-            : (ParkColors.contrastRatio(park.colors.textPrimary, accent) >=
-                      ParkColors.contrastRatio(
-                        park.colors.textOnBrand,
-                        accent,
-                      )
-                  ? park.colors.textPrimary
-                  : park.colors.textOnBrand);
+            : park.colors.textPrimary;
+
         return _TagEffectStyle(
-          gradient: gradient ?? park.gradients.brand,
+          gradient: paint,
           textColor: foreground,
           // 渐变本身即是"边框"，不再叠加实色边框。
           borderColor: null,
