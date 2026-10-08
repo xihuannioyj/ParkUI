@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
 import '../../theme/tokens/park_radius.dart';
@@ -330,7 +331,11 @@ class _ParkCardState extends State<ParkCard> {
               child: ClipRRect(
                 borderRadius: cardRadius,
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  // 模糊半径走 ParkBlur 令牌（park.blur.lg），不硬编码。
+                  filter: ImageFilter.blur(
+                    sigmaX: park.blur.lg,
+                    sigmaY: park.blur.lg,
+                  ),
                   child: AnimatedContainer(
                     duration: park.motion.standard,
                     curve: park.motion.defaultEasing,
@@ -360,130 +365,44 @@ class _ParkCardState extends State<ParkCard> {
     );
   }
 
-  /// 根据当前 [ParkThemeData.surfaceStyle] 解析卡片的表面材质：
-  /// 颜色 / 边框 / 阴影 / 是否使用毛玻璃。
+  /// 根据当前 [ParkThemeData.surfaceStyle] 解析卡片的表面材质。
+  ///
+  /// 材质规则（颜色 / 边框 / 阴影 / 是否玻璃）全部来自
+  /// [ParkSurfaceTokens.resolve] —— 这是全项目唯一的"风格 → 表面"翻译点。
+  /// 本方法只负责把卡片自身的状态（variant / bordered / hover / elevation /
+  /// color）翻译成派生层的意图参数，因此新增风格时本方法无需改动。
   ({Color? color, Border? border, List<BoxShadow>? shadows, bool useGlass})
   _resolveSurface(ParkThemeData park) {
-    final ParkColors colors = park.colors;
-    final bool isGhost = widget.variant == ParkCardVariant.ghost;
-    final Color? explicit = widget.color;
+    final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
+      style: park.surfaceStyle,
+      colors: park.colors,
+      radius: park.radius,
+      blur: park.blur,
+      bordered: widget.bordered,
+      hovered: _isHovered && widget.hoverable,
+      borderTone: _borderTone,
+      transparent: widget.variant == ParkCardVariant.ghost,
+      elevation: widget.elevation ?? 0,
+    );
 
-    switch (park.surfaceStyle) {
-      case ParkSurfaceStyle.flat:
-        final Color color =
-            explicit ?? (isGhost ? Colors.transparent : colors.surface);
-        final Border? border = widget.bordered
-            ? Border.all(
-                color: _isHovered && widget.hoverable
-                    ? colors.brand.withValues(alpha: 0.35)
-                    : colors.borderLight,
-                width: 1,
-              )
-            : null;
-        return (color: color, border: border, shadows: null, useGlass: false);
-
-      case ParkSurfaceStyle.glass:
-        final Color color = explicit ?? colors.surface.withValues(alpha: 0.55);
-        final Border? border = widget.bordered
-            ? Border.all(
-                color: colors.textOnBrand.withValues(alpha: 0.40), width: 1)
-            : null;
-        final List<BoxShadow> shadows = <BoxShadow>[
-          BoxShadow(
-            color: colors.textPrimary.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ];
-        return (color: color, border: border, shadows: shadows, useGlass: true);
-
-      case ParkSurfaceStyle.neo:
-        final Color color =
-            explicit ?? (isGhost ? Colors.transparent : colors.background);
-        final List<BoxShadow> shadows = isGhost
-            ? <BoxShadow>[]
-            : <BoxShadow>[
-                BoxShadow(
-                  color: colors.textOnBrand.withValues(alpha: 0.9),
-                  blurRadius: 12,
-                  offset: const Offset(-5, -5),
-                ),
-                BoxShadow(
-                  color: colors.textPrimary.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  offset: const Offset(5, 5),
-                ),
-              ];
-        return (color: color, border: null, shadows: shadows, useGlass: false);
-
-      case ParkSurfaceStyle.neon:
-        final bool isDark = colors.background.computeLuminance() < 0.5;
-        final Color color =
-            explicit ??
-            (isGhost
-                ? Colors.transparent
-                : (isDark ? colors.textPrimary : colors.surface));
-        final Border? border = widget.bordered
-            ? Border.all(color: colors.brand.withValues(alpha: 0.55), width: 1)
-            : null;
-        final List<BoxShadow> shadows = isGhost
-            ? <BoxShadow>[]
-            : <BoxShadow>[
-                BoxShadow(
-                  color: colors.brand.withValues(alpha: 0.45),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ];
-        return (
-          color: color,
-          border: border,
-          shadows: shadows,
-          useGlass: false,
-        );
-
-      case ParkSurfaceStyle.stripe:
-        final Color color =
-            explicit ?? (isGhost ? Colors.transparent : colors.surface);
-        final Border? border = _defaultBorder(park);
-        final double baseElevation = widget.elevation ?? 0;
-        final double currentElevation =
-            baseElevation + (_isHovered && widget.hoverable ? 2.0 : 0);
-        final List<BoxShadow>? shadows = currentElevation > 0
-            ? <BoxShadow>[
-                BoxShadow(
-                  color: colors.textPrimary.withValues(alpha: 0.08),
-                  blurRadius: currentElevation * 4,
-                  offset: Offset(0, currentElevation * 2),
-                ),
-              ]
-            : null;
-        return (
-          color: color,
-          border: border,
-          shadows: shadows,
-          useGlass: false,
-        );
-    }
+    return (
+      color: widget.color ?? surface.fill,
+      border: surface.border,
+      shadows: surface.shadows,
+      useGlass: surface.useBackdropFilter,
+    );
   }
 
-  /// Stripe 经典风的默认边框逻辑（按 variant 区分）。
-  Border? _defaultBorder(ParkThemeData park) {
-    final ParkColors colors = park.colors;
-    if (!widget.bordered) return null;
-    if (widget.variant == ParkCardVariant.outlined ||
-        widget.variant == ParkCardVariant.ghost) {
-      return Border.all(
-        color: _isHovered && widget.hoverable
-            ? colors.brand.withValues(alpha: 0.3)
-            : colors.border,
-        width: 1,
-      );
-    } else if (widget.variant == ParkCardVariant.inner) {
-      return Border.all(color: colors.disabledBg, width: 1);
-    }
-    return null;
-  }
+  /// 把 [ParkCardVariant] 映射为边框调性。
+  ///
+  /// 具体用什么颜色 / 宽度由 [ParkSurfaceTokens.resolve] 按风格决定，
+  /// 因此这里只表达"要哪种边框"，不携带任何颜色。
+  ParkSurfaceBorderTone get _borderTone => switch (widget.variant) {
+    ParkCardVariant.outlined || ParkCardVariant.ghost =>
+      ParkSurfaceBorderTone.outline,
+    ParkCardVariant.inner => ParkSurfaceBorderTone.inner,
+    ParkCardVariant.preview => ParkSurfaceBorderTone.none,
+  };
 
   Widget _buildSkeletonContent(ParkThemeData park) {
     return Column(

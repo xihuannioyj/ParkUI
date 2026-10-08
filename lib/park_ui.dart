@@ -28,6 +28,9 @@ library;
 
 export 'src/theme/park_theme.dart';
 export 'src/theme/park_theme_data.dart';
+export 'src/theme/park_theme_preset.dart';
+export 'src/theme/park_surface_tokens.dart';
+export 'src/theme/park_surface_style_scope.dart';
 export 'src/theme/park_icon_theme_data.dart';
 export 'src/theme/park_config_provider.dart';
 
@@ -45,6 +48,8 @@ export 'src/theme/tokens/park_motion.dart';
 export 'src/theme/tokens/park_sizing.dart';
 export 'src/theme/tokens/park_elevation.dart';
 export 'src/theme/tokens/park_blur.dart';
+export 'src/theme/tokens/park_gradient.dart';
+export 'src/theme/tokens/park_gradients.dart';
 
 // ============================================================================
 // 基础组件
@@ -56,6 +61,7 @@ export 'src/components/base/park_text.dart';
 export 'src/components/base/park_icon.dart';
 export 'src/components/base/park_icon_size.dart';
 export 'src/components/base/park_divider.dart';
+export 'src/components/base/park_surface.dart';
 export 'src/components/base/park_fab.dart';
 export 'src/components/base/park_link.dart';
 export 'src/components/base/park_space.dart';

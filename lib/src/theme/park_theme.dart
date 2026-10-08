@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'park_config_provider.dart';
+import 'park_surface_style_scope.dart';
+import 'park_surface_tokens.dart';
 import 'park_theme_data.dart';
 import 'tokens/park_colors.dart';
 import 'tokens/park_typography.dart';
@@ -8,6 +10,7 @@ import 'tokens/park_radius.dart';
 import 'tokens/park_shadows.dart';
 import 'tokens/park_elevation.dart';
 import 'tokens/park_blur.dart';
+import 'tokens/park_gradients.dart';
 
 /// Park UI 主题快捷访问工具
 ///
@@ -87,6 +90,33 @@ class ParkTheme {
   static ParkBlur blurOf(BuildContext context) {
     return of(context).blur;
   }
+
+  /// 获取渐变令牌
+  static ParkGradients gradientsOf(BuildContext context) {
+    return of(context).gradients;
+  }
+
+  /// 获取当前生效的表面令牌（已含 [ParkSurfaceStyleScope] 局部覆盖）。
+  ///
+  /// 这是组件消费材质的**推荐入口**：先看局部 Scope有没有覆盖，
+  /// 没有则按全局 [ParkThemeData.surfaceStyle] 派生。
+  static ParkSurfaceTokens surfaceTokensOf(
+    BuildContext context, {
+    bool bordered = true,
+    bool hovered = false,
+    ParkSurfaceBorderTone borderTone = ParkSurfaceBorderTone.outline,
+    bool transparent = false,
+    double elevation = 0.0,
+  }) {
+    return ParkSurfaceStyleScope.tokensOf(
+      context,
+      bordered: bordered,
+      hovered: hovered,
+      borderTone: borderTone,
+      transparent: transparent,
+      elevation: elevation,
+    );
+  }
 }
 
 /// BuildContext 扩展：便捷访问 Park 主题令牌
@@ -114,6 +144,15 @@ extension ParkThemeContextExtension on BuildContext {
 
   /// 获取模糊令牌
   ParkBlur get parkBlur => ParkTheme.blurOf(this);
+
+  /// 获取渐变令牌
+  ParkGradients get parkGradients => ParkTheme.gradientsOf(this);
+
+  /// 获取当前生效的表面令牌（自动含局部 [ParkSurfaceStyleScope] 覆盖）。
+  ///
+  /// 组件应消费本扩展而非直接判断 `surfaceStyle`，这样新增风格时
+  /// 组件零改动即自动适配。
+  ParkSurfaceTokens get parkSurfaceTokens => ParkTheme.surfaceTokensOf(this);
 }
 
 /// 快捷主题常量：浅色。

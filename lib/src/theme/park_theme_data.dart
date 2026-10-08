@@ -8,7 +8,9 @@ import 'tokens/park_motion.dart';
 import 'tokens/park_sizing.dart';
 import 'tokens/park_elevation.dart';
 import 'tokens/park_blur.dart';
+import 'tokens/park_gradients.dart';
 import 'park_icon_theme_data.dart';
+import 'park_theme_preset.dart';
 
 /// 表面风格：决定卡片/容器等表面材质如何渲染（阴影、边框、玻璃、霓虹等）。
 ///
@@ -85,19 +87,41 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
   /// 模糊令牌。
   final ParkBlur blur;
 
+  /// 渐变令牌组。
+  ///
+  /// 与 [colors] 平级：渐变不是"风格派生物"，而是独立令牌组，
+  /// 预设（aurora / candy）可以覆盖它，因此**需要**进 [ParkThemeData]
+  /// 并参与 `copyWith` / `lerp` / `==` / `hashCode`
+  /// （漏改 `==` 会导致主题切换时误判"没变"而不重建）。
+  ///
+  /// 注意这与"表面令牌不进主题"并不矛盾：[ParkSurfaceTokens] 是
+  /// `surfaceStyle` 的派生物（会随风格整体跳变，不适合插值），
+  /// 而 [ParkGradients] 与 [surfaceStyle] 正交、生命周期同 [colors]。
+  ///
+  /// 留空时由 [colors] 自动派生（见 [resolvedGradients]），因此既有调用方
+  /// （如 App 层的 `ThemeStylePreset.buildParkTheme`）无需改动。
+  final ParkGradients? _gradients;
+
+  /// 实际生效的渐变令牌组。
+  ///
+  /// 未显式指定时从 [colors] 派生，保证品牌色变化时渐变自动跟随，
+  /// 且不需要每个构造点都记得传这一项。
+  ParkGradients get gradients => _gradients ?? ParkGradients.fromColors(colors);
+
   const ParkThemeData({
     required this.colors,
     required this.typography,
     required this.spacing,
     required this.radius,
     required this.shadows,
+    ParkGradients? gradients,
     this.surfaceStyle = ParkSurfaceStyle.stripe,
     this.iconTheme = const ParkIconThemeData(),
     this.motion = const ParkMotion(),
     this.sizing = const ParkSizing(),
     this.elevation = const ParkElevation(),
     this.blur = const ParkBlur(),
-  });
+  }) : _gradients = gradients;
 
   /// 亮色主题
   factory ParkThemeData.light() {
@@ -131,6 +155,32 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     );
   }
 
+  /// 由预设派生主题。
+  ///
+  /// ```dart
+  /// // 一行切主题
+  /// MaterialApp(
+  ///   theme: ThemeData(
+  ///     extensions: <ThemeExtension<ParkThemeData>>[
+  ///       ParkThemeData.preset(ParkThemePreset.aurora),
+  ///     ],
+  ///   ),
+  /// )
+  /// ```
+  ///
+  /// 🔴 [ParkThemePreset.stripe] 的输出与 [ParkThemeData.light] /
+  /// [ParkThemeData.dark] **逐字段严格相等**（由
+  /// `test/theme/stripe_baseline_test.dart` 锁定），因此 stripe 观感零回归。
+  ///
+  /// 传入 [base] 可在已有主题上叠加预设（例如保留 App 层选定的品牌色）。
+  factory ParkThemeData.preset(
+    ParkThemePreset preset, {
+    Brightness brightness = Brightness.light,
+    ParkThemeData? base,
+  }) {
+    return preset.build(brightness: brightness, base: base);
+  }
+
   @override
   ParkThemeData copyWith({
     ParkColors? colors,
@@ -138,6 +188,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
     ParkSpacing? spacing,
     ParkRadius? radius,
     ParkShadows? shadows,
+    ParkGradients? gradients,
     ParkSurfaceStyle? surfaceStyle,
     ParkIconThemeData? iconTheme,
     ParkMotion? motion,
@@ -151,6 +202,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       spacing: spacing ?? this.spacing,
       radius: radius ?? this.radius,
       shadows: shadows ?? this.shadows,
+      gradients: gradients ?? _gradients,
       surfaceStyle: surfaceStyle ?? this.surfaceStyle,
       iconTheme: iconTheme ?? this.iconTheme,
       motion: motion ?? this.motion,
@@ -170,11 +222,19 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       spacing: ParkSpacing.lerp(spacing, other.spacing, t),
       radius: _lerpRadius(radius, other.radius, t),
       shadows: ParkShadows.lerp(shadows, other.shadows, t),
+      // Gradients ARE interpolable (unlike surface tokens): each color stop is
+      // Color.lerp-ed and stops are interpolated by ParkGradient.lerp. So they
+      // belong in the theme and take part in the transition animation.
+      gradients: ParkGradients.lerp(gradients, other.gradients, t),
       // surfaceStyle is a discrete enum (ParkSurfaceStyle) and cannot be
       // smoothly interpolated. It switches at the midpoint (t < 0.5 → a, else b).
-      // Avoid animating surfaceStyle transitions — the hard jump is intentional
-      // because rendering strategies (stripe/flat/glass/neo/neon) are mutually
-      // exclusive and have no meaningful intermediate state.
+      //
+      // This hard jump is INTENTIONAL and safe, because the surface material
+      // is NOT baked into this theme: `ParkSurfaceTokens` is derived on read
+      // via `ParkSurfaceTokens.resolve(park.surfaceStyle, ...)`. So when the
+      // enum flips at t = 0.5, the whole derived surface flips with it —
+      // there is never a "glass colors + stripe enum" torn intermediate state.
+      // A jump is strictly better than a tear here.
       surfaceStyle: t < 0.5 ? surfaceStyle : other.surfaceStyle,
       iconTheme: ParkIconThemeData.lerp(iconTheme, other.iconTheme, t),
       motion: ParkMotion.lerp(motion, other.motion, t),
@@ -216,6 +276,12 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
       background: Color.lerp(a.background, b.background, t)!,
       surface: Color.lerp(a.surface, b.surface, t)!,
       overlay: Color.lerp(a.overlay, b.overlay, t)!,
+      // These two were previously MISSING here, which meant a lerped theme
+      // silently reset them to the const defaults instead of interpolating —
+      // so the inverse-surface pill (Toast, etc.) jumped during theme
+      // transitions. Fixed here together with ParkColors.copyWith/==/hashCode.
+      inverseSurface: Color.lerp(a.inverseSurface, b.inverseSurface, t)!,
+      onInverseSurface: Color.lerp(a.onInverseSurface, b.onInverseSurface, t)!,
       disabledBg: Color.lerp(a.disabledBg, b.disabledBg, t)!,
     );
   }
@@ -240,6 +306,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
         other.radius == radius &&
         other.typography == typography &&
         other.shadows == shadows &&
+        other.gradients == gradients &&
         other.surfaceStyle == surfaceStyle &&
         other.iconTheme == iconTheme &&
         other.motion == motion &&
@@ -255,6 +322,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
         radius,
         typography,
         shadows,
+        gradients,
         surfaceStyle,
         iconTheme,
         motion,

@@ -302,6 +302,8 @@ class ParkColors {
     Color? background,
     Color? surface,
     Color? overlay,
+    Color? inverseSurface,
+    Color? onInverseSurface,
     Color? disabledBg,
   }) {
     return ParkColors(
@@ -332,6 +334,9 @@ class ParkColors {
       background: background ?? this.background,
       surface: surface ?? this.surface,
       overlay: overlay ?? this.overlay,
+      // Previously missing: copyWith(inverseSurface: ...) was silently ignored.
+      inverseSurface: inverseSurface ?? this.inverseSurface,
+      onInverseSurface: onInverseSurface ?? this.onInverseSurface,
       disabledBg: disabledBg ?? this.disabledBg,
     );
   }
@@ -408,6 +413,10 @@ class ParkColors {
           background == other.background &&
           surface == other.surface &&
           overlay == other.overlay &&
+          // Previously missing: two themes differing only in these fields were
+          // wrongly reported as equal, so InheritedWidget never rebuilt.
+          inverseSurface == other.inverseSurface &&
+          onInverseSurface == other.onInverseSurface &&
           disabledBg == other.disabledBg;
 
   @override
@@ -439,6 +448,8 @@ class ParkColors {
         background,
         surface,
         overlay,
+        inverseSurface,
+        onInverseSurface,
         disabledBg,
       ]);
 
