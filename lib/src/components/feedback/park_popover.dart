@@ -1,5 +1,11 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_spacing.dart';
+import '../base/park_surface.dart';
 
 /// 气泡方向
 enum ParkPopoverDirection {
@@ -207,6 +213,109 @@ class _ParkPopoverState extends State<ParkPopover>
 
     return triggerWidget;
   }
+}
+
+/// 气泡表面材质的派生结果。
+///
+/// 把"主体填充"与"箭头填充"收敛到**同一个** [fill]，是本组件最关键的
+/// 不变量：改造前两者分处两地、各自写死 `colors.surface`，一旦主体改由
+/// 风格令牌决定就会不同色。
+@immutable
+class ParkPopoverSurface {
+  /// 气泡体（与箭头共用）的填充色。
+  final Color fill;
+
+  /// 圆角。
+  final BorderRadius radius;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 是否需要背景模糊采样。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  /// 箭头颜色 —— **恒等于** [fill]。
+  ///
+  /// 单独暴露这个 getter 是为了让"箭头与气泡体同色"这条不变量
+  /// 可被单元测试直接断言（改造前箭头与主体分处两地、各自写死
+  /// `colors.surface`，是典型的"成对取值漏改"高危点）。
+  Color get arrowColor => fill;
+
+  /// 建议的气泡内容文字色。
+  ///
+  /// popover 本身不画文字（内容由调用方给），但调用方需要知道"在当前
+  /// 表面上该用什么文字色"。直接用 `colors.textPrimary` 在 neon + 深色
+  /// 底下会与近白的 [fill] 撞成 1.00:1（白底白字）——与批次 1 的 neon P0
+  /// 同类。暴露此字段让调用方有一个正确且可测的默认值。
+  final Color titleColor;
+
+  /// 建议的次要文字色（描述 / 备注）。
+  final Color bodyColor;
+
+  const ParkPopoverSurface({
+    required this.fill,
+    required this.radius,
+    required this.shadows,
+    required this.useBlur,
+    required this.blurSigma,
+    required this.titleColor,
+    required this.bodyColor,
+  });
+}
+
+/// 解析气泡表面材质（浮层类统一规范的唯一实现点）。
+///
+/// 抽成顶层公开函数而非私有方法，是为了让它**可被单元测试直接调用**——
+/// 箭头与主体的同色性无法从 widget 树反推（箭头是 CustomPaint，
+/// 颜色是 painter 的私有字段）。
+///
+/// 规范（与 `ParkDialog` 一致）：
+/// 1. 阴影 `tokens.shadows ?? park.shadows.lg`（风格接管 + 浮层下限兜底）；
+/// 2. 圆角保留组件原值（气泡是卡片尺寸，用 `brMd`）；
+/// 3. 无描边（`bordered: false`）。
+@visibleForTesting
+ParkPopoverSurface resolveParkPopoverSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+  BoxDecoration? overlayStyle,
+}) {
+  // overlayStyle 是用户完全接管的逃生舱，此时不派生任何令牌。
+  if (overlayStyle != null) {
+    final BorderRadiusGeometry? customRadius = overlayStyle.borderRadius;
+    return ParkPopoverSurface(
+      fill: overlayStyle.color ?? park.colors.surface,
+      // BorderRadius.topLeft 是单角 Radius，需包成 BorderRadius。
+      radius: customRadius is BorderRadius
+          ? BorderRadius.only(topLeft: customRadius.topLeft)
+          : park.radius.brMd,
+      shadows: overlayStyle.boxShadow,
+      useBlur: false,
+      blurSigma: 0,
+      // 自定义填充时无法判断明暗，退回默认文字色（与改造前行为一致）。
+      titleColor: park.colors.textPrimary,
+      bodyColor: park.colors.textSecondary,
+    );
+  }
+
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  return ParkPopoverSurface(
+    fill: tokens.fill,
+    radius: park.radius.brMd,
+    shadows: tokens.shadows ?? park.shadows.lg,
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+    // 文字色来自 tokens：neon 深色底下 fill 翻转为近白，此时
+    // colors.textPrimary 会与之撞成 1.00:1（白底白字）。
+    titleColor: tokens.titleColor,
+    bodyColor: tokens.bodyColor,
+  );
 }
 
 class _ParkPopoverOverlay extends StatefulWidget {
@@ -454,10 +563,25 @@ class _ParkPopoverOverlayState extends State<_ParkPopoverOverlay> {
     }
   }
 
+  /// 解析气泡的表面材质。
+  ///
+  /// 委托给 [resolveParkPopoverSurface]（顶层函数）以便单元测试直接验证
+  /// "箭头与气泡体同色"这条不变量 —— 箭头是 CustomPaint，其颜色无法从
+  /// widget 树反推。
+  ParkPopoverSurface _resolveSurface(ParkThemeData park) {
+    return resolveParkPopoverSurface(
+      park: park,
+      context: context,
+      overlayStyle: widget.overlayStyle,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+
+    final ParkPopoverSurface surface = _resolveSurface(park);
 
     return Stack(
       children: [
@@ -482,46 +606,66 @@ class _ParkPopoverOverlayState extends State<_ParkPopoverOverlay> {
             child: ScaleTransition(
               scale: widget.scaleAnim,
               alignment: _scaleAlignment(),
-              child: Material(
-                key: ValueKey('popover_z_${widget.zIndex}'),
-                color: Colors.transparent,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.showArrow && _isVerticalTop)
-                      _buildArrow(park),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.showArrow && _isHorizontalRight)
-                          _buildArrow(park),
-                        Semantics(
-                          container: true,
-                          child: Container(
-                            constraints: BoxConstraints(maxWidth: widget.maxWidth),
-                            padding: EdgeInsets.all(park.spacing.md),
-                            decoration: widget.overlayStyle ?? BoxDecoration(
-                              color: park.colors.surface,
-                              borderRadius: park.radius.brMd,
-                              boxShadow: park.shadows.lg,
-                            ),
-                            child: widget.content,
-                          ),
-                        ),
-                        if (widget.showArrow && _isHorizontalLeft)
-                          _buildArrow(park),
-                      ],
-                    ),
-                    if (widget.showArrow && _isVerticalBottom)
-                      _buildArrow(park),
-                  ],
-                ),
-              ),
+              child: _buildBody(surface, park.spacing),
             ),
           ),
         ),
       ],
     );
+  }
+
+  /// 构建气泡主体（含箭头与玻璃模糊）。
+  Widget _buildBody(ParkPopoverSurface surface, ParkSpacing spacing) {
+    // glass 风格：叠加 BackdropFilter 采样背后内容。
+    // 复用 ParkSurfaceBlurDepth 做嵌套降级，避免重复采样同一 backdrop。
+    Widget column = Material(
+      key: ValueKey('popover_z_${widget.zIndex}'),
+      color: Colors.transparent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.showArrow && _isVerticalTop) _buildArrow(surface),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.showArrow && _isHorizontalRight) _buildArrow(surface),
+              Semantics(
+                container: true,
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: widget.maxWidth),
+                  padding: EdgeInsets.all(spacing.md),
+                  decoration: widget.overlayStyle ??
+                      BoxDecoration(
+                        color: surface.fill,
+                        borderRadius: surface.radius,
+                        boxShadow: surface.shadows,
+                      ),
+                  child: widget.content,
+                ),
+              ),
+              if (widget.showArrow && _isHorizontalLeft) _buildArrow(surface),
+            ],
+          ),
+          if (widget.showArrow && _isVerticalBottom) _buildArrow(surface),
+        ],
+      ),
+    );
+
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) <= 1 &&
+        surface.blurSigma > 0) {
+      column = ClipRRect(
+        borderRadius: surface.radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: column,
+        ),
+      );
+    }
+    return column;
   }
 
   bool get _isVerticalTop => direction == ParkPopoverDirection.bottom ||
@@ -562,9 +706,12 @@ class _ParkPopoverOverlayState extends State<_ParkPopoverOverlay> {
     }
   }
 
-  Widget _buildArrow(ParkThemeData park) {
+  Widget _buildArrow(ParkPopoverSurface surface) {
     const arrowSize = 8.0;
-    final color = park.colors.surface;
+    // 🔴 箭头色取自 surface.arrowColor（恒等于气泡体 fill），不能独立写死
+    // `park.colors.surface` —— 否则 neon 等会翻转填充色的风格下，
+    // 箭头与气泡体不同色，出现视觉裂缝。
+    final Color color = surface.arrowColor;
     final cardinal = _cardinalDirection;
 
     switch (cardinal) {
