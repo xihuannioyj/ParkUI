@@ -186,7 +186,39 @@ class ParkSurfaceTokens {
       titleColor: style == ParkSurfaceStyle.neon && isDark
           ? colors.surface
           : colors.textPrimary,
-      bodyColor: colors.textSecondary,
+      // 🔴 正文色必须与 [titleColor] **同规则**，否则是同一个缺陷的镜像。
+      //
+      // 批次 1（ad46310）最初只给 titleColor 加了 neon 翻转、bodyColor 恒为
+      // colors.textSecondary，导致 neon + 深色下：
+      //   fill      = colors.textPrimary = #FFFFFF（近白）
+      //   bodyColor = colors.textSecondary = #ADB8C9 → 对比度仅 2.00:1
+      // 即"标题可读但正文不可读"，是同一个 P0 的另一半。
+      // 修复后 neon + 深色下正文取 colors.surface（深 navy），
+      // 与 fill 的对比度 15.79:1。
+      //
+      // ⚠️ 不要再"简化"成"titleColor 已处理、bodyColor 跟着走" ——
+      // 二者语义不同（标题需最强对比，正文可稍弱），必须各自判断。
+      //
+      // ── 设计取舍：为何 neon 下 titleColor 与 bodyColor **同色** ──
+      //
+      // 考虑过"用不透明度做层级差"（surface@0.75 → 6.99:1，仍达标），
+      // 但**否决**，理由有三：
+      // 1. **违反令牌单一源**：合成色不是任何 [ParkColors] 字段，等于在
+      //    派生层偷偷引入第四种颜色表达方式。fill / titleColor / bodyColor
+      //    三者都是纯令牌，保持一致。
+      // 2. **层级已由排版承担**：所有消费者（Dialog 标题 sizeH3+weightBold
+      //    vs 正文 sizeBody+weightRegular、PageTitle 标题 30px vs 副标题
+      //    16px）都已用**字号 + 字重**区分层级，颜色再分一次是冗余的。
+      // 3. **降级点太少**：实测 surface@0.55 就跌到 3.67:1（不达标），
+      //    可用区间太窄，未来微调色板极易连带破坏对比度；
+      //    不透明度方案会把该风险引入每一次主题调整。
+      //
+      // 结论：**颜色负责"能不能看清"，字号字重负责"谁更重要"**。
+      // 若未来确需颜色层级，应在 [ParkColors] 新增显式的弱化语义色令牌，
+      // 而不是在派生层调不透明度。
+      bodyColor: style == ParkSurfaceStyle.neon && isDark
+          ? colors.surface
+          : colors.textSecondary,
       glassBlur: useBackdropFilter ? blur.lg : 0.0,
       glassAlpha: style == ParkSurfaceStyle.glass ? 0.55 : 1.0,
       useBackdropFilter: useBackdropFilter,

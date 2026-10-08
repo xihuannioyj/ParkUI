@@ -1716,14 +1716,14 @@ void main() {
       }
     });
 
-    test('🔴 tokens.bodyColor 在 neon+dark 近白底上不达标（记录待议）', () {
-      // 这条不是断言 bodyColor 可用，而是**显式记录它不可用**：
-      // neon+dark 下 bodyColor = colors.textSecondary（浅灰）
-      // 落在近白 fill 上仅 2.00:1。因此消费者不能盲目换成 bodyColor。
-      // ParkPageTitle 的副标题做法是"实测取优"：bodyColor 不达标时
-      // 回退 titleColor（实测 neon+dark 从 2.00:1 → 15.79:1，
-      // 而 neon+light / glass 仍保留 bodyColor 不变）。
-      // 此断言钉住"bodyColor 非通用"这个事实，防止后人误用。
+    test('🔴 tokens.bodyColor 与 titleColor 同规则（令牌层自洽，非消费者兜底）', () {
+      // 这条断言的是**令牌层已修好**：bodyColor 不再是恒定的
+      // colors.textSecondary，而是在 neon + 深色下与 titleColor 同规则翻转。
+      //
+      // 🔴 修正记录：本用例最初断言的是"bodyColor < 4.5"（记录缺陷）。
+      // 令牌层修复后该断言会失败 —— 因为缺陷**不应该**再存在。
+      // 因此改为断言"bodyColor/fill >= 4.5"，
+      // 把"缺陷已修"钉成可执行契约，防止令牌层将来被改回。
       final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
       final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
         style: ParkSurfaceStyle.neon,
@@ -1731,8 +1731,83 @@ void main() {
         radius: park.radius,
         blur: park.blur,
       );
-      final double ratio = ParkColors.contrastRatio(t.bodyColor, t.fill);
-      expect(ratio, lessThan(4.5), reason: 'bodyColor 在近白 fill 上确实不达标');
+
+      // 正文色在近白 fill 上必须可读（修复前仅 2.00:1）。
+      expect(
+        ParkColors.contrastRatio(t.bodyColor, t.fill),
+        greaterThanOrEqualTo(4.5),
+        reason: '令牌层已给 bodyColor 补 neon 翻转，正文必须可读',
+      );
+      // 与 titleColor 同规则 → neon + 深色下两者相同。
+      expect(
+        t.bodyColor,
+        t.titleColor,
+        reason: 'neon + 深色下 bodyColor 应与 titleColor 同源（同为 colors.surface）',
+      );
+    });
+
+    test('🔴 5 风格 × 明/暗：bodyColor/fill 全部 >= 4.5:1（令牌层契约）', () {
+      // 这是本次令牌层修复的**核心回归锁**：全矩阵验证"正文色在任意
+      // 风格/明暗下都可读"，而不是只测 neon 一个点。
+      for (final ParkSurfaceStyle style in _styles) {
+        for (final Brightness b in Brightness.values) {
+          final ParkThemeData park = _theme(style, b);
+          final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+            style: style,
+            colors: park.colors,
+            radius: park.radius,
+            blur: park.blur,
+          );
+          final double ratio = ParkColors.contrastRatio(
+            t.bodyColor,
+            t.fill,
+          );
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '$style / $b：bodyColor/fill 仅 '
+                '${ratio.toStringAsFixed(2)}:1 —— 若失败请检查 '
+                'ParkSurfaceTokens.resolve 的 bodyColor 是否被改回恒定值',
+          );
+        }
+      }
+    });
+
+    test('🔴 stripe 零回归：bodyColor 恒为 colors.textSecondary', () {
+      // 令牌层改动**绝不允许**影响 stripe —— golden 与 stripe_baseline
+      // 都以 stripe 为基线。显式钉死逐字段等价。
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.stripe, b);
+        final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+          style: ParkSurfaceStyle.stripe,
+          colors: park.colors,
+          radius: park.radius,
+          blur: park.blur,
+        );
+        expect(
+          t.bodyColor,
+          park.colors.textSecondary,
+          reason: '$b：stripe 下 bodyColor 必须逐字段不变',
+        );
+      }
+    });
+
+    test('🔴 ParkPageTitle 副标题：令牌修好后"实测取优"成为无害冗余', () {
+      // ParkPageTitle 里那层"实测取优"兜底在bodyColor 修好后不再改变结果
+      // （因为 bodyColor 本身已达标），但保留作为防御。
+      // 这条断言两者一致，证明兜底与令牌层不冲突。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+      final Color picked =
+          ParkColors.contrastRatio(t.bodyColor, t.fill) >= 4.5
+              ? t.bodyColor
+              : t.titleColor;
+      expect(picked, t.bodyColor, reason: 'bodyColor 已达标，取优应选中它本身');
     });
   });
 
