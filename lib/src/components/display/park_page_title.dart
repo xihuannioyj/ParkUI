@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/park_surface_style_scope.dart';
 import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_colors.dart';
 import 'park_gradient_text.dart';
 
 /// 页面标题层级。
@@ -128,6 +129,39 @@ class ParkPageTitle extends StatelessWidget {
     final ParkThemeData park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
+    // 🔴 **背景与前景必须同源派生。**
+    //
+    // 当 [background] 绘制了表面时，标题/副标题色**必须**取自同一份表面
+    // 令牌的 `titleColor` / `bodyColor`，不能沿用 `colors.textPrimary`：
+    // neon + 深色板下 `ParkSurfaceTokens.fill` 会翻转成近白
+    // （colors.textPrimary），若前景仍是 colors.textPrimary（也是白）
+    // 就是"白底白字"—— 实测对比度 1.00:1，标题彻底不可见。
+    //
+    // 反之，透明背景（默认）下文字直接落在页面底色上，页面底色恒为
+    // `colors.background`、不随风格翻转，此时必须保留 colors.* ——
+    // 若此时改用 tokens.titleColor，neon + 深色板下反而会变成
+    // 深色字落在近白卡片上（虽然本组件没画卡片，但子组件可能画了）。
+    //
+    // 因此这里的判定条件是"**本组件是否真的画了背景**"，
+    // 而不是"当前风格是什么"。
+    final bool paintsBackground =
+        background != ParkPageTitleBackground.transparent;
+    final ParkSurfaceTokens surface = paintsBackground
+        ? ParkSurfaceTokens.resolve(
+            style: ParkSurfaceStyleScope.of(context),
+            colors: park.colors,
+            radius: park.radius,
+            blur: park.blur,
+            // 标题栏通常贴着页面顶部，用内嵌边框调性避免与内容卡片撞成双线。
+            borderTone: ParkSurfaceBorderTone.inner,
+          )
+        : ParkSurfaceTokens.resolve(
+            style: ParkSurfaceStyle.stripe,
+            colors: park.colors,
+            radius: park.radius,
+            blur: park.blur,
+          );
+
     final double fontSize = _titleFontSize(park);
     final TextStyle titleStyle = TextStyle(
       fontSize: fontSize,
@@ -137,8 +171,23 @@ class ParkPageTitle extends StatelessWidget {
           : park.typography.weightMedium,
       height: park.typography.lineHeightTitle,
       fontFamily: park.typography.fontFamily,
-      color: park.colors.textPrimary,
+      color: paintsBackground ? surface.titleColor : park.colors.textPrimary,
     );
+
+    // 副标题色：⚠️ 不能直接用 `surface.bodyColor`。
+    //
+    // `bodyColor` 在所有风格下都恒等于 `colors.textSecondary`
+    // （见 ParkSurfaceTokens.resolve:189），**不随 fill 翻转**。
+    // 于是 neon + 深色板下：fill 翻成近白，而 bodyColor 仍是浅灰
+    // —— 实测仅 2.00:1，副标题同样不可读。
+    //
+    // 因此这里从两个令牌候选里**实测取优**，而不是照搬 bodyColor：
+    // 令牌是候选集，对比度才是判据。
+    final Color subtitleColor = paintsBackground
+        ? (ParkColors.contrastRatio(surface.bodyColor, surface.fill) >= 4.5
+            ? surface.bodyColor
+            : surface.titleColor)
+        : park.colors.textSecondary;
 
     final Widget titleWidget = gradientTitle
         ? ParkGradientText(
@@ -159,7 +208,7 @@ class ParkPageTitle extends StatelessWidget {
             child: Text(
               subtitle!,
               style: park.typography.body.copyWith(
-                color: park.colors.textSecondary,
+                color: subtitleColor,
                 fontSize: park.typography.sizeBody,
               ),
               textAlign: TextAlign.start,
@@ -200,16 +249,9 @@ class ParkPageTitle extends StatelessWidget {
       child: content,
     );
 
-    // 背景材质：交给派生层翻译，组件内不判断风格。
-    if (background != ParkPageTitleBackground.transparent) {
-      final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
-        style: ParkSurfaceStyleScope.of(context),
-        colors: park.colors,
-        radius: park.radius,
-        blur: park.blur,
-        // 标题栏通常贴着页面顶部，用内嵌边框调性避免与内容卡片撞成双线。
-        borderTone: ParkSurfaceBorderTone.inner,
-      );
+    // 背景材质：复用上面已解析的 surface，保证背景与前景同源。
+    // （paintsBackground 为 true 时 surface 就是按当前风格派生的那份）
+    if (paintsBackground) {
       content = DecoratedBox(
         decoration: BoxDecoration(
           color: surface.fill,
