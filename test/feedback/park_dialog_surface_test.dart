@@ -18,12 +18,15 @@ import 'package:park_ui/park_ui.dart';
 
 /// 打开一个对话框并返回其根节点。
 ///
-/// 注意：对外入口是 [ParkDialog.confirm] 等静态方法（`_show` 是私有的），
-/// 所以这里通过 `confirm(fullscreen: ...)` 触发。
+/// 注意：对外入口是 [ParkDialog.alert] / [ParkDialog.confirm] 等静态方法
+/// （`_show` 是私有的），所以这里通过静态方法触发。
+/// 用 [ParkDialog.alert] 是因为它带 [ParkDialog.closable] 参数，
+/// 可用于验证关闭按钮图标的对比度（bodyColor 的第二个消费点）。
 Future<void> pumpDialog(
   WidgetTester tester, {
   required ParkThemeData theme,
   bool fullscreen = false,
+  bool closable = false,
   ParkSurfaceStyle? scopeStyle,
   String title = '标题',
   String? content = '内容',
@@ -36,11 +39,12 @@ Future<void> pumpDialog(
           builder: (BuildContext dialogContext) {
             return ElevatedButton(
               onPressed: () {
-                ParkDialog.confirm(
+                ParkDialog.alert(
                   dialogContext,
                   title: title,
                   content: content,
                   fullscreen: fullscreen,
+                  closable: closable,
                 );
               },
               child: const Text('open'),
@@ -112,10 +116,97 @@ void main() {
               greaterThanOrEqualTo(4.5),
               reason: '$label 标题对比度仅 ${ratio.toStringAsFixed(2)}:1',
             );
+
+            // 🔴 正文色必须一并断言 —— 标题可读不代表正文可读。
+            //
+            // 批次 1 曾在 `ParkSurfaceTokens` 里只给 titleColor 加 neon 翻转、
+            // bodyColor 恒为 textSecondary，导致 neon + 深色下：
+            //   fill = #FFFFFF（近白）、bodyColor = #ADB8C9 → 2.00:1
+            // 而当时本文件**只断言了标题**，因此完全没抓到。
+            //
+            // 这条断言与标题那条同等重要：两者是"成对取值"，必须同进同出。
+            final double bodyRatio = ParkColors.contrastRatio(
+              _bodyColorOf(tester, base),
+              d.color!,
+            );
+            expect(
+              bodyRatio,
+              greaterThanOrEqualTo(4.5),
+              reason: '$label 正文对比度仅 ${bodyRatio.toStringAsFixed(2)}:1',
+            );
           });
         }
       }
     }
+  });
+
+  // ==========================================================================
+  // 1b. 正文色专项：成对取值的另一半
+  // ==========================================================================
+  group('ParkDialog · bodyColor 与 titleColor 同规则（成对取值）', () {
+    for (final ParkSurfaceStyle style in ParkSurfaceStyle.values) {
+      for (final Brightness brightness in Brightness.values) {
+        testWidgets('$style / ${brightness.name} · bodyColor 与 fill ≥ 4.5:1', (
+          WidgetTester tester,
+        ) async {
+          final ParkThemeData base =
+              brightness == Brightness.dark
+              ? ParkThemeData.dark()
+              : ParkThemeData.light();
+          final ParkThemeData theme = base.copyWith(surfaceStyle: style);
+
+          await pumpDialog(tester, theme: theme);
+
+          final BoxDecoration d = dialogDecoration(tester);
+          final double ratio = ParkColors.contrastRatio(
+            _bodyColorOf(tester, base),
+            d.color!,
+          );
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '$style/${brightness.name} 正文 ${ratio.toStringAsFixed(2)}:1',
+          );
+        });
+      }
+    }
+
+    testWidgets('neon + dark · 关闭按钮图标同样可读（曾为 2.00:1）', (
+      WidgetTester tester,
+    ) async {
+      // 关闭图标是 bodyColor 的第二个消费点，容易在修 title 时被漏掉。
+      final ParkThemeData theme = ParkThemeData.dark().copyWith(
+        surfaceStyle: ParkSurfaceStyle.neon,
+      );
+
+      await pumpDialog(tester, theme: theme, closable: true);
+
+      final BoxDecoration d = dialogDecoration(tester);
+      final Icon icon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byType(ParkDialog),
+          matching: find.byIcon(Icons.close),
+        ),
+      );
+      expect(
+        ParkColors.contrastRatio(icon.color!, d.color!),
+        greaterThanOrEqualTo(4.5),
+        reason: '关闭图标在近白 fill 上必须可读',
+      );
+    });
+
+    testWidgets('neon + dark · bodyColor 不等于 fill（防白底白字回归）', (
+      WidgetTester tester,
+    ) async {
+      // 不依赖具体色值的"必须不同"断言，换色板依然成立。
+      final ParkThemeData theme = ParkThemeData.dark().copyWith(
+        surfaceStyle: ParkSurfaceStyle.neon,
+      );
+
+      await pumpDialog(tester, theme: theme);
+
+      expect(_bodyColorOf(tester, theme), isNot(equals(dialogDecoration(tester).color!)));
+    });
   });
 
   // ==========================================================================
@@ -352,4 +443,28 @@ Color _titleColorOf(WidgetTester tester, ParkThemeData theme) {
     blur: theme.blur,
   );
   return t.titleColor;
+}
+
+/// 取对话框正文 / 次要文字（关闭按钮、关闭图标）的实际颜色。
+///
+/// 与 [_titleColorOf] 读同一个 Text 列表的**最后一个**带色节点 ——
+/// 标题在前、正文在后，因此这正好取到正文色。
+Color _bodyColorOf(WidgetTester tester, ParkThemeData theme) {
+  final List<Color> colors = <Color>[
+    for (final Text t in tester.widgetList<Text>(
+      find.descendant(
+        of: find.byType(ParkDialog),
+        matching: find.byType(Text),
+      ),
+    ))
+      if (t.style?.color != null) t.style!.color!,
+  ];
+  if (colors.isNotEmpty) return colors.last;
+  // 回退：按当前风格派生正文色。
+  return ParkSurfaceTokens.resolve(
+    style: theme.surfaceStyle,
+    colors: theme.colors,
+    radius: theme.radius,
+    blur: theme.blur,
+  ).bodyColor;
 }

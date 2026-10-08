@@ -243,6 +243,80 @@ void main() {
       expect(resolved.arrowColor, equals(resolved.fill));
     });
 
+    // ==========================================================================
+    // 2b. bodyColor：popover 建议内容色与 fill 的成对关系
+    // ==========================================================================
+    for (final ParkSurfaceStyle style in ParkSurfaceStyle.values) {
+      for (final Brightness brightness in Brightness.values) {
+        testWidgets(
+          '$style / ${brightness.name} · bodyColor 与 fill ≥ 4.5:1',
+          (WidgetTester tester,
+          ) async {
+            final ParkThemeData base =
+                brightness == Brightness.dark
+                ? ParkThemeData.dark()
+                : ParkThemeData.light();
+            final ParkThemeData theme = base.copyWith(surfaceStyle: style);
+
+            late ParkPopoverSurface resolved;
+            await tester.pumpWidget(
+              MaterialApp(
+                theme: ThemeData(
+                  extensions: <ThemeExtension<ParkThemeData>>[theme],
+                ),
+                home: Builder(
+                  builder: (BuildContext ctx) {
+                    resolved = resolveParkPopoverSurface(
+                      park: theme,
+                      context: ctx,
+                    );
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            );
+
+            // popover 的内容由调用方提供，bodyColor 是给调用方的建议值，
+            // 必须与 fill 可读 —— 否则"建议色"本身就是个坑。
+            final double ratio = ParkColors.contrastRatio(
+              resolved.bodyColor,
+              resolved.fill,
+            );
+            expect(
+              ratio,
+              greaterThanOrEqualTo(4.5),
+              reason:
+                  '$style/${brightness.name} 建议正文色仅 '
+                  '${ratio.toStringAsFixed(2)}:1',
+            );
+          },
+        );
+      }
+    }
+
+    testWidgets('neon + dark · bodyColor 不等于 fill（防白底浅字）', (
+      WidgetTester tester,
+    ) async {
+      final ParkThemeData theme = ParkThemeData.dark().copyWith(
+        surfaceStyle: ParkSurfaceStyle.neon,
+      );
+
+      late ParkPopoverSurface resolved;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: <ThemeExtension<ParkThemeData>>[theme]),
+          home: Builder(
+            builder: (BuildContext ctx) {
+              resolved = resolveParkPopoverSurface(park: theme, context: ctx);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(resolved.bodyColor, isNot(equals(resolved.fill)));
+    });
+
     testWidgets('neon + dark · 内容文字色可读（防白底白字）', (
       WidgetTester tester,
     ) async {
