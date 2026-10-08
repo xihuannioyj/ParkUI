@@ -129,6 +129,130 @@ void main() {
       expect(t.shadows!.single.blurRadius, 20);
     });
 
+    test('neon + light：填充维持 surface（不翻转）', () {
+      final ParkThemeData park = ParkThemeData.light();
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+
+      expect(t.isDark, isFalse);
+      expect(t.fill, park.colors.surface);
+    });
+
+    test('neon 是唯一随 isDark 翻转填充色的风格（防 wildcard 兜底吞掉 neon）', () {
+      // 回归锁定：曾因 `painted` switch 写了 `_ => colors.surface`，
+      // neon 掉进兜底分支，导致深色模式下卡片与背景几乎同色。
+      final ParkColors light = ParkColors.light();
+      final ParkColors dark = ParkColors.dark();
+
+      for (final ParkSurfaceStyle style in ParkSurfaceStyle.values) {
+        final Color lightFill = _fill(style, light);
+        final Color darkFill = _fill(style, dark);
+
+        if (style == ParkSurfaceStyle.neon) {
+          // neon：浅色取 surface，深色取 textPrimary —— 必须翻转。
+          expect(lightFill, equals(light.surface));
+          expect(darkFill, equals(dark.textPrimary));
+          expect(
+            lightFill,
+            isNot(equals(darkFill)),
+            reason: 'neon 必须随 isDark 翻转填充色',
+          );
+        } else {
+          // 其余风格：填充色与 isDark 无关，light/dark 各自等于其色板的
+          // 语义值（glass 带 55% alpha，neo 取 background）。
+          expect(
+            lightFill,
+            equals(_expectedPainted(style, light)),
+            reason: '$style 在浅色板下的填充色不应受 isDark 影响',
+          );
+          expect(
+            darkFill,
+            equals(_expectedPainted(style, dark)),
+            reason: '$style 在深色板下的填充色不应受 isDark 影响',
+          );
+        }
+      }
+    });
+
+    test('neon + dark：填充色与背景可分辨（不与背景同色）', () {
+      final ParkThemeData park = ParkThemeData.dark();
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+
+      expect(
+        t.fill,
+        isNot(equals(park.colors.background)),
+        reason: 'neon 卡片不得与页面背景同色，否则深色模式下不可分辨',
+      );
+      expect(t.fill, isNot(equals(park.colors.surface)));
+    });
+
+    test('任意风格 + 深色板：标题色与填充色对比度 >= 4.5:1（AA）', () {
+      // 防止"填充色改了但标题色没跟着改"导致文字不可见。
+      for (final ParkSurfaceStyle style in ParkSurfaceStyle.values) {
+        for (final bool transparent in <bool>[false, true]) {
+          final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+            style: style,
+            colors: ParkColors.dark(),
+            radius: ParkRadius.defaults(),
+            blur: ParkBlur.defaults(),
+            transparent: transparent,
+          );
+          if (transparent) continue; // ghost 态不绘制表面，文字由上层负责
+
+          final double ratio = ParkColors.contrastRatio(t.titleColor, t.fill);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '$style 在深色板下标题对比度仅 ${ratio.toStringAsFixed(2)}:1',
+          );
+        }
+      }
+    });
+
+    test('glass + ghost：填充透明（有意统一 ghost 语义，记录行为变更）', () {
+      // 迁移前 glass 分支不检查 isGhost，ghost + glass 仍画 55% 半透明填充。
+      // 迁移后 ghost 对 5 种风格一致生效，属有意修正，此处锁定当前语义。
+      final ParkThemeData park = ParkThemeData.light();
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.glass,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+        transparent: true,
+      );
+
+      expect(t.fill, Colors.transparent);
+      expect(t.shadows, isNull);
+    });
+
+    test('每种风格的填充色都与其自身语义一致（逐风格显式断言）', () {
+      final ParkThemeData dark = ParkThemeData.dark();
+      ParkSurfaceTokens r(ParkSurfaceStyle s) => ParkSurfaceTokens.resolve(
+        style: s,
+        colors: dark.colors,
+        radius: dark.radius,
+        blur: dark.blur,
+      );
+
+      expect(r(ParkSurfaceStyle.stripe).fill, equals(dark.colors.surface));
+      expect(r(ParkSurfaceStyle.flat).fill, equals(dark.colors.surface));
+      expect(r(ParkSurfaceStyle.neo).fill, equals(dark.colors.background));
+      expect(
+        r(ParkSurfaceStyle.glass).fill,
+        equals(dark.colors.surface.withValues(alpha: 0.55)),
+      );
+      expect(r(ParkSurfaceStyle.neon).fill, equals(dark.colors.textPrimary));
+    });
+
     test('所有风格都不污染 ParkColors.brand（品牌语义色保持不透明）', () {
       for (final ParkSurfaceStyle style in ParkSurfaceStyle.values) {
         final ParkThemeData park = ParkThemeData.light();
@@ -382,6 +506,31 @@ void main() {
 String _signature(ParkSurfaceTokens t) {
   return '${t.style}|${t.fill}|${t.border}|${t.glassBlur}'
       '|${t.glassAlpha}|${t.useBackdropFilter}|${t.shadows}';
+}
+
+/// 派生指定风格在指定色板下的填充色（ghost 关闭）。
+Color _fill(ParkSurfaceStyle style, ParkColors colors) {
+  return ParkSurfaceTokens.resolve(
+    style: style,
+    colors: colors,
+    radius: ParkRadius.defaults(),
+    blur: ParkBlur.defaults(),
+  ).fill;
+}
+
+/// 各风格在**非 neon** 时应得的填充色（与 isDark 无关）。
+///
+/// 单独列出以表达"这 4 种风格的填充色不随 isDark 翻转"这一不变量。
+Color _expectedPainted(ParkSurfaceStyle style, ParkColors colors) {
+  return switch (style) {
+    ParkSurfaceStyle.stripe => colors.surface,
+    ParkSurfaceStyle.flat => colors.surface,
+    ParkSurfaceStyle.glass => colors.surface.withValues(alpha: 0.55),
+    ParkSurfaceStyle.neo => colors.background,
+    // neon 由 isDark 决定，调用方不应走到这里。
+    ParkSurfaceStyle.neon =>
+      throw StateError('neon 的填充色依赖 isDark，不适用 _expectedPainted'),
+  };
 }
 
 Widget _probe({

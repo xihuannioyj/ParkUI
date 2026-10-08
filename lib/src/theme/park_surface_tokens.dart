@@ -68,14 +68,27 @@ class ParkSurfaceTokens {
   /// 这是**全项目唯一的材质翻译点**：新增一种风格只需在此加一个分支，
   /// 所有消费 [ParkSurfaceTokens] 的组件自动适配，组件本身零改动。
   ///
-  /// [ParkSurfaceStyle] 的 5 个值全部有显式分支覆盖，**没有 fallthrough**，
+  /// 5 种风格在本方法内全部有显式分支，**刻意不写 `_` 通配**，
   /// 因此新增枚举值时编译器会强制补齐分支（不会静默漏掉）。
+  ///
+  /// 🔴 但这只对本方法成立 —— `fill` / `titleColor` 的派生逻辑分散在
+  /// `painted` 与构造处，新增风格时**必须同步核对这两处**，
+  /// 否则会出现"填充色对了、标题色没对"的半正确状态。
   ///
   /// 组件意图参数：
   /// - [bordered] 是否绘制边框；
   /// - [hovered] 是否处于 hover 态（影响边框高亮与 stripe 阴影高度）；
   /// - [borderTone] 边框调性（`outline` / `inner` / `none`）；
-  /// - [transparent] 是否为 ghost 态（不绘制填充与阴影）；
+  /// - [transparent] 是否为 ghost 态（不绘制填充与阴影）。
+  ///
+  ///   ⚠️ 已知行为变更（相对迁移前的 `ParkCard._resolveSurface`）：迁移前
+  ///   **只有 flat / neo / neon / stripe 检查 isGhost，glass 不检查**，
+  ///   因此 ghost + glass 的卡片仍会画出 55% 半透明填充。迁移后 ghost
+  ///   对全部 5 种风格一致生效（填充透明、不画阴影）。
+  ///
+  ///   这是**有意的修正**而非回归：ghost 的语义就是"不绘制表面"，
+  ///   旧实现让 glass 漏判属于不一致。但它确实改变了 glass + ghost 的观感，
+  ///   故在此显式记录，供 review 与回滚时定位。
   /// - [elevation] 阴影高度基线（仅 stripe 分支使用，其余风格用自带阴影）。
   factory ParkSurfaceTokens.resolve({
     required ParkSurfaceStyle style,
@@ -90,11 +103,20 @@ class ParkSurfaceTokens {
   }) {
     final bool isDark = colors.background.computeLuminance() < 0.5;
 
-    // Ghost 态：任何风格都不绘制填充色。
+    // 填充色：Ghost 态任何风格都不绘制。
+    //
+    // ⚠️ 这里的 switch 必须穷举全部 5 个风格，**不要加 `_` 通配**。
+    // neon 是唯一随明暗翻转填充色的风格：深色底下表面要取亮色
+    // （`colors.textPrimary`），否则深色卡片会与深色背景几乎同色、不可分辨。
+    // 若图省事写 `_ => colors.surface`，新增风格还会静默继承 stripe 的填充色
+    // 而无人察觉 —— 所以这里刻意不写通配分支，让编译器强制补齐。
     final Color painted = switch (style) {
-      ParkSurfaceStyle.neo => colors.background,
+      ParkSurfaceStyle.stripe => colors.surface,
+      ParkSurfaceStyle.flat => colors.surface,
       ParkSurfaceStyle.glass => colors.surface.withValues(alpha: 0.55),
-      _ => colors.surface,
+      ParkSurfaceStyle.neo => colors.background,
+      ParkSurfaceStyle.neon =>
+        isDark ? colors.textPrimary : colors.surface,
     };
     final Color fill = transparent ? Colors.transparent : painted;
 
@@ -155,7 +177,12 @@ class ParkSurfaceTokens {
       border: border,
       radius: radius.brMd,
       shadows: shadows,
-      // 深色表面上标题需要翻转，否则深底深字不可读。
+      // 标题色必须与 [fill] 相反，否则深底深字/白底白字导致标题不可见。
+      //
+      // ⚠️ 这行与上面 `painted` 的 neon 分支是**强耦合**的，请勿"简化"：
+      // neon + 深色时 fill = colors.textPrimary（暗色板下为纯白），
+      // 因此标题必须取 colors.surface（暗色板下为深 navy）才可读。
+      // 若改成"始终 colors.textPrimary"，就会变成白底白字 —— 标题消失。
       titleColor: style == ParkSurfaceStyle.neon && isDark
           ? colors.surface
           : colors.textPrimary,
