@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
+import '../base/park_surface.dart';
 import '../../l10n/park_localizations.dart';
 
 /// ParkDialog — 对话框组件，支持 alert / confirm / info / success / warning / error 等静态调用。
@@ -621,10 +625,83 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
     super.dispose();
   }
 
+  /// 解析对话框的表面材质。
+  ///
+  /// 与 [ParkCard] 的关键差异：对话框是**浮层**，恒定"抬起"，因此阴影有
+  /// 一个不可为 null 的下限（[ParkShadows.lg]）。而 [ParkSurfaceTokens]
+  /// 的阴影是**卡片语义** —— stripe/flat 在 elevation=0 时返回 null。
+  ///
+  /// 所以这里取 `tokens.shadows ?? park.shadows.lg`：
+  /// - stripe / flat → 走兜底 = 与改造前**逐字段一致**（零回归）；
+  /// - glass / neo / neon → 由风格接管 = 获得材质性格（本次新增能力）。
+  ///
+  /// 绝不直接消费 `tokens.shadows`，否则 stripe/flat 对话框会突然丢失阴影。
+  ({
+    Color fill,
+    BorderRadius radius,
+    List<BoxShadow>? shadows,
+    bool useBlur,
+    double blurSigma,
+    Color titleColor,
+    Color bodyColor,
+  })
+  _resolveSurface(ParkThemeData park) {
+    // 走 Scope 读取：局部 ParkSurfaceStyleScope 覆盖自动生效。
+    final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+      context,
+      // 对话框用阴影表达"抬起"，不需要描边。
+      bordered: false,
+    );
+
+    // 🔴 fullscreen 是**独立分支**，不是"默认样式 + 几处覆盖"。
+    //
+    // 它同时短路 4 个属性（圆角→zero / 阴影→null / mainAxisSize→max /
+    // 宽高约束→expand），必须整条路径显式处理，否则会出现"半 fullscreen"
+    // 的撕裂状态（例如圆角已是 0 但仍带阴影）。
+    //
+    // 全屏下还要额外关闭模糊：BackdropFilter 采样的是**已绘制区域**，
+    // 全屏对话框本就覆盖整个视口，模糊它毫无意义却要付出全屏采样的代价。
+    if (widget.fullscreen) {
+      return (
+        fill: tokens.fill,
+        radius: BorderRadius.zero,
+        shadows: null,
+        useBlur: false,
+        blurSigma: 0,
+        titleColor: tokens.titleColor,
+        bodyColor: tokens.bodyColor,
+      );
+    }
+
+    return (
+      fill: tokens.fill,
+      // 浮层圆角比卡片大（brLg vs brMd）：对话框是"更大的表面"。
+      // 🔴 不可用 tokens.radius —— 那是卡片语义（brMd），会让圆角缩小 4px。
+      radius: park.radius.brLg,
+      shadows: tokens.shadows ?? park.shadows.lg,
+      useBlur: tokens.useBackdropFilter,
+      blurSigma: tokens.glassBlur,
+      // 标题/正文色必须来自 tokens：neon 在深色底上 fill 会翻转成亮色，
+      // 若沿用 colors.textPrimary 会变成"白底白字"（与批次 1 的 neon 缺陷同类）。
+      titleColor: tokens.titleColor,
+      bodyColor: tokens.bodyColor,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+
+    final ({
+      Color fill,
+      BorderRadius radius,
+      List<BoxShadow>? shadows,
+      bool useBlur,
+      double blurSigma,
+      Color titleColor,
+      Color bodyColor,
+    }) surface = _resolveSurface(park);
 
     Widget dialogContent = Semantics(
       container: true,
@@ -640,9 +717,9 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                 : const BoxConstraints(maxWidth: 340, minWidth: 260)),
         padding: EdgeInsets.all(park.spacing.lg),
         decoration: BoxDecoration(
-          color: park.colors.surface,
-          borderRadius: widget.fullscreen ? BorderRadius.zero : park.radius.brLg,
-          boxShadow: widget.fullscreen ? null : park.shadows.lg,
+          color: surface.fill,
+          borderRadius: surface.radius,
+          boxShadow: surface.shadows,
         ),
         child: Column(
           mainAxisSize: widget.fullscreen ? MainAxisSize.max : MainAxisSize.min,
@@ -662,7 +739,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                     style: park.typography.body.copyWith(
                       fontSize: park.typography.sizeH3,
                       fontWeight: park.typography.weightBold,
-                      color: park.colors.textPrimary,
+                      color: surface.titleColor,
                     ),
                   ),
                 ),
@@ -675,7 +752,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                     child: widget.closeIcon ?? Icon(
                       Icons.close,
                       size: 20,
-                      color: park.colors.textSecondary,
+                      color: surface.bodyColor,
                     ),
                   ),
                   ),
@@ -692,7 +769,7 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
                 widget.content!,
                 style: park.typography.body.copyWith(
                   fontSize: park.typography.sizeBody,
-                  color: park.colors.textSecondary,
+                  color: surface.bodyColor,
                 ),
               ),
             ],
@@ -739,6 +816,25 @@ class _ParkDialogOverlayState extends State<_ParkDialogOverlay>
       ),
       ),
     );
+
+    // glass 风格：叠加 BackdropFilter 采样背后的遮罩与页面内容。
+    //
+    // 复用 ParkSurfaceBlurDepth 做嵌套降级：对话框已覆盖大片区域，内层再采样
+    // 同一 backdrop 的成本呈平方级增长，因此 depth > 1 时不重复渲染模糊。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) <= 1 &&
+        surface.blurSigma > 0) {
+      dialogContent = ClipRRect(
+        borderRadius: surface.radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: dialogContent,
+        ),
+      );
+    }
 
     return AnimatedBuilder(
       animation: _controller,
