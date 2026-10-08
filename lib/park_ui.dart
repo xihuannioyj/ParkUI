@@ -156,6 +156,10 @@ export 'src/components/display/park_grid.dart';
 export 'src/components/display/park_sticky.dart';
 export 'src/components/display/park_card.dart';
 export 'src/components/display/park_countdown.dart';
+// 批次 2a：6 项视觉特效能力中的 3 个新组件。
+export 'src/components/display/park_gradient_text.dart';
+export 'src/components/display/park_glass_panel.dart';
+export 'src/components/display/park_page_title.dart';
 export 'src/components/display/park_qrcode.dart';
 export 'src/components/display/park_list.dart';
 export 'src/components/display/park_masonry.dart';

@@ -98,7 +98,7 @@ class ParkThemeData extends ThemeExtension<ParkThemeData> {
   /// `surfaceStyle` 的派生物（会随风格整体跳变，不适合插值），
   /// 而 [ParkGradients] 与 [surfaceStyle] 正交、生命周期同 [colors]。
   ///
-  /// 留空时由 [colors] 自动派生（见 [resolvedGradients]），因此既有调用方
+  /// 留空时由 [colors] 自动派生（见 [gradients] getter），因此既有调用方
   /// （如 App 层的 `ThemeStylePreset.buildParkTheme`）无需改动。
   final ParkGradients? _gradients;
 

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
@@ -99,6 +101,23 @@ class ParkCard extends StatefulWidget {
   /// 自定义边框颜色（覆盖主题默认边框色）
   final Color? borderColor;
 
+  /// 霓虹辉光色；null 时取 `park.colors.brand`。
+  ///
+  /// 仅 [ParkSurfaceStyle.neon] 下生效。其余风格忽略此参数。
+  final Color? glowColor;
+
+  /// 霓虹辉光强度（0-1）。
+  ///
+  /// 仅 [ParkSurfaceStyle.neon] 下生效。会**乘到**材质令牌给出的辉光
+  /// 透明度上（而非替换），因此换预设时辉光"性格"仍由令牌决定。
+  final double glowIntensity;
+
+  /// 霓虹风格下是否用**渐变描边**替代实色描边。
+  ///
+  /// 默认开启。渐变取自 `park.gradients.sweep`，随主题联动。
+  /// 其余风格忽略此参数。
+  final bool gradientBorder;
+
   const ParkCard({
     super.key,
     this.title,
@@ -123,7 +142,13 @@ class ParkCard extends StatefulWidget {
     this.icon,
     this.showIndicator = false,
     this.borderColor,
-  });
+    this.glowColor,
+    this.glowIntensity = 1.0,
+    this.gradientBorder = true,
+  }) : assert(
+         glowIntensity >= 0.0 && glowIntensity <= 1.0,
+         'glowIntensity 必须落在 0-1',
+       );
 
   @override
   State<ParkCard> createState() => _ParkCardState();
@@ -146,6 +171,7 @@ class _ParkCardState extends State<ParkCard> {
       Border? border,
       List<BoxShadow>? shadows,
       bool useGlass,
+      Gradient? gradientBorder,
     })
     surface = _resolveSurface(park);
 
@@ -349,20 +375,97 @@ class _ParkCardState extends State<ParkCard> {
                 ),
               ),
             )
-          : AnimatedContainer(
-              duration: park.motion.standard,
-              curve: park.motion.defaultEasing,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: surface.color,
-                borderRadius: cardRadius,
-                border: effectiveBorder,
-                boxShadow: surface.shadows,
-              ),
-              child: cardContent,
+          : _buildDecoratedCard(
+              park: park,
+              cardRadius: cardRadius,
+              surface: surface,
+              effectiveBorder: effectiveBorder,
+              cardContent: cardContent,
             ),
           ),
     );
+  }
+
+  /// 非玻璃分支的卡片外壳。
+  ///
+  /// 🔴 **stripe 零回归约束**：当 [surface.gradientBorder] 为 null
+  /// （即非 neon 风格）时，走的分支与迁移前 `AnimatedContainer` +
+  /// `BoxDecoration(color/borderRadius/border/boxShadow)` **逐字段一致**，
+  /// 因此 `test/golden/goldens/park_card_*.png` 零 diff。
+  ///
+  /// neon + gradientBorder 时额外套一层"渐变描边壳"：外层画渐变、
+  /// 内层填充表面色，形成真正的**渐变描边**（Flutter 的
+  /// `BoxDecoration.gradient` 只能铺满、不能只画描边，故必须分层）。
+  Widget _buildDecoratedCard({
+    required ParkThemeData park,
+    required BorderRadius cardRadius,
+    required ({
+      Color? color,
+      Border? border,
+      List<BoxShadow>? shadows,
+      bool useGlass,
+      Gradient? gradientBorder,
+    })
+    surface,
+    required Border? effectiveBorder,
+    required Widget cardContent,
+  }) {
+    final AnimatedContainer base = AnimatedContainer(
+      duration: park.motion.standard,
+      curve: park.motion.defaultEasing,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: surface.color,
+        borderRadius: cardRadius,
+        border: effectiveBorder,
+        boxShadow: surface.shadows,
+      ),
+      child: cardContent,
+    );
+
+    final Gradient? strokeGradient = surface.gradientBorder;
+    if (strokeGradient == null) return base;
+
+    // 渐变描边：外层渐变 + 内层实色，中间露出的宽度即描边。
+    // 描边宽度取自主题命名约定（1.5dp），与 neon 风格"发光边"的观感匹配。
+    const double neonStrokeWidth = 1.5;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: cardRadius,
+        gradient: strokeGradient,
+        boxShadow: surface.shadows,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(neonStrokeWidth),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: surface.color,
+            borderRadius: BorderRadius.all(
+              Radius.circular(
+                // 🔴 必须夹到 >= 0：调用方可能传入小于描边宽度的圆角
+                // （如 radius.xs=4 与 1.5 同量级时内缩后仍为正，但自定义
+                // borderRadius 可能给 0），负半径会让 Radius.circular 抛断言。
+                math.max(0.0, _radiusOf(cardRadius) - neonStrokeWidth),
+              ),
+            ),
+          ),
+          child: base,
+        ),
+      ),
+    );
+  }
+
+  /// 从 [BorderRadius] 提取标量圆角（各角相同）。
+  ///
+  /// 非均匀圆角不参与渐变描边内缩，退化为 0 —— 此时内层无内缩，
+  /// 描边宽度完全由外层 padding 决定，观感仍然正确。
+  static double _radiusOf(BorderRadius radius) {
+    if (radius.topLeft == radius.topRight &&
+        radius.topRight == radius.bottomRight &&
+        radius.bottomRight == radius.bottomLeft) {
+      return radius.topLeft.x;
+    }
+    return 0.0;
   }
 
   /// 根据当前 [ParkThemeData.surfaceStyle] 解析卡片的表面材质。
@@ -371,7 +474,18 @@ class _ParkCardState extends State<ParkCard> {
   /// [ParkSurfaceTokens.resolve] —— 这是全项目唯一的"风格 → 表面"翻译点。
   /// 本方法只负责把卡片自身的状态（variant / bordered / hover / elevation /
   /// color）翻译成派生层的意图参数，因此新增风格时本方法无需改动。
-  ({Color? color, Border? border, List<BoxShadow>? shadows, bool useGlass})
+  ///
+  /// 🔴 **stripe 零回归约束**：非 neon 风格走一条与迁移前完全一致的路径，
+  /// `gradientBorder` 恒为 null、`shadows` 原样透传材质令牌的值。
+  /// `test/golden/goldens/park_card_*.png` 是这条约束的守门员 ——
+  /// 任何让 stripe 产生 diff 的改动都是回归，不是改进。
+  ({
+    Color? color,
+    Border? border,
+    List<BoxShadow>? shadows,
+    bool useGlass,
+    Gradient? gradientBorder,
+  })
   _resolveSurface(ParkThemeData park) {
     final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
       style: park.surfaceStyle,
@@ -385,11 +499,49 @@ class _ParkCardState extends State<ParkCard> {
       elevation: widget.elevation ?? 0,
     );
 
+    // 🔴 非 neon 风格原样返回，不做任何额外处理 —— 这是 stripe 零 diff 的关键。
+    if (surface.style != ParkSurfaceStyle.neon) {
+      return (
+        color: widget.color ?? surface.fill,
+        border: surface.border,
+        shadows: surface.shadows,
+        useGlass: surface.useBackdropFilter,
+        gradientBorder: null,
+      );
+    }
+
+    // ---- 以下仅 neon 风格生效 ----
+
+    // 辉光：材质令牌给出的品牌辉光，强度与色相都可由调用方覆盖。
+    // 颜色可被 glowColor 覆盖，默认取品牌色（令牌派生，非硬编码）。
+    //
+    // 🔴 强度以令牌 alpha 为**基准缩放**（而非替换）：这样换预设时
+    // 辉光的"性格"（透明度/模糊半径的相对关系）仍由材质层决定。
+    final Color glow = widget.glowColor ?? park.colors.brand;
+    final double gi = widget.glowIntensity.clamp(0.0, 1.0);
+    final List<BoxShadow>? glowShadows = surface.shadows == null
+        ? null
+        : <BoxShadow>[
+            for (final BoxShadow s in surface.shadows!)
+              BoxShadow(
+                // glowColor 已覆盖时用其 alpha，否则按令牌 alpha 缩放。
+                color: widget.glowColor == null
+                    ? s.color.withValues(alpha: s.color.a * gi)
+                    : glow.withValues(alpha: s.color.a * gi),
+                blurRadius: s.blurRadius * gi,
+                spreadRadius: s.spreadRadius * gi,
+                offset: s.offset,
+              ),
+          ];
+
     return (
       color: widget.color ?? surface.fill,
-      border: surface.border,
-      shadows: surface.shadows,
+      // gradientBorder 开启时返回 null，由调用方用渐变描边代替实色描边。
+      border: widget.gradientBorder ? null : surface.border,
+      shadows: glowShadows,
       useGlass: surface.useBackdropFilter,
+      // 渐变描边用 sweep 令牌（随主题联动），禁止硬编码色值。
+      gradientBorder: widget.gradientBorder ? park.gradients.sweep.asFlutter : null,
     );
   }
 

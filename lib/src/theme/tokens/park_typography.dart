@@ -13,6 +13,19 @@ class ParkTypography {
   /// 超大标题
   final double sizeDisplay;
 
+  /// 页面大标题
+  ///
+  /// 🔴 取值 **30.0**，刻意避开 28：28 已被 [sizeH1] 占用，若两值相同则
+  /// `pageTitle` 与 `h1` 在视觉上无法区分，"语义分层"就失去意义。
+  /// 34（display）→ 30（pageTitle）→ 28（h1）构成三级递减的标题梯度。
+  final double sizePageTitle;
+
+  /// 区块标题
+  ///
+  /// 取值 20.0，落在 [sizeH2]（22）与 [sizeH3]（18）之间，
+  /// 为"卡片区块 / 分组标题"提供比 h3 更强的存在感又不越级到 h2。
+  final double sizeSectionTitle;
+
   /// 一级标题
   final double sizeH1;
 
@@ -76,6 +89,8 @@ class ParkTypography {
 
   const ParkTypography({
     this.sizeDisplay = 34.0,
+    this.sizePageTitle = 30.0,
+    this.sizeSectionTitle = 20.0,
     this.sizeH1 = 28.0,
     this.sizeH2 = 22.0,
     this.sizeH3 = 18.0,
@@ -107,6 +122,26 @@ class ParkTypography {
     fontSize: sizeDisplay,
     height: lineHeightTitle,
     fontWeight: weightBold,
+    fontFamily: fontFamily,
+  );
+
+  /// 页面大标题样式
+  ///
+  /// 适用于页面顶部的主标题（比 [h1] 大、比 [display] 小）。
+  TextStyle get pageTitle => TextStyle(
+    fontSize: sizePageTitle,
+    height: lineHeightTitle,
+    fontWeight: weightBold,
+    fontFamily: fontFamily,
+  );
+
+  /// 区块标题样式
+  ///
+  /// 适用于卡片区块 / 分组标题（比 [h3] 强、比 [h2] 弱）。
+  TextStyle get sectionTitle => TextStyle(
+    fontSize: sizeSectionTitle,
+    height: lineHeightTitle,
+    fontWeight: weightMedium,
     fontFamily: fontFamily,
   );
 
@@ -175,6 +210,10 @@ class ParkTypography {
   static ParkTypography lerp(ParkTypography a, ParkTypography b, double t) {
     return ParkTypography(
       sizeDisplay: a.sizeDisplay + (b.sizeDisplay - a.sizeDisplay) * t,
+      sizePageTitle:
+          a.sizePageTitle + (b.sizePageTitle - a.sizePageTitle) * t,
+      sizeSectionTitle:
+          a.sizeSectionTitle + (b.sizeSectionTitle - a.sizeSectionTitle) * t,
       sizeH1: a.sizeH1 + (b.sizeH1 - a.sizeH1) * t,
       sizeH2: a.sizeH2 + (b.sizeH2 - a.sizeH2) * t,
       sizeH3: a.sizeH3 + (b.sizeH3 - a.sizeH3) * t,
@@ -199,6 +238,8 @@ class ParkTypography {
 
   ParkTypography copyWith({
     double? sizeDisplay,
+    double? sizePageTitle,
+    double? sizeSectionTitle,
     double? sizeH1,
     double? sizeH2,
     double? sizeH3,
@@ -217,6 +258,8 @@ class ParkTypography {
   }) {
     return ParkTypography(
       sizeDisplay: sizeDisplay ?? this.sizeDisplay,
+      sizePageTitle: sizePageTitle ?? this.sizePageTitle,
+      sizeSectionTitle: sizeSectionTitle ?? this.sizeSectionTitle,
       sizeH1: sizeH1 ?? this.sizeH1,
       sizeH2: sizeH2 ?? this.sizeH2,
       sizeH3: sizeH3 ?? this.sizeH3,
@@ -242,6 +285,8 @@ class ParkTypography {
       other is ParkTypography &&
           runtimeType == other.runtimeType &&
           sizeDisplay == other.sizeDisplay &&
+          sizePageTitle == other.sizePageTitle &&
+          sizeSectionTitle == other.sizeSectionTitle &&
           sizeH1 == other.sizeH1 &&
           sizeH2 == other.sizeH2 &&
           sizeH3 == other.sizeH3 &&
@@ -261,6 +306,8 @@ class ParkTypography {
   @override
   int get hashCode => Object.hash(
     sizeDisplay,
+    sizePageTitle,
+    sizeSectionTitle,
     sizeH1,
     sizeH2,
     sizeH3,

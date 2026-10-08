@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_gradient.dart';
 import '../../l10n/park_localizations.dart';
 
 /// Park 结果状态类型
@@ -72,6 +75,20 @@ class ParkResult extends StatelessWidget {
   /// Rich description widget (takes priority over [description] when set).
   final Widget? descriptionWidget;
 
+  /// 高优先级插画。
+  ///
+  /// 🔴 优先级最高：`illustration` > [icon] > 状态默认图标。
+  final Widget? illustration;
+
+  /// 无插画时，是否用**渐变占位块**代替裸图标。
+  ///
+  /// 占位块颜色由 `status` 决定（成功绿 / 错误红 / 警告橙 / 信息蓝），
+  /// 但**一律取自 [ParkColors] 的语义色令牌**，不做硬编码。
+  final bool gradientPlaceholder;
+
+  /// 图标区是否使用玻璃容器包裹（与 glass 风格协调）。
+  final bool glassContainer;
+
   const ParkResult({
     super.key,
     this.status = ParkResultStatus.info,
@@ -81,6 +98,9 @@ class ParkResult extends StatelessWidget {
     this.descriptionWidget,
     this.actions,
     this.extra,
+    this.illustration,
+    this.gradientPlaceholder = false,
+    this.glassContainer = false,
   });
 
   /// 403 Forbidden preset.
@@ -212,21 +232,15 @@ class ParkResult extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 状态图标
-              icon ??
-                  Container(
-                    width: iconContainerSize,
-                    height: iconContainerSize,
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      statusIcon,
-                      color: statusColor,
-                      size: iconSize,
-                    ),
-                  ),
+              // 状态图标区：illustration > icon > 渐变占位块 > 默认圆形容器
+              _buildStatusVisual(
+                context: context,
+                park: park,
+                statusColor: statusColor,
+                statusIcon: statusIcon,
+                containerSize: iconContainerSize,
+                iconSize: iconSize,
+              ),
 
               SizedBox(height: park.spacing.lg),
 
@@ -308,6 +322,85 @@ class ParkResult extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// 构建状态视觉区。
+  ///
+  /// 优先级：`illustration` > [icon] > [gradientPlaceholder] 渐变块 >
+  /// 默认圆形容器。默认分支与改造前**逐字段一致**（零回归）。
+  Widget _buildStatusVisual({
+    required BuildContext context,
+    required ParkThemeData park,
+    required Color statusColor,
+    required IconData statusIcon,
+    required double containerSize,
+    required double iconSize,
+  }) {
+    if (illustration != null) return illustration!;
+    if (icon != null) return icon!;
+
+    if (gradientPlaceholder) {
+      // 渐变占位块：以状态色为主，色标全部来自 ParkColors 语义令牌
+      // （statusColor 本身即令牌色；高光端用 textOnBrand 的低透明度）。
+      return Container(
+        width: containerSize,
+        height: containerSize,
+        decoration: BoxDecoration(
+          gradient: ParkGradient.linear(
+            colors: <Color>[
+              statusColor.withValues(alpha: 0.85),
+              statusColor.withValues(alpha: 0.35),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).asFlutter,
+          borderRadius: BorderRadius.circular(park.radius.lg),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: statusColor.withValues(alpha: 0.24),
+              blurRadius: park.blur.md,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(statusIcon, color: park.colors.textOnBrand, size: iconSize),
+      );
+    }
+
+    final Widget base = Container(
+      width: containerSize,
+      height: containerSize,
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(statusIcon, color: statusColor, size: iconSize),
+    );
+
+    if (!glassContainer) return base;
+
+    // 玻璃容器：材质取自表面令牌派生层，随风格联动。
+    final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
+      style: ParkSurfaceStyleScope.of(context),
+      colors: park.colors,
+      radius: park.radius,
+      blur: park.blur,
+      bordered: false,
+    );
+    return Container(
+      width: containerSize,
+      height: containerSize,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: surface.fill.withValues(alpha: surface.glassAlpha),
+        borderRadius: BorderRadius.circular(park.radius.lg),
+        border: Border.all(
+          color: park.colors.textOnBrand.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: base,
     );
   }
 

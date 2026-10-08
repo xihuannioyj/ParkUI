@@ -34,8 +34,8 @@ void main() {
 
       // 当前实际组件文件数量
       // 如果新增或删除组件，需同步更新此断言值
-      expect(dartFiles.length, equals(130),
-          reason: '组件文件数量应为 130，如有变更请更新此断言值');
+      expect(dartFiles.length, equals(133),
+          reason: '组件文件数量应为 133，如有变更请更新此断言值');
     });
 
     test('park_ui.dart 导出的组件文件数量稳定', () {
@@ -52,8 +52,8 @@ void main() {
 
       // 当前 barrel 文件中导出的组件数量
       // 如果新增或删除组件导出，需同步更新此断言值
-      expect(componentExports.length, equals(122),
-          reason: 'barrel 文件中组件导出数量应为 122，如有变更请更新此断言值');
+      expect(componentExports.length, equals(125),
+          reason: 'barrel 文件中组件导出数量应为 125，如有变更请更新此断言值');
     });
 
     test('各子目录组件分布合理', () {
