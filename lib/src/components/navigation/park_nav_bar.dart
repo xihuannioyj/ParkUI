@@ -1,6 +1,12 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_colors.dart';
+import '../base/park_surface.dart';
 
 /// Park 顶部导航栏
 ///
@@ -17,6 +23,150 @@ import '../../theme/park_theme_data.dart';
 ///   ],
 /// )
 /// ```
+/// 顶部导航栏表面材质的派生结果。
+@immutable
+class ParkNavBarSurface {
+  /// 导航栏填充色；透明模式下为 [Colors.transparent]。
+  final Color fill;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 底部分割线颜色；null 表示不画分割线。
+  final Color? dividerColor;
+
+  /// 标题 / 返回箭头 / 右侧操作图标的前景色。
+  final Color titleColor;
+
+  /// 副标题色。
+  final Color bodyColor;
+
+  /// 是否需要背景模糊采样（glass 风格）。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  const ParkNavBarSurface({
+    required this.fill,
+    required this.shadows,
+    required this.dividerColor,
+    required this.titleColor,
+    required this.bodyColor,
+    required this.useBlur,
+    required this.blurSigma,
+  });
+}
+
+/// 导航栏改造前的 elevation 阴影（浮层兜底 floor）。
+///
+/// 组件原本按 `elevation` 现算一条阴影（overlay 8% / blur=elevation /
+/// offset=(0, elevation/2)），并非 `park.shadows.*`。
+List<BoxShadow> _navBarElevationShadow(ParkThemeData park, double elevation) {
+  return <BoxShadow>[
+    BoxShadow(
+      color: park.colors.overlay.withValues(alpha: 0.08),
+      blurRadius: elevation,
+      offset: Offset(0, elevation / 2),
+    ),
+  ];
+}
+
+/// 导航栏底部分割线颜色。
+///
+/// 原实现固定用 `colors.divider`（亮色板 navy 7.8% / 暗色板 白 10%）。
+/// 这在 **neon + 深色** 底下会失效：此时表面 fill 翻转为
+/// `colors.textPrimary`（暗色板下是纯白），而暗色板的 divider 是"白 10%"
+/// —— 白线压在白底上完全不可见。
+///
+/// 因此策略是：**原色仍可分辨时沿用原色**（stripe / flat 观感零回归），
+/// 仅在原色与 fill 不可分辨时回落到表面文字色的低透明度版本。
+///
+/// ⚠️ `ParkColors.contrastRatio` 只读 r/g/b、**忽略 alpha**，所以这里必须
+/// 先把半透明的 fill / divider 各自 alpha 合成到不透明底再比，否则算出来
+/// 的是"未合成"的纯色，结论无效。
+Color _navBarDividerColor({
+  required ParkThemeData park,
+  required Color fill,
+  required Color fallback,
+}) {
+  final Color opaqueFill = Color.alphaBlend(fill, park.colors.background);
+  final Color composited = Color.alphaBlend(park.colors.divider, opaqueFill);
+  if (ParkColors.contrastRatio(composited, opaqueFill) > 1.02) {
+    return park.colors.divider;
+  }
+  return fallback.withValues(alpha: 0.35);
+}
+
+/// 解析顶部导航栏的表面材质（浮层规范在 NavBar 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. **阴影**：`tokens.shadows ?? 组件原值`（[_navBarElevationShadow]）——
+///    但导航栏**不是**"恒定抬起"的浮层，它有显式的 `elevation` 旋钮，
+///    `elevation == 0` 就是"不要阴影"。此时即便 glass / neo / neon 也不
+///    凭空加阴影，否则全站导航栏会突然全部投影（非零回归）。
+/// 2. **圆角**：导航栏无圆角（贴边满宽），本组件不涉及圆角。
+/// 3. **边框**：尊重组件原有的 `bordered` 语义 —— 底边 0.5px 分割线。
+///    它是"分割线"而非"表面 outline"，**不**消费 `tokens.border`
+///    （后者是 `Border.all` 四边 1px，会改变观感）；颜色由
+///    [_navBarDividerColor] 做表面适配。
+/// 4. **文字色**：`tokens.titleColor` / `tokens.bodyColor`。
+///    透明栏走独立分支，用 `colors.textPrimary` / `textSecondary`。
+/// 5. **特殊形态**：[transparent] 是**独立分支**（同时短路填充 / 阴影 /
+///    分割线 / 模糊四个属性），整条 return，避免"透明但带阴影"的撕裂态。
+@visibleForTesting
+ParkNavBarSurface resolveParkNavBarSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+  bool transparent = false,
+  bool bordered = true,
+  double elevation = 0.0,
+}) {
+  // 导航栏没有"表面 outline"语义（只有底部分割线），故 bordered: false，
+  // 分割线由 _navBarDividerColor 单独处理。
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  if (transparent) {
+    return ParkNavBarSurface(
+      fill: Colors.transparent,
+      shadows: null,
+      dividerColor: null,
+      // 🔴 透明栏背后是**页面内容**（colors.background），不再有表面，
+      // 因此可读基准是页面背景而非 fill。neon + 深色下 tokens.titleColor
+      // 是 colors.surface（深 navy），压在深色页面上会完全消失。
+      // colors.textPrimary / textSecondary 按定义即"在 background 上可读"。
+      titleColor: park.colors.textPrimary,
+      bodyColor: park.colors.textSecondary,
+      useBlur: false,
+      blurSigma: 0.0,
+    );
+  }
+
+  return ParkNavBarSurface(
+    fill: tokens.fill,
+    shadows: elevation > 0
+        ? ParkSurfaceTokens.overlayShadows(
+            tokens: tokens,
+            floor: _navBarElevationShadow(park, elevation),
+          )
+        : null,
+    dividerColor: bordered
+        ? _navBarDividerColor(
+            park: park,
+            fill: tokens.fill,
+            fallback: tokens.titleColor,
+          )
+        : null,
+    titleColor: tokens.titleColor,
+    bodyColor: tokens.bodyColor,
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+  );
+}
+
 class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   /// 标题（字符串或自定义 Widget）
   final Widget? title;
@@ -159,36 +309,36 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final colors = park.colors;
     final double topInset = safeAreaTop ? MediaQuery.paddingOf(context).top : 0;
 
-    final bgColor = transparent
-        ? Colors.transparent
-        : (backgroundColor ?? colors.surface);
-    final fgColor = titleColor ?? colors.textPrimary;
-    final actionColor = colors.textPrimary;
+    // 表面材质走派生层：局部 ParkSurfaceStyleScope 覆盖自动生效。
+    final ParkNavBarSurface surface = resolveParkNavBarSurface(
+      park: park,
+      context: context,
+      transparent: transparent,
+      bordered: bordered,
+      elevation: elevation,
+    );
 
-    // 解析边框：transparent 模式始终无边框无阴影
-    final showBorder = !transparent && bordered;
-    final showElevation = !transparent && elevation > 0;
+    // backgroundColor / titleColor 是用户逃生舱，优先级高于派生结果。
+    final Color bgColor = backgroundColor ?? surface.fill;
+    final Color fgColor = titleColor ?? surface.titleColor;
+    // 返回箭头 / 右侧操作图标跟随表面前景色（与改造前一致，不随 titleColor
+    // 覆盖而变），但必须来自表面令牌以保证在任何风格下都可辨。
+    final Color actionColor = surface.titleColor;
 
-    return Container(
+    Widget bar = Container(
       // 总高计入 bottom 高度，避免 bottom 挤压工具栏导致 RenderFlex 溢出。
       height: height + topInset + (bottomHeight ?? bottom?.preferredSize.height ?? 0),
       decoration: BoxDecoration(
         color: bgColor,
-        border: showBorder
-            ? Border(bottom: BorderSide(color: colors.divider, width: 0.5))
+        // 分割线：保留组件原有几何（仅底边 0.5px），颜色做表面适配。
+        border: surface.dividerColor != null
+            ? Border(
+                bottom: BorderSide(color: surface.dividerColor!, width: 0.5),
+              )
             : null,
-        boxShadow: showElevation
-            ? [
-                BoxShadow(
-                  color: colors.overlay.withValues(alpha: 0.08),
-                  blurRadius: elevation,
-                  offset: Offset(0, elevation / 2),
-                ),
-              ]
-            : null,
+        boxShadow: surface.shadows,
       ),
       child: SizedBox.expand(
         child: Column(
@@ -213,7 +363,9 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: colors.textSecondary,
+                              // 副标题走 surface.bodyColor（与改造前的
+                              // colors.textSecondary 同源，但会随风格翻转）。
+                              color: surface.bodyColor,
                               fontSize: park.typography.sizeOverline,
                               fontWeight: park.typography.weightRegular,
                             ),
@@ -236,6 +388,22 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
     );
+
+    // glass 风格：叠加 BackdropFilter 采样背后的页面内容。
+    // 导航栏没有圆角，无需 ClipRRect；嵌套降级统一由 ParkSurfaceBlurDepth
+    // 判定（必须是 `< 1` 而非 `<= 1`）。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
+        surface.blurSigma > 0) {
+      bar = BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: surface.blurSigma,
+          sigmaY: surface.blurSigma,
+        ),
+        child: bar,
+      );
+    }
+    return bar;
   }
 
   void _handleBack(BuildContext context) async {
@@ -297,8 +465,19 @@ class ParkNavBar extends StatelessWidget implements PreferredSizeWidget {
 
     if (title == null) return const SizedBox.shrink();
 
-    // 如果 title 已经是 _ParkNavBarTitle 则直接返回（它自己处理样式）
-    if (title is _ParkNavBarTitle) return title!;
+    // 如果 title 已经是 _ParkNavBarTitle 则重建一个（它自己处理样式）。
+    //
+    // 不能原样返回：_ParkNavBarTitle 需要知道当前是否处于透明栏 ——
+    // 透明栏的可读基准是页面背景而非表面，漏传会让它按"有表面"取
+    // tokens.titleColor（neon + 深色下是深 navy，压在深色页面上会消失）。
+    if (title is _ParkNavBarTitle) {
+      final _ParkNavBarTitle asTitle = title! as _ParkNavBarTitle;
+      return _ParkNavBarTitle(
+        text: asTitle.text,
+        titleColor: asTitle.titleColor,
+        transparent: transparent,
+      );
+    }
 
     // 外部传入的自定义 Widget
     return DefaultTextStyle(
@@ -317,13 +496,29 @@ class _ParkNavBarTitle extends StatelessWidget {
   final String text;
   final Color? titleColor;
 
-  const _ParkNavBarTitle({required this.text, this.titleColor});
+  /// 是否处于透明导航栏中。
+  ///
+  /// 透明栏背后是**页面内容**而非表面，文字色的可读基准不同
+  /// （见 [resolveParkNavBarSurface] 的 transparent 分支），因此必须透传。
+  final bool transparent;
+
+  const _ParkNavBarTitle({
+    required this.text,
+    this.titleColor,
+    this.transparent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final fgColor = titleColor ?? park.colors.textPrimary;
+    // 与 ParkNavBar 走同一个解析器，保证"标题色 vs 表面"的成对取值不分裂。
+    final ParkNavBarSurface surface = resolveParkNavBarSurface(
+      park: park,
+      context: context,
+      transparent: transparent,
+    );
+    final Color fgColor = titleColor ?? surface.titleColor;
 
     return Text(
       text,
