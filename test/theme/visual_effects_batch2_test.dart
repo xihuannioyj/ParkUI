@@ -1366,9 +1366,12 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             park,
+            // 🔴 **不能同时开gradientPlaceholder** —— 实现里渐变占位块
+            // 在 glassContainer 之前早退（park_empty.dart:343），
+            // 两者同开时 glass 容器根本不会被渲染，断言就成了空转。
+            // 这里要验的是玻璃容器分支，故只开 glassContainer。
             const ParkEmpty(
               description: '容器',
-              gradientPlaceholder: true,
               glassContainer: true,
             ),
           ),
@@ -1408,10 +1411,12 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             park,
+            // 🔴 不能同时开 gradientPlaceholder ——渐变块在
+            // glassContainer 之前早退（park_result.dart:344），
+            // 同开时玻璃容器不会被渲染，断言会空转。
             const ParkResult(
               title: '容器',
               status: ParkResultStatus.warning,
-              gradientPlaceholder: true,
               glassContainer: true,
             ),
           ),
@@ -1507,10 +1512,88 @@ void main() {
       expect(expected, park.colors.textOnBrand);
     });
 
+    // --------------------------------------------------------------
+    // 🔴 互斥参数：`gradientPlaceholder` 与 `glassContainer` 同开时，
+    //    渐变块早退，玻璃容器永不渲染 —— 这是真实的 API 陷阱
+    //    （我自己第一次写测试时同时开了两个，断言直接空转）。
+    //    这里把优先级钉死：两个参数各自单独可用，组合时有确定胜者。
+    // --------------------------------------------------------------
+
+    testWidgets('🔴 gradientPlaceholder 优先于 glassContainer（互斥钉死）', (
+      tester,
+    ) async {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.glass, Brightness.light);
+
+      // 同开两者 -> 渐变块胜出：应能找到带 gradient 的 DecoratedBox。
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkEmpty(
+            description: '互斥',
+            gradientPlaceholder: true,
+            glassContainer: true,
+          ),
+        ),
+      );
+      expect(
+        find.byWidgetPredicate(
+          (Widget w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).gradient != null,
+        ),
+        findsWidgets,
+        reason: 'gradientPlaceholder 优先，渐变块应被渲染',
+      );
+      // 图标色取 textOnBrand（反色面），而不是玻璃容器的 titleColor。
+      final Icon icon = tester.widget<Icon>(find.byType(Icon).first);
+      expect(icon.color, park.colors.textOnBrand);
+
+      // 仅开 glassContainer -> 走玻璃容器分支（无渐变）。
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkEmpty(description: '仅玻璃', glassContainer: true),
+        ),
+      );
+      final Container container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(ParkEmpty),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final Color fill =
+          (container.decoration! as BoxDecoration).color!;
+      expect(
+        ParkColors.contrastRatio(
+          tester.widget<Icon>(find.byType(Icon).first).color!,
+          fill,
+        ),
+        greaterThanOrEqualTo(4.5),
+        reason: '仅开 glassContainer 时走玻璃分支，Icon 必须走 titleColor',
+      );
+    });
+
+    testWidgets('🔴 ParkResult 同样：gradientPlaceholder 优先', (tester) async {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.glass, Brightness.light);
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkResult(
+            title: '互斥',
+            gradientPlaceholder: true,
+            glassContainer: true,
+          ),
+        ),
+      );
+      // 渐变块胜出：状态图标用 textOnBrand，而非玻璃容器的 titleColor。
+      final Icon icon = tester.widget<Icon>(find.byType(Icon).first);
+      expect(icon.color, park.colors.textOnBrand);
+    });
+
     test('🔴 ParkGlassPanel 本身不设文字色 —— 契约由调用方履行', () {
-      // ParkGlassPanel 是纯容器：它只提供 fill / 描边 / 模糊，
-      // 内部文字色必须由调用方从 surface.titleColor 取。
-      // 这条测试把该契约写死，防止有人误以为面板会兜底文字色。
       final ParkThemeData park = _theme(ParkSurfaceStyle.glass, Brightness.dark);
       final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
         style: ParkSurfaceStyle.glass,
@@ -1523,6 +1606,133 @@ void main() {
         ParkColors.contrastRatio(t.titleColor, t.fill),
         greaterThanOrEqualTo(4.5),
       );
+    });
+
+    // --------------------------------------------------------------
+    // 🔴 ParkPageTitle：背景与前景必须同源（本批次漏掉的第三处）
+    //
+    // 原实现标题色硬编码 colors.textPrimary，而 background:fill 时
+    // 背景取 surface.fill —— neon+dark 下 fill 翻转为近白，
+    // 于是"白底白字"，实测对比度 1.00:1。
+    // --------------------------------------------------------------
+
+    testWidgets('🔴 ParkPageTitle + background:fill：真实标题色可读', (
+      tester,
+    ) async {
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            const ParkPageTitle(
+              title: '订单管理',
+              background: ParkPageTitleBackground.fill,
+            ),
+          ),
+        );
+
+        // 从 widget 树取真实背景与真实文字色，而不是重算令牌。
+        final DecoratedBox box = tester.widget<DecoratedBox>(
+          find.descendant(
+            of: find.byType(ParkPageTitle),
+            matching: find.byType(DecoratedBox),
+          ),
+        );
+        final Color fill = (box.decoration as BoxDecoration).color!;
+        final Text text = tester.widget<Text>(find.text('订单管理'));
+
+        final double ratio = ParkColors.contrastRatio(
+          text.style!.color!,
+          fill,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '$b：真实标题/fill 仅 ${ratio.toStringAsFixed(2)}:1'
+              '（修复前 neon+dark 为 1.00:1 白底白字）',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkPageTitle + 副标题：真实副标题色可读', (tester) async {
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            const ParkPageTitle(
+              title: '标题',
+              subtitle: '共 128 条',
+              background: ParkPageTitleBackground.fill,
+            ),
+          ),
+        );
+
+        final DecoratedBox box = tester.widget<DecoratedBox>(
+          find.descendant(
+            of: find.byType(ParkPageTitle),
+            matching: find.byType(DecoratedBox),
+          ),
+        );
+        final Color fill = (box.decoration as BoxDecoration).color!;
+        final Text sub = tester.widget<Text>(find.text('共 128 条'));
+
+        final double ratio = ParkColors.contrastRatio(
+          sub.style!.color!,
+          fill,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '$b：真实副标题/fill 仅 ${ratio.toStringAsFixed(2)}:1',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkPageTitle 透明背景：必须保留 colors.*（不得被 tokens 污染）', (
+      tester,
+    ) async {
+      // 透明背景下文字落在页面底色上（恒为 colors.background，不翻转），
+      // 此时沿用 colors.textPrimary 才是对的 —— 防止"过度修复"引入回归。
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(park, const ParkPageTitle(title: '透明底')),
+        );
+        final Text text = tester.widget<Text>(find.text('透明底'));
+        expect(
+          text.style!.color,
+          park.colors.textPrimary,
+          reason: '$b：透明背景不应改动标题色来源',
+        );
+        // 且必须真的没有绘制背景
+        expect(
+          find.descendant(
+            of: find.byType(ParkPageTitle),
+            matching: find.byType(DecoratedBox),
+          ),
+          findsNothing,
+        );
+      }
+    });
+
+    test('🔴 tokens.bodyColor 在 neon+dark 近白底上不达标（记录待议）', () {
+      // 这条不是断言 bodyColor 可用，而是**显式记录它不可用**：
+      // neon+dark 下 bodyColor = colors.textSecondary（浅灰）
+      // 落在近白 fill 上仅 2.00:1。因此消费者不能盲目换成 bodyColor。
+      // ParkPageTitle 的副标题做法是"实测取优"：bodyColor 不达标时
+      // 回退 titleColor（实测 neon+dark 从 2.00:1 → 15.79:1，
+      // 而 neon+light / glass 仍保留 bodyColor 不变）。
+      // 此断言钉住"bodyColor 非通用"这个事实，防止后人误用。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+      final double ratio = ParkColors.contrastRatio(t.bodyColor, t.fill);
+      expect(ratio, lessThan(4.5), reason: 'bodyColor 在近白 fill 上确实不达标');
     });
   });
 

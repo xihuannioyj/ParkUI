@@ -85,6 +85,9 @@ class ParkResult extends StatelessWidget {
   ///
   /// 占位块颜色由 `status` 决定（成功绿 / 错误红 / 警告橙 / 信息蓝），
   /// 但**一律取自 [ParkColors] 的语义色令牌**，不做硬编码。
+  ///
+  /// ⚠️ **与 [glassContainer] 互斥**：同时开启时渐变占位块优先生效，
+  /// 玻璃容器只是裸图标容器的可选包裹，不会生效。
   final bool gradientPlaceholder;
 
   /// 图标区是否使用玻璃容器包裹（与 glass 风格协调）。

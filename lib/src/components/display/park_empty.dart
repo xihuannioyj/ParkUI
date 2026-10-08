@@ -63,6 +63,11 @@ class ParkEmpty extends StatelessWidget {
   /// 占位块 = 圆角渐变方块（`park.gradients.brand`）+ 居中图标，
   /// 尺寸随 [size] 变化（small 48 / medium 72 / large 96）。
   /// 图标色取 `colors.textOnBrand`（前景令牌），保证与渐变底对比度达标。
+  ///
+  /// ⚠️ **与 [glassContainer] 互斥**：同时开启时渐变占位块优先生效
+  /// （渲染优先级 illustration > image > gradientPlaceholder > 裸图标，
+  /// 而玻璃容器只是裸图标的一层可选包裹），玻璃容器不会生效。
+  /// 想要"玻璃容器 + 渐变"请用 [illustration] 自行组合。
   final bool gradientPlaceholder;
 
   /// 插图区是否使用玻璃容器包裹。
