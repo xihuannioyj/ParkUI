@@ -1218,6 +1218,133 @@ void main() {
   // ========================================================================
   // 跨组件：品牌色绝不被风格污染（红线）
   // ========================================================================
+  // ========================================================================
+  // 回归：玻璃容器内的"成对取值"必须走表面令牌
+  //
+  // 🔴 这组测试由 software-engineer 预警后补写。他指出 neon 风格下
+  // ParkSurfaceTokens.fill 会翻转为近白，若容器内文字/图标仍用
+  // colors.textSecondary / statusColor，就会出现"近白底 + 浅灰字"
+  // （实测 1.78~2.54:1，图标近乎不可见）。
+  //
+  // 这类缺陷**只测主体现对比度抓不到** —— 必须断言"容器内元素"
+  // 与"容器填充"的成对关系。
+  // ========================================================================
+  group('回归 · 玻璃容器内元素与 fill 的成对取值', () {
+    test('🔴 neon + dark：容器内元素不得用 colors.*（fill 已翻转为近白）', () {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+
+      // 先确认前提：neon + dark 的 fill 确实是近白。
+      expect(
+        ParkColors.contrastRatio(park.colors.textPrimary, t.fill),
+        lessThan(1.2),
+        reason: '前提：neon+dark 的 fill 翻转成近白，与 textPrimary 几乎同色',
+      );
+
+      // 容器内文字/图标色必须走 titleColor（= colors.surface，深色）。
+      final double ratio = ParkColors.contrastRatio(t.titleColor, t.fill);
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'neon+dark：titleColor 在近白 fill 上应 >= 4.5:1，'
+            '实测 ${ratio.toStringAsFixed(2)}:1',
+      );
+
+      // 反证：若用 colors.textSecondary（浅灰）会跌到 ~2.00:1 —— 不可见。
+      final double wrong = ParkColors.contrastRatio(
+        park.colors.textSecondary,
+        t.fill,
+      );
+      expect(
+        wrong,
+        lessThan(4.5),
+        reason: '反证：colors.textSecondary 在近白 fill 上确实不达标，'
+            '说明必须走 titleColor（实测 ${wrong.toStringAsFixed(2)}:1）',
+      );
+    });
+
+    test('🔴 5 风格 × 明/暗：玻璃容器内 titleColor/fill 均 >= 4.5:1', () {
+      for (final ParkSurfaceStyle style in _styles) {
+        for (final Brightness b in Brightness.values) {
+          final ParkThemeData park = _theme(style, b);
+          final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+            style: style,
+            colors: park.colors,
+            radius: park.radius,
+            blur: park.blur,
+            bordered: false,
+          );
+          final double ratio = ParkColors.contrastRatio(
+            t.titleColor,
+            t.fill,
+          );
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason: '$style / $b：玻璃容器内对比度仅 '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+        }
+      }
+    });
+
+    test('🔴 ParkResult 状态色在近白 fill 上不达标 → 必须走 titleColor', () {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      final ParkSurfaceTokens t = ParkSurfaceTokens.resolve(
+        style: ParkSurfaceStyle.neon,
+        colors: park.colors,
+        radius: park.radius,
+        blur: park.blur,
+      );
+      // warning / success 在近白底上都会失效（实测 1.78 / 2.54）。
+      for (final Color status in <Color>[
+        park.colors.warning,
+        park.colors.success,
+      ]) {
+        expect(
+          ParkColors.contrastRatio(status, t.fill),
+          lessThan(4.5),
+          reason: '状态色在近白 fill 上本就不达标 —— 这正是组件改用 '
+              'titleColor 的原因',
+        );
+      }
+      expect(
+        ParkColors.contrastRatio(t.titleColor, t.fill),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
+    test('🔴 hairlineColorFor：暗底取反色面、亮底取品牌色（单一实现点）', () {
+      for (final Brightness b in Brightness.values) {
+        final ParkColors colors =
+            b == Brightness.dark ? ParkColors.dark() : ParkColors.light();
+        final Color onDark = ParkGlassPanel.hairlineColorFor(
+          fill: colors.surface,
+          colors: colors,
+          isDark: true,
+        );
+        final Color onLight = ParkGlassPanel.hairlineColorFor(
+          fill: Colors.white,
+          colors: colors,
+          isDark: false,
+        );
+        expect(onDark, colors.textOnBrand);
+        expect(onLight, colors.brand);
+        // 两种取值必须不同，否则有一侧会"描边消失"。
+        expect(onDark, isNot(equals(onLight)));
+      }
+    });
+
+    test('🔴 hairlineAlpha 是唯一的 0.35 描边透明度来源', () {
+      expect(ParkGlassPanel.hairlineAlpha, 0.35);
+    });
+  });
+
   group('红线 · 品牌色未被任何风格污染', () {
     test('🔴 5 风格下 colors.brand 保持完全不透明且互不相等', () {
       final ParkColors light = ParkColors.light();

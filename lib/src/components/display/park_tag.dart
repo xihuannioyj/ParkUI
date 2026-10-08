@@ -398,7 +398,12 @@ class ParkTag extends StatelessWidget {
                 (glass.glassAlpha - ParkGlassPanel.minFillAlpha) * i,
           ),
           textColor: glass.titleColor,
-          borderColor: park.colors.textOnBrand.withValues(alpha: 0.35 * i),
+          // 描边复用统一规则（暗底亮边 / 亮底暗边），避免 neon 亮底描边消失。
+          borderColor: ParkGlassPanel.hairlineColorFor(
+            fill: glass.fill,
+            colors: park.colors,
+            isDark: glass.isDark,
+          ).withValues(alpha: ParkGlassPanel.hairlineAlpha * i),
           useBackdropFilter: blurAllowed,
           blurSigma: blurAllowed ? park.blur.sm * i : 0.0,
         );

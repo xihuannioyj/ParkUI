@@ -6,6 +6,7 @@ import '../../theme/park_surface_style_scope.dart';
 import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_blur.dart';
+import '../../theme/tokens/park_colors.dart';
 import '../base/park_surface.dart';
 
 /// 玻璃拟态面板 —— 半透明填充 + 背景模糊 + 1px 高光边。
@@ -61,6 +62,33 @@ class ParkGlassPanel extends StatelessWidget {
   ///
   /// intensity=0（完全降级）时仍保留这层底，文字才不会直接落在背景图上。
   static const double minFillAlpha = 0.15;
+
+  /// 玻璃高光描边的标准透明度。
+  ///
+  /// 与 [ParkSurface] 的 1px 高光边保持同一观感，集中在此避免各处写死。
+  static const double hairlineAlpha = 0.35;
+
+  /// 在给定填充色上**可见**的 1px 描边色（玻璃容器的"高光边"）。
+  ///
+  /// ## 为什么需要这个函数
+  ///
+  /// 玻璃容器的描边不能恒用 `colors.textOnBrand`：它是"反色面色"，
+  /// 在**深色**容器上表现为亮边（正确），但在 neon 这类
+  /// **fill 会翻转为近白**的风格下，近白底 + 近白描边 = 描边消失。
+  ///
+  /// 这类"成对取值"如果在各组件里各写一份 `isDark ? A : B`，
+  /// 改一处漏一处就会出现"容器有边、里面图标看不见"的半正确状态
+  /// —— 本函数把规则收敛为**唯一实现点**，供 `ParkEmpty` /
+  /// `ParkResult` / `ParkTag` 共用。
+  ///
+  /// 规则：暗底取反色面色（亮边），亮底取品牌色（暗边）——
+  /// 两种明暗下描边都可见，且不引入新的裸色值。
+  static Color hairlineColorFor({
+    required Color fill,
+    required ParkColors colors,
+    required bool isDark,
+  }) =>
+      isDark ? colors.textOnBrand : colors.brand;
 
   /// 子内容。
   final Widget child;
@@ -208,8 +236,12 @@ class ParkGlassPanel extends StatelessWidget {
 
     final Border? border = highlight
         ? Border.all(
-            // 高光边用"反色面色"，暗底亮边、亮底暗边，任何明暗都成立。
-            color: park.colors.textOnBrand.withValues(alpha: 0.35 * i),
+            // 高光边走统一规则（暗底亮边 / 亮底暗边），任何明暗都可见。
+            color: hairlineColorFor(
+              fill: fill,
+              colors: park.colors,
+              isDark: surface.isDark,
+            ).withValues(alpha: hairlineAlpha * i),
             width: 1,
           )
         : null;

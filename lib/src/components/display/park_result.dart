@@ -4,6 +4,7 @@ import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_gradient.dart';
 import '../../l10n/park_localizations.dart';
+import 'park_glass_panel.dart';
 
 /// Park 结果状态类型
 ///
@@ -381,12 +382,29 @@ class ParkResult extends StatelessWidget {
     if (!glassContainer) return base;
 
     // 玻璃容器：材质取自表面令牌派生层，随风格联动。
+    //
+    // 🔴 **霓虹深色下 fill 会翻转为近白**（见 ParkSurfaceTokens.resolve
+    // 的 painted switch：neon + isDark → colors.textPrimary）。
+    // 此时若内层仍用 statusColor（success 绿 / warning 橙 / error 红），
+    // 实测对比度会跌到 warning 1.78:1、success 2.54:1 —— 近乎不可见。
+    //
+    // 修法：**霓虹风格下不再叠加状态色底**，直接用表面令牌标题色画图标；
+    // 状态语义改由容器本身的霓虹材质 + 外层状态文字承载。
+    // 这样"颜色可读"优先于"颜色表状态"—— 不可见的图标传达不了任何语义。
     final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
       style: ParkSurfaceStyleScope.of(context),
       colors: park.colors,
       radius: park.radius,
       blur: park.blur,
       bordered: false,
+    );
+    final bool neonFlip =
+        surface.isDark && surface.style == ParkSurfaceStyle.neon;
+    // 高光边复用统一规则（与 ParkGlassPanel / ParkEmpty 同一实现点）。
+    final Color onFill = ParkGlassPanel.hairlineColorFor(
+      fill: surface.fill,
+      colors: park.colors,
+      isDark: surface.isDark,
     );
     return Container(
       width: containerSize,
@@ -396,11 +414,15 @@ class ParkResult extends StatelessWidget {
         color: surface.fill.withValues(alpha: surface.glassAlpha),
         borderRadius: BorderRadius.circular(park.radius.lg),
         border: Border.all(
-          color: park.colors.textOnBrand.withValues(alpha: 0.35),
+          color: onFill.withValues(alpha: ParkGlassPanel.hairlineAlpha),
           width: 1,
         ),
       ),
-      child: base,
+      child: neonFlip
+          // 霓虹深底亮面：用深色图标（surface.titleColor = colors.surface）。
+          ? Icon(statusIcon, color: surface.titleColor, size: iconSize)
+          // 其余风格保留既有观感：状态色图标 + 淡状态色底。
+          : base,
     );
   }
 

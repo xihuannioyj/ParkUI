@@ -3,6 +3,7 @@ import '../../l10n/park_localizations.dart';
 import '../../theme/park_surface_style_scope.dart';
 import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import 'park_glass_panel.dart';
 
 /// Empty-state size presets.
 enum ParkEmptySize { small, medium, large }
@@ -369,17 +370,35 @@ class ParkEmpty extends StatelessWidget {
     }
 
     // 优先级 4：裸图标（默认，行为与改造前一致）。
+    //
+    // 🔴 无容器时图标直接落在页面背景上，故用 colors.* 是正确的
+    // （背景恒为 colors.background，不随风格翻转）。
     final Widget bareIcon = Icon(iconData, size: _iconSize, color: iconColor);
 
     if (!glassContainer) return bareIcon;
 
     // glassContainer：套一层玻璃容器，与 glass 风格协调。
+    //
+    // 🔴 **霓虹深色下 fill 会翻转为近白**（见 ParkSurfaceTokens.resolve
+    // 的 painted switch：neon + isDark → colors.textPrimary），
+    // 此时若图标仍用 colors.textPlaceholder / textSecondary
+    // （暗色板上的浅灰），会变成"浅底浅字"，对比度跌到 1.78~2.00:1，
+    // 图标几乎不可见。因此容器内的图标色**必须**取表面令牌的
+    // [ParkSurfaceTokens.titleColor] —— 它与 fill 是强耦合的一对，
+    // neon+dark 时自动翻转为 colors.surface（深色），保证可读。
     final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
       style: ParkSurfaceStyleScope.of(context),
       colors: park.colors,
       radius: park.radius,
       blur: park.blur,
       bordered: false,
+    );
+    // 高光边同理：反色面色在近白底上会消失，改为复用统一规则
+    // （暗底亮边 / 亮底暗边），与 ParkGlassPanel / ParkTag 同一实现点。
+    final Color onFill = ParkGlassPanel.hairlineColorFor(
+      fill: surface.fill,
+      colors: park.colors,
+      isDark: surface.isDark,
     );
     final double box = _iconSize * 1.6;
     return Container(
@@ -390,11 +409,16 @@ class ParkEmpty extends StatelessWidget {
         color: surface.fill.withValues(alpha: surface.glassAlpha),
         borderRadius: BorderRadius.circular(park.radius.lg),
         border: Border.all(
-          color: park.colors.textOnBrand.withValues(alpha: 0.35),
+          color: onFill.withValues(alpha: ParkGlassPanel.hairlineAlpha),
           width: 1,
         ),
       ),
-      child: bareIcon,
+      child: Icon(
+        iconData,
+        size: _iconSize,
+        // 与容器 fill 成对取值，统一走表面令牌。
+        color: surface.titleColor,
+      ),
     );
   }
 }
