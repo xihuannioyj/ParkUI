@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
 import '../../l10n/park_localizations.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../base/park_surface.dart';
 
 /// 消息弹出位置
 enum ParkMessagePosition { top, bottom }
@@ -27,6 +31,129 @@ class ParkMessageConfig {
   final int maxCount;
 
   const ParkMessageConfig({this.maxCount = 1});
+}
+
+/// 全局消息提示的表面材质派生结果（与 [ParkPopconfirmSurface] 同构）。
+///
+/// 把容器填充、圆角、阴影与文字色收敛到**一个**派生结果里，避免"容器改了、
+/// 文字没改"的半迁移状态。
+@immutable
+class ParkMessageSurface {
+  /// 容器填充色（语义色背景，见 [resolveParkMessageSurface]）。
+  final Color fill;
+
+  /// 圆角（保留组件原值 `ParkRadius.brMd`，不消费 [ParkSurfaceTokens.radius]）。
+  final BorderRadius radius;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 是否需要背景模糊采样（glass 风格）。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  /// 标题文字色 —— **必须**来自表面令牌。
+  final Color titleColor;
+
+  /// 正文文字色 —— **必须**来自表面令牌。
+  final Color bodyColor;
+
+  const ParkMessageSurface({
+    required this.fill,
+    required this.radius,
+    required this.shadows,
+    required this.useBlur,
+    required this.blurSigma,
+    required this.titleColor,
+    required this.bodyColor,
+  });
+}
+
+/// 消息框改造前的浮层阴影（浮层兜底 floor）。
+///
+/// 原 overlay 路径用的是 [ParkThemeData.shadows] 的 md 档；按浮层规范第 1 条，
+/// stripe / flat 风格下 [ParkSurfaceTokens.shadows] 为 null，必须回落到此原值，
+/// 否则消息会凭空丢失阴影（非零回归）。
+List<BoxShadow> _messageShadowFloor(ParkThemeData park) => park.shadows.md;
+
+/// 解析全局消息提示的表面材质（浮层规范在 ParkMessage 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. 阴影 `tokens.shadows ?? floor`（[_messageShadowFloor]）——
+///    风格接管优先，浮层原值兜底；
+/// 2. 圆角保留组件原值 `BorderRadius.circular(park.radius.brMd)`，
+///    **不**消费 [ParkSurfaceTokens.radius]；
+/// 3. 无边框（消息原本无边框语义，故 [bordered] 传 false）；
+/// 4. 文字色取派生的 `titleColor / bodyColor`（消息用语义文字对
+///    `colors.textPrimary / textSecondary`，而非表面令牌 —— 见下方实现注释）；
+/// 5. 无全屏 / 特殊形态分支。
+///
+/// ## 关于填充色：消息是**语义色**表面（info=蓝 / success=绿 / warning=橙 /
+/// error=红），类型身份由左侧 [accentColor] 描边条承载，因此**容器填充保留
+/// 语义色**而非 [ParkSurfaceTokens.fill]。这样做有两个好处：
+/// - stripe / flat 下观感与改造前完全一致（零回归）；
+/// - 玻璃风格只对背后内容做 [BackdropFilter] 模糊，不把语义色变半透明，
+///   避免削弱信息可读性（消息是瞬时强提示，可读性优先）。
+/// 文字色使用**语义文字对** `colors.textPrimary / textSecondary`（见下方
+/// 实现注释）：消息填充恒为语义浅色，与语义文字对天然配对，5 风格 × 2 明暗中
+/// 对比度均 ≥ 4.5:1；不需要表面令牌的 neon 翻转逻辑。
+///
+/// 抽成顶层函数（[visibleForTesting]）以便单测直接断言"文字色与填充对比度"。
+@visibleForTesting
+ParkMessageSurface resolveParkMessageSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+  required Color backgroundColor,
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  return ParkMessageSurface(
+    fill: backgroundColor,
+    radius: park.radius.brMd,
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: _messageShadowFloor(park),
+    ),
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+    // 🔴 标题 / 正文使用**语义文字对** `colors.textPrimary / textSecondary`，
+    // 而非表面令牌：消息填充恒为语义浅色（infoLight 等），在 5 风格 × 2 明暗中
+    // 始终是"可读的着色背景"，与 textPrimary / textSecondary 配对即可保证对比度。
+    // 若改用 surface 令牌（neon + 深色下 token 文字翻转为 colors.surface 深 navy），
+    // 而填充仍是近黑的 infoLight 深色，会反成"深字深底"不可读。
+    titleColor: park.colors.textPrimary,
+    bodyColor: park.colors.textSecondary,
+  );
+}
+
+/// 玻璃风格包装：在 [ParkSurfaceBlurDepth] 允许（嵌套层级 `< 1`）时对子树
+/// 叠加 [BackdropFilter] 采样背后内容；否则原样返回。
+///
+/// 外层 [ClipRRect]（调用方）负责把模糊结果裁成圆角，这里只负责"是否模糊"。
+/// 判定必须是 `< 1` 而非 `<= 1`，与 [ParkSurface.canBlur] 的语义一致，
+/// 避免在同一 backdrop 上重复采样。
+Widget _parkMessageGlassWrap({
+  required ParkMessageSurface surface,
+  required BuildContext context,
+  required Widget child,
+}) {
+  if (surface.useBlur &&
+      ParkSurfaceBlurDepth.of(context) < 1 &&
+      surface.blurSigma > 0) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: surface.blurSigma,
+        sigmaY: surface.blurSigma,
+      ),
+      child: child,
+    );
+  }
+  return child;
 }
 
 /// ParkMessage — 全局消息提示，从顶部/底部滑入，自动消失。
@@ -443,7 +570,11 @@ class _ParkMessageState extends State<ParkMessage> {
 
   Widget _buildBar(ParkThemeData park) {
     final l10n = ParkLocalizations.of(context);
-    final bg = widget.backgroundColor ?? park.colors.infoLight;
+    final ParkMessageSurface surface = resolveParkMessageSurface(
+      park: park,
+      context: context,
+      backgroundColor: widget.backgroundColor ?? park.colors.infoLight,
+    );
 
     // size 令牌：小/中/大 三档内边距、字号与图标大小
     final EdgeInsets padding = switch (widget.size) {
@@ -489,8 +620,9 @@ class _ParkMessageState extends State<ParkMessage> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: park.radius.brMd,
+            color: surface.fill,
+            borderRadius: surface.radius,
+            boxShadow: surface.shadows,
           ),
           child: Row(
             children: [
@@ -508,7 +640,7 @@ class _ParkMessageState extends State<ParkMessage> {
                       style: park.typography.body.copyWith(
                         fontSize: titleFontSize,
                         fontWeight: park.typography.weightMedium,
-                        color: park.colors.textPrimary,
+                        color: surface.titleColor,
                         // Overlay 无 Material → fallback style 黄色下划线，
                         // 必须显式清除（ParkMessage.show 走 overlay 路径）。
                         decoration: TextDecoration.none,
@@ -520,7 +652,7 @@ class _ParkMessageState extends State<ParkMessage> {
                         widget.content!,
                         style: park.typography.body.copyWith(
                           fontSize: contentFontSize,
-                          color: park.colors.textSecondary,
+                          color: surface.bodyColor,
                           decoration: TextDecoration.none,
                         ),
                       ),
@@ -532,7 +664,7 @@ class _ParkMessageState extends State<ParkMessage> {
                 Semantics(
                   button: true,
                   label: l10n.closeText,
-                  child: Icon(Icons.close, size: closeIconSize, color: park.colors.textSecondary),
+                  child: Icon(Icons.close, size: closeIconSize, color: surface.bodyColor),
                 ),
             ],
           ),
@@ -669,7 +801,13 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final bg = widget.backgroundColor ?? park.colors.infoLight;
+    // 浮层表面材质：填充保留语义色（见 [resolveParkMessageSurface]），
+    // 阴影 / 文字色走 surface 令牌；glass 风格由 [_parkMessageGlassWrap] 叠加模糊。
+    final ParkMessageSurface surface = resolveParkMessageSurface(
+      park: park,
+      context: context,
+      backgroundColor: widget.backgroundColor ?? park.colors.infoLight,
+    );
 
     final alignment = widget.position == ParkMessagePosition.top
         ? Alignment.topCenter
@@ -746,81 +884,85 @@ class _ParkMessageOverlayState extends State<_ParkMessageOverlay>
                         ? null
                         : _handleTap,
                 child: ClipRRect(
-                  borderRadius: park.radius.brMd,
-                  child: Stack(
-                    children: [
-                      Container(
-                        padding: padding,
-                        decoration: BoxDecoration(
-                          color: bg,
-                          borderRadius: park.radius.brMd,
-                          boxShadow: park.shadows.md,
-                        ),
-                        child: Row(
-                          children: [
-                            if (widget.icon != null) ...[
-                              widget.icon!,
-                              SizedBox(width: park.spacing.sm),
-                            ],
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.title,
-                                    style: park.typography.body.copyWith(
-                                      fontSize: titleFontSize,
-                                      fontWeight: park.typography.weightMedium,
-                                      color: park.colors.textPrimary,
-                                    ),
-                                  ),
-                                  if (widget.content != null) ...[
-                                    SizedBox(height: park.spacing.xs),
+                  borderRadius: surface.radius,
+                  child: _parkMessageGlassWrap(
+                    surface: surface,
+                    context: context,
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: padding,
+                          decoration: BoxDecoration(
+                            color: surface.fill,
+                            borderRadius: surface.radius,
+                            boxShadow: surface.shadows,
+                          ),
+                          child: Row(
+                            children: [
+                              if (widget.icon != null) ...[
+                                widget.icon!,
+                                SizedBox(width: park.spacing.sm),
+                              ],
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      widget.content!,
+                                      widget.title,
                                       style: park.typography.body.copyWith(
-                                        fontSize: contentFontSize,
-                                        color: park.colors.textSecondary,
+                                        fontSize: titleFontSize,
+                                        fontWeight: park.typography.weightMedium,
+                                        color: surface.titleColor,
                                       ),
                                     ),
+                                    if (widget.content != null) ...[
+                                      SizedBox(height: park.spacing.xs),
+                                      Text(
+                                        widget.content!,
+                                        style: park.typography.body.copyWith(
+                                          fontSize: contentFontSize,
+                                          color: surface.bodyColor,
+                                        ),
+                                      ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ),
-                            if (widget.closable)
-                              Semantics(
-                                button: true,
-                                label: ParkLocalizations.of(context).closeText,
-                                child: GestureDetector(
-                                  onTap: close,
-                                  child: Icon(
-                                    Icons.close,
-                                    size: closeIconSize,
-                                    color: park.colors.textSecondary,
-                                  ),
                                 ),
                               ),
-                          ],
+                              if (widget.closable)
+                                Semantics(
+                                  button: true,
+                                  label: ParkLocalizations.of(context).closeText,
+                                  child: GestureDetector(
+                                    onTap: close,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: closeIconSize,
+                                      color: surface.bodyColor,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (widget.accentColor != null)
-                        Positioned(
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 3,
-                            decoration: BoxDecoration(
-                              color: widget.accentColor,
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(park.radius.sm),
-                                bottomLeft: Radius.circular(park.radius.sm),
+                        if (widget.accentColor != null)
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 3,
+                              decoration: BoxDecoration(
+                                color: widget.accentColor,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(park.radius.sm),
+                                  bottomLeft: Radius.circular(park.radius.sm),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
