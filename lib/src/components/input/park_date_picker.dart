@@ -597,6 +597,11 @@ class _ParkDatePickerState extends FormFieldState<DateTime>
   @override
   void didUpdateWidget(ParkDatePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置日期 / 外部联动）不会更新显示。
+    if (oldWidget.value != widget.value) {
+      setValue(widget.value);
+    }
     if (oldWidget.value != widget.value ||
         oldWidget.firstDate != widget.firstDate ||
         oldWidget.lastDate != widget.lastDate) {

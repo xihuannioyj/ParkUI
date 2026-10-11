@@ -269,7 +269,6 @@ class ParkFormConditionMatcher {
       final dynamic threshold = conditions['gt'];
       if (fieldValue == null || threshold == null) return false;
       final int? cmp = _compareNumbers(fieldValue, threshold); if (cmp == null) return false; return cmp > 0;
-      return false;
     }
 
     if (conditions.containsKey('field') && conditions.containsKey('lt')) {
@@ -278,7 +277,6 @@ class ParkFormConditionMatcher {
       final dynamic threshold = conditions['lt'];
       if (fieldValue == null || threshold == null) return false;
       final int? cmp = _compareNumbers(fieldValue, threshold); if (cmp == null) return false; return cmp < 0;
-      return false;
     }
 
     if (conditions.containsKey('field') && conditions.containsKey('gte')) {

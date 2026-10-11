@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
 import '../../l10n/park_localizations.dart';
+import '../base/park_surface.dart';
 
 /// Park 抽屉位置（向后兼容）
 enum ParkDrawerPosition {
@@ -45,6 +49,104 @@ enum ParkDrawerSize {
 
   /// 大尺寸（520px）
   large,
+}
+
+/// Drawer 表面材质的派生结果。
+@immutable
+class ParkDrawerSurface {
+  final Color fill;
+  final BorderRadius radius;
+  final List<BoxShadow>? shadows;
+  final Color bodyColor;
+  final bool useBlur;
+  final double blurSigma;
+
+  /// null 保留 Flutter Drawer 原生 elevation；0 表示由令牌阴影接管。
+  final double? materialElevation;
+
+  const ParkDrawerSurface({
+    required this.fill,
+    required this.radius,
+    required this.shadows,
+    required this.bodyColor,
+    required this.useBlur,
+    required this.blurSigma,
+    required this.materialElevation,
+  });
+}
+
+List<BoxShadow> _drawerVerticalShadow(
+  ParkThemeData park,
+  ParkDrawerPlacement placement,
+) {
+  return <BoxShadow>[
+    BoxShadow(
+      color: park.colors.textPrimary.withValues(alpha: 0.08),
+      blurRadius: 12,
+      offset: placement == ParkDrawerPlacement.top
+          ? const Offset(0, 4)
+          : const Offset(0, -4),
+    ),
+  ];
+}
+
+/// 解析 Drawer 表面。组件没有显式 fullscreen 模式，因此尺寸恰好贴满视口时
+/// 仍保留既有 Drawer 圆角/阴影语义，避免把响应式尺寸误判为全屏而破坏 stripe。
+@visibleForTesting
+ParkDrawerSurface resolveParkDrawerSurface({
+  required BuildContext context,
+  required ParkThemeData park,
+  required ParkDrawerPlacement placement,
+  required bool fullscreen,
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  final bool horizontal = placement == ParkDrawerPlacement.left ||
+      placement == ParkDrawerPlacement.right;
+  var radius = switch (placement) {
+    ParkDrawerPlacement.left => BorderRadius.only(
+        topRight: Radius.circular(park.radius.lg),
+        bottomRight: Radius.circular(park.radius.lg),
+      ),
+    ParkDrawerPlacement.right => BorderRadius.only(
+        topLeft: Radius.circular(park.radius.lg),
+        bottomLeft: Radius.circular(park.radius.lg),
+      ),
+    ParkDrawerPlacement.top => BorderRadius.only(
+        bottomLeft: Radius.circular(park.radius.lg),
+        bottomRight: Radius.circular(park.radius.lg),
+      ),
+    ParkDrawerPlacement.bottom => BorderRadius.only(
+        topLeft: Radius.circular(park.radius.lg),
+        topRight: Radius.circular(park.radius.lg),
+      ),
+  };
+
+  // 全屏形态走独立分支：抽屉 extent 覆盖整屏时不再需要单边圆角，
+  // 否则会与屏幕边缘出现可见缝隙。这是浮层规范第 5 条（全屏形态独立分支）。
+  if (fullscreen) {
+    radius = BorderRadius.zero;
+  }
+
+  return ParkDrawerSurface(
+    fill: tokens.fill,
+    radius: radius,
+    // 水平 Drawer 的 stripe / flat floor 是 Flutter 原生 elevation，无法用
+    // BoxShadow 无损复刻；tokens 非空时才关闭原生阴影并由令牌接管。
+    shadows: horizontal
+        ? tokens.shadows
+        : ParkSurfaceTokens.overlayShadows(
+            tokens: tokens,
+            floor: _drawerVerticalShadow(park, placement),
+          ),
+    bodyColor: tokens.bodyColor,
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+    materialElevation: horizontal && tokens.shadows == null ? null : 0,
+  );
 }
 
 /// Park 抽屉
@@ -367,9 +469,21 @@ class _ParkDrawerState extends State<ParkDrawer> {
     }
 
     final resolvedSize = _resolvedSize;
+    final Size viewport = MediaQuery.sizeOf(context);
+    final double viewportExtent =
+        _isHorizontal ? viewport.width : viewport.height;
+    final double effectiveExtent =
+        resolvedSize.clamp(0.0, viewportExtent).toDouble();
+    final bool fullscreen = effectiveExtent >= viewportExtent;
+    final ParkDrawerSurface surface = resolveParkDrawerSurface(
+      context: context,
+      park: park,
+      placement: _effectivePlacement,
+      fullscreen: fullscreen,
+    );
 
     // 键盘事件监听包裹
-    Widget content = _buildDrawerContent(park, colors);
+    Widget content = _buildDrawerContent(park, colors, surface);
 
     // Overlay 环境无 Material → 子内容（含用户传入的 child/header/footer）
     // 会继承 fallback DefaultTextStyle（红色 48px + 黄色下划线），
@@ -390,9 +504,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
 
     Widget result;
     if (_isHorizontal) {
-      final maxWidth = MediaQuery.sizeOf(context).width;
-      final effectiveWidth = resolvedSize.clamp(0.0, maxWidth).toDouble();
-      Widget drawerContent = SizedBox(width: effectiveWidth, child: content);
+      Widget drawerContent = SizedBox(width: effectiveExtent, child: content);
 
       // 按方向对齐：right → 右侧，left → 左侧（Stack 默认 topStart 会把
       // 右抽屉渲染到左侧，必须显式 Align）。
@@ -424,10 +536,8 @@ class _ParkDrawerState extends State<ParkDrawer> {
         result = drawerContent;
       }
     } else {
-      final maxHeight = MediaQuery.sizeOf(context).height;
-      final effectiveHeight = resolvedSize.clamp(0.0, maxHeight).toDouble();
       Widget drawerContent =
-          SizedBox(height: effectiveHeight, child: content);
+          SizedBox(height: effectiveExtent, child: content);
 
       // 按方向对齐：bottom → 底部，top → 顶部
       drawerContent = Align(
@@ -470,74 +580,81 @@ class _ParkDrawerState extends State<ParkDrawer> {
     return result;
   }
 
-  Widget _buildDrawerContent(ParkThemeData park, ParkColors colors) {
-    final placement = _effectivePlacement;
-
+  Widget _buildDrawerContent(
+    ParkThemeData park,
+    ParkColors colors,
+    ParkDrawerSurface surface,
+  ) {
     final l10n = ParkLocalizations.of(context);
+    Widget panel;
 
-    // 顶/底方向使用自定义容器
     if (!_isHorizontal) {
-      return Semantics(
+      panel = Semantics(
         container: true,
         label: l10n.navigationDrawerLabel,
-        child: _buildVerticalDrawer(park, colors),
+        child: _buildVerticalDrawer(park, colors, surface),
+      );
+    } else {
+      panel = Semantics(
+        container: true,
+        label: l10n.navigationDrawerLabel,
+        child: Drawer(
+          shape: RoundedRectangleBorder(borderRadius: surface.radius),
+          elevation: surface.materialElevation,
+          // 遮罩由 ParkDrawer 自绘（maskColor ?? park.colors.overlay）。
+          backgroundColor: surface.fill,
+          child: _buildInnerContent(park, colors, surface),
+        ),
       );
     }
 
-    // 左/右方向使用 Flutter Drawer
-    return Semantics(
-      container: true,
-      label: l10n.navigationDrawerLabel,
-      child: Drawer(
-        shape: RoundedRectangleBorder(
-          borderRadius: placement == ParkDrawerPlacement.left
-              ? BorderRadius.only(
-                  topRight: Radius.circular(park.radius.lg),
-                  bottomRight: Radius.circular(park.radius.lg),
-                )
-              : BorderRadius.only(
-                  topLeft: Radius.circular(park.radius.lg),
-                  bottomLeft: Radius.circular(park.radius.lg),
-                ),
+    // glass 只允许最外层采样；全屏分支已在解析器中关闭模糊。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
+        surface.blurSigma > 0) {
+      panel = ClipRRect(
+        borderRadius: surface.radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: panel,
         ),
-        // 遮罩由 ParkDrawer 自绘（maskColor ?? park.colors.overlay，淡色），
-        // Drawer 无 scrimColor 参数，不再误传。
-        backgroundColor: colors.surface,
-        child: _buildInnerContent(park, colors),
-      ),
-    );
+      );
+    }
+
+    if (surface.shadows != null) {
+      panel = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: surface.radius,
+          boxShadow: surface.shadows,
+        ),
+        child: panel,
+      );
+    }
+    return panel;
   }
 
-  Widget _buildVerticalDrawer(ParkThemeData park, ParkColors colors) {
-    final placement = _effectivePlacement;
-
+  Widget _buildVerticalDrawer(
+    ParkThemeData park,
+    ParkColors colors,
+    ParkDrawerSurface surface,
+  ) {
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: placement == ParkDrawerPlacement.top
-            ? BorderRadius.only(
-                bottomLeft: Radius.circular(park.radius.lg),
-                bottomRight: Radius.circular(park.radius.lg),
-              )
-            : BorderRadius.only(
-                topLeft: Radius.circular(park.radius.lg),
-                topRight: Radius.circular(park.radius.lg),
-              ),
-        boxShadow: [
-          BoxShadow(
-            color: park.colors.textPrimary.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: placement == ParkDrawerPlacement.top
-                ? const Offset(0, 4)
-                : const Offset(0, -4),
-          ),
-        ],
+        color: surface.fill,
+        borderRadius: surface.radius,
       ),
-      child: _buildInnerContent(park, colors),
+      child: _buildInnerContent(park, colors, surface),
     );
   }
 
-  Widget _buildInnerContent(ParkThemeData park, ParkColors colors) {
+  Widget _buildInnerContent(
+    ParkThemeData park,
+    ParkColors colors,
+    ParkDrawerSurface surface,
+  ) {
     return Column(
       children: [
         // Header
@@ -552,7 +669,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
             ),
             child: SafeArea(
               bottom: false,
-              child: _buildHeader(park, colors),
+              child: _buildHeader(park, surface),
             ),
           ),
 
@@ -583,7 +700,10 @@ class _ParkDrawerState extends State<ParkDrawer> {
     );
   }
 
-  Widget _buildHeader(ParkThemeData park, ParkColors colors) {
+  Widget _buildHeader(
+    ParkThemeData park,
+    ParkDrawerSurface surface,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: park.spacing.md,
@@ -614,7 +734,7 @@ class _ParkDrawerState extends State<ParkDrawer> {
                   child: Icon(
                     Icons.close,
                     size: 20,
-                    color: colors.textSecondary,
+                    color: surface.bodyColor,
                   ),
                 ),
               ),

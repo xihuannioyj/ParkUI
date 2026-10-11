@@ -86,9 +86,7 @@ class _ParkTimePickerState extends State<ParkTimePicker> {
     if (service == null) return;
 
     _bindable = service.bind<TimeOfDay>(key);
-    if (_bindable!.value != null) {
-      _selected = _bindable!.value;
-    }
+    _selected = _bindable!.value;
     _bindable!.addListener(_onBindableChanged);
   }
 

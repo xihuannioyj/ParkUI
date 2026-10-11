@@ -135,6 +135,17 @@ class _ParkRateState extends FormFieldState<double>
     super.didChange(value);
     (widget as ParkRate).onChanged?.call(value ?? 0);
   }
+
+  @override
+  void didUpdateWidget(covariant FormField<double> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 外部联动）不会更新显示。
+    // 用 setValue 而非 didChange：外部赋值不应再次触发 onChanged。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+    }
+  }
 }
 
 class _ParkRateBuilder extends StatelessWidget {

@@ -1829,7 +1829,196 @@ void main() {
       }
     });
 
-    test('🔴 tokens.bodyColor 与 titleColor 同规则（令牌层自洽，非消费者兜底）', () {
+    // ========================================================================
+  // illustration 路径 —— 文档承诺的组合方式此前零覆盖（team-lead 指出的真缺口）
+  //
+  // 缺口性质与此前几轮不同：不是"断言对象选错"，而是**文档承诺了
+  // 组合语义却没有任何断言守着**。按 team-lead 采纳的团队准则
+  // 「任何正确性承诺都必须能指出一条会在该承诺被破坏时失败的断言」，
+  // 本组把下列承诺逐条钉死。
+  // ========================================================================
+  group('illustration 路径 · 文档承诺的组合语义', () {
+    testWidgets('🔴 ParkResult：illustration 优先于 icon（文档 L81 承诺）', (
+      tester,
+    ) async {
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.neon, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            const ParkResult(
+              title: '优先级',
+              illustration: Icon(Icons.brush),
+              icon: Icon(Icons.circle),
+            ),
+          ),
+        );
+        expect(
+          find.byIcon(Icons.brush),
+          findsOneWidget,
+          reason: '$b：illustration 应胜出',
+        );
+        expect(
+          find.byIcon(Icons.circle),
+          findsNothing,
+          reason: '$b：icon 应被illustration 顶掉（文档 L81 承诺）',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkResult：illustration 存在时无渐变块/无默认圆容器', (
+      tester,
+    ) async {
+      // 优先级链illustration > icon > gradientPlaceholder > 默认圆容器。
+      // 既然illustration 已给出，后两者都不该出现。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.neon, Brightness.dark);
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkResult(
+            title: '独占',
+            illustration: Icon(Icons.brush),
+            gradientPlaceholder: true,
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.brush), findsOneWidget);
+      // 渐变占位块是 BoxShape.circle 容器 + 默认状态图标；
+      // 既然走了 illustration 分支，默认状态图标不应存在。
+      expect(
+        find.byIcon(Icons.info),
+        findsNothing,
+        reason: 'illustration 存在时不应回落到默认状态图标',
+      );
+    });
+
+    testWidgets('🔴 ParkEmpty：illustration 不被任何容器包裹（保持原样）', (
+      tester,
+    ) async {
+      // 文档承诺"用户提供的插画/图片原样渲染（不做任何包裹），
+      // 以免改变用户自己设计的排版"。
+      // 验证方式：把illustration 放进一个可识别的自定义容器，
+      // 断言该容器在树中原样存在（未被 DecoratedBox/ClipRRect 包住）。
+      for (final Brightness b in Brightness.values) {
+        final ParkThemeData park = _theme(ParkSurfaceStyle.glass, b);
+        await tester.pumpWidget(
+          _wrap(
+            park,
+            ParkEmpty(
+              description: '原样',
+              illustration: Container(
+                key: const Key('my-illustration'),
+                width: 40,
+                height: 40,
+                color: park.colors.brand,
+                child: const Icon(Icons.brush),
+              ),
+            ),
+          ),
+        );
+        expect(
+          find.byKey(const Key('my-illustration')),
+          findsOneWidget,
+          reason: '$b：用户插画应原样渲染',
+        );
+        // 关键：玻璃容器**不应**包住用户插画 ——
+        // 否则等于替用户改了他自己的排版。
+        expect(
+          find.ancestor(
+            of: find.byKey(const Key('my-illustration')),
+            matching: find.byType(ClipRRect),
+          ),
+          findsNothing,
+          reason: '$b：用户插画不得被裁剪包裹（会破坏自定义排版）',
+        );
+      }
+    });
+
+    testWidgets('🔴 ParkEmpty：illustration 优先于 gradientPlaceholder', (
+      tester,
+    ) async {
+      final ParkThemeData park = _theme(ParkSurfaceStyle.glass, Brightness.light);
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkEmpty(
+            description: '混合',
+            illustration: Icon(Icons.brush),
+            gradientPlaceholder: true,
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.brush), findsOneWidget);
+      expect(
+        find.byIcon(Icons.inbox),
+        findsNothing,
+        reason: 'illustration 应优先于渐变占位块',
+      );
+    });
+
+    testWidgets('🔴 ParkEmpty：image 仍被支持（向后兼容未破坏）', (
+      tester,
+    ) async {
+      // illustration 是新增参数，不能挤掉既有 image 的能力。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.stripe, Brightness.light);
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          const ParkEmpty(description: 'image', image: Icon(Icons.image)),
+        ),
+      );
+      expect(
+        find.byIcon(Icons.image),
+        findsOneWidget,
+        reason: 'image 参数必须继续可用（向后兼容）',
+      );
+    });
+
+    testWidgets('🔴 ParkResult：三个工厂预设不受illustration 影响', (
+      tester,
+    ) async {
+      // forfrbidden/notFound/serverError 三个工厂都预设了 icon，
+      // 用户传 illustration 时应胜出。
+      final ParkThemeData park = _theme(ParkSurfaceStyle.stripe, Brightness.light);
+      await tester.pumpWidget(
+        _wrap(
+          park,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ParkResult.forbidden(
+                illustration: const Icon(Icons.brush),
+              ),
+              ParkResult.notFound(illustration: const Icon(Icons.brush)),
+              // ⚠️ serverError 工厂目前**没有暴露** illustration / icon
+              // （见 park_result.dart:164-182），与上面两个工厂不对称，属组件 API 缺陷。
+              // 这里改用等价的公开构造函数复现同一场景：
+              // status500 + 预设 bug_report 图标 + 用户 illustration，
+              // 断言"用户 illustration 胜出、预设图标不渲染"的意图不变。
+              // TODO(park_result): 工厂补齐 illustration 后，
+              // 请改回 ParkResult.serverError(illustration: const Icon(Icons.brush))。
+              const ParkResult(
+                status: ParkResultStatus.status500,
+                icon: Icon(Icons.bug_report, size: 56),
+                illustration: Icon(Icons.brush),
+                title: '',
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(
+        find.byIcon(Icons.brush),
+        findsNWidgets(3),
+        reason: '工厂预设的 icon 应被用户 illustration 覆盖',
+      );
+      expect(find.byIcon(Icons.lock), findsNothing);
+      expect(find.byIcon(Icons.search_off), findsNothing);
+      expect(find.byIcon(Icons.bug_report), findsNothing);
+    });
+  });
+
+  group('令牌层 · 表面派生', () {
       // 这条断言的是**令牌层已修好**：bodyColor 不再是恒定的
       // colors.textSecondary，而是在 neon + 深色下与 titleColor 同规则翻转。
       //

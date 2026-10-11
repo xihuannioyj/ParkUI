@@ -108,6 +108,9 @@ class ParkResult extends StatelessWidget {
   });
 
   /// 403 Forbidden preset.
+  ///
+  /// [icon] / [illustration] 均可覆盖预设图标 —— 因为预设图标只是
+  /// "没传时的默认值"，不应成为用户无法替换的硬约束。
   factory ParkResult.forbidden({
     Key? key,
     String? title,
@@ -115,11 +118,16 @@ class ParkResult extends StatelessWidget {
     Widget? descriptionWidget,
     List<Widget>? actions,
     List<Widget>? extra,
+    Widget? icon,
+    Widget? illustration,
   }) {
     return ParkResult(
       key: key,
       status: ParkResultStatus.status403,
-      icon: const Icon(Icons.lock, size: 56),
+      // 🔴 用户显式传入的 icon/illustration 优先于预设默认图标。
+      // 缺省仍给 Icons.lock，保持既有观感不变。
+      icon: icon ?? const Icon(Icons.lock, size: 56),
+      illustration: illustration,
       title: title ?? '',
       description: description,
       descriptionWidget: descriptionWidget,
@@ -136,11 +144,14 @@ class ParkResult extends StatelessWidget {
     Widget? descriptionWidget,
     List<Widget>? actions,
     List<Widget>? extra,
+    Widget? icon,
+    Widget? illustration,
   }) {
     return ParkResult(
       key: key,
       status: ParkResultStatus.status404,
-      icon: const Icon(Icons.search_off, size: 56),
+      icon: icon ?? const Icon(Icons.search_off, size: 56),
+      illustration: illustration,
       title: title ?? '',
       description: description,
       descriptionWidget: descriptionWidget,

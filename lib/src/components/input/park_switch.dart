@@ -159,6 +159,16 @@ class _ParkSwitchState extends FormFieldState<dynamic> with BindableFormFieldMix
     didChange(newValue);
     w.onChanged?.call(newValue);
   }
+
+  @override
+  void didUpdateWidget(covariant FormField<dynamic> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 全选 / 外部联动）不会更新显示。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+    }
+  }
 }
 
 class _ParkSwitchBuilder extends StatelessWidget {

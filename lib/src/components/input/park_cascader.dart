@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_colors.dart';
-import '../../theme/tokens/park_typography.dart';
 import '../../binding/park_binding_form_field_mixin.dart';
 import '../../binding/park_binding_service.dart';
 import '../../l10n/park_localizations.dart';
@@ -434,6 +434,18 @@ class _ParkCascaderState extends FormFieldState<List<String>>
     with BindableFormFieldMixin<List<String>> {
   @override
   ParkCascader get widget => super.widget as ParkCascader;
+
+  @override
+  void didUpdateWidget(covariant FormField<List<String>> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 外部联动）不会更新显示。
+    // List 用 listEquals 做内容比较：父级每次 build 传新实例但内容相同时不应覆盖
+    // 用户刚在面板里做出的选择。
+    if (!listEquals(widget.initialValue, oldWidget.initialValue)) {
+      setValue(widget.initialValue);
+    }
+  }
 }
 
 // =============================================================================

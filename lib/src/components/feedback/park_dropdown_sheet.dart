@@ -1,8 +1,14 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/tokens/park_colors.dart';
 import '../../l10n/park_localizations.dart';
 import '../../binding/park_binding_mixin.dart';
 import '../../binding/park_binding_service.dart';
+import '../base/park_surface.dart';
 
 /// 下拉面板选项项数据模型
 class ParkDropdownSheetItem {
@@ -77,6 +83,117 @@ enum ParkDropdownSheetSize {
 ///   child: Column(children: [YourCustomWidget()]),
 /// );
 /// ```
+/// 下拉面板表面材质的派生结果。
+@immutable
+class ParkDropdownSheetSurface {
+  /// 面板填充色。
+  final Color fill;
+
+  /// 圆角（保留组件原值：顶部 lg 圆角）。
+  final BorderRadius radius;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 拖拽手柄颜色（与 [fill] 成对取值，保证在本表面上可分辨）。
+  final Color handleColor;
+
+  /// 标题文字色。
+  final Color titleColor;
+
+  /// 正文 / 次要文字色（取消按钮、副标题）。
+  final Color bodyColor;
+
+  /// 是否需要背景模糊采样（glass 风格）。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  const ParkDropdownSheetSurface({
+    required this.fill,
+    required this.radius,
+    required this.shadows,
+    required this.handleColor,
+    required this.titleColor,
+    required this.bodyColor,
+    required this.useBlur,
+    required this.blurSigma,
+  });
+}
+
+/// 面板上"弱化元素"（拖拽手柄）的颜色。
+///
+/// 与 ParkNavBar / ParkTabBar 的分割线**同一策略**：原色
+/// （[ParkColors.border]）在本表面上仍可分辨时沿用（stripe / flat 观感
+/// 零回归），不可分辨时才回落到表面文字色的低透明度版本。
+///
+/// 为什么必须做这层适配：neon + 深色下 fill 翻转为 `colors.textPrimary`
+/// （暗色板纯白），而暗色板的 border 是"白 12%" —— 白手柄压在白底上会
+/// 完全消失（contrastRatio == 1.00）。
+///
+/// ⚠️ `ParkColors.contrastRatio` 只读 r/g/b、**忽略 alpha**，必须先 alpha
+/// 合成到不透明底再比，否则算的是"未合成"的纯色，结论无效。
+Color _dropdownSheetMutedColor({
+  required ParkThemeData park,
+  required Color fill,
+  required Color fallback,
+}) {
+  final Color opaqueFill = Color.alphaBlend(fill, park.colors.background);
+  final Color composited = Color.alphaBlend(park.colors.border, opaqueFill);
+  if (ParkColors.contrastRatio(composited, opaqueFill) > 1.02) {
+    return park.colors.border;
+  }
+  return fallback.withValues(alpha: 0.35);
+}
+
+/// 解析下拉面板的表面材质（浮层规范在 DropdownSheet 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. **阴影**：`tokens.shadows ?? park.shadows.lg`（浮层下限兜底）——
+///    面板是恒定抬起的浮层，阴影不可为 null，否则 stripe / flat 会凭空丢
+///    失阴影（`tokens.shadows` 在这两种风格下为 null）。
+/// 2. **圆角**：保留组件原值（顶部 lg 圆角），不消费 `tokens.radius`。
+/// 3. **边框**：面板外壳无描边，故 `bordered: false`。
+/// 4. **文字色**：标题 / 副标题 / 取消按钮走 `tokens.titleColor` /
+///    `tokens.bodyColor`；拖拽手柄做表面适配。
+/// 5. **特殊形态**：本组件无全屏形态；`grid` 布局的 item 是**内嵌面板**
+///    （自带 `colors.background` 底与描边），属于另一层表面，不消费浮层
+///    表面令牌。
+///
+/// 不参与派生的：确认按钮的 `colors.brand`、选中项的 `brand@0.08` 底色与
+/// `brand` 文字、多选框图标 —— 这些都是**语义色**，随表面风格漂移会让
+/// "选中了哪一项"失去一致性。
+@visibleForTesting
+ParkDropdownSheetSurface resolveParkDropdownSheetSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+}) {
+  // 面板外壳无描边语义。
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  return ParkDropdownSheetSurface(
+    fill: tokens.fill,
+    radius: BorderRadius.vertical(top: Radius.circular(park.radius.lg)),
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: park.shadows.lg,
+    ),
+    handleColor: _dropdownSheetMutedColor(
+      park: park,
+      fill: tokens.fill,
+      fallback: tokens.titleColor,
+    ),
+    titleColor: tokens.titleColor,
+    bodyColor: tokens.bodyColor,
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+  );
+}
+
 class ParkDropdownSheet extends StatefulWidget {
   /// 触发组件
   final Widget trigger;
@@ -540,11 +657,18 @@ class _ParkDropdownSheetContentState
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
 
-    return Container(
+    // 表面材质走派生层：局部 ParkSurfaceStyleScope 覆盖自动生效。
+    final ParkDropdownSheetSurface surface = resolveParkDropdownSheetSurface(
+      park: park,
+      context: context,
+    );
+
+    Widget sheet = Container(
       decoration: BoxDecoration(
-        color: park.colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(park.radius.lg)),
-        boxShadow: park.shadows.lg,
+        color: surface.fill,
+        // 圆角保留组件原值（顶部 lg），不消费 tokens.radius。
+        borderRadius: surface.radius,
+        boxShadow: surface.shadows,
       ),
       child: SafeArea(
         top: false,
@@ -559,28 +683,47 @@ class _ParkDropdownSheetContentState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: park.colors.border,
+                    color: surface.handleColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
 
             // ── 标题栏 ──
-            _buildHeader(park),
+            _buildHeader(park, surface),
 
             // ── 搜索框 ──
             if (widget.searchable && widget.items != null)
               _buildSearchField(park),
 
             // ── 内容区 ──
-            widget.child ?? _buildBody(park),
+            widget.child ?? _buildBody(park, surface),
           ],
         ),
       ),
     );
+
+    // glass 风格：叠加 BackdropFilter 采样背后的页面内容。
+    // 面板有顶部圆角，用 ClipRRect 裁出圆角；嵌套降级统一由
+    // ParkSurfaceBlurDepth 判定（必须是 `< 1` 而非 `<= 1`）。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
+        surface.blurSigma > 0) {
+      sheet = ClipRRect(
+        borderRadius: surface.radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: sheet,
+        ),
+      );
+    }
+    return sheet;
   }
 
-  Widget _buildHeader(ParkThemeData park) {
+  Widget _buildHeader(ParkThemeData park, ParkDropdownSheetSurface surface) {
     final t = _sizeTokens(park);
     return Padding(
       padding: t.headerPadding,
@@ -598,7 +741,8 @@ class _ParkDropdownSheetContentState
               widget.cancelText ?? ParkLocalizations.of(context).cancelText,
               style: park.typography.body.copyWith(
                 fontSize: t.headerFontSize,
-                color: park.colors.textSecondary,
+                // 取消按钮走 surface.bodyColor（原为 colors.textSecondary）。
+                color: surface.bodyColor,
               ),
             ),
           ),
@@ -612,7 +756,8 @@ class _ParkDropdownSheetContentState
               style: park.typography.body.copyWith(
                 fontSize: t.headerFontSize,
                 fontWeight: park.typography.weightBold,
-                color: park.colors.textPrimary,
+                // 标题走 surface.titleColor（防 neon + 深色白底白字）。
+                color: surface.titleColor,
               ),
             )
           else
@@ -672,7 +817,7 @@ class _ParkDropdownSheetContentState
     );
   }
 
-  Widget _buildBody(ParkThemeData park) {
+  Widget _buildBody(ParkThemeData park, ParkDropdownSheetSurface surface) {
     final items = _filteredItems;
     if (items.isEmpty) {
       return Padding(
@@ -696,8 +841,8 @@ class _ParkDropdownSheetContentState
     return SizedBox(
       height: estimatedHeight,
       child: widget.layout == ParkDropdownSheetLayout.grid
-          ? _buildGridView(park)
-          : _buildListView(park),
+          ? _buildGridView(park, surface)
+          : _buildListView(park, surface),
     );
   }
 
@@ -712,7 +857,7 @@ class _ParkDropdownSheetContentState
     return (count * t.listRowHeight).clamp(100.0, 360.0);
   }
 
-  Widget _buildListView(ParkThemeData park) {
+  Widget _buildListView(ParkThemeData park, ParkDropdownSheetSurface surface) {
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
         park.spacing.base,
@@ -814,7 +959,7 @@ class _ParkDropdownSheetContentState
     );
   }
 
-  Widget _buildGridView(ParkThemeData park) {
+  Widget _buildGridView(ParkThemeData park, ParkDropdownSheetSurface surface) {
     return GridView.builder(
       padding: EdgeInsets.fromLTRB(
         park.spacing.base,

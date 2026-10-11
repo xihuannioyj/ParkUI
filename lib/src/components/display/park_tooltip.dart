@@ -309,6 +309,40 @@ class _ParkTooltipState extends State<ParkTooltip>
     final effectiveRadius =
         widget.borderRadius ?? BorderRadius.circular(park.radius.sm);
 
+    // Resolve the trigger geometry first: both the placement that actually
+    // fits on screen and the arrow offset depend on it.
+    final RenderBox? triggerRenderBox =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    final Size screenSize = MediaQuery.of(context).size;
+    final Offset triggerPosition =
+        triggerRenderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
+    final Size triggerSize = triggerRenderBox?.size ?? Size.zero;
+    final double g = widget.gap;
+    final bool measured = _bubbleMeasured && _bubbleSize != Size.zero;
+
+    // Flip to the opposite side when the preferred side has no room for the
+    // bubble, so a tooltip anchored to a control near a screen edge (e.g. an
+    // app-bar button) is not clamped on top of the control it describes.
+    final ParkTooltipPlacement placement = triggerRenderBox == null || !measured
+        ? widget.placement
+        : _resolvePlacement(
+            triggerPosition: triggerPosition,
+            triggerSize: triggerSize,
+            bubbleSize: _bubbleSize,
+            screenSize: screenSize,
+            gap: g,
+          );
+    final _TooltipLayout? layout = triggerRenderBox == null || !measured
+        ? null
+        : _resolveLayout(
+            placement: placement,
+            triggerPosition: triggerPosition,
+            triggerSize: triggerSize,
+            bubbleSize: _bubbleSize,
+            screenSize: screenSize,
+            gap: g,
+          );
+
     // Build the tooltip content widget.
     Widget tooltipContent;
     if (widget.richMessage != null) {
@@ -346,9 +380,10 @@ class _ParkTooltipState extends State<ParkTooltip>
     // Wrap with arrow if enabled.
     if (widget.showArrow) {
       bubble = _TooltipWithArrow(
-        placement: widget.placement,
+        placement: placement,
         color: bgColor,
         arrowPadding: widget.arrowPadding,
+        arrowOffset: layout?.arrowOffset ?? Offset.zero,
         child: bubble,
       );
     }
@@ -358,7 +393,7 @@ class _ParkTooltipState extends State<ParkTooltip>
       opacity: _fadeAnimation,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        alignment: _scaleAlignment(widget.placement),
+        alignment: _scaleAlignment(placement),
         child: bubble,
       ),
     );
@@ -375,11 +410,6 @@ class _ParkTooltipState extends State<ParkTooltip>
       );
     }
 
-    // Calculate position using GlobalKey.
-    final triggerRenderBox =
-        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
-    final screenSize = MediaQuery.of(context).size;
-
     if (triggerRenderBox == null) {
       // Fallback: render at center if trigger not found (e.g., in tests).
       return Center(
@@ -392,14 +422,10 @@ class _ParkTooltipState extends State<ParkTooltip>
       );
     }
 
-    final triggerPosition = triggerRenderBox.localToGlobal(Offset.zero);
-    final triggerSize = triggerRenderBox.size;
-    final g = widget.gap;
-
     // First frame: render bubble invisibly at the trigger position to
     // measure its real size. The key must be attached HERE (first frame)
     // so the post-frame callback can read its size.
-    if (!_bubbleMeasured || _bubbleSize == Size.zero) {
+    if (layout == null) {
       return Positioned(
         left: triggerPosition.dx.clamp(0.0, screenSize.width),
         top: triggerPosition.dy.clamp(0.0, screenSize.height),
@@ -418,52 +444,11 @@ class _ParkTooltipState extends State<ParkTooltip>
       );
     }
 
-    // Second frame: position the bubble using the measured size.
-    double left;
-    double top;
-
-    switch (widget.placement) {
-      case ParkTooltipPlacement.top:
-        left = triggerPosition.dx + triggerSize.width / 2 - _bubbleSize.width / 2;
-        top = triggerPosition.dy - _bubbleSize.height - g;
-        break;
-      case ParkTooltipPlacement.topLeft:
-        left = triggerPosition.dx;
-        top = triggerPosition.dy - _bubbleSize.height - g;
-        break;
-      case ParkTooltipPlacement.topRight:
-        left = triggerPosition.dx + triggerSize.width - _bubbleSize.width;
-        top = triggerPosition.dy - _bubbleSize.height - g;
-        break;
-      case ParkTooltipPlacement.bottom:
-        left = triggerPosition.dx + triggerSize.width / 2 - _bubbleSize.width / 2;
-        top = triggerPosition.dy + triggerSize.height + g;
-        break;
-      case ParkTooltipPlacement.bottomLeft:
-        left = triggerPosition.dx;
-        top = triggerPosition.dy + triggerSize.height + g;
-        break;
-      case ParkTooltipPlacement.bottomRight:
-        left = triggerPosition.dx + triggerSize.width - _bubbleSize.width;
-        top = triggerPosition.dy + triggerSize.height + g;
-        break;
-      case ParkTooltipPlacement.left:
-        left = triggerPosition.dx - _bubbleSize.width - g;
-        top = triggerPosition.dy + triggerSize.height / 2 - _bubbleSize.height / 2;
-        break;
-      case ParkTooltipPlacement.right:
-        left = triggerPosition.dx + triggerSize.width + g;
-        top = triggerPosition.dy + triggerSize.height / 2 - _bubbleSize.height / 2;
-        break;
-    }
-
-    // Clamp to screen bounds.
-    left = left.clamp(0.0, (screenSize.width - _bubbleSize.width).clamp(0.0, double.infinity));
-    top = top.clamp(0.0, (screenSize.height - _bubbleSize.height).clamp(0.0, double.infinity));
-
+    // Second frame: the bubble has been measured, so place it where
+    // [_resolveLayout] decided (placement possibly flipped to stay on screen).
     return Positioned(
-      left: left,
-      top: top,
+      left: layout.left,
+      top: layout.top,
       child: Semantics(
         label: widget.message,
         container: true,
@@ -471,6 +456,193 @@ class _ParkTooltipState extends State<ParkTooltip>
         child: animated,
       ),
     );
+  }
+
+  /// Returns the placement to actually use: [ParkTooltipPlacement] requested by
+  /// the caller, flipped to the opposite side of the trigger when the requested
+  /// side has no room for the bubble and the opposite side does fit.
+  ///
+  /// Without this, a tooltip with the default top placement anchored to an
+  /// app-bar button is clamped against the top of the screen and ends up drawn
+  /// over the button instead of next to it.
+  ParkTooltipPlacement _resolvePlacement({
+    required Offset triggerPosition,
+    required Size triggerSize,
+    required Size bubbleSize,
+    required Size screenSize,
+    required double gap,
+  }) {
+    final ParkTooltipPlacement preferred = widget.placement;
+
+    final double spaceAbove = triggerPosition.dy - gap;
+    final double spaceBelow =
+        screenSize.height - (triggerPosition.dy + triggerSize.height) - gap;
+    final double spaceLeft = triggerPosition.dx - gap;
+    final double spaceRight =
+        screenSize.width - (triggerPosition.dx + triggerSize.width) - gap;
+
+    final bool fitsAbove = spaceAbove >= bubbleSize.height;
+    final bool fitsBelow = spaceBelow >= bubbleSize.height;
+    final bool fitsLeft = spaceLeft >= bubbleSize.width;
+    final bool fitsRight = spaceRight >= bubbleSize.width;
+
+    switch (preferred) {
+      case ParkTooltipPlacement.top:
+        return !fitsAbove && fitsBelow
+            ? ParkTooltipPlacement.bottom
+            : preferred;
+      case ParkTooltipPlacement.topLeft:
+        return !fitsAbove && fitsBelow
+            ? ParkTooltipPlacement.bottomLeft
+            : preferred;
+      case ParkTooltipPlacement.topRight:
+        return !fitsAbove && fitsBelow
+            ? ParkTooltipPlacement.bottomRight
+            : preferred;
+      case ParkTooltipPlacement.bottom:
+        return !fitsBelow && fitsAbove
+            ? ParkTooltipPlacement.top
+            : preferred;
+      case ParkTooltipPlacement.bottomLeft:
+        return !fitsBelow && fitsAbove
+            ? ParkTooltipPlacement.topLeft
+            : preferred;
+      case ParkTooltipPlacement.bottomRight:
+        return !fitsBelow && fitsAbove
+            ? ParkTooltipPlacement.topRight
+            : preferred;
+      case ParkTooltipPlacement.left:
+        return !fitsLeft && fitsRight
+            ? ParkTooltipPlacement.right
+            : preferred;
+      case ParkTooltipPlacement.right:
+        return !fitsRight && fitsLeft
+            ? ParkTooltipPlacement.left
+            : preferred;
+    }
+  }
+
+  /// Computes the on-screen position of the bubble for [placement], clamped to
+  /// the screen, plus the arrow offset needed to keep the arrow pointing at the
+  /// trigger after clamping.
+  _TooltipLayout _resolveLayout({
+    required ParkTooltipPlacement placement,
+    required Offset triggerPosition,
+    required Size triggerSize,
+    required Size bubbleSize,
+    required Size screenSize,
+    required double gap,
+  }) {
+    final double g = gap;
+    double left;
+    double top;
+
+    switch (placement) {
+      case ParkTooltipPlacement.top:
+        left = triggerPosition.dx + triggerSize.width / 2 - bubbleSize.width / 2;
+        top = triggerPosition.dy - bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.topLeft:
+        left = triggerPosition.dx;
+        top = triggerPosition.dy - bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.topRight:
+        left = triggerPosition.dx + triggerSize.width - bubbleSize.width;
+        top = triggerPosition.dy - bubbleSize.height - g;
+        break;
+      case ParkTooltipPlacement.bottom:
+        left = triggerPosition.dx + triggerSize.width / 2 - bubbleSize.width / 2;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.bottomLeft:
+        left = triggerPosition.dx;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.bottomRight:
+        left = triggerPosition.dx + triggerSize.width - bubbleSize.width;
+        top = triggerPosition.dy + triggerSize.height + g;
+        break;
+      case ParkTooltipPlacement.left:
+        left = triggerPosition.dx - bubbleSize.width - g;
+        top = triggerPosition.dy + triggerSize.height / 2 - bubbleSize.height / 2;
+        break;
+      case ParkTooltipPlacement.right:
+        left = triggerPosition.dx + triggerSize.width + g;
+        top = triggerPosition.dy + triggerSize.height / 2 - bubbleSize.height / 2;
+        break;
+    }
+
+    // Clamp to screen bounds.
+    left = left.clamp(
+      0.0,
+      (screenSize.width - bubbleSize.width).clamp(0.0, double.infinity),
+    );
+    top = top.clamp(
+      0.0,
+      (screenSize.height - bubbleSize.height).clamp(0.0, double.infinity),
+    );
+
+    return _TooltipLayout(
+      left: left,
+      top: top,
+      arrowOffset: _resolveArrowOffset(
+        placement: placement,
+        triggerPosition: triggerPosition,
+        triggerSize: triggerSize,
+        bubbleSize: bubbleSize,
+        left: left,
+        top: top,
+      ),
+    );
+  }
+
+  /// Shifts the arrow along the bubble edge so it keeps pointing at the centre
+  /// of the trigger once the bubble has been clamped into the screen.
+  ///
+  /// The shift is clamped so the triangle always stays inside the bubble.
+  /// Corner placements ([ParkTooltipPlacement.topLeft] and friends) align a
+  /// bubble edge with the trigger edge on purpose, so their arrow stays centred.
+  Offset _resolveArrowOffset({
+    required ParkTooltipPlacement placement,
+    required Offset triggerPosition,
+    required Size triggerSize,
+    required Size bubbleSize,
+    required double left,
+    required double top,
+  }) {
+    const double edgeInset = 4.0;
+
+    switch (placement) {
+      case ParkTooltipPlacement.top:
+      case ParkTooltipPlacement.bottom:
+        final double maxShift =
+            bubbleSize.width / 2 - edgeInset - _TooltipWithArrow._arrowSize;
+        if (maxShift <= 0) return Offset.zero;
+        final double triggerCenterX =
+            triggerPosition.dx + triggerSize.width / 2;
+        final double bubbleCenterX = left + bubbleSize.width / 2;
+        return Offset(
+          (triggerCenterX - bubbleCenterX).clamp(-maxShift, maxShift),
+          0,
+        );
+      case ParkTooltipPlacement.left:
+      case ParkTooltipPlacement.right:
+        final double maxShift =
+            bubbleSize.height / 2 - edgeInset - _TooltipWithArrow._arrowSize;
+        if (maxShift <= 0) return Offset.zero;
+        final double triggerCenterY =
+            triggerPosition.dy + triggerSize.height / 2;
+        final double bubbleCenterY = top + bubbleSize.height / 2;
+        return Offset(
+          0,
+          (triggerCenterY - bubbleCenterY).clamp(-maxShift, maxShift),
+        );
+      case ParkTooltipPlacement.topLeft:
+      case ParkTooltipPlacement.topRight:
+      case ParkTooltipPlacement.bottomLeft:
+      case ParkTooltipPlacement.bottomRight:
+        return Offset.zero;
+    }
   }
 
   Alignment _scaleAlignment(ParkTooltipPlacement p) {
@@ -522,6 +694,28 @@ class _ParkTooltipState extends State<ParkTooltip>
 }
 
 // ---------------------------------------------------------------------------
+// Resolved on-screen geometry
+// ---------------------------------------------------------------------------
+
+/// Where the tooltip bubble ended up on screen, plus the arrow shift needed to
+/// keep the arrow pointing at the trigger.
+class _TooltipLayout {
+  const _TooltipLayout({
+    required this.left,
+    required this.top,
+    required this.arrowOffset,
+  });
+
+  /// Bubble offset from the top-left of the screen.
+  final double left;
+  final double top;
+
+  /// Offset applied to the arrow along the bubble edge, relative to the edge
+  /// centre. [Offset.zero] means the arrow stays centred on that edge.
+  final Offset arrowOffset;
+}
+
+// ---------------------------------------------------------------------------
 // Arrow wrapper
 // ---------------------------------------------------------------------------
 
@@ -533,12 +727,17 @@ class _TooltipWithArrow extends StatelessWidget {
     required this.color,
     required this.child,
     this.arrowPadding,
+    this.arrowOffset = Offset.zero,
   });
 
   final ParkTooltipPlacement placement;
   final Color color;
   final Widget child;
   final EdgeInsets? arrowPadding;
+
+  /// Extra shift of the arrow along the bubble edge, so it can keep pointing
+  /// at the trigger after the bubble was clamped into the screen.
+  final Offset arrowOffset;
 
   static const double _arrowSize = 6.0;
 
@@ -553,6 +752,7 @@ class _TooltipWithArrow extends StatelessWidget {
           edge: arrowEdge,
           arrowSize: _arrowSize,
           arrowPadding: arrowPadding,
+          arrowOffset: arrowOffset,
         ),
         child: Padding(
           padding: _effectivePadding(arrowEdge),
@@ -636,12 +836,17 @@ class _ArrowPainter extends CustomPainter {
     required this.edge,
     required this.arrowSize,
     this.arrowPadding,
+    this.arrowOffset = Offset.zero,
   });
 
   final Color color;
   final _ArrowEdge edge;
   final double arrowSize;
   final EdgeInsets? arrowPadding;
+
+  /// Extra shift along the bubble edge, used to keep the arrow pointing at the
+  /// trigger when the bubble was clamped into the screen.
+  final Offset arrowOffset;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -651,9 +856,11 @@ class _ArrowPainter extends CustomPainter {
 
     final path = Path();
 
-    // Arrow center offset from arrowPadding.
-    final dx = (arrowPadding?.left ?? 0) - (arrowPadding?.right ?? 0);
-    final dy = (arrowPadding?.top ?? 0) - (arrowPadding?.bottom ?? 0);
+    // Arrow center offset from arrowPadding and the resolved arrow shift.
+    final dx =
+        arrowOffset.dx + (arrowPadding?.left ?? 0) - (arrowPadding?.right ?? 0);
+    final dy =
+        arrowOffset.dy + (arrowPadding?.top ?? 0) - (arrowPadding?.bottom ?? 0);
 
     switch (edge) {
       case _ArrowEdge.bottom:
@@ -697,5 +904,6 @@ class _ArrowPainter extends CustomPainter {
   bool shouldRepaint(covariant _ArrowPainter oldDelegate) =>
       oldDelegate.color != color ||
       oldDelegate.edge != edge ||
-      oldDelegate.arrowPadding != arrowPadding;
+      oldDelegate.arrowPadding != arrowPadding ||
+      oldDelegate.arrowOffset != arrowOffset;
 }

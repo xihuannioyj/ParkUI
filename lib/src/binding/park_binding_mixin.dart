@@ -62,9 +62,15 @@ mixin BindableWidgetMixin<T, S extends StatefulWidget> on State<S> {
 
   @override
   void dispose() {
+    // 先取引用：_unlinkBinding 会把它置空。
+    final ParkBindable<T>? bindable = _bindable;
+    final ParkBindingService? svc = _bindingService;
     _unlinkBinding();
-    if (bindKey != null) {
-      _bindingService?.disposeBindable(bindKey!);
+    // 仅当同一路径已无人监听时才释放共享的 bindable。
+    // 旧实现无条件 disposeBindable：多个 widget 共用同一 bindKey 时，
+    // 先销毁的那个会把共享实例释放掉，另一个之后写值会抛 AssertionError。
+    if (bindKey != null && svc != null && !(bindable?.hasListeners ?? false)) {
+      svc.disposeBindable(bindKey!);
     }
     super.dispose();
   }

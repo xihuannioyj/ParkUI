@@ -29,10 +29,19 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
   ParkBindable<T>? _bindable;
   bool _isLinked = false;
 
-  String? get _bindKey =>
+  /// 读取任意 widget 上的绑定键（widget 未实现 [ParkBindableWidget] 时为 null）。
+  /// 注意：[ParkBindableWidget] 不是 [Widget] 的子类型，无法类型提升，需显式 cast。
+  static String? _bindKeyOf(Widget? widget) =>
       (widget is ParkBindableWidget) ? (widget as ParkBindableWidget).bindKey : null;
-  ParkBindingService? get _bindingService =>
-      (widget is ParkBindableWidget) ? (widget as ParkBindableWidget).bindingService : null;
+
+  /// 读取任意 widget 上的绑定服务（widget 未实现 [ParkBindableWidget] 时为 null）。
+  static ParkBindingService? _bindingServiceOf(Widget? widget) =>
+      (widget is ParkBindableWidget)
+          ? (widget as ParkBindableWidget).bindingService
+          : null;
+
+  String? get _bindKey => _bindKeyOf(widget);
+  ParkBindingService? get _bindingService => _bindingServiceOf(widget);
 
   @override
   void initState() {
@@ -52,6 +61,24 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
       if (scope != null) {
         _doLink(scope.service);
       }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant FormField<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 绑定参数（bindKey / bindingService）变化时必须重新建链：
+    // 旧实现没有 didUpdateWidget，父级把 bindKey 从 'a' 改成 'b' 后，
+    // 组件仍然写回旧路径 'a'（绑定的路径与新 widget 不一致 → 脏写 + 新路径永远收不到值）。
+    if (_bindKeyOf(oldWidget) == _bindKey &&
+        _bindingServiceOf(oldWidget) == _bindingService) {
+      return; // 绑定参数未变化，保持既有绑定（避免每次父级重建都重新 bind）
+    }
+    _unlinkBinding();
+    final ParkBindingService? service =
+        _bindingService ?? ParkBindingFormScope.of(context)?.service;
+    if (_bindKey != null && service != null) {
+      _doLink(service);
     }
   }
 
@@ -76,7 +103,13 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
   void onBindableChanged() {
     if (mounted && _bindable != null) {
       // 通过安全 cast 传递，避免 bindable.value 与 T 类型不匹配时崩溃
-      didChange(_tryCast<T>(_bindable!.value));
+      final T? incoming = _tryCast<T>(_bindable!.value);
+      // 相等短路：FormFieldState.didChange 会无条件 setState，
+      // 若值没变还调用它会引发无意义的重建（model→UI 回声也会造成重建风暴）。
+      // 该短路同时切断 didChange → _syncToBindable → notify → onBindableChanged
+      // 的回声链（另一道保险是 ParkBindable 的值相等检测）。
+      if (incoming == value) return;
+      didChange(incoming);
     }
   }
 
@@ -103,6 +136,10 @@ mixin BindableFormFieldMixin<T> on FormFieldState<T> {
   ///
   /// 移除旧版 `value != null` 守卫，支持清空输入框时同步 null 值。
   /// 使用 dynamic 绕开 Dart 泛型协变限制（T? → T 不满足赋值兼容性）。
+  ///
+  /// 回声链终止：写入 bindable 会触发 [onBindableChanged]，但那里有值相等短路，
+  /// 加上 [ParkBindable] setter 自身的相等检测，`didChange → 写 bindable →
+  /// onBindableChanged → didChange` 最多走一轮即停止，不会无限递归。
   void _syncToBindable(T? value) {
     if (_bindable != null) {
       // ignore: avoid_dynamic_calls

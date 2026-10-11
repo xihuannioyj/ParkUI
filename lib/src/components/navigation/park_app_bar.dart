@@ -1,6 +1,11 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
 import '../../theme/park_theme_data.dart';
+import '../base/park_surface.dart';
 
 /// ParkAppBar / ParkSliverAppBar 默认阴影高度（扁平品牌风格，无阴影）。
 const double _kDefaultElevation = 0.0;
@@ -16,10 +21,15 @@ const double _kDefaultTitleSpacing = NavigationToolbar.kMiddleSpacing;
 
 /// 构建标题 Widget：String 走 Park 排版令牌，Widget 合并默认文字样式。
 /// 当 [subtitle] 非空时，标题与副标题以 Column 纵向排列（副标题走 bodySmall 令牌）。
-Widget? _parkBarTitle(Object? title, ParkThemeData park, Color fgColor,
-    {String? subtitle}) {
+Widget? _parkBarTitle(
+  Object? title,
+  ParkThemeData park,
+  Color titleColor, {
+  String? subtitle,
+  Color? subtitleColor,
+}) {
   if (title == null && subtitle == null) return null;
-  final TextStyle titleStyle = park.typography.h3.copyWith(color: fgColor);
+  final TextStyle titleStyle = park.typography.h3.copyWith(color: titleColor);
   Widget titleWidget;
   if (title == null) {
     titleWidget = const SizedBox.shrink();
@@ -35,8 +45,9 @@ Widget? _parkBarTitle(Object? title, ParkThemeData park, Color fgColor,
         DefaultTextStyle.merge(style: titleStyle, child: title as Widget);
   }
   if (subtitle == null) return titleWidget;
-  final TextStyle subtitleStyle =
-      park.typography.bodySmall.copyWith(color: fgColor.withValues(alpha: 0.65));
+  final TextStyle subtitleStyle = park.typography.bodySmall.copyWith(
+    color: subtitleColor ?? titleColor.withValues(alpha: 0.65),
+  );
   return Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,6 +105,85 @@ _ParkBarLeading _parkBarResolveLeading(
     return _ParkBarLeading(_parkBarBackButton(context, fgColor), false);
   }
   return const _ParkBarLeading(null, true);
+}
+
+/// AppBar 表面材质的派生结果，供普通与 Sliver 形态共用。
+@immutable
+class ParkAppBarSurface {
+  final Color fill;
+  final Color titleColor;
+  final Color bodyColor;
+  final Color? shadowColor;
+  final bool useBlur;
+  final double blurSigma;
+
+  const ParkAppBarSurface({
+    required this.fill,
+    required this.titleColor,
+    required this.bodyColor,
+    required this.shadowColor,
+    required this.useBlur,
+    required this.blurSigma,
+  });
+}
+
+/// 解析 AppBar 表面材质。
+///
+/// AppBar 的 `elevation == 0` 是显式的无阴影语义，因此不会仅因切换风格
+/// 凭空抬起；只有调用方请求 elevation 时，glass / neo / neon 才用令牌阴影
+/// 的主色接管 Material 阴影色。圆角、shape、bottom 均保持原组件路径。
+@visibleForTesting
+ParkAppBarSurface resolveParkAppBarSurface({
+  required BuildContext context,
+  required ParkThemeData park,
+  Color? backgroundColor,
+  Color? foregroundColor,
+  Color? shadowColor,
+  double elevation = _kDefaultElevation,
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+  final Color titleColor = foregroundColor ?? tokens.titleColor;
+
+  return ParkAppBarSurface(
+    fill: backgroundColor ?? tokens.fill,
+    titleColor: titleColor,
+    // stripe 必须保留改造前的 65% 前景色；其他风格消费表面正文语义色。
+    bodyColor: foregroundColor != null
+        ? foregroundColor.withValues(alpha: 0.65)
+        : tokens.style == ParkSurfaceStyle.stripe
+            ? park.colors.textPrimary.withValues(alpha: 0.65)
+            : tokens.bodyColor,
+    shadowColor: shadowColor ??
+        (elevation > 0 && tokens.shadows != null && tokens.shadows!.isNotEmpty
+            ? tokens.shadows!.first.color
+            : null),
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+  );
+}
+
+/// glass AppBar 把填充与用户 flexibleSpace 放在同一模糊层内。
+Widget? _parkBarFlexibleSpace({
+  required Widget? child,
+  required ParkAppBarSurface surface,
+  required bool canBlur,
+}) {
+  if (!canBlur) return child;
+  return ClipRect(
+    child: BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: surface.blurSigma,
+        sigmaY: surface.blurSigma,
+      ),
+      child: ColoredBox(
+        color: surface.fill,
+        child: child ?? const SizedBox.expand(),
+      ),
+    ),
+  );
 }
 
 /// Park 顶部应用栏 — 对齐 Flutter 原生 [AppBar] 的参数面，
@@ -200,8 +290,19 @@ class ParkAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final Color bgColor = backgroundColor ?? park.colors.surface;
-    final Color fgColor = foregroundColor ?? park.colors.textPrimary;
+    final double effectiveElevation = elevation ?? _kDefaultElevation;
+    final ParkAppBarSurface surface = resolveParkAppBarSurface(
+      context: context,
+      park: park,
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      shadowColor: shadowColor,
+      elevation: effectiveElevation,
+    );
+    final bool canBlur = surface.useBlur &&
+        surface.blurSigma > 0 &&
+        ParkSurfaceBlurDepth.of(context) < 1;
+    final Color fgColor = surface.titleColor;
 
     final _ParkBarLeading resolved = _parkBarResolveLeading(
       context,
@@ -213,19 +314,29 @@ class ParkAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       leading: resolved.widget,
       automaticallyImplyLeading: resolved.imply,
-      title: _parkBarTitle(title, park, fgColor, subtitle: subtitle),
+      title: _parkBarTitle(
+        title,
+        park,
+        fgColor,
+        subtitle: subtitle,
+        subtitleColor: surface.bodyColor,
+      ),
       centerTitle: centerTitle,
-      backgroundColor: bgColor,
+      backgroundColor: canBlur ? Colors.transparent : surface.fill,
       foregroundColor: fgColor,
-      elevation: elevation ?? _kDefaultElevation,
+      elevation: effectiveElevation,
       scrolledUnderElevation: _kDefaultElevation,
       bottom: bottom,
       titleSpacing: titleSpacing ?? _kDefaultTitleSpacing,
       actions: actions,
       surfaceTintColor: surfaceTintColor,
       toolbarHeight: toolbarHeight,
-      flexibleSpace: flexibleSpace,
-      shadowColor: shadowColor,
+      flexibleSpace: _parkBarFlexibleSpace(
+        child: flexibleSpace,
+        surface: surface,
+        canBlur: canBlur,
+      ),
+      shadowColor: surface.shadowColor,
       shape: shape,
       iconTheme: iconTheme,
     );
@@ -345,8 +456,19 @@ class ParkSliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    final Color bgColor = backgroundColor ?? park.colors.surface;
-    final Color fgColor = foregroundColor ?? park.colors.textPrimary;
+    final double effectiveElevation = elevation ?? _kDefaultElevation;
+    final ParkAppBarSurface surface = resolveParkAppBarSurface(
+      context: context,
+      park: park,
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      shadowColor: shadowColor,
+      elevation: effectiveElevation,
+    );
+    final bool canBlur = surface.useBlur &&
+        surface.blurSigma > 0 &&
+        ParkSurfaceBlurDepth.of(context) < 1;
+    final Color fgColor = surface.titleColor;
 
     final _ParkBarLeading resolved = _parkBarResolveLeading(
       context,
@@ -358,11 +480,17 @@ class ParkSliverAppBar extends StatelessWidget {
     return SliverAppBar(
       leading: resolved.widget,
       automaticallyImplyLeading: resolved.imply,
-      title: _parkBarTitle(title, park, fgColor, subtitle: subtitle),
+      title: _parkBarTitle(
+        title,
+        park,
+        fgColor,
+        subtitle: subtitle,
+        subtitleColor: surface.bodyColor,
+      ),
       centerTitle: centerTitle,
-      backgroundColor: bgColor,
+      backgroundColor: canBlur ? Colors.transparent : surface.fill,
       foregroundColor: fgColor,
-      elevation: elevation ?? _kDefaultElevation,
+      elevation: effectiveElevation,
       scrolledUnderElevation: _kDefaultElevation,
       bottom: bottom,
       titleSpacing: titleSpacing ?? _kDefaultTitleSpacing,
@@ -373,8 +501,12 @@ class ParkSliverAppBar extends StatelessWidget {
       expandedHeight: expandedHeight,
       surfaceTintColor: surfaceTintColor,
       toolbarHeight: toolbarHeight ?? kToolbarHeight,
-      flexibleSpace: flexibleSpace,
-      shadowColor: shadowColor,
+      flexibleSpace: _parkBarFlexibleSpace(
+        child: flexibleSpace,
+        surface: surface,
+        canBlur: canBlur,
+      ),
+      shadowColor: surface.shadowColor,
       shape: shape,
       iconTheme: iconTheme,
     );

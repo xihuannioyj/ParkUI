@@ -679,6 +679,16 @@ class ParkSelect extends FormField<String> implements ParkBindableWidget {
 class _ParkSelectState extends FormFieldState<String> with BindableFormFieldMixin<String> {
   @override
   ParkSelect get widget => super.widget as ParkSelect;
+
+  @override
+  void didUpdateWidget(covariant FormField<String> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 外部联动）不会更新显示（含多选的逗号分隔值）。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+    }
+  }
 }
 
 /// 内部：选项列表底部面板

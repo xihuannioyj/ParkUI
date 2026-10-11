@@ -385,6 +385,16 @@ class _ParkRadioState extends FormFieldState<String>
     with BindableFormFieldMixin<String> {
   @override
   ParkRadio get widget => super.widget as ParkRadio;
+
+  @override
+  void didUpdateWidget(covariant FormField<String> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 全选 / 外部联动）不会更新显示。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+    }
+  }
 }
 
 /// 单个单选框项

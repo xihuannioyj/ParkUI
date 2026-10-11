@@ -582,6 +582,7 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
     final spacing = park.spacing;
     final radius = park.radius;
     final l10n = ParkLocalizations.of(context);
+    final bool canConfirm = _startDate != null && _endDate != null;
 
     return Container(
       decoration: BoxDecoration(
@@ -608,96 +609,83 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
               ),
             ),
 
-            // ── 标题栏 ──
+            // ── 标题栏：左右等宽插槽，保证标题严格居中 ──
             Padding(
               padding: EdgeInsets.fromLTRB(
+                spacing.base,
                 spacing.sm,
-                spacing.xs,
+                spacing.base,
                 spacing.sm,
-                spacing.xs,
               ),
-              child: Row(
-                children: [
-                  Semantics(
-                    button: true,
-                    label: l10n.cancelText,
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      l10n.cancelText,
-                      style: TextStyle(color: colors.textSecondary),
-                    ),
-                  ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    l10n.timeFilter,
-                    style: typo.body.copyWith(
-                      fontSize: typo.sizeBody,
-                      fontWeight: typo.weightBold,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Semantics(
-                    button: true,
-                    label: l10n.confirmText,
-                    child: TextButton(
-                      onPressed: () {
-                        if (_startDate != null && _endDate != null) {
-                          Navigator.pop(
-                            context,
-                            ParkDateRange(
-                              start: _startDate!,
-                              end: _endDate!,
-                            ),
-                          );
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        l10n.confirmText,
-                        style: TextStyle(
-                          color: (_startDate != null && _endDate != null)
-                              ? colors.brand
-                              : colors.textPlaceholder,
+              child: SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 56,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildHeaderAction(
+                          label: l10n.cancelText,
+                          color: colors.textSecondary,
+                          onTap: () => Navigator.pop(context),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          l10n.timeFilter,
+                          style: typo.body.copyWith(
+                            fontSize: typo.sizeBody,
+                            fontWeight: typo.weightBold,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 56,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _buildHeaderAction(
+                          label: l10n.confirmText,
+                          color: canConfirm
+                              ? colors.brand
+                              : colors.textPlaceholder,
+                          bold: true,
+                          onTap: canConfirm
+                              ? () => Navigator.pop(
+                                    context,
+                                    ParkDateRange(
+                                      start: _startDate!,
+                                      end: _endDate!,
+                                    ),
+                                  )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // ── 快捷预设 ──
+            // ── 快捷预设：胶囊自动换行（不再横向滚动，窄屏也不截断） ──
             if (widget.showShortcuts && widget.shortcuts.isNotEmpty)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: spacing.base),
-                child: SizedBox(
-                  height: 38,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.shortcuts.length,
-                    separatorBuilder: (_, _a) =>
-                        SizedBox(width: spacing.sm),
-                    itemBuilder: (context, index) {
-                      final s = widget.shortcuts[index];
-                      return _ShortcutChip(
+                child: Wrap(
+                  spacing: spacing.sm,
+                  runSpacing: 0,
+                  children: [
+                    for (final s in widget.shortcuts)
+                      _ShortcutChip(
                         label: s.label,
                         selected: _isShortcutActive(s),
                         onTap: () => _handleShortcut(s),
-                      );
-                    },
-                  ),
+                      ),
+                  ],
                 ),
               ),
 
@@ -706,104 +694,85 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   spacing.base,
-                  spacing.xs,
+                  spacing.sm,
                   spacing.base,
                   0,
                 ),
-                child: SizedBox(
-                  height: 38,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.presets!.length,
-                    separatorBuilder: (_, _a) =>
-                        SizedBox(width: spacing.sm),
-                    itemBuilder: (context, index) {
-                      final p = widget.presets![index];
-                      final isSelected = p.startDate != null &&
-                          p.endDate != null &&
-                          _startDate == p.startDate &&
-                          _endDate == p.endDate;
-                      return _ShortcutChip(
+                child: Wrap(
+                  spacing: spacing.sm,
+                  runSpacing: 0,
+                  children: [
+                    for (final p in widget.presets!)
+                      _ShortcutChip(
                         label: p.label,
-                        selected: isSelected,
+                        selected: p.startDate != null &&
+                            p.endDate != null &&
+                            _startDate == p.startDate &&
+                            _endDate == p.endDate,
                         onTap: () => _handlePreset(p),
-                      );
-                    },
-                  ),
+                      ),
+                  ],
                 ),
               ),
 
             SizedBox(height: spacing.sm),
 
-            // ── 日期选择区域 ──
+            // ── 起止日期：并排两块字段，与页面上的筛选项形成同一套语言 ──
             Padding(
               padding: EdgeInsets.symmetric(horizontal: spacing.base),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colors.background,
-                  borderRadius: radius.brMd,
-                ),
-                child: Column(
-                  children: [
-                    _DateField(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _DateField(
                       label: l10n.startTime,
                       date: _startDate,
                       hintText: l10n.selectStartDate,
                       onTap: () => _pickDate(isStart: true),
                       park: park,
                     ),
-                    Divider(
-                      height: 1,
-                      indent: 12,
-                      endIndent: 12,
-                      color: colors.border.withValues(alpha: 0.6),
-                    ),
-                    _DateField(
+                  ),
+                  SizedBox(width: spacing.sm),
+                  Expanded(
+                    child: _DateField(
                       label: l10n.endTime,
                       date: _endDate,
                       hintText: l10n.selectEndDate,
                       onTap: () => _pickDate(isStart: false),
                       park: park,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
-            SizedBox(height: spacing.base),
+            SizedBox(height: spacing.md),
 
-            // ── 重置按钮 ──
+            // ── 重置：降级为文字操作，主操作只留「确定」 ──
             if (widget.showShortcuts)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacing.base,
-                  0,
-                  spacing.base,
-                  spacing.base,
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        _startDate = null;
-                        _endDate = null;
-                      });
-                    },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: colors.surface,
-                      foregroundColor: colors.textPrimary,
-                      side: BorderSide(color: colors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: radius.brMd,
-                      ),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _startDate = null;
+                      _endDate = null;
+                    });
+                  },
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    size: 16,
+                    color: colors.textSecondary,
+                  ),
+                  label: Text(l10n.resetFilter),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.textSecondary,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing.md,
+                      vertical: spacing.sm,
                     ),
-                    child: Text(
-                      l10n.resetFilter,
-                      style: typo.body.copyWith(
-                        fontSize: typo.sizeBody,
-                      ),
+                    minimumSize: const Size(0, 44),
+                    textStyle: typo.body.copyWith(
+                      fontSize: typo.sizeBodySmall,
                     ),
                   ),
                 ),
@@ -821,6 +790,35 @@ class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
         ),
         ),
       ),
+    );
+  }
+
+  /// 标题栏文字操作。
+  ///
+  /// 固定 44 高度以满足最小触控目标；左右插槽等宽，保证标题严格居中。
+  Widget _buildHeaderAction({
+    required String label,
+    required Color color,
+    bool bold = false,
+    VoidCallback? onTap,
+  }) {
+    final park =
+        Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(44, 44),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: park.typography.body.copyWith(
+          fontSize: park.typography.sizeBody,
+          fontWeight: bold
+              ? park.typography.weightBold
+              : park.typography.weightRegular,
+        ),
+      ),
+      child: Text(label),
     );
   }
 
@@ -853,38 +851,45 @@ class _ShortcutChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
+    final colors = park.colors;
     return Semantics(
       button: true,
+      selected: selected,
       label: label,
       child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: park.motion.quick,
-        curve: park.motion.defaultEasing,
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: selected
-              ? park.colors.brand.withValues(alpha: 0.1)
-              : park.colors.background,
-          borderRadius: park.radius.brFull,
-          border: Border.all(
-            color: selected
-                ? park.colors.brand.withValues(alpha: 0.3)
-                : park.colors.border,
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        // 纵向 padding 把触控高度撑到 44，视觉胶囊靠内容+padding 自适应宽度与 36 高度
+        // （不能给 Container 设 alignment：在 Wrap 的有界约束下会被拉成整行宽）。
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: park.spacing.xs),
+          child: AnimatedContainer(
+            duration: park.motion.quick,
+            curve: park.motion.defaultEasing,
+            padding: EdgeInsets.symmetric(
+              horizontal: park.spacing.md,
+              vertical: 9,
+            ),
+            decoration: BoxDecoration(
+              color: selected ? colors.brand : colors.background,
+              borderRadius: park.radius.brFull,
+              border: Border.all(
+                color: selected ? colors.brand : colors.border,
+              ),
+              boxShadow: selected ? park.shadows.sm : null,
+            ),
+            child: Text(
+              label,
+              style: park.typography.body.copyWith(
+                fontSize: park.typography.sizeBodySmall,
+                fontWeight: selected
+                    ? park.typography.weightBold
+                    : park.typography.weightRegular,
+                color: selected ? colors.textOnBrand : colors.textSecondary,
+              ),
+            ),
           ),
         ),
-        child: Text(
-          label,
-          style: park.typography.body.copyWith(
-            fontSize: park.typography.sizeBodySmall,
-            fontWeight: selected ? park.typography.weightBold : null,
-            color: selected ? park.colors.brand : park.colors.textPrimary,
-          ),
-        ),
-      ),
       ),
     );
   }
@@ -914,45 +919,66 @@ class _DateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValue = date != null;
+    final colors = park.colors;
     return Semantics(
       button: true,
       label: '$label${hasValue ? _fmt(date) : hintText}',
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: park.spacing.base,
-          vertical: park.spacing.sm,
-        ),
-        child: Row(
-          children: [
-            Text(
-              '$label：',
-              style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
-                fontWeight: park.typography.weightMedium,
-                color: park.colors.textPrimary,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: park.spacing.md,
+            vertical: park.spacing.md,
+          ),
+          decoration: BoxDecoration(
+            color: colors.background,
+            borderRadius: park.radius.brMd,
+            border: Border.all(
+              color: hasValue
+                  ? colors.brand.withValues(alpha: 0.35)
+                  : colors.border,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: park.typography.body.copyWith(
+                        fontSize: park.typography.sizeCaption,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14,
+                    color: hasValue ? colors.brand : colors.textPlaceholder,
+                  ),
+                ],
               ),
-            ),
-            const Spacer(),
-            Text(
-              hasValue ? _fmt(date) : hintText,
-              style: park.typography.body.copyWith(
-                fontSize: park.typography.sizeBody,
-                color: hasValue
-                    ? park.colors.textPrimary
-                    : park.colors.textPlaceholder,
+              SizedBox(height: park.spacing.xs),
+              Text(
+                hasValue ? _fmt(date) : hintText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: park.typography.body.copyWith(
+                  fontSize: park.typography.sizeBody,
+                  fontWeight: hasValue
+                      ? park.typography.weightMedium
+                      : park.typography.weightRegular,
+                  color:
+                      hasValue ? colors.textPrimary : colors.textPlaceholder,
+                ),
               ),
-            ),
-            SizedBox(width: park.spacing.sm),
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 16,
-              color: park.colors.textPlaceholder,
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

@@ -209,7 +209,7 @@ void main() {
 
         expect(
           messageDecoration(tester).borderRadius,
-          equals(BorderRadius.circular(theme.radius.brMd)),
+          equals(theme.radius.brMd),
         );
       });
 
@@ -413,7 +413,7 @@ void main() {
 
       expect(
         resolved.radius,
-        equals(BorderRadius.circular(theme.radius.brMd)),
+        equals(theme.radius.brMd),
       );
     });
   });

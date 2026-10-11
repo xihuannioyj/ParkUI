@@ -511,7 +511,9 @@ void main() {
         );
         expect(
           resolved.radius,
-          isNot(equals(BorderRadius.circular(theme.radius.brMd))),
+          // ⚠️ radius.brMd 返回的已经是 BorderRadius（见 ParkRadius.brMd），
+          // 不能再包一层 BorderRadius.circular() —— 那是把 BorderRadius 当 double 传。
+          isNot(equals(theme.radius.brMd)),
         );
       });
     }

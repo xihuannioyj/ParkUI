@@ -439,20 +439,18 @@ class _ParkColorPickerState extends State<ParkColorPicker> {
     if (service == null) return;
 
     _bindable = service.bind<Color>(key);
-    if (_bindable!.value != null) {
-      _selected = _bindable!.value;
-      _syncHsvFromColor(_selected);
-    }
+    _selected = _bindable!.value;
+    _syncHsvFromColor(_selected);
     _bindable!.addListener(_onBindableChanged);
   }
 
   /// model → UI 方向同步。
   void _onBindableChanged() {
     if (!mounted || _bindable == null) return;
-    final Color? value = _bindable!.value;
-    if (value != null && value != _selected) {
+    final Color value = _bindable!.value;
+    if (value != _selected) {
       setState(() {
-        _selected = value!;
+        _selected = value;
         _syncHsvFromColor(_selected);
       });
     }

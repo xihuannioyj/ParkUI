@@ -348,11 +348,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
       children.add(
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: unsectionedFields
-              .map(
-                (ParkFormFieldSchema f) => _buildField(f, formLayout),
-              )
-              .toList(),
+          children: _buildFields(unsectionedFields, formLayout),
         ),
       );
     }
@@ -366,11 +362,7 @@ class _ParkDynamicFormState extends State<ParkDynamicForm> {
 
       Widget sectionContent = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: fields
-            .map(
-              (ParkFormFieldSchema f) => _buildField(f, formLayout),
-            )
-            .toList(),
+        children: _buildFields(fields, formLayout),
       );
 
       // 可折叠包裹。

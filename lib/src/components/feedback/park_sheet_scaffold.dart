@@ -1,6 +1,81 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
+import '../base/park_surface.dart';
+
+/// 底部弹层（Sheet）表面材质的派生结果。
+///
+/// 三个 sheet 类组件（[ParkSheetScaffold] / ParkDropdownSheet /
+/// ParkActionSheet）共用同一套取值规则：填充 / 阴影 / 文字色来自材质令牌，
+/// 圆角保留组件原值。
+@immutable
+class ParkSheetSurface {
+  /// 弹层填充色。
+  final Color fill;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 是否需要背景模糊采样（仅 glass 风格）。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  /// 标题文字色 —— **必须**来自表面令牌。
+  final Color titleColor;
+
+  /// 次级文字色（取消 / 描述）—— **必须**来自表面令牌。
+  final Color bodyColor;
+
+  const ParkSheetSurface({
+    required this.fill,
+    required this.shadows,
+    required this.useBlur,
+    required this.blurSigma,
+    required this.titleColor,
+    required this.bodyColor,
+  });
+}
+
+/// 解析底部弹层的表面材质（浮层规范在 Sheet 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. 阴影 `tokens.shadows ?? shadowFloor` —— 风格接管优先，浮层原值兜底；
+///    [shadowFloor] 由调用方给出组件改造前的原值（无阴影则传空列表），
+///    因此 stripe / flat 下逐字段一致；
+/// 2. 圆角**不由本方法决定**：三个 sheet 各有自己的圆角语义（顶部大圆角 /
+///    全圆角卡片），应保留组件原值而非消费 `tokens.radius`；
+/// 3. 三个 sheet 原本都无边框，故 `bordered: false`，不凭空加边框；
+/// 4. 文字色一律取 `tokens.titleColor` / `tokens.bodyColor`；
+///    品牌色（确认按钮）是语义色，不参与材质派生；
+/// 5. 全屏形态由调用方自行短路（本方法只负责"卡片化"的那层表面）。
+@visibleForTesting
+ParkSheetSurface resolveParkSheetSurface({
+  required BuildContext context,
+  List<BoxShadow> shadowFloor = const <BoxShadow>[],
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+
+  return ParkSheetSurface(
+    fill: tokens.fill,
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: shadowFloor,
+    ),
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+    titleColor: tokens.titleColor,
+    bodyColor: tokens.bodyColor,
+  );
+}
 
 /// A standardized bottom-sheet scaffold with a cancel / title / confirm header.
 ///
@@ -121,10 +196,18 @@ class ParkSheetScaffold extends StatelessWidget {
     final effectiveCancelText = cancelText ?? l10n.cancelText;
     final effectiveConfirmText = confirmText ?? l10n.confirmText;
 
-    return Container(
+    // 表面材质走派生层：局部 ParkSurfaceStyleScope 覆盖自动生效。
+    // 本组件改造前无阴影，故 floor 为空列表 —— stripe / flat 下逐字段一致。
+    final ParkSheetSurface surface =
+        resolveParkSheetSurface(context: context);
+    final BorderRadius sheetRadius =
+        BorderRadius.vertical(top: Radius.circular(radius.lg));
+
+    Widget sheet = Container(
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(radius.lg)),
+        color: surface.fill,
+        borderRadius: sheetRadius,
+        boxShadow: surface.shadows,
       ),
       child: SafeArea(
         top: false,
@@ -170,7 +253,8 @@ class ParkSheetScaffold extends StatelessWidget {
                             effectiveCancelText,
                             style: TextStyle(
                               fontSize: typo.sizeBody,
-                              color: colors.textSecondary,
+                              // 次级文字色来自表面令牌（stripe 下 = textSecondary）。
+                              color: surface.bodyColor,
                             ),
                           ),
                         ),
@@ -184,7 +268,8 @@ class ParkSheetScaffold extends StatelessWidget {
                           style: TextStyle(
                             fontSize: typo.sizeH3,
                             fontWeight: typo.weightMedium,
-                            color: colors.textPrimary,
+                            // 标题色来自表面令牌（防 neon + 深色下白底白字）。
+                            color: surface.titleColor,
                           ),
                         ),
                       ),
@@ -232,5 +317,26 @@ class ParkSheetScaffold extends StatelessWidget {
         ),
       ),
     );
+
+    // glass 风格：叠加 BackdropFilter 采样背后的页面内容。
+    //
+    // 复用 ParkSurfaceBlurDepth 做嵌套降级，避免重复采样同一 backdrop。
+    // 判定必须是 `< 1` 而非 `<= 1`（见 ParkSurface.canBlur 的说明）。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
+        surface.blurSigma > 0) {
+      sheet = ClipRRect(
+        borderRadius: sheetRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: sheet,
+        ),
+      );
+    }
+
+    return sheet;
   }
 }

@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import '../../l10n/park_localizations.dart';
 import '../../theme/park_theme_data.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
+import '../base/park_surface.dart';
 
 /// 通知提醒框组件
 ///
@@ -141,6 +146,81 @@ class _NotificationController {
   _NotificationController({required this.dismiss});
 }
 
+/// 通知卡片的表面材质派生结果。
+///
+/// 把容器填充、阴影与文字色收敛到**一个**派生结果里，避免"容器换材质了、
+/// 文字还是旧语义色"的半迁移状态。
+@immutable
+class ParkNotificationSurface {
+  /// 卡片填充色。
+  final Color fill;
+
+  /// 阴影；空列表表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 是否需要背景模糊采样（仅 glass 风格）。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  /// 标题文字色 —— **必须**来自表面令牌。
+  final Color titleColor;
+
+  /// 描述文字色 —— **必须**来自表面令牌。
+  final Color bodyColor;
+
+  const ParkNotificationSurface({
+    required this.fill,
+    required this.shadows,
+    required this.useBlur,
+    required this.blurSigma,
+    required this.titleColor,
+    required this.bodyColor,
+  });
+}
+
+/// 解析通知卡片的表面材质（浮层规范在 Notification 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. 阴影 `tokens.shadows ?? park.shadows.md` —— 改造前用的就是 `md`，
+///    风格接管优先、浮层原值兜底，stripe / flat 下逐字段一致；
+/// 2. 圆角保留组件原值 `park.radius.brMd`，**不**消费 `tokens.radius`；
+/// 3. 边框**不**取材质层：通知卡片自带一条**语义色描边**（success / error /
+///    warning / info 强调色），是组件的语义契约，必须原样保留；
+///    因此这里传 `bordered: false`，由组件自己画那一条 accent 边框；
+/// 4. 文字色一律取 `tokens.titleColor` / `tokens.bodyColor`；
+/// 5. 本组件无全屏 / 特殊形态，故没有独立分支。
+///
+/// ⚠️ `type`（success / error / warning / info）**不参与**派生：它只决定强调色
+/// （图标与描边），不应影响容器材质 —— 材质由风格决定，语义色由 type 决定，
+/// 二者正交。
+@visibleForTesting
+ParkNotificationSurface resolveParkNotificationSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    // 通知卡片自带 accent 描边，材质层不再叠加第二条边框。
+    bordered: false,
+  );
+
+  return ParkNotificationSurface(
+    fill: tokens.fill,
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: park.shadows.md,
+    ),
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+    // 🔴 标题 / 描述**都**必须来自 tokens：neon + 深色底下 fill 翻转为近白，
+    // 若沿用 colors.textPrimary / textSecondary 会撞成白底白字。
+    titleColor: tokens.titleColor,
+    bodyColor: tokens.bodyColor,
+  );
+}
+
 class _NotificationOverlay extends StatefulWidget {
   final String title;
   final String? description;
@@ -265,6 +345,97 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
       ParkNotificationSize.large => 18.0,
     };
 
+    // 表面材质走派生层：局部 ParkSurfaceStyleScope 覆盖自动生效。
+    final ParkNotificationSurface surface = resolveParkNotificationSurface(
+      park: park,
+      context: context,
+    );
+    final BorderRadius radius = park.radius.brMd;
+
+    Widget card = Container(
+      width: ParkNotification._kNotificationWidth,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: surface.fill,
+        borderRadius: radius,
+        // 🔴 强调色描边是组件自身的语义契约（success/error/warning/info），
+        // **不**替换为材质层边框 —— 否则语义色丢失、neo 风格还会凭空变没边框。
+        border: Border.all(color: accent, width: 1),
+        boxShadow: surface.shadows,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          widget.icon ??
+              Icon(defaultIcon,
+                  size: iconSize, color: accent),
+          SizedBox(width: park.spacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: titleFontSize,
+                    fontWeight: park.typography.weightBold,
+                    color: surface.titleColor,
+                    // Overlay 无 Material → fallback style 黄色下划线，
+                    // 必须显式清除。
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                if (widget.description != null) ...[
+                  SizedBox(height: park.spacing.xs),
+                  Text(
+                    widget.description!,
+                    style: TextStyle(
+                      fontSize: descFontSize,
+                      color: surface.bodyColor,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (widget.closable)
+            Semantics(
+              button: true,
+              label: ParkLocalizations.of(context).closeText,
+              child: GestureDetector(
+                onTap: close,
+                child: Icon(
+                  Icons.close,
+                  size: closeIconSize,
+                  color: surface.bodyColor,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    // glass 风格：叠加 BackdropFilter 采样背后的页面内容。
+    //
+    // 复用 ParkSurfaceBlurDepth 做嵌套降级，避免重复采样同一 backdrop。
+    // 判定必须是 `< 1` 而非 `<= 1`（见 ParkSurface.canBlur 的说明）。
+    if (surface.useBlur &&
+        ParkSurfaceBlurDepth.of(context) < 1 &&
+        surface.blurSigma > 0) {
+      card = ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: surface.blurSigma,
+            sigmaY: surface.blurSigma,
+          ),
+          child: card,
+        ),
+      );
+    }
+
     return Positioned(
       top: MediaQuery.of(context).padding.top +
           park.spacing.base +
@@ -278,68 +449,7 @@ class _NotificationOverlayState extends State<_NotificationOverlay>
             liveRegion: true,
             label: widget.title,
             hint: widget.description,
-            child: Container(
-              width: ParkNotification._kNotificationWidth,
-              padding: padding,
-              decoration: BoxDecoration(
-                color: park.colors.surface,
-                borderRadius: park.radius.brMd,
-                border: Border.all(color: accent, width: 1),
-                boxShadow: park.shadows.md,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  widget.icon ??
-                      Icon(defaultIcon,
-                          size: iconSize, color: accent),
-                  SizedBox(width: park.spacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: TextStyle(
-                            fontSize: titleFontSize,
-                            fontWeight: park.typography.weightBold,
-                            color: park.colors.textPrimary,
-                            // Overlay 无 Material → fallback style 黄色下划线，
-                            // 必须显式清除。
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        if (widget.description != null) ...[
-                          SizedBox(height: park.spacing.xs),
-                          Text(
-                            widget.description!,
-                            style: TextStyle(
-                              fontSize: descFontSize,
-                              color: park.colors.textSecondary,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (widget.closable)
-                    Semantics(
-                      button: true,
-                      label: ParkLocalizations.of(context).closeText,
-                      child: GestureDetector(
-                        onTap: close,
-                        child: Icon(
-                          Icons.close,
-                          size: closeIconSize,
-                          color: park.colors.textSecondary,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            child: card,
           ),
         ),
       ),

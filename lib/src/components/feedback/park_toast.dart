@@ -4,6 +4,78 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../theme/park_theme_data.dart';
 import '../../theme/tokens/park_motion.dart';
+import '../../theme/park_surface_style_scope.dart';
+import '../../theme/park_surface_tokens.dart';
+
+/// 全局 Toast 的表面材质派生结果（与 [ParkMessageSurface] 同构）。
+///
+/// Toast 是**中性胶囊**：填充固定走 [inverseSurface]、文字固定走
+/// `textOnBrand`，不消费材质 `fill` / 文字色。这里只把**阴影**收敛到材质令牌，
+/// 使 glass / neo 风格下有正确的浮层阴影，而 stripe / flat 下 [ParkSurfaceTokens.shadows]
+/// 为 null → 回落到浮层原值（零回归）。
+@immutable
+class ParkToastSurface {
+  /// 容器填充色（固定 inverseSurface，见 [resolveParkToastSurface]）。
+  final Color fill;
+
+  /// 圆角（固定胶囊 brFull，不消费 [ParkSurfaceTokens.radius]）。
+  final BorderRadius radius;
+
+  /// 阴影；null 表示无阴影。
+  final List<BoxShadow>? shadows;
+
+  /// 是否需要背景模糊采样（glass 风格）；Toast 强制不透明，仅记录令牌值。
+  final bool useBlur;
+
+  /// 模糊 sigma。
+  final double blurSigma;
+
+  const ParkToastSurface({
+    required this.fill,
+    required this.radius,
+    required this.shadows,
+    required this.useBlur,
+    required this.blurSigma,
+  });
+}
+
+/// Toast 改造前的浮层阴影 floor（与 [ParkMessageSurface] 同理，浮层原值兜底）。
+List<BoxShadow> _toastShadowFloor(ParkThemeData park) => park.shadows.sm;
+
+/// 解析全局 Toast 的表面材质（浮层规范在 ParkToast 上的实现）。
+///
+/// 五条浮层规范：
+/// 1. 阴影 `tokens.shadows ?? floor`（[_toastShadowFloor]）——
+///    stripe / flat 下 [ParkSurfaceTokens.shadows] 为 null，回落到此原值；
+/// 2. 圆角保留组件原值 `brFull`（胶囊），不消费 [ParkSurfaceTokens.radius]；
+/// 3. 无边框（Toast 无边框语义，故 [bordered] 传 false）；
+/// 4. Toast 填充 / 文字色固定（inverseSurface / textOnBrand），不来自材质，
+///    因此无"文字色取自 tokens"条目；
+/// 5. 无全屏形态分支。
+@visibleForTesting
+ParkToastSurface resolveParkToastSurface({
+  required ParkThemeData park,
+  required BuildContext context,
+  required Color backgroundColor,
+}) {
+  final ParkSurfaceTokens tokens = ParkSurfaceStyleScope.tokensOf(
+    context,
+    bordered: false,
+  );
+  return ParkToastSurface(
+    // Toast 强制 100% 不透明（见 _buildPill 注释），玻璃模糊不可见，
+    // 因此 fill 保留 inverseSurface，useBlur 仅记录令牌值、容器不包裹
+    // BackdropFilter。
+    fill: backgroundColor,
+    radius: park.radius.brFull,
+    shadows: ParkSurfaceTokens.overlayShadows(
+      tokens: tokens,
+      floor: _toastShadowFloor(park),
+    ),
+    useBlur: tokens.useBackdropFilter,
+    blurSigma: tokens.glassBlur,
+  );
+}
 
 /// Toast 弹出位置
 enum ParkToastPosition { top, center, bottom }
@@ -296,14 +368,16 @@ class ParkToast extends StatelessWidget {
   Widget build(BuildContext context) {
     final park =
         Theme.of(context).extension<ParkThemeData>() ?? ParkThemeData.light();
-    return _buildPill(park);
+    return _buildPill(park, context);
   }
 
-  Widget _buildPill(ParkThemeData park) {
+  Widget _buildPill(ParkThemeData park, BuildContext context) {
     // 默认背景必须 100% 不透明（如 ParkLoading 气泡用 surface 的解法）：
     // 任何残留透明度都会透出底下页面内容（如顶部装饰条），视觉上出现异常色线。
     // 主题统一：走 inverseSurface 令牌（亮色模式深色胶囊、暗色模式浅色胶囊）。
     final bg = bgColor ?? park.colors.inverseSurface;
+    final ParkToastSurface surface =
+        resolveParkToastSurface(park: park, context: context, backgroundColor: bg);
     // 用 LayoutBuilder 拿真实布局约束计算宽度，避免依赖 MediaQuery.sizeOf：
     // ScreenUtil 等库会替换 MediaQuery.size 为设计稿假尺寸，导致宽度基准错误。
     final pill = LayoutBuilder(
@@ -322,8 +396,9 @@ class ParkToast extends StatelessWidget {
                 vertical: park.spacing.sm,
               ),
               decoration: BoxDecoration(
-                color: bg,
-                borderRadius: park.radius.brFull,
+                color: surface.fill,
+                borderRadius: surface.radius,
+                boxShadow: surface.shadows,
               ),
               clipBehavior: Clip.antiAlias,
               child: _ParkToastBody(
@@ -493,6 +568,8 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
     // 默认背景必须 100% 不透明（禁用半透明 colors.overlay，零透出）。
     // 主题统一：走 inverseSurface 令牌。
     final bg = widget.bgColor ?? park.colors.inverseSurface;
+    final ParkToastSurface surface =
+        resolveParkToastSurface(park: park, context: context, backgroundColor: bg);
 
     Widget toastWidget = SafeArea(
       child: Semantics(
@@ -538,8 +615,9 @@ class _ParkToastOverlayState extends State<_ParkToastOverlay>
                             vertical: park.spacing.sm,
                           ),
                           decoration: BoxDecoration(
-                            color: bg,
-                            borderRadius: park.radius.brFull,
+                            color: surface.fill,
+                            borderRadius: surface.radius,
+                            boxShadow: surface.shadows,
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: widget.contentWidget != null

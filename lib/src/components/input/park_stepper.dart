@@ -62,7 +62,7 @@ class ParkStepper extends FormField<int> implements ParkBindableWidget {
     super.onSaved,
   })  : // P1-2：step<=0 时步进无意义（同值回调风暴/方向反转），构造期拦截。
         assert(step > 0, 'step must be greater than 0'),
-        assert(min == null || max == null || min! <= max!,
+        assert(min == null || max == null || min <= max,
             'min must be <= max'),
         super(
           initialValue: value,
@@ -150,6 +150,16 @@ class _ParkStepperState extends FormFieldState<int>
     }
     didChange(newValue);
     widget.onChanged?.call(newValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant FormField<int> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // FormField 只在首次创建时读取 initialValue，父级改变 value 时必须自行同步，
+    // 否则受控用法（重置 / 外部联动）不会更新显示（含文本框内容）。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+    }
   }
 }
 

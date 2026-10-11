@@ -250,8 +250,6 @@ class _ParkButtonState extends State<ParkButton> {
     final colors = park.colors;
     final radiusTokens = park.radius;
 
-    final sizing = park.sizing;
-
     // 解析尺寸参数
     final sizeConfig = _resolveSize(widget.size, park);
 

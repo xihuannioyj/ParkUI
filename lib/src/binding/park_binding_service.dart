@@ -56,15 +56,17 @@ class ParkBindingService {
   final Map<String, ParkBindable<dynamic>> _bindables =
       <String, ParkBindable<dynamic>>{};
 
-  /// 已释放的绑定实例守卫集合。
-  final Set<ParkBindable<dynamic>> _disposedGuard =
-      <ParkBindable<dynamic>>{};
-
-  /// Counter for periodic cleanup of [_disposedGuard] (R5-011).
-  int _disposeCounter = 0;
-
   /// bind() 注册的监听引用（path → listener），用于 dispose 时精确移除，避免监听器泄漏（B15）。
   final Map<String, VoidCallback> _bindListeners = <String, VoidCallback>{};
+
+  /// 路径 → 本帧已调度的副作用触发闭包（合帧去重）。
+  ///
+  /// 旧实现每次值变化都新建一个闭包交给 [ParkBindingScheduler]，
+  /// 而调度器按闭包身份去重，导致同一路径在同一帧内被重复触发、
+  /// 依赖它的 watchEffect 被重复执行 N 次（N = 本帧变更次数）。
+  /// 这里以「路径」为键复用同一个闭包，保证同一帧只触发一次。
+  final Map<String, VoidCallback> _pendingTriggerNotifiers =
+      <String, VoidCallback>{};
 
   /// 批量调度器（微任务合并）。
   final ParkBindingScheduler _scheduler = ParkBindingScheduler();
@@ -161,7 +163,7 @@ class ParkBindingService {
     // 保存引用以便 dispose 时精确移除，避免监听器泄漏（B15）。
     final VoidCallback listener = () {
       _syncToModel(path, bindable.value);
-      _scheduler.scheduleNotify(() => _triggerEffects(path));
+      _scheduleTriggerEffects(path);
     };
     _bindListeners[path] = listener;
     bindable.addListener(listener);
@@ -266,9 +268,16 @@ class ParkBindingService {
     // 仅对实际变化的 bindable 更新值。值的更新会触发其监听器
     // （model-sync + 经调度器合帧的副作用）。在 batch 作用域内，
     // 这些通知会被 ParkBindingScheduler 合并到单次微任务帧（D2）。
-    for (final entry in _bindables.entries) {
+    //
+    // 遍历快照而非 entries 本身：监听器回调中可能 dispose / 重新绑定同一路径，
+    // 直接遍历会抛并发修改异常。同时校验池中仍是同一实例，避免向已被替换的实例写值。
+    // （旧实现用 _disposedGuard 黑名单跳过已释放实例；但 ParkBindable.dispose()
+    // 会同步回调 removeBindable 把实例摘出池子，池中不可能残留已释放实例，
+    // 因此该黑名单只增不减、毫无作用，已连同「每 100 次整体 clear()」的兜底一并移除。）
+    for (final MapEntry<String, ParkBindable<dynamic>> entry
+        in _bindables.entries.toList()) {
+      if (!identical(_bindables[entry.key], entry.value)) continue;
       final bindable = entry.value;
-      if (_disposedGuard.contains(bindable)) continue;
       final newValue = ParkBindingPath.resolve(entry.key, _model);
       final oldValue = ParkBindingPath.resolve(entry.key, oldModel);
       if (newValue != oldValue) {
@@ -279,18 +288,12 @@ class ParkBindingService {
 
   /// 释放指定路径的绑定。
   void disposeBindable(String path) {
-    final bindable = _bindables.remove(path);
+    // 先 dispose：由 ParkBindable.dispose 回调 removeBindable 完成注销
+    // （保证「注销恰好一次」）。旧实现先摘除映射再 dispose，导致
+    // removeBindable 找不到实例、守卫集合条目只增不减。
+    final ParkBindable<dynamic>? bindable = _bindables[path];
     if (bindable != null) {
-      final VoidCallback? listener = _bindListeners.remove(path);
-      if (listener != null) bindable.removeListener(listener);
-      _disposedGuard.add(bindable);
       bindable.dispose();
-      // R5-011: Periodic cleanup every 100 disposals to prevent infinite growth.
-      _disposeCounter++;
-      if (_disposeCounter >= 100) {
-        _disposedGuard.clear();
-        _disposeCounter = 0;
-      }
     }
     _triggerEffects(path);
   }
@@ -302,25 +305,30 @@ class ParkBindingService {
       effect.stop();
     }
     _watchEffects.clear();
+    _effectIndex.clear();
     // 移除 bind() 注册的监听器引用，避免泄漏（B15）。
     _bindListeners.clear();
+    // 调度器中尚未执行的合帧触发也不再需要。
+    _pendingTriggerNotifiers.clear();
     _scheduler.dispose();
     for (final bindable in _bindables.values.toList()) {
-      _disposedGuard.add(bindable);
       bindable.dispose();
     }
     _bindables.clear();
     _model.clear();
     _batchDepth = 0;
+    _effectDepth = 0;
   }
 
   /// 内部：移除 bindable 引用（由 ParkBindable.dispose 调用）。
   void removeBindable(String path) {
     final ParkBindable<dynamic>? bindable = _bindables.remove(path);
-    _bindListeners.remove(path);
-    // CR-08: 同步清理 _disposedGuard，避免依赖周期性清理。
+    final VoidCallback? listener = _bindListeners.remove(path);
     if (bindable != null) {
-      _disposedGuard.remove(bindable);
+      // 真正摘掉监听器（旧实现只丢弃引用，已建链但未释放的实例仍会回写模型）。
+      if (listener != null) bindable.removeListener(listener);
+      // 注销后清除 owner：避免实例被再次注销时误删同路径的新绑定（见 ParkBindable.dispose）。
+      bindable.setupOwner(null);
     }
   }
 
@@ -348,6 +356,19 @@ class ParkBindingService {
 
   final Set<_WatchEffect> _watchEffects = {};
 
+  /// 路径 → 依赖该路径的副作用集合（依赖索引）。
+  ///
+  /// 由副作用在「执行完毕收集到依赖」与「停止追踪」时维护，
+  /// 使一次路径变更只访问真正依赖它的副作用，而不是全量扫描 [_watchEffects]。
+  final Map<String, Set<_WatchEffect>> _effectIndex =
+      <String, Set<_WatchEffect>>{};
+
+  /// 当前副作用执行链深度（B124：限制自触发导致的无限递归）。
+  int _effectDepth = 0;
+
+  /// 副作用执行链最大深度。
+  static const int _maxEffectDepth = 10;
+
   /// 注册一个副作用函数，自动追踪其依赖的绑定路径。
   ///
   /// 当任何被依赖的路径值变化时，自动重新执行 [fn]。
@@ -371,15 +392,83 @@ class ParkBindingService {
     return effect.stop;
   }
 
+  /// 内部：从索引中摘除副作用当前记录的依赖。
+  ///
+  /// 停止追踪时调用，避免索引残留已停止副作用，
+  /// 否则「曾经依赖过的路径」变更时会错误地访问它。
+  void _unindexEffect(_WatchEffect effect) {
+    for (final String dep in effect._deps) {
+      _removeFromIndex(dep, effect);
+    }
+  }
+
+  /// 内部：按「执行前 / 执行后」依赖集合的差异同步索引。
+  ///
+  /// 副作用执行期间不摘除执行前的依赖（见 [_WatchEffect._execute] 注释），
+  /// 因此需要在这里做差集：摘除不再依赖的路径、登记新增路径。
+  /// 若副作用在执行期间被停止，则不再登记任何依赖。
+  void _resyncEffectIndex(_WatchEffect effect, Set<String> previousDeps) {
+    for (final String dep in previousDeps) {
+      if (effect._deps.contains(dep)) continue;
+      _removeFromIndex(dep, effect);
+    }
+    if (effect._disposed) {
+      // 执行期间被停止：把本次收集到的依赖也一并摘净
+      for (final String dep in effect._deps) {
+        _removeFromIndex(dep, effect);
+      }
+      return;
+    }
+    for (final String dep in effect._deps) {
+      if (previousDeps.contains(dep)) continue;
+      _addToIndex(dep, effect);
+    }
+  }
+
+  /// 内部：把副作用登记进 [path] 的依赖集合。
+  void _addToIndex(String path, _WatchEffect effect) {
+    _effectIndex.putIfAbsent(path, () => <_WatchEffect>{}).add(effect);
+  }
+
+  /// 内部：把副作用从 [path] 的依赖集合摘除（空桶一并移除，避免索引无界增长）。
+  void _removeFromIndex(String path, _WatchEffect effect) {
+    final Set<_WatchEffect>? bucket = _effectIndex[path];
+    if (bucket == null) return;
+    bucket.remove(effect);
+    if (bucket.isEmpty) _effectIndex.remove(path);
+  }
+
+  /// 内部：安排一次 [path] 的副作用触发。
+  ///
+  /// 同一帧内同一路径的多次变更只调度一个闭包（见 [_pendingTriggerNotifiers]），
+  /// 因此依赖它的副作用在同一帧最多执行一次。
+  void _scheduleTriggerEffects(String path) {
+    if (_pendingTriggerNotifiers.containsKey(path)) return;
+    void notifier() {
+      // 执行后立即摘除，保证后续帧/后续批次可以重新调度本路径。
+      _pendingTriggerNotifiers.remove(path);
+      _triggerEffects(path);
+    }
+    _pendingTriggerNotifiers[path] = notifier;
+    _scheduler.scheduleNotify(notifier);
+  }
+
   /// 内部：触发所有依赖了 [path] 的副作用。
   ///
   /// B124：增加最大深度限制（10），防止循环依赖导致栈溢出。
+  /// 优化：通过 [_effectIndex] 精确定位依赖副作用，复杂度与依赖者数量相关，
+  /// 而不是与副作用总数相关（旧实现每次都遍历全部副作用）。
   void _triggerEffects(String path, [int depth = 0]) {
-    if (depth > 10) return;
-    for (final effect in _watchEffects.toList()) {
-      if (effect._deps.contains(path)) {
-        effect._run(depth);
-      }
+    // 深度取「入参」与「当前执行链深度」的较大值：副作用内部再次写值时会以
+    // 默认深度 0 回调本方法（见 setValue 的未绑定路径分支），只看入参会限流失效。
+    final int currentDepth = depth > _effectDepth ? depth : _effectDepth;
+    if (currentDepth > _maxEffectDepth) return;
+    final Set<_WatchEffect>? effects = _effectIndex[path];
+    if (effects == null || effects.isEmpty) return;
+    // 复制一份再遍历：副作用执行时会重新收集依赖（增删索引），
+    // 直接遍历原集合会抛并发修改异常。
+    for (final _WatchEffect effect in effects.toList()) {
+      effect._run(currentDepth + 1);
     }
   }
 }
@@ -397,25 +486,51 @@ class _WatchEffect {
   /// 重入期间如果有新的触发，标记为 dirty，执行完后调度一次重跑。
   bool _dirty = false;
 
-  /// CR-07：微任务重跑计数器，防止无限重入绕过深度限制。
+  /// CR-07：连续重跑计数器，防止无限重入绕过深度限制。
+  ///
+  /// 旧实现把清零放在「本次执行没有产生重入」的分支里，等价于每次正常执行都
+  /// 归还预算；一旦出现「重入 → 正常 → 重入 → 正常」的交替链，计数器会被反复
+  /// 清零而使限流形同虚设。现在只在「外部触发重新进入」（[_run]）时重置，
+  /// 同一条自触发链累加到上限后保持停止，直到下一次外部触发重新授予预算。
   int _rerunCount = 0;
+
+  /// 单条自触发链允许的最大重跑次数。
+  static const int _maxRerun = 10;
 
   _WatchEffect(this._fn, this._service);
 
-  /// 执行副作用并收集依赖。
+  /// 外部入口：注册时首次执行，或依赖路径变更时由 [_triggerEffects] 调用。
   ///
   /// [depth] 当前触发链深度，用于限制递归深度（B124）。
   void _run([int depth = 0]) {
     if (_disposed) return;
     // B124：重入检测 — 如果当前 effect 正在执行，标记 dirty 以便执行完后重跑。
+    // 注意：重入路径不改动 _rerunCount，否则自触发链的计数会被反复清零。
     if (_isRunning) {
       _dirty = true;
       return;
     }
+    // 外部触发 → 开启新的重跑链，重置重跑预算。
+    _rerunCount = 0;
+    _execute(depth);
+  }
+
+  /// 实际执行副作用并收集依赖（供外部入口与内部重跑复用，不重置重跑计数）。
+  void _execute(int depth) {
+    if (_disposed) return;
     _isRunning = true;
+    // 执行前的依赖快照：执行期间索引中仍保留这些依赖（不提前摘除），
+    // 这样副作用运行中回写自身依赖时，_triggerEffects 仍能命中本副作用
+    // 并走重入检测（_dirty），与旧实现按实时 _deps 判定的语义保持一致。
+    // 执行结束后再由 _resyncEffectIndex 做差集，摘除不再依赖的路径。
+    final Set<String> previousDeps = Set<String>.from(_deps);
     _deps.clear();
 
     final ctx = _service._trackContext;
+    // 记录执行链深度：副作用内部同步写值时，_triggerEffects 会读到它并 +1，
+    // 使深度限制真正生效（旧实现只把入参往下传，副作用内部写值恒为 0）。
+    final int prevDepth = _service._effectDepth;
+    _service._effectDepth = depth;
     ctx.activeEffect = _fn;
     ctx.collectedDeps = _deps;
     try {
@@ -423,30 +538,36 @@ class _WatchEffect {
     } finally {
       ctx.activeEffect = null;
       ctx.collectedDeps = null;
+      _service._effectDepth = prevDepth;
       _isRunning = false;
+      // 按依赖差集同步索引，使后续变更可以精确命中本副作用。
+      _service._resyncEffectIndex(this, previousDeps);
       // 如果执行期间有新的触发，调度一次微任务重跑。
       if (_dirty) {
         _dirty = false;
         _rerunCount++;
-        if (_rerunCount > 10) {
+        if (_rerunCount > _maxRerun) {
           debugPrint(
-            '[ParkBindingService] watchEffect 微任务重跑超过 10 次，'
-            '可能存在循环依赖，已停止重跑。',
+            '[ParkBindingService] watchEffect 重跑超过 $_maxRerun 次，'
+            '可能存在循环依赖，已停止重跑（等待下一次外部触发）。',
           );
-          _rerunCount = 0;
         } else {
-          scheduleMicrotask(() => _run(_rerunCount));
+          // 重跑发生在新的微任务帧中，不在当前触发链内，深度重新从 0 起算。
+          scheduleMicrotask(() {
+            if (_disposed) return;
+            _execute(0);
+          });
         }
-      } else {
-        // 正常执行完毕，重置重跑计数器。
-        _rerunCount = 0;
       }
     }
   }
 
   /// 停止追踪。
   void stop() {
+    if (_disposed) return;
     _disposed = true;
+    // 先按当前依赖摘除索引，再清空依赖（顺序反了会残留索引条目）。
+    _service._unindexEffect(this);
     _deps.clear();
     _service._watchEffects.remove(this);
   }

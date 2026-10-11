@@ -114,8 +114,18 @@ class ParkCard extends StatefulWidget {
 
   /// 霓虹风格下是否用**渐变描边**替代实色描边。
   ///
-  /// 默认开启。渐变取自 `park.gradients.sweep`，随主题联动。
-  /// 其余风格忽略此参数。
+  /// 渐变取自 `park.gradients.sweep`，随主题联动。
+  ///
+  /// 🔴 **仅在 [ParkSurfaceStyle.neon] 下生效**，其余风格一律忽略此参数
+  /// （即保留实色描边）。这不是"软限制"，而是实打实的行为门控，见
+  /// `_resolveSurface` 里的 `useGradientStroke`。
+  ///
+  /// ⚠️ 默认 **false**。曾默认为 true，但门控当时漏判 `surfaceStyle`，
+  /// 导致**所有风格**（含默认 stripe）都被替换成渐变描边 → 实色细边框
+  /// 消失、neo 凭空多出边框。详见 commit `bad1e39` 引入的回归。
+  ///
+  /// 想开启 neon 渐变描边需显式传 `true`；此时 [borderColor] 会失效
+  /// （渐变描边与实色描边互斥，见 `_resolveSurface` 的说明）。
   final bool gradientBorder;
 
   const ParkCard({
@@ -144,7 +154,7 @@ class ParkCard extends StatefulWidget {
     this.borderColor,
     this.glowColor,
     this.glowIntensity = 1.0,
-    this.gradientBorder = true,
+    this.gradientBorder = false,
   }) : assert(
          glowIntensity >= 0.0 && glowIntensity <= 1.0,
          'glowIntensity 必须落在 0-1',
@@ -172,6 +182,8 @@ class _ParkCardState extends State<ParkCard> {
       List<BoxShadow>? shadows,
       bool useGlass,
       Gradient? gradientBorder,
+      Color titleColor,
+      Color bodyColor,
     })
     surface = _resolveSurface(park);
 
@@ -179,6 +191,22 @@ class _ParkCardState extends State<ParkCard> {
     final Border? effectiveBorder = widget.borderColor != null && surface.border != null
         ? Border.all(color: widget.borderColor!, width: 1)
         : surface.border;
+
+    // 🔴 文字色必须与表面令牌同源，不能硬编码 colors.textPrimary/Secondary。
+    //
+    // neon + 深色板下 [surface.fill] 会翻转为近白（colors.textPrimary），
+    // 若文字仍取 colors.textPrimary 就是"白底白字"（实测 1.00:1），
+    // 副标题取 colors.textSecondary 也只有 2.00:1 —— 与批次 1
+    // ParkSurfaceTokens 那次 P0 同源。
+    //
+    // 因此：卡片**真的绘制了背景**时取 tokens 的 titleColor / bodyColor；
+    // ghost 变体下 fill 恒为 Colors.transparent（不绘制表面），文字直接落在
+    // 页面底色上，而页面底色不随风格翻转 —— 此时必须保留 colors.*。
+    // 判据是"是否真的画了背景"，而非"风格是否为 neon"，与
+    // ParkPageTitle 的 paintsBackground 同一思路。
+    final bool paintsBackground = surface.color != null && surface.color!.a != 0;
+    final Color titleColor = paintsBackground ? surface.titleColor : colors.textPrimary;
+    final Color bodyColor = paintsBackground ? surface.bodyColor : colors.textSecondary;
 
     final BorderRadius cardRadius = widget.borderRadius ?? radius.brMd;
     final EdgeInsetsGeometry defaultPadding = switch (widget.size) {
@@ -281,8 +309,7 @@ class _ParkCardState extends State<ParkCard> {
                                                           fontWeight: park
                                                               .typography
                                                               .weightBold,
-                                                          color: colors
-                                                              .textPrimary,
+                                                          color: titleColor,
                                                         ),
                                                     maxLines: 1,
                                                     overflow:
@@ -308,7 +335,7 @@ class _ParkCardState extends State<ParkCard> {
                                       child: Text(
                                         widget.description!,
                                         style: park.typography.caption.copyWith(
-                                          color: colors.textSecondary,
+                                          color: bodyColor,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -405,6 +432,8 @@ class _ParkCardState extends State<ParkCard> {
       List<BoxShadow>? shadows,
       bool useGlass,
       Gradient? gradientBorder,
+      Color titleColor,
+      Color bodyColor,
     })
     surface,
     required Border? effectiveBorder,
@@ -485,6 +514,8 @@ class _ParkCardState extends State<ParkCard> {
     List<BoxShadow>? shadows,
     bool useGlass,
     Gradient? gradientBorder,
+    Color titleColor,
+    Color bodyColor,
   })
   _resolveSurface(ParkThemeData park) {
     final ParkSurfaceTokens surface = ParkSurfaceTokens.resolve(
@@ -507,10 +538,19 @@ class _ParkCardState extends State<ParkCard> {
         shadows: surface.shadows,
         useGlass: surface.useBackdropFilter,
         gradientBorder: null,
+        titleColor: surface.titleColor,
+        bodyColor: surface.bodyColor,
       );
     }
 
     // ---- 以下仅 neon 风格生效 ----
+
+    // 渐变描边门控：既看调用方意愿，也看当前风格。
+    //
+    // ⚠️ 两者缺一不可。只判 [gradientBorder] 会让所有风格被替换描边
+    // （曾发生的 P0）；只判风格则让参数在非 neon 下完全无效、失去意义。
+    final bool useGradientStroke =
+        widget.gradientBorder && surface.style == ParkSurfaceStyle.neon;
 
     // 辉光：材质令牌给出的品牌辉光，强度与色相都可由调用方覆盖。
     // 颜色可被 glowColor 覆盖，默认取品牌色（令牌派生，非硬编码）。
@@ -536,12 +576,22 @@ class _ParkCardState extends State<ParkCard> {
 
     return (
       color: widget.color ?? surface.fill,
-      // gradientBorder 开启时返回 null，由调用方用渐变描边代替实色描边。
-      border: widget.gradientBorder ? null : surface.border,
+      // 🔴 渐变描边只在 neon 下替换实色描边。
+      //
+      // 门控必须同时判断 [gradientBorder] 与 `surface.style` ——
+      // 只判断前者会让**所有风格**（含默认 stripe）都被换成渐变描边，
+      // 导致实色细边框消失、neo 凭空多出边框。详见字段文档的 P0 说明。
+      //
+      // 开启时 border 返回 null，由调用方用渐变描边代替实色描边；
+      // 此时 [ParkCard.borderColor] 也一并失效（互斥，见 build 的说明）。
+      border: useGradientStroke ? null : surface.border,
       shadows: glowShadows,
       useGlass: surface.useBackdropFilter,
       // 渐变描边用 sweep 令牌（随主题联动），禁止硬编码色值。
-      gradientBorder: widget.gradientBorder ? park.gradients.sweep.asFlutter : null,
+      gradientBorder: useGradientStroke ? park.gradients.sweep.asFlutter : null,
+      // neon 下标题/正文必须取 surface 的成对色（fill 翻转过，colors.* 不跟随）。
+      titleColor: surface.titleColor,
+      bodyColor: surface.bodyColor,
     );
   }
 

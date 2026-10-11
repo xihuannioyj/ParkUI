@@ -143,6 +143,26 @@ class _ParkCheckboxState extends FormFieldState<bool>
       _animController.reverse();
     }
   }
+
+  @override
+  void didUpdateWidget(covariant FormField<bool> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ParkCheckbox 把 `value` 作为 FormField 的 initialValue 传入，而 Flutter 的
+    // FormFieldState 只在首次创建时读取 initialValue，之后父级改变 value 并不会
+    // 同步内部值——表现为“父级 setState 勾选状态后，勾选框外观不更新”
+    // （典型场景：列表页点“全选”后每一行的勾选框没有变选中）。
+    // 这里在外部 value 真正发生变化时同步内部值（用 setValue 而非 didChange，
+    // 因为 didUpdateWidget 紧随其后就是重建，无需再触发 setState）。
+    // 仅在“变化”时同步，因此“传常量 value 并靠自身点击切换”的用法不受影响。
+    if (widget.initialValue != oldWidget.initialValue) {
+      setValue(widget.initialValue);
+      if (widget.initialValue ?? false) {
+        _animController.forward();
+      } else {
+        _animController.reverse();
+      }
+    }
+  }
 }
 
 class _ParkCheckboxBuilder extends StatelessWidget {
@@ -351,6 +371,26 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   /// 统一解析后的选项列表
   List<ParkCheckboxOption> get _resolvedOptions => widget.options;
 
+  /// 判断两个选中值列表内容是否相等。
+  ///
+  /// 复选框组的选中态在语义上是集合（与顺序无关），因此这里按元素计数比较：
+  /// 旧的「长度 + containsAll」启发式在同长度、不同内容的场景下会误判
+  /// （例如 [a, b] vs [a, a]），既可能漏掉必要的 setState，也可能多写一次 bindable。
+  static bool _sameSelection(List<String> a, List<String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    final Map<String, int> counts = <String, int>{};
+    for (final String value in a) {
+      counts[value] = (counts[value] ?? 0) + 1;
+    }
+    for (final String value in b) {
+      final int remaining = counts[value] ?? 0;
+      if (remaining == 0) return false;
+      counts[value] = remaining - 1;
+    }
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -383,28 +423,31 @@ class _ParkCheckboxGroupState extends State<ParkCheckboxGroup> {
   void _onBindableChanged() {
     if (!mounted || _bindable == null) return;
     final List<String> value = _bindable!.value;
-    if (value.length != _selected.length ||
-        !Set<String>.from(value).containsAll(_selected)) {
-      setState(() => _selected = List<String>.from(value));
-    }
+    // 内容相同则直接返回：既省掉一次 setState，也保证外部传入的
+    // 「内容相等但实例不同」的值不会覆盖组件内部状态（不 clobber UI）。
+    if (_sameSelection(value, _selected)) return;
+    setState(() => _selected = List<String>.from(value));
   }
 
   /// UI → model 方向同步。
   void _syncToBindable() {
     final ParkBindable<List<String>>? bindable = _bindable;
     if (bindable == null) return;
-    final List<String> value = List<String>.from(_selected);
-    if (bindable.value.length != value.length ||
-        !Set<String>.from(bindable.value).containsAll(value)) {
-      // ignore: avoid_dynamic_calls
-      (bindable as dynamic).value = value;
-    }
+    // 内容相同则不写回：ParkBindable 的相等检测对 List 是引用比较，
+    // 每次写新实例都会 notify → 触发使用方重建（重建风暴）。
+    if (_sameSelection(bindable.value, _selected)) return;
+    // ignore: avoid_dynamic_calls
+    (bindable as dynamic).value = List<String>.from(_selected);
   }
 
   @override
   void didUpdateWidget(covariant ParkCheckboxGroup oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value) {
+    // 用内容比较代替 List 的引用比较：父级传入「内容相等的新列表」时
+    // 不应把组件内部（可能刚被用户或服务更新过的）选中状态重置掉。
+    // 仍然只在 widget.value 确实换了实例时才考虑同步，保持旧的受控触发时机。
+    if (oldWidget.value != widget.value &&
+        !_sameSelection(widget.value, _selected)) {
       _selected = List<String>.from(widget.value);
     }
     if (widget.bindKey != oldWidget.bindKey ||
